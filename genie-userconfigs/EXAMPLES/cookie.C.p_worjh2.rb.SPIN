@@ -1,6 +1,6 @@
 # **********************************************************************
 # adapted from: muffin.C.p_worjh2.r.SPIN
-# base-config: 	cookie.C.p_worjh2.r
+# base-config: 	cookie.C.p_worjh2.rb
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
@@ -23,6 +23,15 @@ bg_par_data_save_level=2
 bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # Include experiment name in BIOGEM netCDF filenames? 
 bg_ctrl_ncout_expid_name=.false.
+#
+# *** FORCINGS *********************************************************
+#
+# apply numerical dye circulation tracer
+bg_par_forcing_name="pyyyyz.Fblue"
+bg_par_force_point_i=22
+bg_par_force_point_j=33
+bg_par_force_point_k=8
+bg_par_ocn_force_scale_val_49=1.0E12
 #
 # *** MISC *************************************************************
 #
