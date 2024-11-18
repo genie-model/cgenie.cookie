@@ -82,8 +82,6 @@ bg_par_data_save_level=7
 bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # Include experiment name in BIOGEM netCDF filenames? 
 bg_ctrl_ncout_expid_name=.false.
-# turn off ECOGEM location-specific time-series saving
-eg_par_ecogem_timeseries_file='timeseries_sites_NONE.eco'
 #
 # *** FORCINGS *********************************************************
 #
