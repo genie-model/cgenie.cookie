@@ -76,7 +76,7 @@ OMP_NUM_THREADS=2
 export OMP_NUM_THREADS
 #
 OUTPUTPATH=$OUTPUTDIR/$RUNID
-CONFIGPATH=$HOMEDIR/cgenie.cookie/genie-main/configs
+CONFIGPATH=$HOMEDIR/cgenie.cookie/genie-baseconfigs
 CONFIGNAME=$RUNID".config"
 BINARYPATH=$HOMEDIR/cgenie.cookie/genie-main
 RESTARTNAME="rst.1"
@@ -330,13 +330,13 @@ if [ -n "$5" ]; then
   echo gs_18=$RESTARTNAME >> $CONFIGPATH/$CONFIGNAME
   echo el_2=$OUTPUTPATH"/ents" >> $CONFIGPATH/$CONFIGNAME
   echo el_22=$RESTARTPATH"/ents" >> $CONFIGPATH/$CONFIGNAME
-  echo ea_rstdir_name=$RESTARTPATH"/embm" >> $CONFIGPATH/$CONFIGNAME
-  echo go_rstdir_name=$RESTARTPATH"/goldstein" >> $CONFIGPATH/$CONFIGNAME
-  echo gs_rstdir_name=$RESTARTPATH"/goldsteinseaice" >> $CONFIGPATH/$CONFIGNAME
+  echo ea_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
+  echo go_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
+  echo gs_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
   echo el_rstdir_name=$RESTARTPATH"/ents" >> $CONFIGPATH/$CONFIGNAME
-  echo ac_par_rstdir_name=$RESTARTPATH"/atchem" >> $CONFIGPATH/$CONFIGNAME
-  echo bg_par_rstdir_name=$RESTARTPATH"/biogem" >> $CONFIGPATH/$CONFIGNAME
-  echo sg_par_rstdir_name=$RESTARTPATH"/sedgem" >> $CONFIGPATH/$CONFIGNAME
+  echo ac_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
+  echo bg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
+  echo sg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
   echo rg_par_rstdir_name=$RESTARTPATH"/rokgem" >> $CONFIGPATH/$CONFIGNAME
   echo eg_par_rstdir_name=$RESTARTPATH"/ecogem" >> $CONFIGPATH/$CONFIGNAME
 else
@@ -355,20 +355,20 @@ echo ac_ctrl_ncrst=.true. >> $CONFIGPATH/$CONFIGNAME
 echo bg_ctrl_ncrst=.true. >> $CONFIGPATH/$CONFIGNAME
 echo sg_ctrl_ncrst=.true. >> $CONFIGPATH/$CONFIGNAME
 echo eg_ctrl_ncrst=.true. >> $CONFIGPATH/$CONFIGNAME
-#
+# ---------------------------------
 # (7) OVER-RIDE DEFAULTS
 # ----------------------
 echo bg_ctrl_force_oldformat=.false. >> $CONFIGPATH/$CONFIGNAME
-#
+# ---------------------------------
 # (8) INCORPORATE RUN CONFIGURATION
 # ---------------------------------
 echo "   Make safe goin format"
 #dos2unix $GOIN
 #tr ‘\r’ ‘\n’ < $GOIN
 cat $GOIN >> $CONFIGPATH/$CONFIGNAME
-#
+# ---------------------------------
 # (9) GO!
-# -------
+# ---------------------------------
 # Run model ...
 echo ""
 echo ">> Here we go ..."
@@ -393,14 +393,34 @@ else
     echo "$MODELID" > 'current_config.dat'
 fi
 ./genie_example.job -O -f $CONFIGPATH/$CONFIGNAME
-# Clean up and archive
+# ---------------------------------
+# (10) CLEAN UP AND ARCHIVE
+# ---------------------------------
+# remove config
 rm -f $CONFIGPATH/$CONFIGNAME
+# change to output dir
+cd $OUTPUTDIR
+# remove empty results directories
+if [ -z "$( ls -A $RUNID'/atchem' )" ]; then rm -d $RUNID'/atchem'; fi
+if [ -z "$( ls -A $RUNID'/biogem' )" ]; then rm -d $RUNID'/biogem'; fi
+if [ -z "$( ls -A $RUNID'/ecogem' )" ]; then rm -d $RUNID'/ecogem'; fi
+if [ -z "$( ls -A $RUNID'/embm' )" ]; then rm -d $RUNID'/embm'; fi
+if [ -z "$( ls -A $RUNID'/ents' )" ]; then rm -d $RUNID'/ents'; fi
+if [ -z "$( ls -A $RUNID'/gemlite' )" ]; then rm -d $RUNID'/gemlite'; fi
+if [ -z "$( ls -A $RUNID'/goldstein' )" ]; then rm -d $RUNID'/goldstein'; fi
+if [ -z "$( ls -A $RUNID'/goldsteinseaice' )" ]; then rm -d $RUNID'/goldsteinseaice'; fi
+if [ -z "$( ls -A $RUNID'/main' )" ]; then rm -d $RUNID'/main'; fi
+if [ -z "$( ls -A $RUNID'/plasim' )" ]; then rm -d $RUNID'/plasim'; fi
+if [ -z "$( ls -A $RUNID'/rokgem' )" ]; then rm -d $RUNID'/rokgem'; fi
+if [ -z "$( ls -A $RUNID'/sedgem' )" ]; then rm -d $RUNID'/sedgem'; fi
+# Archive
 echo ""
 echo ">> Archiving ..."
-cd $OUTPUTDIR
 tar cfz $RUNID.tar.gz $RUNID
 mv $RUNID.tar.gz $HOMEDIR/cgenie_archive/$RUNID.tar.gz
 cd $BINARYPATH
 echo ">> All done - now go and play outside"
 echo ""
+# ---------------------------------
+# ---------------------------------
 #

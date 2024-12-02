@@ -189,7 +189,6 @@ c SG > Dummy variables to be passed to/from ENTS via genie.F
       character go_lin*13
       real go_ec(5)
       integer go_istep0
-      integer lenrst
 
 c SG <
 
@@ -202,6 +201,7 @@ c     file access checks
 
 c     namelist for reading initialisation data
       NAMELIST /ini_gold_nml/indir_name,outdir_name,rstdir_name
+      NAMELIST /ini_gold_nml/inrstdir_name,outrstdir_name,ascrst_name
       NAMELIST /ini_gold_nml/igrid,world
       NAMELIST /ini_gold_nml/npstp,iwstp,itstp,ianav
       NAMELIST /ini_gold_nml/conserv_per,ans
@@ -312,7 +312,7 @@ c        This 'if' checks for a terminal slash symbol
       end if
       if (debug_init) print*,'Output dir. name ',outdir_name(1:lenout)
 
-c     Restart (input) directory name
+c     Restart directory name
       lenrst = lnsig1(rstdir_name)
       if (rstdir_name(lenrst:lenrst).ne.'/') then
 c        This 'if' checks for a terminal slash symbol
@@ -320,6 +320,26 @@ c        This 'if' checks for a terminal slash symbol
          rstdir_name(lenrst:lenrst+1) = '/'
       end if
       if (debug_init) print*,'Restart dir. name ',rstdir_name(1:lenrst)
+
+c     Input restart directory name
+      leninrst = lnsig1(inrstdir_name)
+      if (inrstdir_name(leninrst:leninrst).ne.'/') then
+c        This 'if' checks for a terminal slash symbol
+         leninrst = leninrst + 1
+         inrstdir_name(leninrst:leninrst+1) = '/'
+      end if
+      if (debug_init)
+     & print*,'Input restart dir. name ',inrstdir_name(1:leninrst)
+
+c     Output restart directory name
+      lenoutrst = lnsig1(outrstdir_name)
+      if (outrstdir_name(lenoutrst:lenoutrst).ne.'/') then
+c        This 'if' checks for a terminal slash symbol
+         lenoutrst = lenoutrst + 1
+         outrstdir_name(lenoutrst:lenoutrst+1) = '/'
+      end if
+      if (debug_init)
+     & print*,'Output restart dir. name ',outrstdir_name(1:lenoutrst)
 
 crma (15/09/05) : read in grid type
 crma (0 = const dsinlat; 1 = const dlat; 2 = IGCM)
@@ -1657,7 +1677,9 @@ c+DJL 31/8/2004
       if (debug_init) print*,dirnetout 
 c-DJL 31/8/2004
 
-
+c ======================================================================
+c RESTART CODE >>>
+c ======================================================================
 c Is this a new or continuing run?
       if(ans.eq.'n'.or.ans.eq.'N')then
 c        This is a new run, initial conditions already set up
@@ -1683,9 +1705,10 @@ c AY (01/12/03)
 c+DJL 31/8/2004
         if (lnetin) then
          call inm_netcdf(lrestart_genie)
-        else
+      else
          call check_unit(1,__LINE__,__FILE__)
-         open(1,file=rstdir_name(1:lenrst)//lin,iostat=ios)
+c         open(1,file=rstdir_name(1:lenrst)//lin,iostat=ios)
+         open(1,file=inrstdir_name(1:leninrst)//ascrst_name,iostat=ios)
          call check_iostat(ios,__LINE__,__FILE__)
          call inm(1)
          close(1,iostat=ios)
@@ -1728,6 +1751,9 @@ c                  (code having been copied from initialization avove)
          enddo
 
       endif
+c ======================================================================
+c <<< RESTART CODE
+c ======================================================================
 
 c periodic b.c. (required for implicit code)
 
@@ -1962,107 +1988,103 @@ c ======================================================================
 c Open output files
 c ======================================================================
 
-c AY (08/12/03) : this section creates output files that have data
-c                 put into them throughout model runs (time series)
-
-c Average values of ocean T
-      call check_unit(4,__LINE__,__FILE__)
-      open(4,file=outdir_name(1:lenout)//lout//'.'//'t',iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-c    +     status='old')
-      if (debug_init) write(4,*) 
-     & '% GOLDSTEIN ocean model, ocean temperature'
+c     AY (08/12/03) : this section creates output files that have data
+c     put into them throughout model runs (time series)
+      
+      if (debug_init) then
+         
+c     Average values of ocean T
+         call check_unit(4,__LINE__,__FILE__)
+         open(4,file=outdir_name(1:lenout)//lout//'.'//'t',iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+c     +     status='old')
+         if (debug_init) write(4,*) 
+     &        '% GOLDSTEIN ocean model, ocean temperature'
 c     write(4,'(11(a11,3x))')
-      if (debug_init) write(4,'(11a14)',iostat=ios)
-     $              '% time       '
-     $             ,' Pac_T_d   ',' Atl_T_d   '
-     $             ,' Ind_T_d   ',' Sou_T_d   '
-     $             ,' Pac_T_u   ',' Atl_T_u   '
-     $             ,' Ind_T_u   ',' Sou_T_u   '
-     $             ,' drho/dz   ',' speed     '
-      call check_iostat(ios,__LINE__,__FILE__)
-      close(4,iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-c Average values of ocean S
-      call check_unit(14,__LINE__,__FILE__)
-      open(14,file=outdir_name(1:lenout)//lout//'.'//'s',iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-c    +     status='old')
-      if (debug_init) write(14,*)
-     & '% GOLDSTEIN ocean model, ocean salinity'
+         if (debug_init) write(4,'(11a14)',iostat=ios)
+     $        '% time       '
+     $        ,' Pac_T_d   ',' Atl_T_d   '
+     $        ,' Ind_T_d   ',' Sou_T_d   '
+     $        ,' Pac_T_u   ',' Atl_T_u   '
+     $        ,' Ind_T_u   ',' Sou_T_u   '
+     $        ,' drho/dz   ',' speed     '
+         call check_iostat(ios,__LINE__,__FILE__)
+         close(4,iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+c     Average values of ocean S
+         call check_unit(14,__LINE__,__FILE__)
+         open(14,file=outdir_name(1:lenout)//lout//'.'//'s',iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+c     +     status='old')
+         if (debug_init) write(14,*)
+     &        '% GOLDSTEIN ocean model, ocean salinity'
 c     write(14,'(11(a11,3x))')
-      if (debug_init) write(14,'(11a14)',iostat=ios)
-     $              '% time       '
-     $             ,' Pac_S_d   ',' Atl_S_d   '
-     $             ,' Ind_S_d   ',' Sou_S_d   '
-     $             ,' Pac_S_u   ',' Atl_S_u   '
-     $             ,' Ind_S_u   ',' Sou_S_u   '
-     $             ,' drho/dz   ',' speed     '
-      call check_iostat(ios,__LINE__,__FILE__)
-      close(14,iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
+         if (debug_init) write(14,'(11a14)',iostat=ios)
+     $        '% time       '
+     $        ,' Pac_S_d   ',' Atl_S_d   '
+     $        ,' Ind_S_d   ',' Sou_S_d   '
+     $        ,' Pac_S_u   ',' Atl_S_u   '
+     $        ,' Ind_S_u   ',' Sou_S_u   '
+     $        ,' drho/dz   ',' speed     '
+         call check_iostat(ios,__LINE__,__FILE__)
+         close(14,iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
 
-c Values of ocean maximum/minimum circulation
-      call check_unit(40,__LINE__,__FILE__)
-      open(40,file=outdir_name(1:lenout)//lout//'.'//'opsit',iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-c    +     status='new')
-      if (debug_init) write(40,*)
-     &  '% GOLDSTEIN ocean model, ocean overturning'
-      if (debug_init) write(40,'(5a14,a10)',iostat=ios)
-     &  '% time       ','Pacific min',
-     +     'Pacific max','Atlantic min','Atlantic max',
-     +     ' Location'
-      call check_iostat(ios,__LINE__,__FILE__)
-      if (debug_init) write(40,'(5a14,2a5)',iostat=ios) '%            ',
-     +     'Sv','Sv','Sv','Sv','j','k'
-      call check_iostat(ios,__LINE__,__FILE__)
-      close(40,iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
+c     Values of ocean maximum/minimum circulation
+         call check_unit(40,__LINE__,__FILE__)
+         open(40,
+     &      file=outdir_name(1:lenout)//lout//'.'//'opsit',iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+c     +     status='new')
+         if (debug_init) write(40,*)
+     &        '% GOLDSTEIN ocean model, ocean overturning'
+         if (debug_init) write(40,'(5a14,a10)',iostat=ios)
+     &        '% time       ','Pacific min',
+     +        'Pacific max','Atlantic min','Atlantic max',
+     +        ' Location'
+         call check_iostat(ios,__LINE__,__FILE__)
+         if (debug_init)
+     &         write(40,'(5a14,2a5)',iostat=ios) '%            ',
+     +'Sv','Sv','Sv','Sv','j','k'
+         call check_iostat(ios,__LINE__,__FILE__)
+         close(40,iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
 
-c Values of ocean basin FW and heat fluxes
-      call check_unit(41,__LINE__,__FILE__)
-      open(41,file=outdir_name(1:lenout)//lout//'.'//'flux',iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-c    +     status='new')
-      if (debug_init) write(41,'(3a28)',iostat=ios)
-     &  '% GOLDSTEIN ocean model, FW ',
-     +     'and heat fluxes, first data ',
-     +     'line is region area (m2)    '
-      call check_iostat(ios,__LINE__,__FILE__)
-      if (debug_init) write(41,'(11a14)',iostat=ios) '% time        ',
-     +     ' ',' ',' Total FW ',' ',' ',
-     +     ' ',' ','Total heat',' ',' '
-      call check_iostat(ios,__LINE__,__FILE__)
-      if (debug_init) write(41,'(11a14)',iostat=ios) '%             ',
-     +     'Global','Atlantic','Pacific','Indian','Southern',
-     +     'Global','Atlantic','Pacific','Indian','Southern'
-      call check_iostat(ios,__LINE__,__FILE__)
-      if (debug_init) write(41,'(11a14)',iostat=ios) '%             ',
-     +     'Sv','Sv','Sv','Sv','Sv',
-     +     'PW','PW','PW','PW','PW'
-      call check_iostat(ios,__LINE__,__FILE__)
-c    +     'W/m2','W/m2','W/m2','W/m2','W/m2'
-      close(41,iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
+c     Values of ocean basin FW and heat fluxes
+         call check_unit(41,__LINE__,__FILE__)
+         open(41,file=outdir_name(1:lenout)//lout//'.'//'flux',iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+c     +     status='new')
+         if (debug_init) write(41,'(3a28)',iostat=ios)
+     &        '% GOLDSTEIN ocean model, FW ',
+     +        'and heat fluxes, first data ',
+     +        'line is region area (m2)    '
+         call check_iostat(ios,__LINE__,__FILE__)
+         if (debug_init) write(41,'(11a14)',iostat=ios) '% time        ',
+     +        ' ',' ',' Total FW ',' ',' ',
+     +        ' ',' ','Total heat',' ',' '
+         call check_iostat(ios,__LINE__,__FILE__)
+         if (debug_init) write(41,'(11a14)',iostat=ios) '%             ',
+     +        'Global','Atlantic','Pacific','Indian','Southern',
+     +        'Global','Atlantic','Pacific','Indian','Southern'
+         call check_iostat(ios,__LINE__,__FILE__)
+         if (debug_init) write(41,'(11a14)',iostat=ios) '%             ',
+     +        'Sv','Sv','Sv','Sv','Sv',
+     +        'PW','PW','PW','PW','PW'
+         call check_iostat(ios,__LINE__,__FILE__)
+c     +     'W/m2','W/m2','W/m2','W/m2','W/m2'
+         close(41,iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
 
-c file for writing extra freshwater forcing
-      call check_unit(44,__LINE__,__FILE__)
-      open(44,file=outdir_name(1:lenout)//lout//'.'//'hose',iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-      if (debug_init) write(44,*)
-     &  '% GOLDSTEIN ocean model, extra FW forcing'
-      close(44,iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
+c     file for writing extra freshwater forcing
+         call check_unit(44,__LINE__,__FILE__)
+         open(44,file=outdir_name(1:lenout)//lout//'.'//'hose',iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+         if (debug_init) write(44,*)
+     &        '% GOLDSTEIN ocean model, extra FW forcing'
+         close(44,iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
 
-      if (dosc) then
-c Seasonal averages
-c
-c AY (30/04/04) : don't need to call this here anymore
-c
-c     open(50,file=outdir_name(1:lenout)//lout//'.osc')
-c    +     status='new')
-c     close(50)
       endif
 
 c Output arguments

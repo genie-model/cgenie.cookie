@@ -52,6 +52,8 @@ CONTAINS
     par_indir_name = trim(par_indir_name)//'/'
     par_outdir_name = trim(par_outdir_name)//'/'
     par_rstdir_name = trim(par_rstdir_name)//'/'
+    par_inrstdir_name = trim(par_inrstdir_name)//'/'
+    par_outrstdir_name = trim(par_outrstdir_name)//'/'
     if (ctrl_debug_init > 0) then
        ! --- RUN CONTROL --------------------------------------------------------------------------------------------------------- !
        print*,'--- RUN CONTROL ------------------------------------'
@@ -224,6 +226,8 @@ CONTAINS
        print*,'Input dir. name                                     : ',trim(par_indir_name)
        print*,'Output dir. name                                    : ',trim(par_outdir_name)
        print*,'Restart (input) dir. name                           : ',trim(par_rstdir_name)
+       print*,'Input restart dir. name                             : ',trim(par_inrstdir_name)
+       print*,'Output restart dir. name                            : ',trim(par_outrstdir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
        print*,'Sediment water depth grid name                      : ',trim(par_sed_topo_D_name)
@@ -309,9 +313,9 @@ CONTAINS
     ! -------------------------------------------------------- ! set filename
     IF (ctrl_misc_debug4) print*, 'set filename'
     IF (ctrl_ncrst) THEN
-       loc_filename = TRIM(par_rstdir_name)//par_ncrst_name
+       loc_filename = TRIM(par_inrstdir_name)//par_ncrst_name
     else
-       loc_filename = TRIM(par_rstdir_name)//trim(par_infile_name)
+       loc_filename = TRIM(par_inrstdir_name)//trim(par_infile_name)
     endif
     ! -------------------------------------------------------- ! check file status
     IF (ctrl_misc_debug4) print*, 'check file status'
@@ -2190,21 +2194,29 @@ CONTAINS
     write(unit=out,fmt='(A28,e14.6,A9)',iostat=ios) &
          & ' kerogen weathering        :',loc_Fkerogen,' mol yr-1'
     Write(unit=out,fmt=*) '---------------------------------'
-    if (loc_tot_FCaCO3 > const_real_nullsmall) then
+    if (par_sed_diag_fracSiweath*loc_tot_FCaCO3 > const_real_nullsmall) then
        write(unit=out,fmt='(A28,e14.6)',iostat=ios) &
             & ' kerogen C/silicate ratio  =',loc_Fkerogen/(par_sed_diag_fracSiweath*loc_tot_FCaCO3)
+    else
+       write(unit=out,fmt='(A32)',iostat=ios) ' kerogen C/silicate ratio  = NaN'
     end if
-    if (loc_tot_FCaCO3 > const_real_nullsmall) then
+    if (par_sed_diag_fracSiweath*loc_tot_FCaCO3 > const_real_nullsmall) then
        write(unit=out,fmt='(A28,e14.6)',iostat=ios) &
             & ' kerogen P/silicate ratio  =',loc_tot_FPOP/(par_sed_diag_fracSiweath*loc_tot_FCaCO3)
+    else
+       write(unit=out,fmt='(A32)',iostat=ios) ' kerogen P/silicate ratio  = NaN'
     end if
     if (loc_Fkerogen > const_real_nullsmall) then
        write(unit=out,fmt='(A28,e14.6)',iostat=ios) &
             & ' kerogen P/C ratio         =',loc_tot_FPOP/loc_Fkerogen
+    else
+       write(unit=out,fmt='(A32)',iostat=ios) ' kerogen P/C ratio         = NaN'
     end if
     if (loc_Fkerogen > const_real_nullsmall) then
        write(unit=out,fmt='(A28,e14.6)',iostat=ios) &
             & ' kerogen ALK/C ratio       =',par_sed_diag_P2ALK*loc_tot_FPOP/loc_Fkerogen
+    else
+       write(unit=out,fmt='(A32)',iostat=ios) ' kerogen ALK/C ratio       = NaN'
     end if
     Write(unit=out,fmt=*) '---------------------------------'
 
@@ -2298,53 +2310,83 @@ CONTAINS
     call check_iostat(ios,__LINE__,__FILE__)
 
     ! write data
-    Write(unit=out,fmt=*) '% Sediment diagnostics data'
-    Write(unit=out,fmt=*) '% ----------------------------------------'
+    Write(unit=out,fmt=*) '% -------------------------------------------------------------------------------'
+    Write(unit=out,fmt=*) '% Sediment diagnostics data -- ocean-sediment interface (and core-top) at run end'
+    Write(unit=out,fmt=*) '% -------------------------------------------------------------------------------'
     Write(unit=out,fmt=*) '% '
-    write(unit=out,fmt='(A1,2A4,2A8,3A8,6A10,2A8,4A10,8A10)',iostat=ios) &
+    write(unit=out,fmt='(A1,2A4,2A8,3A8,12A10,A10,12A12)',iostat=ios) &
          & '%',                                          &
          & '   i','   j',                                &
          & '     lon',                                   &
          & '     lat',                                   &
-         & '     D_m',                                   &
-         & '     T_K',                                   &
-         & '   S_mil',                                   &
-         & '    CO2_uM',                                 &
-         & '    ALK_uM',                                 &
-         & '     O2_uM',                                 &
-         & '     Ca_uM',                                 &
-         & '   SiO2_uM',                                 &
-         & '    CO3_uM',                                 &
-         & '     ohm',                                   &
-         & '   dCO3_uM',                                 &
-         & '     POC_%',                                 &
-         & '     cal_%',                                 &
-         & '    opal_%',                                 &
-         & '     det_%',                                 &
-         & '   fsedPOC',                                 &
-         & '   fsedcal',                                 &
-         & '  fsedopal',                                 &
-         & '   fseddet',                                 &
-         & '   fdisPOC',                                 &
-         & '   fdiscal',                                 &
-         & '  fdisopal',                                 &
-         & '    fdidet'
+         & '   depth',                                   &
+         & '    temp',                                   &
+         & '    sal',                                    &
+         & '       DIC',                                 &
+         & '       ALK',                                 &
+         & '      [O2]',                                 &
+         & '      [Ca]',                                 &
+         & '  [H4SiO4]',                                 &
+         & '   [CO32-]',                                 &
+         & '  OHM(cal)',                                 &
+         & ' dCO3(cal)',                                 &
+         & '   sed POC',                                 &
+         & '   sed cal',                                 &
+         & '  sed opal',                                 &
+         & '   sed det',                                 &
+         & ' (sed ash)',                                 &
+         & '    POC rain',                               &
+         & '    cal rain',                               &
+         & '   opal rain',                               &
+         & '    det rain',                               &
+         & '   POC remin',                               &
+         & '   cal remin',                               &
+         & '  opal remin',                               &
+         & '   det remin',                               &
+         & '  POC burial',                               &
+         & '  cal burial',                               &
+         & ' opal burial',                               &
+         & '  det burial'
+    write(unit=out,fmt='(A1,2A4,2A8,3A8,12A10,A10,3A48)',iostat=ios) &
+         & '%',                                          &
+         & '    ','    ',                                &
+         & '        ',                                   &
+         & '        ',                                   &
+         & '     (m)',                                   &
+         & '     (C)',                                   &
+         & '   (PSU)',                                   &
+         & '      (uM)',                                 &
+         & '      (uM)',                                 &
+         & '      (uM)',                                 &
+         & '      (mM)',                                 &
+         & '      (uM)',                                 &
+         & '      (uM)',                                 &
+         & '     (n/a)',                                 &
+         & '      (uM)',                                 &
+         & '     (wt%)',                                 &
+         & '     (wt%)',                                 &
+         & '     (wt%)',                                 &
+         & '     (wt%)',                                 &
+         & '     (wt%)',                                 &
+         & '    --- (umol cm-2 yr-1) -----------------------', &
+         & '   ---- (umol cm-2 yr-1) -----------------------', &
+         & '  ----- (umol cm-2 yr-1) -----------------------'
     call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) ' '
     DO i=1,n_i
        DO j=1,n_j
           IF (sed_mask(i,j)) THEN
-             write(unit=out,fmt='(1X,2I4,2f8.1,3f8.1,6f10.1,2f8.3,4f10.1,8f10.3)',iostat=ios) &
+             write(unit=out,fmt='(1X,2I4,2f8.1,3f8.1,6f10.1,2f10.3,4f10.1,f10.1,12f12.3)',iostat=ios) &
                   & i,j,                                                     &
                   & phys_sed(ips_lon,i,j),                                   &
                   & phys_sed(ips_lat,i,j),                                   &
                   & phys_sed(ips_D,i,j),                                     &
-                  & dum_sfcsumocn(io_T,i,j),                                 &
+                  & dum_sfcsumocn(io_T,i,j)-const_zeroC,                     &
                   & dum_sfcsumocn(io_S,i,j),                                 &
                   & 1.0E+06*dum_sfcsumocn(io_DIC,i,j),                       &
                   & 1.0E+06*dum_sfcsumocn(io_ALK,i,j),                       &
                   & 1.0E+06*dum_sfcsumocn(io_O2,i,j),                        &
-                  & 1.0E+06*dum_sfcsumocn(io_Ca,i,j),                        &
+                  & 1.0E+03*dum_sfcsumocn(io_Ca,i,j),                        &
                   & 1.0E+06*dum_sfcsumocn(io_SiO2,i,j),                      &
                   & 1.0E+06*sed_carb(ic_conc_CO3,i,j),                       &
                   & sed_carb(ic_ohm_cal,i,j),                                &
@@ -2353,6 +2395,7 @@ CONTAINS
                   & loc_sed_coretop(is_CaCO3,i,j),                           &
                   & loc_sed_coretop(is_opal,i,j),                            &
                   & loc_sed_coretop(is_det,i,j),                             &
+                  & loc_sed_coretop(is_ash,i,j),                             &
                   & 1.0E+06*sed_fsed(is_POC,i,j)/dum_dtyr,                   &
                   & 1.0E+06*sed_fsed(is_CaCO3,i,j)/dum_dtyr,                 &
                   & 1.0E+06*sed_fsed(is_opal,i,j)/dum_dtyr,                  &
@@ -2360,7 +2403,11 @@ CONTAINS
                   & 1.0E+06*sed_fdis(is_POC,i,j)/dum_dtyr,                   &
                   & 1.0E+06*sed_fdis(is_CaCO3,i,j)/dum_dtyr,                 &
                   & 1.0E+06*sed_fdis(is_opal,i,j)/dum_dtyr,                  &
-                  & 1.0E+06*sed_fdis(is_det,i,j)/dum_dtyr
+                  & 1.0E+06*sed_fdis(is_det,i,j)/dum_dtyr,                   &
+                  & 1.0E+06*(sed_fsed(is_POC,i,j)-sed_fdis(is_POC,i,j))/dum_dtyr,     &
+                  & 1.0E+06*(sed_fsed(is_CaCO3,i,j)-sed_fdis(is_CaCO3,i,j))/dum_dtyr, &
+                  & 1.0E+06*(sed_fsed(is_opal,i,j)-sed_fdis(is_opal,i,j))/dum_dtyr,   &
+                  & 1.0E+06*(sed_fsed(is_det,i,j)-sed_fdis(is_det,i,j))/dum_dtyr
              call check_iostat(ios,__LINE__,__FILE__)
           end if
        end do

@@ -232,8 +232,10 @@ c     has been made
       enddo
 
       if(mod(istep,(npstp*ndta)).lt.1) then
-         if (debug_loop) call diaga
-         if (debug_loop) print*
+         if (debug_loop) then
+            call diaga
+            print*
+         endif
       endif
 c        enddo
         
@@ -249,6 +251,9 @@ c AY (05/10/04) : netCDF output added
            call outm_netcdf_embm(istep)
       endif
 
+c     ======================================================================
+c     RESTART CODE >>>
+c     ======================================================================
 c write EMBM restart file
       if(mod(istep,(iwstp*ndta)).eq.0)then
          if (lascout) then
@@ -256,7 +261,8 @@ c write EMBM restart file
             if (debug_loop) print*,'Writing EMBM restart file at time',
      +           istep/real(ndta),'(koverall',koverall,')'
             call check_unit(2,__LINE__,__FILE__)
-            open(2,file=outdir_name(1:lenout)//lout//'.'//ext,
+c     open(2,file=outdir_name(1:lenout)//lout//'.'//ext,
+            open(2,file=outrstdir_name(1:lenoutrst)//ascrst_name,
      &           iostat=ios)
             call check_iostat(ios,__LINE__,__FILE__)
             rewind 2
@@ -264,88 +270,86 @@ c write EMBM restart file
             close(2,iostat=ios)
             call check_iostat(ios,__LINE__,__FILE__)
          endif
-
          iw = iw + 1
          if (debug_loop) print*
       endif
+c     ======================================================================
+c     <<< RESTART CODE
+c     ======================================================================
 
 c AY (29/04/04) : format statements for time-series files of average 
-c                 air temperature and specific humidity
+c     air temperature and specific humidity
  110  format(4e15.6,2i5,1e15.6,2i5)
 
       if(mod(istep,(itstp*ndta)).eq.0)then
-c AY (05/05/04) : temporary "time" variable (until we sort it out at the
-c                 genie.F level)
-         t = real(istep)/real(nyear*ndta)
-c AY (16/12/03) : files opened so that data can be appended to the end
-c                 of them (need f90 compilation for this)
-         if (debug_loop) print*,'Writing to EMBM time-series files'
-
-         call check_unit(41,__LINE__,__FILE__)
-         open(41,file=outdir_name(1:lenout)//lout//'.'//'airt',
-     1        status='old',position='append',iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-
-         call check_unit(42,__LINE__,__FILE__)
-         open(42,file=outdir_name(1:lenout)//lout//'.'//'q',
-     1        status='old',position='append',iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-
-         call diag3(sum1,sum2,isum1,isum2)
-
-         if (debug_loop) 
-     & write(41,110,iostat=ios)t,sum1(1),sum1(2),sum1(3),isum1(1),
-     +        isum1(2),sum1(4),isum1(3),isum1(4)
-         call check_iostat(ios,__LINE__,__FILE__)
-         if (debug_loop) 
-     & write(42,110,iostat=ios)t,sum2(1),sum2(2),sum2(3),isum2(1),
-     +        isum2(2),sum2(4),isum2(3),isum2(4)
-         call check_iostat(ios,__LINE__,__FILE__)
-
-         close(41,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         close(42,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-
-         if (debug_loop) print*
+         if (debug_loop) then
+c     AY (05/05/04) : temporary "time" variable (until we sort it out at the
+c     genie.F level)
+            t = real(istep)/real(nyear*ndta)
+c     AY (16/12/03) : files opened so that data can be appended to the end
+c     of them (need f90 compilation for this)
+            print*,'Writing to EMBM time-series files'
+            call check_unit(41,__LINE__,__FILE__)
+            open(41,file=outdir_name(1:lenout)//lout//'.'//'airt',
+     1           status='old',position='append',iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            call check_unit(42,__LINE__,__FILE__)
+            open(42,file=outdir_name(1:lenout)//lout//'.'//'q',
+     1           status='old',position='append',iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            call diag3(sum1,sum2,isum1,isum2)
+            write(41,110,iostat=ios)t,sum1(1),sum1(2),sum1(3),isum1(1),
+     +           isum1(2),sum1(4),isum1(3),isum1(4)
+            call check_iostat(ios,__LINE__,__FILE__)
+            write(42,110,iostat=ios)t,sum2(1),sum2(2),sum2(3),isum2(1),
+     +           isum2(2),sum2(4),isum2(3),isum2(4)
+            call check_iostat(ios,__LINE__,__FILE__)
+            close(41,iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            close(42,iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            print*
+         endif
       endif
 
       if (dosc) then
-c average the last nyear steps in every ianav steps (if ianav>nyear)
-      itv = mod(istep+(nyear*ndta)-1,(ianav*ndta))
-c      if(itv.lt.(nyear*ndta))then
-      if(itv.lt.(nyear*ndta) .and. (mod(istep,ndta).lt.1))then
-         ext=conv_embm(mod(iav,10))
-         if(istep.ge.(nyear*ndta).and.itv.eq.(nyear*ndta)-1)then
-            iout = 1
-         else
-            iout = 0
+         if (debug_loop) then
+c     average the last nyear steps in every ianav steps (if ianav>nyear)
+            itv = mod(istep+(nyear*ndta)-1,(ianav*ndta))
+c     if(itv.lt.(nyear*ndta))then
+            if(itv.lt.(nyear*ndta) .and. (mod(istep,ndta).lt.1))then
+               ext=conv_embm(mod(iav,10))
+               if(istep.ge.(nyear*ndta).and.itv.eq.(nyear*ndta)-1)then
+                  iout = 1
+               else
+                  iout = 0
+               endif
+               call diagosc_embm(istep, iout, ext, fx0flux, fwflux,
+     :              wateratm)
+c     endif
+            endif
          endif
-         if (debug_loop) call diagosc_embm(istep, iout, ext, fx0flux, fwflux,
-     :     wateratm)
-c         endif
-      endif
       endif
 
-c AY (22/03/04) : netCDF writing code (from Paul and Dan)
+c     AY (22/03/04) : netCDF writing code (from Paul and Dan)
       if(mod(istep,(iwstp*ndta)).eq.0) then
-         if (debug_loop) print*,'Writing EMBM netCDF file at time',istep
-c
-c        do netCDF stuff ...
-         call ini_netcdf_embm(istep,1)
-c
-c AY (12/07/05) : removed surplus input arguments to subroutine
-c AP (03/08/06) : provide a dummy field for qdry
-c also use dummy field for qdry for rq_pa
-         qdrydum(:,:)=0.
-         call write_netcdf_embm(imax, jmax, k1,
-     :        tq, qdrydum, qdrydum,
-     :        fx0flux, fwflux, 
-     :        work,
-     :        maxi, maxj, 1)
-c
-         call end_netcdf_embm(1)
-         if (debug_loop) print*
+         if (debug_loop) then
+            print*,'Writing EMBM netCDF file at time',istep
+c     do netCDF stuff ...
+            call ini_netcdf_embm(istep,1)
+c     AY (12/07/05) : removed surplus input arguments to subroutine
+c     AP (03/08/06) : provide a dummy field for qdry
+c     also use dummy field for qdry for rq_pa
+            qdrydum(:,:)=0.
+            call write_netcdf_embm(imax, jmax, k1,
+     :           tq, qdrydum, qdrydum,
+     :           fx0flux, fwflux, 
+     :           work,
+     :           maxi, maxj, 1)
+c     
+            call end_netcdf_embm(1)
+            print*
+         endif
       endif
 
 c Output arguments

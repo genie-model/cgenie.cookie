@@ -103,12 +103,15 @@ c     common /sic_grid/nclon1,nclat1,nclon2,nclat2,nclon3,nclat3
 c AY (04/10/04) : copying Dan's GOLDSTEIN changes
 c     Added by DJL for netcdf restarts
       character filenetin*200,dirnetout*200,rstdir_name*200
+      character inrstdir_name*200,outrstdir_name*200,ascrst_name*10
       logical lnetin,lnetout,lascout
+      integer leninrst, lenoutrst
       integer iyear_rest,imonth_rest,ioffset_rest
       real day_rest
 
       common /sic_restarts/filenetin,dirnetout,
-     :     lnetin,lnetout,lascout,rstdir_name,
+     :     lnetin,lnetout,lascout,rstdir_name, leninrst, lenoutrst,
+     &     inrstdir_name,outrstdir_name,ascrst_name,
      :     iyear_rest,imonth_rest,ioffset_rest,day_rest
 
 c     for goldseaice energy/water check:

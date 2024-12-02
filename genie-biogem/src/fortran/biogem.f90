@@ -2907,7 +2907,7 @@ SUBROUTINE biogem_save_restart(dum_genie_clock)
      ! ------------------------------------------------------- !
      ! SAVE RESTART DATA: NETCDF FORMAT
      ! ------------------------------------------------------- !
-     string_ncrst = TRIM(par_outdir_name)//trim(par_ncrst_name)
+     string_ncrst = TRIM(par_outrstdir_name)//trim(par_ncrst_name)
      ncrst_ntrec = 0
      call sub_data_netCDF_ncrstsave(trim(string_ncrst),loc_yr,loc_iou)
   else
@@ -2917,7 +2917,7 @@ SUBROUTINE biogem_save_restart(dum_genie_clock)
      ! binary dump data format
      ! NOTE: data is saved unformatted for minimal file size
      !       also means that arrays can be written directly to file without needing to loop thought data
-     loc_filename = TRIM(par_outdir_name)//trim(par_outfile_name)
+     loc_filename = TRIM(par_outrstdir_name)//trim(par_outfile_name)
      call check_unit(out,__LINE__,__FILE__)
      OPEN(unit=out,status='replace',file=loc_filename,form='unformatted',action='write',iostat=ios)
      call check_iostat(ios,__LINE__,__FILE__)

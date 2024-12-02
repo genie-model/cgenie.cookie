@@ -327,36 +327,17 @@ SUBROUTINE initialise_biogem(                       &
   if (ctrl_ncout_expid_name) then
      string_ncout2d    = TRIM(par_outdir_name)//trim(expid_name)//'.2d.nc'
      string_ncout3d    = TRIM(par_outdir_name)//trim(expid_name)//'.3d.nc'
-!!$     string_nctsint    = TRIM(par_outdir_name)//trim(expid_name)//'.ts.nc'
-!!$     string_nctsi      = TRIM(par_outdir_name)//trim(expid_name)//'.ts_int.nc'
-!!$     string_nctsglob   = TRIM(par_outdir_name)//trim(expid_name)//'.ts_glob.nc'
-!!$     string_ncout3dsig = TRIM(par_outdir_name)//trim(expid_name)//'.3dts.nc'
   else
-     string_ncout2d    = TRIM(par_outdir_name)//'fields_biogem_2d.nc'
-     string_ncout3d    = TRIM(par_outdir_name)//'fields_biogem_3d.nc'
-!!$     string_nctsint    = TRIM(par_outdir_name)//'timeseries_biogem.nc'
-!!$     string_nctsi      = TRIM(par_outdir_name)//'ts_biogem_int.nc'
-!!$     string_nctsglob   = TRIM(par_outdir_name)//'ts_biogem_glob.nc'
-!!$     string_ncout3dsig = TRIM(par_outdir_name)//'fields_biogem_3dts.nc'
+     string_ncout2d    = TRIM(par_outdir_name)//'biogem_fields_2d.nc'
+     string_ncout3d    = TRIM(par_outdir_name)//'biogem_fields_3d.nc'
   end if
   ! initialise 2d and 3d netcdf files
-  IF (ctrl_continuing.AND.opt_append_data) THEN
-     OPEN(unit=in,status='old',file=TRIM(par_rstdir_name)//'netcdf_record_numbers',form='formatted',action='read')
-     READ(unit=in,fmt='(i6)') ncout2d_ntrec,ncout3d_ntrec
-     close(unit=in)
-  ELSE
      call sub_init_netcdf(trim(string_ncout2d),loc_iou,2)
      ncout2d_iou = loc_iou
      ncout2d_ntrec = 0
      call sub_init_netcdf(trim(string_ncout3d),loc_iou,3)
      ncout3d_iou = loc_iou
      ncout3d_ntrec = 0
-!!$     if (ctrl_data_save_3d_sig) then
-!!$        call sub_init_netcdf(trim(string_ncout3dsig),loc_iou,4)
-!!$        ncout3dsig_iou = loc_iou
-!!$        ncout3dsig_ntrec = 0
-!!$     end if
-  ENDIF
   ! JDW: initialise matrix netcdf output
   if(ctrl_data_diagnose_TM)THEN
      ! find number of wet grid-points

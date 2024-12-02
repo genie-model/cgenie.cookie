@@ -1455,8 +1455,16 @@
                         <description></description>
                     </param>
                     <param name="outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>embm</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description></description>
+                    </param>
+                    <param name="inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (input) directory</description>
+                    </param>
+                    <param name="outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (output) directory</description>
                     </param>
                     <param name="igrid">
                         <value datatype="integer">0</value>
@@ -1791,6 +1799,10 @@
                     <param name="ascout">
 			<value datatype="string">y</value>
                         <description>ASCII restart output  (y/n)</description>
+                    </param>
+                    <param name="ascrst_name">
+			<value datatype="string">restart.eb</value>
+                        <description>ASCII restart name</description>
                     </param>
                     <param name="filenetin">
 			<value datatype="string">embm_restart_1999_12_30.nc</value>
@@ -2440,12 +2452,20 @@
                         <description></description>
                     </param>
                     <param name="outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>goldstein</value>
-                        <description></description>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
+                        <description>results output directory</description>
                     </param>
                     <param name="rstdir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-goldstein<sep/>data<sep/>input</value>
                         <description>restart (input) directory</description>
+                    </param>
+                    <param name="inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (input) directory</description>
+                    </param>
+                    <param name="outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (output) directory</description>
                     </param>
                     <param name="igrid">
                         <value datatype="integer">0</value>
@@ -2521,7 +2541,6 @@
                             (dimensionless). Tuned values: 1.6674 (EnKF), 1.1841 (ACCPM), 1.3005 (NSGA-II)
                         </description>
                     </param>
-
                     <paramArray name="diff" dimension="1" extent="2">
                         <description>ocean diffusivites iso/dia (or horiz/vert)</description>
                         <param name="diff(1)" index="1">
@@ -2679,7 +2698,11 @@
                     </param>
                     <param name="ascout">
 			<value datatype="string">y</value>
-                        <description>ASCII restart output  (y/n)</description>
+                        <description>ASCII restart output (y/n)</description>
+                    </param>
+                    <param name="ascrst_name">
+			<value datatype="string">restart.go</value>
+                        <description>ASCII restart name</description>
                     </param>
                     <param name="filenetin">
 			<value datatype="string"><sep/>home<sep/>joebloggs<sep/>goldstein_restart_1999_12_30.nc</value>
@@ -2770,12 +2793,20 @@
                         <description></description>
                     </param>
                     <param name="outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>goldsteinseaice</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description></description>
                     </param>
                     <param name="rstdir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-goldsteinseaice<sep/>data<sep/>input</value>
                         <description>restart (input) directory</description>
+                    </param>
+                    <param name="inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (input) directory</description>
+                    </param>
+                    <param name="outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (output) directory</description>
                     </param>
                     <param name="igrid">
                         <value datatype="integer">0</value>
@@ -2857,6 +2888,10 @@
                     <param name="ascout">
 			<value datatype="string">y</value>
                         <description>ASCII restart output  (y/n)</description>
+                    </param>
+                    <param name="ascrst_name">
+			<value datatype="string">restart.gs</value>
+                        <description>ASCII restart name</description>
                     </param>
                     <param name="filenetin">
 			<value datatype="string"><sep/>home<sep/>joebloggs<sep/>goldsic_restart_1999_12_30.nc</value>
@@ -5491,8 +5526,16 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>BIOGEM data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>biogem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>BIOGEM results output directory</description>
+                    </param>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_rstdir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-biogem<sep/>data<sep/>input</value>
@@ -5744,7 +5787,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.bg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
                     <param name="ctrl_data_save_2d">
@@ -7170,12 +7213,20 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>ATCHEM data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>atchem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>ATCHEM results output directory</description>
                     </param>
                     <param name="par_rstdir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-atchem<sep/>data<sep/>input</value>
                         <description>restart (input) directory</description>
+                    </param>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_infile_name">
 			<value datatype="string">atchem</value>
@@ -7190,7 +7241,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.ac.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
                 </namelist>
@@ -7810,8 +7861,16 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref>/sedgem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref>/results</value>
                         <description>results output directory</description>
+                    </param>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_rstdir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref>/genie-sedgem/data/input</value>
@@ -7945,11 +8004,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.sg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
                     <param name="par_ncsedcore_name">
-			<value datatype="string">sedcore.nc</value>
+			<value datatype="string">sedgem_sedcore.nc</value>
                         <description>netCDF sedcore file name</description>
                     </param>
                 </namelist>

@@ -197,16 +197,18 @@ c AY (03/05/04) : extra seasonal diagnostics for fluxes
 c nre no mixed-type common blocks
 
       integer nsteps, npstp, iwstp, itstp, iw, ianav
-      integer lenin, lenout, lenrst, iav
+      integer lenin, lenout, lenrst, iav, leninrst, lenoutrst
 
       common /ebmgint/nsteps, npstp, iwstp, itstp, iw, ianav,
-     1     lenin, lenout, lenrst, iav
+     1     lenin, lenout, lenrst, iav, leninrst, lenoutrst
 
 c AY (01/12/03) : input and output directory locations
 
       character lout*3, indir_name*100, outdir_name*100
+      character inrstdir_name*200,outrstdir_name*200,ascrst_name*10
 
-      common /ebmgchar/lout,indir_name,outdir_name
+      common /ebmgchar/lout,indir_name,outdir_name,
+     &     inrstdir_name,outrstdir_name,ascrst_name
 
 c AY (02/02/04) : names of data files for error calculation
 

@@ -198,7 +198,7 @@ SUBROUTINE atchem_save_rst(dum_genie_clock)
      ! ------------------------------------------------------- !
      ! SAVE RESTART DATA: NETCDF FORMAT
      ! ------------------------------------------------------- !
-     string_ncrst = TRIM(par_outdir_name)//trim(par_ncrst_name)
+     string_ncrst = TRIM(par_outrstdir_name)//trim(par_ncrst_name)
      ncrst_ntrec = 0
      call sub_data_netCDF_ncrstsave(trim(string_ncrst),loc_yr,loc_iou)
   else
@@ -207,7 +207,7 @@ SUBROUTINE atchem_save_rst(dum_genie_clock)
      ! ------------------------------------------------------- !
      ! NOTE: data is saved unformatted for minimal file size
      !       also means that arrays can be written directly to file without needing to loop thought data
-     loc_filename = TRIM(par_outdir_name)//trim(par_outfile_name)
+     loc_filename = TRIM(par_outrstdir_name)//trim(par_outfile_name)
      OPEN(unit=out,status='replace',file=loc_filename,form='unformatted',action='write')
      WRITE(unit=out)                                    &
           & n_l_atm,                                    &

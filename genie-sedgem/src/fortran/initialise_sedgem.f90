@@ -135,7 +135,7 @@ SUBROUTINE initialise_sedgem( &
   sed_time_save = 0.0
   ! ---------------------------------------------------------- ! INITIALIZE netCDF OUTPUT
   IF (ctrl_misc_debug2) print*, 'INITIALIZE netCDF OUTPUT'
-  string_ncout2d   = TRIM(par_outdir_name)//'fields_sedgem_2d.nc'
+  string_ncout2d   = TRIM(par_outdir_name)//'sedgem_fields_2d.nc'
   IF (ctrl_timeseries_output) THEN
      IF (ctrl_continuing.AND.ctrl_append_data) THEN
         OPEN(unit=in,status='old',file=TRIM(par_rstdir_name)//'netcdf_record_numbers',form='formatted',action='read')

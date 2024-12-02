@@ -57,13 +57,10 @@ CONTAINS
     ! set and report namelist data
     par_indir_name = trim(par_indir_name)//'/'
     par_outdir_name = trim(par_outdir_name)//'/'
+    par_inrstdir_name = trim(par_inrstdir_name)//'/'
+    par_outrstdir_name = trim(par_outrstdir_name)//'/'
     par_rstdir_name = trim(par_rstdir_name)//'/'
     par_fordir_name = trim(par_fordir_name)//'/'
-    ! *************************************************************
-    ! *** HARD SET RESTART NAME BECAUSE NAMELIST IS BEING PANTS ***
-    ! *************************************************************
-    par_ncrst_name = '_restart.nc'
-    ! *************************************************************
     if (ctrl_debug_init > 0) then
        ! --- TRACER INITIALIZATION  ---------------------------------------------------------------------------------------------- !
        print*,'--- INITIALIZATION ---------------------------------'
@@ -462,6 +459,8 @@ CONTAINS
        print*,'(Paleo config) input dir. name                      : ',trim(par_pindir_name)
        print*,'Input dir. name                                     : ',trim(par_indir_name)
        print*,'Output dir. name                                    : ',trim(par_outdir_name)
+       print*,'Input restart dir. name                             : ',trim(par_inrstdir_name)
+       print*,'Output restart dir. name                            : ',trim(par_outrstdir_name)
        print*,'Restart (input) dir. name                           : ',trim(par_rstdir_name)
        print*,'Forcings (input) dir. name                          : ',trim(par_fordir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
@@ -687,9 +686,9 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! -------------------------------------------------------- ! set filename
     IF (ctrl_ncrst) THEN
-       loc_filename = TRIM(par_rstdir_name)//par_ncrst_name
+       loc_filename = TRIM(par_inrstdir_name)//par_ncrst_name
     else
-       loc_filename = TRIM(par_rstdir_name)//trim(par_infile_name)
+       loc_filename = TRIM(par_inrstdir_name)//trim(par_infile_name)
     endif
     ! -------------------------------------------------------- ! check file status
     call check_unit(in,__LINE__,__FILE__)

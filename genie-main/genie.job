@@ -309,11 +309,11 @@ fi
 [ ! -d $OUTDIR/sedgem ]    &&   mkdir -p $OUTDIR/sedgem
 [ ! -d $OUTDIR/rokgem ]    &&   mkdir -p $OUTDIR/rokgem
 [ ! -d $OUTDIR/ecogem ]    &&   mkdir -p $OUTDIR/ecogem
-[ ! -d $OUTDIR/goldlite ]    &&   mkdir -p $OUTDIR/goldlite
-[ ! -d $OUTDIR/ocnlite ]    &&   mkdir -p $OUTDIR/ocnlite
 [ ! -d $OUTDIR/gemlite ]    &&   mkdir -p $OUTDIR/gemlite
 [ ! -d $OUTDIR/ents ]      &&   mkdir -p $OUTDIR/ents
 [ ! -d $OUTDIR/archive ]      &&   mkdir -p $OUTDIR/archive
+[ ! -d $OUTDIR/restarts ]      &&   mkdir -p $OUTDIR/restarts
+[ ! -d $OUTDIR/results ]      &&   mkdir -p $OUTDIR/results
 # additional cgenie
 [ ! -d $ARCHIVEDIR ]      &&   mkdir -p $ARCHIVEDIR
 [ ! -d $LOGDIR ]      &&   mkdir -p $LOGDIR
@@ -324,8 +324,6 @@ fi
 # ###################################################################
 cp $DEFINITIONS_HOME/definition.xml $OUTDIR/archive
 cp $CONFIGFILES $OUTDIR/archive
-#svn diff ../ > $OUTDIR/archive/svn.diff
-#svn info ../ > $OUTDIR/archive/svn.info
 
 # ###################################################################
 # Create the namelist and goin files.

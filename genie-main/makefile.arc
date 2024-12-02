@@ -325,6 +325,7 @@ ifeq ($(F77),gfortran)
   FVER=$(shell gfortran -dumpversion)
   ifeq ($(shell test $(FVER) -gt 9; echo $$?),0)
     FFLAGS += -fallow-argument-mismatch
+    FFLAGS += -fallow-invalid-boz
   endif
   # NOTE: Arrays larger than limit set by ‘-fmax-stack-var-size=’, are moved from stack to static storage. 
   #       This makes the procedure unsafe when called recursively, or concurrently from multiple threads. 
@@ -364,7 +365,6 @@ ifeq ($(F77),gfortran)
     FFLAGS += -pedantic
     FFLAGS += -fbacktrace
     FFLAGS += -g -ffpe-trap=zero,overflow,invalid -Wall
-    BOUNDS_FLAGS += -fbounds-check
   endif
   ifeq ($(BUILD),TEST)
     FFLAGS += -g -ffpe-trap=zero,overflow,invalid -O0 -Wall -fbounds-check

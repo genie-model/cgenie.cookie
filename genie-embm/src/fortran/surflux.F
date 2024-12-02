@@ -1606,30 +1606,32 @@ c                 ocean but not the atmosphere.
 c
 
 c AY (05/04/02) : call routine to output surface flux fields (in the
-c                 same way as a restart file)
-c	          note : this file-writing uses the same index as
-c	                 the EMBM (with which it shares a common block)
+c     same way as a restart file)
+c     note : this file-writing uses the same index as
+c     the EMBM (with which it shares a common block)
       if(mod(istep,iwstp).eq.0)then
-         ext=conv_surf(mod(iw,10))
-         if (debug_loop) print*,
-     & 'Writing SURFLUX output file at time',istep
-         call check_unit(2,__LINE__,__FILE__)
-         open(2,file=outdir_name(1:lenout)//lout//'.sfx.'//ext,
-     &        iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         rewind 2
-c AY (12/07/04) : removed surplus input arguments to subroutine
-         call outm_surf(2,co2,
-     :     albedo,usurf,fxlho,fxsho,
-     :     fxswo,fxlwo,
-     :     evap_atm,pptn_ocn,runoff_ocn,
-     :     fxlha,fxsha,
-     :     fxswa,fxlwa,
-     :     evap_atm,pptn_atm,
-     :     dthsic,dtareasic)
-         close(2,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         if (debug_loop) print*
+         if (debug_loop) then
+            ext=conv_surf(mod(iw,10))
+            print*,
+     &           'Writing SURFLUX output file at time',istep
+            call check_unit(2,__LINE__,__FILE__)
+            open(2,file=outdir_name(1:lenout)//lout//'.sfx.'//ext,
+     &           iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            rewind 2
+c     AY (12/07/04) : removed surplus input arguments to subroutine
+            call outm_surf(2,co2,
+     :           albedo,usurf,fxlho,fxsho,
+     :           fxswo,fxlwo,
+     :           evap_atm,pptn_ocn,runoff_ocn,
+     :           fxlha,fxsha,
+     :           fxswa,fxlwa,
+     :           evap_atm,pptn_atm,
+     :           dthsic,dtareasic)
+            close(2,iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            print*
+         endif
       endif
 
 c Set values of dummy variables destined for BIOGEM & ENTS

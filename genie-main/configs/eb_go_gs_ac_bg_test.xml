@@ -181,6 +181,6 @@
 		</macro>
 	</build>
 	<testing>
-		<var name="TESTFILE">biogem/fields_biogem_3d.nc</var>
+		<var name="TESTFILE">results/biogem_fields_3d.nc</var>
 	</testing>
 </job>
