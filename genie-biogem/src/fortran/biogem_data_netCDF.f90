@@ -3874,9 +3874,6 @@ CONTAINS
     !-----------------------------------------------------------------------
     loc_tmp_ij(:,:)    = int_psi_timeslice(1:n_i,0:n_j)/int_t_timeslice
     loc_mask_surf(:,:) = const_real_one
-    where(abs(loc_tmp_ij) < const_real_nullsmall)
-       loc_mask_surf = const_real_zero
-    endwhere
     call sub_adddef_netcdf_psi(loc_iou,'phys_psi','Barotropic streamfunction','Sv',const_real_zero,const_real_zero)
     call sub_putvar2d('phys_psi',loc_iou,n_i,n_j+1,loc_ntrec,loc_tmp_ij,loc_mask_surf)
     !-----------------------------------------------------------------------
