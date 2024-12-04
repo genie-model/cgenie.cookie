@@ -522,18 +522,19 @@ CONTAINS
        !
        loc_filename=fun_data_timeseries_filename( &
             & loc_t,par_outdir_name,trim(par_outfile_name)//'_series','misc_opsi',string_results_ext)
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
-          loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(n_k/2)) //'] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(n_k/2)) //'] / '// &
+       if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
+          loc_string = '% time (yr) / '// &
+               & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+               & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+               & 'Pacific min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+               & 'Pacific max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+               & 'Atlantic max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
+       else
+          loc_string = '% time (yr) / '// &
                & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
                & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
-       case default
-          loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
-               & 'global min opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
-               & 'global max opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
-       end select
+       end if
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -1257,7 +1258,7 @@ CONTAINS
                    loc_filename=fun_data_timeseries_filename( &
                         & loc_t,par_outdir_name,trim(par_outfile_name)//'_series_diag','pre_Csoft',string_results_ext &
                         & )
-                   loc_string = '% time (yr) / global total (regenerated, not actually preformed) Csoft (mol) / global mean (mol kg-1)'
+                   loc_string = '% time (yr) / global total (regenerated, not preformed) Csoft (mol) / global mean (mol kg-1)'
                    if (.NOT. ctrl_bio_remin_redox_save) loc_save = .false.
                 end if
              end select
@@ -2251,24 +2252,21 @@ CONTAINS
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
           WRITE(unit=out,fmt='(f12.3,6f9.3)',iostat=ios)          &
                & loc_t,                                           &
                & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
                & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
+               & loc_opsi_scale*int_misc_opsip_min_sig/int_t_sig, &
+               & loc_opsi_scale*int_misc_opsip_max_sig/int_t_sig, &
                & loc_opsi_scale*int_misc_opsia_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
-       case default
-          WRITE(unit=out,fmt='(f12.3,4f9.3)',iostat=ios)          &
+               & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig
+       else
+          WRITE(unit=out,fmt='(f12.3,2f9.3)',iostat=ios)          &
                & loc_t,                                           &
                & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
-               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
-               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
-       end select
+               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig
+       end if
        call check_iostat(ios,__LINE__,__FILE__)
        CLOSE(unit=out,iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -3906,7 +3904,7 @@ CONTAINS
        SELECT CASE (sed_type(is))
        CASE (1:7)
           ! NOTE:
-          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+          !      '1' -> assigned to primary biogenic phases; POM (POC), CaCO3, opal (all contributing to bulk composition)
           !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
           !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
           !      '4' -> assigned to elemental components associated with CaCO3; Cd
@@ -3947,7 +3945,7 @@ CONTAINS
        SELECT CASE (sed_type(is))
        CASE (1:7)
           ! NOTE:
-          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+          !      '1' -> assigned to primary biogenic phases; POM (POC), CaCO3, opal (all contributing to bulk composition)
           !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
           !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
           !      '4' -> assigned to elemental components associated with CaCO3; Cd
@@ -4067,15 +4065,15 @@ CONTAINS
 
   END SUBROUTINE sub_data_save_global_av
   ! ****************************************************************************************************************************** !
-
-
+  
+  
   ! ****************************************************************************************************************************** !
   ! RUN-TIME REPORTING
-  SUBROUTINE sub_echo_runtime(dum_yr,dum_opsi_scale,dum_opsia_minmax,dum_sfcatm1,dum_gemlite)
+  SUBROUTINE sub_echo_runtime(dum_yr,dum_opsi_scale,dum_opsia_max,dum_sfcatm1,dum_gemlite)
     ! dummy arguments
     REAL,INTENT(in)::dum_yr
     REAL,INTENT(in)::dum_opsi_scale
-    REAL,DIMENSION(2),INTENT(in)::dum_opsia_minmax
+    REAL,INTENT(in)::dum_opsia_max
     REAL,DIMENSION(n_atm,n_i,n_j),INTENT(in)::dum_sfcatm1
     logical,intent(in)::dum_gemlite                                     ! in GEMlite phase of cycle?
     ! local variables
@@ -4099,8 +4097,7 @@ CONTAINS
 
     ! *** echo run-time ***
     IF (opt_select(iopt_select_carbchem)) THEN
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
           ! print header (if necessary)
           if (par_misc_t_echo_header) then
              print*,' '
@@ -4131,7 +4128,7 @@ CONTAINS
                   & dum_yr, &
                   & loc_pCO2, &
                   & fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso), &
-                  & dum_opsi_scale*dum_opsia_minmax(2), &
+                  & dum_opsi_scale*dum_opsia_max, &
                   & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*SUM(phys_ocn(ipo_A,:,:,n_k)*phys_ocnatm(ipoa_seaice,:,:)), &
                   & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - &
                   & const_zeroC, &
@@ -4144,7 +4141,7 @@ CONTAINS
                   & dum_yr, &
                   & loc_pCO2, &
                   & fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso), &
-                  & dum_opsi_scale*dum_opsia_minmax(2), &
+                  & dum_opsi_scale*dum_opsia_max, &
                   & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*SUM(phys_ocn(ipo_A,:,:,n_k)*phys_ocnatm(ipoa_seaice,:,:)), &
                   & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - &
                   & const_zeroC, &
@@ -4153,7 +4150,7 @@ CONTAINS
                   & conv_mol_umol*SUM(phys_ocn(ipo_M,:,:,:)*ocn(io_ALK,:,:,:))/loc_ocn_tot_M
           endif
           ! ###################################################################################################################### !
-       case default
+       else
           ! print header (if necessary)
           if (par_misc_t_echo_header) then
              print*,' '
@@ -4203,10 +4200,9 @@ CONTAINS
                   & conv_mol_umol*SUM(phys_ocn(ipo_M,:,:,:)*ocn(io_ALK,:,:,:))/loc_ocn_tot_M
           endif
           ! ###################################################################################################################### !
-       end select
+       end if
     else
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
           if (par_misc_t_echo_header) then
              print*,' '
              ! ### MAKE MODIFICATIONS TO SCREEN PRINTING INFORMATION HERE ######################################################## !
@@ -4224,12 +4220,12 @@ CONTAINS
           PRINT'(A5,F11.2,3X,F9.3,F8.3,F8.3,F8.3)', &
                & ' *** ', &
                & dum_yr, &
-               & dum_opsi_scale*dum_opsia_minmax(2), &
+               & dum_opsi_scale*dum_opsia_max, &
                & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*SUM(phys_ocn(ipo_A,:,:,n_k)*phys_ocnatm(ipoa_seaice,:,:)), &
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - const_zeroC, &
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_S,:,:,n_k))/loc_ocn_tot_A
           ! ###################################################################################################################### !
-       case default
+       else
           if (par_misc_t_echo_header) then
              print*,' '
              ! ### MAKE MODIFICATIONS TO SCREEN PRINTING INFORMATION HERE ######################################################## !
@@ -4250,7 +4246,7 @@ CONTAINS
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - const_zeroC, &
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_S,:,:,n_k))/loc_ocn_tot_A
           ! ###################################################################################################################### !
-       end select
+       end if
     end if
 
   END SUBROUTINE sub_echo_runtime
@@ -4330,86 +4326,6 @@ CONTAINS
     end if
 
   END SUBROUTINE sub_echo_maxmin
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! Copy of GOLDSTEIn overturning streamfunction calculation
-  SUBROUTINE sub_calc_psi(dum_u,dum_opsi,dum_opsia,dum_opsip,dum_zpsi,dum_opsia_minmax,dum_opsip_minmax)
-    ! dummy arguments
-    REAL,INTENT(in),DIMENSION(3,n_i,n_j,n_k)::dum_u
-    REAL,INTENT(out),DIMENSION(0:n_j,0:n_k)::dum_opsi,dum_opsia,dum_opsip,dum_zpsi
-    REAL,INTENT(out),DIMENSION(2)::dum_opsia_minmax,dum_opsip_minmax
-    ! local variables
-    INTEGER::i,j,k
-    REAL::loc_ominp,loc_omaxp
-    REAL::loc_omina,loc_omaxa
-    REAL,DIMENSION(n_j,n_k)::loc_ou,loc_zu
-    REAL,DIMENSION(0:n_j,0:n_k)::loc_opsi,loc_opsia,loc_opsip,loc_zpsi
-    ! initialize arrays
-    loc_opsi(:,:)  = 0.0
-    loc_opsia(:,:) = 0.0
-    loc_opsip(:,:) = 0.0
-    ! Calculate global meridional overturning streamfunction opsi (on C grid only)
-    DO j=1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=1,n_i
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
-          END DO
-          loc_opsi(j,k) = loc_opsi(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-       END DO
-    END DO
-    ! Pacific overturning streamfunction
-    loc_ominp = 0.0
-    loc_omaxp = 0.0
-    DO j=goldstein_jsf+1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=goldstein_ips(j),goldstein_ipf(j)
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
-          ENDDO
-          loc_opsip(j,k) = loc_opsip(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          IF(loc_opsip(j,k) < loc_ominp) loc_ominp = loc_opsip(j,k)
-          IF(loc_opsip(j,k) > loc_omaxp) loc_omaxp = loc_opsip(j,k)
-       ENDDO
-    ENDDO
-    dum_opsip_minmax(1) = loc_ominp
-    dum_opsip_minmax(2) = loc_omaxp
-    ! Atlantic overturning streamfunction
-    ! NOTE: Atlantic calculation hacked so that only the deeper 1/2 of the maximum is calculated
-    loc_omina = 0.0
-    loc_omaxa = 0.0
-    DO j=goldstein_jsf+1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=goldstein_ias(j),goldstein_iaf(j)
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
-          ENDDO
-          loc_opsia(j,k) = loc_opsia(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          IF((loc_opsia(j,k) < loc_omina) .AND. (k <= n_k/2)) loc_omina = loc_opsia(j,k)
-          IF((loc_opsia(j,k) > loc_omaxa) .AND. (k <= n_k/2)) loc_omaxa = loc_opsia(j,k)
-       ENDDO
-    ENDDO
-    dum_opsia_minmax(1) = loc_omina
-    dum_opsia_minmax(2) = loc_omaxa
-    !
-    loc_zpsi(:,:) = 0.0
-    DO i=1,n_i-1
-       DO k=1,n_k-1
-          loc_zu(i,k) = 0
-          DO j=1,n_j
-             loc_zu(i,k) = loc_zu(i,k) + dum_u(1,i,j,k)/goldstein_c(j)*goldstein_ds
-          ENDDO
-          loc_zpsi(i,k) = loc_zpsi(i,k-1) - goldstein_dz(k)*loc_zu(i,k)
-       ENDDO
-    ENDDO
-    ! set results arrays
-    dum_opsi(1:n_j,1:n_k)  = loc_opsi(1:n_j,1:n_k)
-    dum_opsia(1:n_j,1:n_k) = loc_opsia(1:n_j,1:n_k)
-    dum_opsip(1:n_j,1:n_k) = loc_opsip(1:n_j,1:n_k)
-    dum_zpsi(1:n_j,1:n_k)  = loc_zpsi(1:n_j,1:n_k)
-  END SUBROUTINE sub_calc_psi
   ! ****************************************************************************************************************************** !
 
 

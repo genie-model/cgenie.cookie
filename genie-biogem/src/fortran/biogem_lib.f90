@@ -1334,7 +1334,7 @@ MODULE biogem_lib
   REAL::int_misc_seaice_sig                                      !
   real::int_misc_seaice_sig_th,int_misc_seaice_sig_vol           !
   real::int_misc_opsi_min_sig,int_misc_opsi_max_sig              !
-  real::int_misc_opsid_min_sig,int_misc_opsid_max_sig            !
+  real::int_misc_opsip_min_sig,int_misc_opsip_max_sig            !
   real::int_misc_opsia_min_sig,int_misc_opsia_max_sig            !
   real::int_misc_SLT_sig                                         !
   real::int_misc_det_Fe_tot_sig,int_misc_det_Fe_dis_sig          !

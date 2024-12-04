@@ -3122,11 +3122,12 @@ subroutine diag_biogem( &
   real,intent(in),dimension(n_atm,n_i,n_j)::dum_sfcatm1                 ! atmosphere-surface tracer composition; ocn grid
   logical,intent(in)::dum_gemlite                                       ! in GEMlite phase of cycle?
   ! LOCAL VARIABLES
+  integer::k
+  integer::loc_opsi_maxk
   real::loc_t,loc_yr                                                    ! local time and time step BLAH actual year
   REAL,DIMENSION(0:n_j,0:n_k)::loc_opsi                                 !
   REAL,DIMENSION(0:n_j,0:n_k)::loc_opsia,loc_opsip,loc_zpsi             !
-  real::loc_opsi_scale                                                  !
-  REAL,DIMENSION(2)::loc_opsia_minmax,loc_opsip_minmax                  !
+  real::loc_opsi_scale,loc_opsi_D                                       !
 
   ! calculate local variables
   loc_t = par_misc_t_runtime - real(dum_genie_clock)/(1000.0*conv_yr_s)
@@ -3139,6 +3140,22 @@ subroutine diag_biogem( &
   ! calculate local opsi conversion constant
   loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6
 
+  ! find lagest k value deeper than a specifed depth
+  ! NOTE: upper depth layer edges are the MOC centers
+  !       top of layer k = SUM(goldstein_dsc*goldstein_dz(k+1:n_k)), so need to account for k = n_k (depth = 0.0)
+  ! NOTE: par_data_save_opsi_minD is a prescribed minimum depth for determining the min and max values
+  ! set default minimum depth level (surface)
+  loc_opsi_maxk = n_k
+  ! work from bottom up to sub-surface
+  DO k=0,n_k-1
+     loc_opsi_D = SUM(goldstein_dsc*goldstein_dz(k+1:n_k))
+     if (loc_opsi_D < par_data_save_opsi_Dmin) then
+        loc_opsi_maxk = k-1
+        exit
+     end if
+  end DO
+  if (k < 0) loc_opsi_maxk = 0
+  
   ! *** RUN-TIME REPORTING ***
   ! run-time reporting
   ! NOTE: carry out an updated tracer inventory audit at this time (if selected)
@@ -3156,8 +3173,8 @@ subroutine diag_biogem( &
      ! if (mod(par_data_save_sig_i,50) == 0) par_misc_t_echo_header = .TRUE.
      ! ########################################################################################################################## !
      if (error_stop) par_misc_t_echo_header = .TRUE.
-     CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax)
-     call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
+     CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi)
+     call sub_echo_runtime(loc_yr,loc_opsi_scale,maxval(loc_opsia(:,0:loc_opsi_maxk)),dum_sfcatm1(:,:,:),dum_gemlite)
      ! carry out tracer audit + echo max,min ocean tracer values (and location)
      ! NOTE: use audit switch to turn on/off
      IF (ctrl_audit) THEN
@@ -3242,7 +3259,6 @@ SUBROUTINE diag_biogem_timeslice( &
   REAL,DIMENSION(n_atm,n_i,n_j)::locij_focnatm                   ! local ocn->atm flux (atm tracer currency) (mol yr-1)
   REAL,DIMENSION(n_sed,n_i,n_j)::locij_focnsed                   ! local ocn->sed change (sed tracer currency) (mol)
   REAL,DIMENSION(n_ocn,n_i,n_j)::locij_fsedocn                   ! local sed->ocean change (ocn tracer currency) (mol)
-  REAL,DIMENSION(2)::loc_opsia_minmax,loc_opsip_minmax           !
   real,dimension(1:3)::loc_FeFELL                                !
   INTEGER::ios
   integer::n,nloc,nvar
@@ -3511,7 +3527,7 @@ SUBROUTINE diag_biogem_timeslice( &
            int_focnsed_timeslice(:,:,:)  = int_focnsed_timeslice(:,:,:) + locij_focnsed(:,:,:)
            int_fsedocn_timeslice(:,:,:)  = int_fsedocn_timeslice(:,:,:) + locij_fsedocn(:,:,:)
            ! update time-slice data - GOLDSTEIn
-           CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax)
+           CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi)
            int_opsi_timeslice(:,:)  = int_opsi_timeslice(:,:)  + loc_dtyr*loc_opsi(:,:)
            int_opsia_timeslice(:,:) = int_opsia_timeslice(:,:) + loc_dtyr*loc_opsia(:,:)
            int_opsip_timeslice(:,:) = int_opsip_timeslice(:,:) + loc_dtyr*loc_opsip(:,:)
@@ -3716,7 +3732,6 @@ SUBROUTINE diag_biogem_timeseries( &
   real::loc_ocnsed_rtot_A,loc_ocnsed_rtot_A_ben                  !
   real::loc_tot_A,loc_tot_EP                                     !
   real::loc_sig                                                  !
-  REAL,DIMENSION(2)::loc_opsia_minmax,loc_opsip_minmax           !
   real::loc_opsi_scale,loc_opsi_D                                !
 
   ! *** TIME-SERIES DATA UPDATE ***
@@ -4024,14 +4039,13 @@ SUBROUTINE diag_biogem_timeseries( &
               ! overturning streamfunction
               ! NOTE: loc_opsi dim == (0:n_j,0:n_k)
               CALL sub_calc_psi( &
-                   & phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax &
-                   & )
-              int_misc_opsi_min_sig  = int_misc_opsi_min_sig + loc_dtyr*minval(loc_opsi(:,:))
-              int_misc_opsi_max_sig  = int_misc_opsi_max_sig + loc_dtyr*maxval(loc_opsi(:,:))
-              int_misc_opsid_min_sig = int_misc_opsid_min_sig + loc_dtyr*minval(loc_opsi(:,0:loc_opsi_maxk))
-              int_misc_opsid_max_sig = int_misc_opsid_max_sig + loc_dtyr*maxval(loc_opsi(:,0:loc_opsi_maxk))
-              int_misc_opsia_min_sig = int_misc_opsia_min_sig + loc_dtyr*loc_opsia_minmax(1)
-              int_misc_opsia_max_sig = int_misc_opsia_max_sig + loc_dtyr*loc_opsia_minmax(2)
+                   & phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi)
+              int_misc_opsi_min_sig  = int_misc_opsi_min_sig +  loc_dtyr*minval(loc_opsi(:,0:loc_opsi_maxk))
+              int_misc_opsi_max_sig  = int_misc_opsi_max_sig +  loc_dtyr*maxval(loc_opsi(:,0:loc_opsi_maxk))
+              int_misc_opsip_min_sig = int_misc_opsip_min_sig + loc_dtyr*minval(loc_opsip(:,0:loc_opsi_maxk))
+              int_misc_opsip_max_sig = int_misc_opsip_max_sig + loc_dtyr*maxval(loc_opsip(:,0:loc_opsi_maxk))
+              int_misc_opsia_min_sig = int_misc_opsia_min_sig + loc_dtyr*minval(loc_opsia(:,0:loc_opsi_maxk))
+              int_misc_opsia_max_sig = int_misc_opsia_max_sig + loc_dtyr*maxval(loc_opsia(:,0:loc_opsi_maxk))
               ! calculate current mean surface land (air) temperature SLT (degrees C)
               loc_sig = 0.0
               loc_tot_A = 0.0
@@ -4276,9 +4290,8 @@ SUBROUTINE diag_biogem_timeseries( &
               if (.NOT. ctrl_debug_lvl0) then
                  loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6
                  CALL sub_calc_psi( &
-                      & phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax &
-                      & )
-                 call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
+                      & phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi)
+                 call sub_echo_runtime(loc_yr,loc_opsi_scale,maxval(loc_opsia(:,0:loc_opsi_maxk)),dum_sfcatm1(:,:,:),dum_gemlite)
               endif
               ! preserve SLT
               int_SLT = int_misc_SLT_sig/int_t_sig

@@ -3847,9 +3847,10 @@ CONTAINS
     endwhere
     call sub_adddef_netcdf_moc(loc_iou,'phys_opsi','Global streamfunction','Sv',const_real_zero,const_real_zero)
     call sub_putvar2d('phys_opsi',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask)
-    ! Atlantic & Pacific -- modern topos only
-    select case (fname_topo)
-    case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+    ! Atlantic & Pacific -- only for worlds with a basin mask provided
+    ! NOTE: goldstein_jsf is set > 0 if a mask exists and is read in, in initialize_goldstein.f
+    !       and goldstein_jsf == 1 if there are no Atl or Pac basins defined
+    if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
        ! Atlantic
        loc_tmp_jk(:,:) = loc_scale*int_opsia_timeslice(:,:)/int_t_timeslice
        loc_tmp_jk(:,n_k:0:-1) = loc_tmp_jk(:,0:n_k:1)
@@ -3868,7 +3869,9 @@ CONTAINS
        endwhere
        call sub_adddef_netcdf_moc(loc_iou,'phys_opsip','Pacific streamfunction','Sv',const_real_zero,const_real_zero)
        call sub_putvar2d('phys_opsip',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask)
-    end select
+    else
+!!$       print*,goldstein_jsf,' (no mask)'
+    end if
     !-----------------------------------------------------------------------
     !       WRITE PSI
     !-----------------------------------------------------------------------
