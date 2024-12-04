@@ -616,27 +616,6 @@ c dza(kmax) never referenced, set to 0 for Andy's biogeo-code
 
       dza(kmax) = 0.
 
-c set up sin and cos factors at rho and v points (c grid)
-c fix for global domain although only cv and cv2 are referred to at or beyond
-c limits 24/6/2 if no flow out of N + S boundaries.
-
-crma      do j=0,jmax
-crma         sv(j) = s0 + j*ds
-crma         if(abs(1.0 - abs(sv(j))).lt.1e-12)then
-crma            cv(j) = 0.
-crma            rcv(j) = 1e12
-crma         else
-crma            cv(j) = sqrt(1 - sv(j)*sv(j))
-crma            rcv(j) = 1.0/cv(j)
-crma         endif
-crma         cv2(j) = cv(j)*cv(j)*rds
-crma         s(j) = sv(j) - 0.5*ds
-crma         if(s(j).lt.-1.0)s(j) = -2.0 - s(j)
-crma         c(j) = sqrt(1 - s(j)*s(j))
-crma         rc(j) = 1.0/c(j)
-crma         rc2(j) = rc(j)*rc(j)*rdphi
-crma      enddo   
-
 c set up coeffs for state equation following WS 1993
 
 crma error: rhosc value in coeffs assumed dsc=4 km, corrected offline for IPCC runs with GENIE-1, 23/8/5 nre
@@ -699,39 +678,6 @@ c convert hosing_period from yr to ocean timesteps
 
 crma end of hosing extras
 
-c define forcing
-
-c AY (01/12/03) : this code will need to migrate to EMBM
-c read wind data
-c taux,tauy at u-points
-c     open(96,file='taux_u.interp')
-c     open(97,file='tauy_u.interp')
-c taux,tauy at v-points
-c     open(98,file='taux_v.interp')
-c     open(99,file='tauy_v.interp')
-c     do j=1,jmax
-c        do i=1,imax
-c rotate grid to check b.c.s
-c        do idum=1,imax
-c           i=1+mod(idum+18-1,36)
-c           read(96,*)dztau(1,i,j)
-c           read(97,*)dztau(2,i,j)
-c           read(98,*)dztav(1,i,j)
-c           read(99,*)dztav(2,i,j)
-c multiply by scaling factor scf (to drive correct gyre strengths)
-c           dztau(1,i,j) = scf*dztau(1,i,j)/(rh0sc*dsc*usc*fsc)/dzz
-c           dztau(2,i,j) = scf*dztau(2,i,j)/(rh0sc*dsc*usc*fsc)/dzz
-c           dztav(1,i,j) = scf*dztav(1,i,j)/(rh0sc*dsc*usc*fsc)/dzz
-c           dztav(2,i,j) = scf*dztav(2,i,j)/(rh0sc*dsc*usc*fsc)/dzz
-c           tau(1,i,j) = dztau(1,i,j)*dzz
-c           tau(2,i,j) = dztav(2,i,j)*dzz
-c        enddo
-c     enddo
-c     close(96)
-c     close(97)
-c     close(98)
-c     close(99)
-
 c parameters for (restricted) time-dependent forcing 
 c set sda1 < 1e05 for steady forcing 
 
@@ -787,44 +733,50 @@ c count wet cells
          enddo
       enddo
 
+c     ======================================================================
+c     Set up OPSI basin mask
+c     ======================================================================
+c     NOTE: i?s and i?f are vectors defiend in ocean.cmn for the
+c     start and end i-points of a basin for each j value
+c     integer ips(maxj),ipf(maxj),ias(maxj),iaf(maxj)
+c     basin mask: 0: land
+c     2: Pacific
+c     3: Atlantic
+c     1: remaining ocean grid cells
+c     NOTE: bmask is local and only used to derive ips,ipf,ias,iaf
+c     NOTE: initialize jsf = jmax so that no basins are applied as default
+      ips(:)=0
+      ipf(:)=0
+      ias(:)=0
+      iaf(:)=0
+      jsf = jmax
+c     ****************************************************************
       inquire(file=indir_name(1:lenin)//world(1:lenworld)//
-     & '.bmask',exist=ioex)
+     &     '.bmask',exist=ioex)
       if (ioex) then
          if (debug_init) print *, 'reading in basin mask file'
          call check_unit(13,__LINE__,__FILE__)
          open(13,file=indir_name(1:lenin)//world(1:lenworld)//
-     & '.bmask',iostat=ios)
+     &        '.bmask',iostat=ios)
          call check_iostat(ios,__LINE__,__FILE__)
          do j=jmax,1,-1
             read(13,*,iostat=ios)(bmask(i,j),i=1,imax)
             call check_iostat(ios,__LINE__,__FILE__)
-            if (debug_init) write(6,'(i4,66i3)')j,(bmask(i,j),i=1,imax)
          enddo
-c basin mask: 0: land
-c             2: Pacific
-c             3: Atlantic
-c             1: remaining ocean grid cells
-c for now, derive ias(:), iaf(:), ips(:), ipf(:) north of j=jsf from
-c the basin mask, jsf is set to be the first grid row south of the
-c southern extent of the Atlantic basin
-c allow Atlantic basin to extend across western/eastern model grid boundary
-         ips(:)=0
-         ipf(:)=0
-         ias(:)=0
-         iaf(:)=0
-         jsf=1
+         jsf = 1
          do j=1,jmax
             iatl=0
             do i=1,imax
                if ((ips(j).eq.0).and.(bmask(i,j).eq.2)) ips(j)=i
                if (bmask(i,j).eq.2) ipf(j)=i
                if( 
-     & (ias(j).ne.0).and.(bmask(i,j).gt.0).and.(bmask(i,j).ne.3) 
-     & ) iatl=1
+     &              (ias(j).ne.0).and.(bmask(i,j).gt.0)
+     &              .and.(bmask(i,j).ne.3) 
+     &              ) iatl=1
                if (((ias(j).eq.0).or.(iatl.eq.1)).and.(bmask(i,j).eq.3)) 
-     & then
-                 ias(j)=i
-                 if(iatl.eq.1) iatl=2
+     &              then
+                  ias(j)=i
+                  if(iatl.eq.1) iatl=2
                endif
                if ((bmask(i,j).eq.3).and.(iatl.eq.0)) iaf(j)=i
                if ((jsf.eq.1).and.(bmask(i,j).eq.3)) jsf=j-1
@@ -833,43 +785,37 @@ c allow Atlantic basin to extend across western/eastern model grid boundary
             if (ias(j).eq.0) ias(j)=1
          enddo
          close(13,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
+c$$$c     save a reconstructed copy of mask(!)
+c$$$         call check_iostat(ios,__LINE__,__FILE__)
+c$$$         call check_unit(113,__LINE__,__FILE__)
+c$$$         open(213,file=indir_name(1:lenin)//world(1:lenworld)//
+c$$$     &        '.bmask.OUTIN',iostat=ios)
+c$$$         call check_iostat(ios,__LINE__,__FILE__)
+c$$$         do j=jmax,1,-1
+c$$$            write(213,'(36I4)',iostat=ios)(bmask(i,j),i=1,imax)
+c$$$            call check_iostat(ios,__LINE__,__FILE__)
+c$$$         enddo
+c$$$         close(213,iostat=ios)
+c$$$         call check_iostat(ios,__LINE__,__FILE__)
       else
-         if (debug_init) print *,
-     & 'no basin mask available - trying to detect '//
-     &        'Atlantic and Pacific basins from land mask'
-         do j=1,jmax
-            do i=1,imax
-               if (k1(i,j).le.kmax) then
-                  bmask(i,j) = 1
-               else
-                  bmask(i,j) = 0
-               endif
-            enddo
-         enddo
-crma - light edits of code for ocean basin start/end i-points
-
-c find ocean positions semi-automatically, must start with a
-c longitude i which is in the right ocean for all j, tricky in north
-
-
 c     ****************************************************************
-c     stop 'testing new code'
-         ias(:)=0
-         iaf(:)=0
-         ips(:)=0
-         ipf(:)=0
+c     rma - light edits of code for ocean basin start/end i-points
+c     for now, derive ias(:), iaf(:), ips(:), ipf(:) north of j=jsf from
+c     the basin mask, jsf is set to be the first grid row south of the
+c     southern extent of the Atlantic basin
+c     allow Atlantic basin to extend across western/eastern model grid boundary
+c     find ocean positions semi-automatically, must start with a
+c     longitude i which is in the right ocean for all j, tricky in north
          ias(jmax) = nint(imax*24.0/36.0)
          ips(jmax) = nint(imax*10.0/36.0)
          jsf = 1
-crma for 64x32l grid (15/9/05):
-crma      if(ldeg) then
+c     rma for 64x32l grid (15/9/05):
+c     rma      if(ldeg) then
          if(igrid.ne.0) then
             ias(jmax) = 61
             ips(jmax) = 36
             jsf = 10
          endif
-         if (debug_init) print*,'ips ipf ias iaf '
          do j=1,jmax
             ips(j) = ips(jmax)
             ipf(j) = ips(j)
@@ -897,7 +843,7 @@ c     ************
                if(ips(j).ge.ipf(j).and.j.le.jmax/2)jsf = j
             endif
          enddo
-
+c     
          if(igrid.eq.0) then
 c     ************
 c     This bit to get the Arctic all Atlantic
@@ -917,25 +863,39 @@ c     This bit to get the Southern tip of Greenland out of the Pacific
                endif
 c     ************
             enddo
-c     ****************************************************************
          endif
-
-crma      if(ldeg) then
-         if(igrid.ne.0) then
-            ips(jmax) = 1
-            ipf(jmax) = 0 
-            ips(jmax-1) = 1
-            ipf(jmax-1) = 0 
-            ias(jmax) = 1
-            iaf(jmax) = imax
-         endif
-
+c     ************
+c$$$c     REPRODUCE BMASK
+c$$$         do j=1,jmax
+c$$$            do i=1,imax
+c$$$               if (k1(i,j).le.kmax) then
+c$$$                  bmask(i,j) = 1
+c$$$               else
+c$$$                  bmask(i,j) = 0
+c$$$               endif
+c$$$            enddo
+c$$$         enddo
+c$$$         do j=jsf,jmax
+c$$$            do i=ips(j),ipf(j)
+c$$$               bmask(i,j) = 2
+c$$$            enddo
+c$$$            do i=ias(j),iaf(j)
+c$$$               bmask(i,j) = 3
+c$$$            enddo
+c$$$         enddo
+c$$$         call check_unit(113,__LINE__,__FILE__)
+c$$$         open(113,file=indir_name(1:lenin)//world(1:lenworld)//
+c$$$     &        '.bmask.OUT',iostat=ios)
+c$$$         call check_iostat(ios,__LINE__,__FILE__)
+c$$$         do j=jmax,1,-1
+c$$$            write(113,'(36I4)',iostat=ios)(bmask(i,j),i=1,imax)
+c$$$            call check_iostat(ios,__LINE__,__FILE__)
+c$$$         enddo
+c$$$         close(113,iostat=ios)
+c$$$         call check_iostat(ios,__LINE__,__FILE__)
+c     ************
       endif
-
-      if (debug_init) print*,'jsf ',jsf
-      if (debug_init) write(6,'(5i4)')
-     & (j,ips(j),ipf(j),ias(j),iaf(j),j=jmax,1,-1)
-
+c     copy variables for passing out
       do j=1,jmax
          ips_out(j)=ips(j)
          ipf_out(j)=ipf(j)
@@ -943,8 +903,9 @@ crma      if(ldeg) then
          iaf_out(j)=iaf(j)
       enddo
       jsf_out=jsf
+c     ======================================================================
 
-c Freshwater hosing: Initialise the denominators which are used to
+c     Freshwater hosing: Initialise the denominators which are used to
 c convert the total area-integrated freshwater-hosing flux in units of
 c Sv into freshwater fluxes in units of m/s in the grid cells in a
 c latitudinal band in the high-latitude Atlantic
