@@ -332,23 +332,25 @@ CONTAINS
                      & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
                      & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
                      & 'surface '//TRIM(string_carb(ic))//' d14C (o/oo) / ' //&
-                     & 'surface mean '//TRIM(string_carb(ic))//' (mol kg-1)'
+                     & 'surface mean (total)  '//TRIM(string_carb(ic))//' (mol kg-1)'
              elseif (ocn_select(io_DIC_13C)) then
                 loc_string = '% time (yr) / ' //&
                      & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
                      & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
-                     & 'surface mean '//TRIM(string_carb(ic))//' (mol kg-1)'
+                     & 'surface mean (total) '//TRIM(string_carb(ic))//' (mol kg-1)'
              else
-                loc_string = '% time (yr) / surface '//TRIM(string_carb(ic))//' (mol kg-1)'
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                  & 'surface mean (total) '//TRIM(string_carb(ic))//' (mol kg-1)'
              end if
           CASE (ic_fug_CO2)
              loc_string = '% time (yr) / ' //&
-                  & 'surface (ice-free) '//TRIM(string_carb(ic))//' (atm) / ' //&
-                  & 'surface '//TRIM(string_carb(ic))//' (atm)'
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (atm) / ' //&
+                  & 'surface mean (total) '//TRIM(string_carb(ic))//' (atm)'
           case default
              loc_string = '% time (yr) / ' //&
-                  & 'surface (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                  & 'surface '//TRIM(string_carb(ic))//' (mol kg-1)'
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                  & 'surface mean (total) '//TRIM(string_carb(ic))//' (mol kg-1)'
           end SELECT
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
@@ -1621,7 +1623,7 @@ CONTAINS
                 loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
                 call check_unit(out,__LINE__,__FILE__)
                 OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-                WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
+                WRITE(unit=out,fmt='(f12.3,e15.7,f12.3,e15.7)',iostat=ios) &
                      & loc_t, &
                      & loc_sig_opn, &
                      & fun_calc_isotope_delta &
@@ -2767,7 +2769,7 @@ CONTAINS
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
              if (int_diag_weather_sig(io_Os_188Os) > const_real_nullsmall) then
-                loc_sig = int_diag_weather_sig(io_Os_187Os)/loc_tot
+                loc_sig = int_diag_weather_sig(io_Os_187Os)/int_diag_weather_sig(io_Os_188Os)
              else
                 loc_sig = -999.9
              end if
@@ -3698,6 +3700,9 @@ CONTAINS
                    call sub_adj_carbconst(   &
                         & loc_ocn(io_Ca,i,j,k),  &
                         & loc_ocn(io_Mg,i,j,k),  &
+                        & ocn(io_S,i,j,k), &
+                        & ocn(io_T,i,j,k),&
+                        & loc_phys_ocn(ipo_Dmid,i,j,k), &
                         & loc_carbconst(:,i,j,k) &
                         & )
                 end if
