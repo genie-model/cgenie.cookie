@@ -3533,7 +3533,9 @@ CONTAINS
                      & carb(:,i,j,k),      &
                      & carbalk(:,i,j,k)    &
                      & )
-                ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
+                ! estimate Revelle (and 'sensitivity') factor
+                ! NOTE: although this is only meaningful for the surface, retain full depth initializaion for now
+                !       for back-compatablity
                 loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
                      & ocn(io_DIC,i,j,k),  &
                      & ocn(io_ALK,i,j,k),  &
@@ -3548,8 +3550,8 @@ CONTAINS
                      & carbconst(:,i,j,k), &
                      & carb(:,i,j,k)    &
                      & )
-                carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
-                carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
+                carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)
+                carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
                 ! calculate carbonate system isotopic properties
                 if (ocn_select(io_DIC_13C)) then
                    call sub_calc_carb_r13C(      &

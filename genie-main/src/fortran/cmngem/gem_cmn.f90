@@ -40,8 +40,10 @@ MODULE gem_cmn
   ! ------------------- GEOCHEM CONTROLS ----------------------------------------------------------------------------------------- !
   CHARACTER(len=63)::par_carbconstset_name                              ! carbonate dissociation constants set
   NAMELIST /ini_gem_nml/par_carbconstset_name
-  CHARACTER(len=63)::par_adj_carbconst_option                              ! adjustment of carbonate dissociation constants to Mg/Ca
+  CHARACTER(len=63)::par_adj_carbconst_option                           ! adjustment of carbonate dissociation constants to Mg/Ca
   NAMELIST /ini_gem_nml/par_adj_carbconst_option
+  logical::ctrl_carbchem_pH_tolerance_OLD                               ! OLD pH solution tolerance test?
+  NAMELIST /ini_gem_nml/ctrl_carbchem_pH_tolerance_OLD
   real::par_carbchem_pH_tolerance                                       ! pH solution tolerance
   integer::par_carbchem_pH_iterationmax                                 ! pH solution maximum number of iterations
   NAMELIST /ini_gem_nml/par_carbchem_pH_tolerance,par_carbchem_pH_iterationmax

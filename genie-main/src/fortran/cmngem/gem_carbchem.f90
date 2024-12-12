@@ -524,6 +524,7 @@ CONTAINS
     REAL::loc_H,loc_H_old,loc_H1,loc_H2,loc_H_p2,loc_H_p3,loc_H_free,loc_H_total
     REAL::loc_sat_cal,loc_sat_arg
     real::loc_r
+    real::loc_dpH
     ! initialize loop variables
     n = 1
     m = 1
@@ -674,8 +675,12 @@ CONTAINS
        !       ABS(1.0 - loc_H/loc_H_old) < (1.0E-8/loc_H)*par_carbchem_pH_tolerance
        !       i.e., at higher pH and lower [H], pH was considered solved for, for a larger relative change in [H]
        ! NOTE: in the calculation of RF0, the pH tolerance was not scaled
-!!$       IF (ABS(1.0 - loc_H/loc_H_old) < (1.0E-8/loc_H)*par_carbchem_pH_tolerance) then
-       IF ( ABS(log10(loc_H_old)-log10(loc_H)) < dum_pHtol ) then
+       if (ctrl_carbchem_pH_tolerance_OLD) then
+          loc_dpH = ABS(1.0 - loc_H/loc_H_old)/(1.0E-8/loc_H)
+       else
+          loc_dpH = ABS(log10(loc_H_old)-log10(loc_H))
+       end if
+       if ( loc_dpH < dum_pHtol ) then
           ! calculate result variables
           dum_carb(ic_conc_CO2)  = loc_conc_CO2
           dum_carb(ic_conc_CO3)  = loc_conc_CO3
@@ -753,6 +758,7 @@ CONTAINS
   END SUBROUTINE sub_calc_carb
   ! ****************************************************************************************************************************** !
 
+  
   ! ****************************************************************************************************************************** !
   ! CALCULATE CHLORINITY
   FUNCTION fun_calc_Cl(dum_S)
@@ -1299,27 +1305,36 @@ CONTAINS
     real::loc_DIC_RFO,loc_pH_tolerance,loc_dDIC
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
+    real::loc_dpH,loc_pHtol
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
     ! -------------------------------------------------------- !
-    !
-    loc_HF = 0.0
+    ! initialize local concentrations that could remain undefined if dum_H2Stot or dum_NH4tot are negative
     loc_HS = 0.0
     loc_NH3 = 0.0
-    ! set pH solution tolerance
-    loc_pH_tolerance = 0.001*par_carbchem_pH_tolerance
     ! define DIC perturbion
     loc_dDIC = 1.0E-6;
-    ! copy dum_carb -> loc_carb (needed becasue pH is used to seed 
+    ! initialize carb chem 
     loc_carb = dum_carb
+    ! set stricter pH tolorence
+    if (.NOT. ctrl_carbchem_pH_tolerance_OLD) then
+       loc_pHtol = 0.01*par_carbchem_pH_tolerance
+    else
+       loc_pHtol = par_carbchem_pH_tolerance
+    end if
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
-    call sub_calc_carb(                                                               &
-         & loc_pH_tolerance,                                                          &
-         & dum_DIC,dum_ALK,dum_Ca,                                                    &
-         & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
-         & dum_carbconst,loc_carb,loc_carbalk)
+    ! calculate and save initial [H] value
+    ! NOTE: omit call to sub_calc_carb for back-compatability
+    ! NOTE: solving for pH with the stricter local tolorence
+    if (.NOT. ctrl_carbchem_pH_tolerance_OLD) then
+       call sub_calc_carb(                                                               &
+            & loc_pHtol,                                                                 &
+            & dum_DIC,dum_ALK,dum_Ca,                                                    &
+            & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+            & dum_carbconst,loc_carb,loc_carbalk)
+    end if
     loc_H = loc_carb(ic_H)
     ! -------------------------------------------------------- !
     ! RE_SOLVE pH
@@ -1408,8 +1423,13 @@ CONTAINS
        loc_H2 = dum_carbconst(icc_k2)*loc_conc_HCO3/loc_conc_CO3
        ! the implicit bit!
        loc_H = SQRT(loc_H1*loc_H2)
-       IF (ABS(1.0 - loc_H/loc_H_old) < par_carbchem_pH_tolerance) then
-!!$       IF ( ABS(log10(loc_H_old)-log10(loc_H)) < dum_pHtol) then
+       ! test for the relative change in [H] falling below some criterion (at which point the solution is assumed stable)
+       if (ctrl_carbchem_pH_tolerance_OLD) then
+          loc_dpH = ABS(1.0 - loc_H/loc_H_old)
+       else
+          loc_dpH = ABS(log10(loc_H_old)-log10(loc_H))
+       end if
+      if ( loc_dpH < loc_pHtol ) then
           EXIT
        else
           n = n + 1
@@ -1457,30 +1477,32 @@ CONTAINS
     REAL::loc_ALK,loc_dALK,loc_DIC,loc_DIC_low,loc_DIC_high,loc_CO2_init
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
-    real::loc_pH_tolerance,nmax,n
+    integer::nmax,n
+    real::loc_pHtol
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
     ! -------------------------------------------------------- !
     ! define ALK perturbion
     loc_dALK = 1.0E-6;
     ! initialize DIC search limits
-    ! NOTE: assuming dALK is carbonate alkalinity, then
+    ! NOTE: assuming dALK == carbonate alkalinity, then
     !       (a) dDIC cannot be > dALK (low CO32- limit)
     !       (b) dDIC cannot be < 0.5*ALK (high CO32- limit)
     loc_DIC_low  = dum_DIC + 0.5*loc_dALK
     loc_DIC_high = dum_DIC + 1.0*loc_dALK
-    ! initialize carb chem (esp. [H])
+    ! initialize carb chem 
     loc_carb = dum_carb
-    ! initialize pH tolerance
-    loc_pH_tolerance = 0.001*par_carbchem_pH_tolerance
+    ! set stricter pH tolorence
+    loc_pHtol = 0.01*par_carbchem_pH_tolerance
     ! max iterations allowed
     nmax = 100
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
     ! calculate and save initial [CO2] value
+    ! NOTE: solving for pH with the stricter local tolorence
     call sub_calc_carb(                                                               &
-         & loc_pH_tolerance,                                                          &
+         & loc_pHtol,                                                                 &
          & dum_DIC,dum_ALK,dum_Ca,                                                    &
          & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
          & dum_carbconst,loc_carb,loc_carbalk)
@@ -1496,7 +1518,7 @@ CONTAINS
        loc_DIC = (loc_DIC_low + loc_DIC_high)/2.0
        ! solve for pH and [CO2] ... request a 1000x finer pH tolorence than default
        call sub_calc_carb(                                                               &
-            & loc_pH_tolerance,                                                          &
+            & loc_pHtol,                                                                 &
             & loc_DIC,loc_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)

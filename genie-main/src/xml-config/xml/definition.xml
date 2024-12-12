@@ -1359,6 +1359,10 @@
                         <value datatype="string">TyrrellZeebe2004</value>
                         <description>carbonate dissociation constants set</description>
                     </param>
+                    <param name="ctrl_carbchem_pH_tolerance_OLD">
+                        <value datatype="boolean">.true.</value>
+                        <description>OLD pH solution tolerance test?</description>
+                    </param>
                     <param name="par_carbchem_pH_tolerance">
                         <value datatype="real">0.001</value>
                         <description>pH solution tolerance</description>
