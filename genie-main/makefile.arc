@@ -60,7 +60,7 @@ ifeq ($(NIGHTLYBUILD2),TRUE)
 endif
 
 # === Ancillary Tools ===
-PYTHON = python3
+PYTHON = python
 PERL   = perl
 ETAGS  = etags
 TAGFILE=$(MAIN_DIR)/TAGS
