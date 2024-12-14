@@ -54,15 +54,15 @@ CONTAINS
                      & 'global total ' //TRIM(string_ocn(io))//' (mol) / ' //&
                      & 'global mean ' //TRIM(string_ocn(io))//' (mol kg-1) / ' //&
                      & 'surface (ice-free) ' //TRIM(string_ocn(io))//' (mol kg-1) / ' //&
-                     & 'benthic'//loc_string_Dmin//TRIM(string_ocn(io))//' (mol kg-1) / ' //&
-                     & 'surface ' //TRIM(string_ocn(io))//' (mol kg-1)'
+                     & 'benthic '//loc_string_Dmin//TRIM(string_ocn(io))//' (mol kg-1) / ' //&
+                     & 'surface (total area) ' //TRIM(string_ocn(io))//' (mol kg-1)'
              CASE (n_itype_min:n_itype_max)
                 loc_string = '% time (yr) / ' //&
                      & 'global total '//TRIM(string_ocn(io))//' (mol) / ' //&
                      & 'global ' // TRIM(string_ocn(io))//' (o/oo) / ' //&
                      & 'surface (ice-free) ' //TRIM(string_ocn(io))//' (o/oo) / ' //&
                      & 'benthic'//loc_string_Dmin//TRIM(string_ocn(io))//' (o/oo) / ' //&
-                     & 'surface ' //TRIM(string_ocn(io))//' (o/oo)'
+                     & 'surface (total area) ' //TRIM(string_ocn(io))//' (o/oo)'
              end SELECT
           else
              SELECT CASE (ocn_type(io))
@@ -325,32 +325,34 @@ CONTAINS
                & )
           SELECT CASE (ic)
           CASE (ic_ohm_cal,ic_ohm_arg)
-             loc_string = '% time (yr) / mean saturation state'
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (n/a) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (n/a)'
           CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
              if (ocn_select(io_DIC_14C)) then
                 loc_string = '% time (yr) / ' //&
                      & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
                      & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
                      & 'surface '//TRIM(string_carb(ic))//' d14C (o/oo) / ' //&
-                     & 'surface mean (total)  '//TRIM(string_carb(ic))//' (mol kg-1)'
+                     & 'surface mean (total area)  '//TRIM(string_carb(ic))//' (mol kg-1)'
              elseif (ocn_select(io_DIC_13C)) then
                 loc_string = '% time (yr) / ' //&
                      & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
                      & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
-                     & 'surface mean (total) '//TRIM(string_carb(ic))//' (mol kg-1)'
+                     & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
              else
              loc_string = '% time (yr) / ' //&
                   & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                  & 'surface mean (total) '//TRIM(string_carb(ic))//' (mol kg-1)'
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
              end if
           CASE (ic_fug_CO2)
              loc_string = '% time (yr) / ' //&
                   & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (atm) / ' //&
-                  & 'surface mean (total) '//TRIM(string_carb(ic))//' (atm)'
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (atm)'
           case default
              loc_string = '% time (yr) / ' //&
                   & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                  & 'surface mean (total) '//TRIM(string_carb(ic))//' (mol kg-1)'
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
           end SELECT
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
@@ -1123,7 +1125,7 @@ CONTAINS
        ! ocean
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
-          if (force_flux_ocn_select(io)) then
+          if (force_flux_ocn_select(io) .OR. ((par_force_restore_ohmega > const_real_nullsmall) .AND. ocn_select(io))) then
              loc_filename=fun_data_timeseries_filename( &
                   & loc_t,par_outdir_name, &
                   & trim(par_outfile_name)//'_series_diag','fluxforcing_ocn_'//TRIM(string_ocn(io)),string_results_ext &
@@ -1259,7 +1261,7 @@ CONTAINS
                    loc_filename=fun_data_timeseries_filename( &
                         & loc_t,par_outdir_name,trim(par_outfile_name)//'_series_diag','pre_Csoft',string_results_ext &
                         & )
-                   loc_string = '% time (yr) / global total (regenerated, not actually preformed) Csoft (mol) / global mean (mol kg-1)'
+                   loc_string = '% time (yr) / global total (regenerated, not preformed) Csoft (mol) / global mean (mol kg-1)'
                    if (.NOT. ctrl_bio_remin_redox_save) loc_save = .false.
                 end if
              end select
@@ -3115,7 +3117,7 @@ CONTAINS
        ! ocean
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
-          if (force_flux_ocn_select(io)) then
+          if (force_flux_ocn_select(io) .OR. ((par_force_restore_ohmega > const_real_nullsmall) .AND. ocn_select(io))) then
              loc_filename=fun_data_timeseries_filename( &
                   & dum_t,par_outdir_name, &
                   & trim(par_outfile_name)//'_series_diag','fluxforcing_ocn_'//TRIM(string_ocn(io)),string_results_ext &

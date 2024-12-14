@@ -562,7 +562,8 @@ CONTAINS
        print*,'i coordinate of point forcing (0 = DISABLED)        : ',par_force_point_i
        print*,'j coordinate of point forcing (0 = DISABLED)        : ',par_force_point_j
        print*,'k coordinate of point forcing (0 = DISABLED)        : ',par_force_point_k
-       print*,'Surface ocean saturation state target               : ',par_force_invert_ohmega
+       print*,'Surface ocean saturation target -- inversions       : ',par_force_invert_ohmega
+       print*,'Surface ocean saturation target -- restoring        : ',par_force_restore_ohmega
        print*,'Sediment wt% CaCO3 target                           : ',par_force_invert_wtpctcaco3
        print*,'Prevent negative inversion fluxes                   : ',ctrl_force_invert_noneg
        print*,'Calcite saturation as the saturation target?        : ',ctrl_force_ohmega_calcite
@@ -571,6 +572,7 @@ CONTAINS
        print*,'Force explicit inversion?                           : ',ctrl_force_invert_explicit
        print*,'Automatic ocean age tracer?                         : ',ctrl_force_ocn_age
        print*,'Or ... automatic ocean age single-tracer tracer?    : ',ctrl_force_ocn_age1
+       print*,'CaCO3 flux (for saturaton restoring) (mol yr-1)     : ',par_force_FCaCO3
        ! --- TRANSPORT MATRIX ---------------------------------------------------------------------------------------------------- !
        print*,'Diagnose transport matrix during run?		: ',ctrl_data_diagnose_TM
        print*,'Year to start diagnosing transport matrix	: ',par_data_TM_start
@@ -611,9 +613,7 @@ CONTAINS
        par_bio_remin_sinkingrate_reaction = par_bio_remin_sinkingrate_scav
     end if
     ! flexible C:P
-    if (par_bio_red_PC_flex > 0) then
-       opt_bio_red_PC_flex = par_bio_red_PC_flex
-    end if
+    if (par_bio_red_PC_flex > 0) opt_bio_red_PC_flex = par_bio_red_PC_flex
     ! -------------------------------------------------------- !
     ! adjust units
     ! -------------------------------------------------------- !
