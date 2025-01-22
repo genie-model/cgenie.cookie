@@ -277,7 +277,10 @@ subroutine biogem(        &
                  IF (force_restore_ocn_select(io_colr)) THEN
                     loc_force_actual = loc_force_actual + loc_k_icefree*carb(ic_H,i,j,n_k)/loc_k_tot_icefree
                  end if
-              end IF
+              elseif (par_force_restore_ohmega > const_real_nullsmall) then
+                 ! direct OHM restoring (calcite)
+                 loc_force_actual = loc_force_actual + loc_k_icefree*carb(ic_ohm_cal,i,j,n_k)/loc_k_tot_icefree
+              end if
               ! calc mean DIC (or DOC) d13C
               IF ( &
                    & (force_restore_ocn_select(io_DIC_13C) .OR. force_restore_ocn_select(io_DOM_C_13C)) &
@@ -1049,7 +1052,44 @@ subroutine biogem(        &
                  !
                  ! ############################################################################################################### !
               end SELECT
-
+              ! OCEAN TRACERS #4 -- SATURATION
+              ! NOTE: we are adding/subtracting CaCO3 (flux == par_force_FCaCO3)
+              ! NOTE: keep adjustment flux isotopically neutral to each box
+              ! NOTE: locijk_focn is in units of mol yr-1
+              if (par_force_restore_ohmega > const_real_nullsmall) then
+                 ! set current and target values for consistency
+                 ! NOTE: loc_force_actual set earlier
+                 loc_force_target = par_force_restore_ohmega
+                 ! calculate the sign of the ALK (and DIC and Ca2+) input
+                 If (loc_force_target > loc_force_actual) then
+                    loc_force_sign = 1.0
+                 else
+                    loc_force_sign = -1.0
+                 end If
+                 ! calculate fluxes
+                 ! NOTE: raw scaling fluxes are in units mol yr-1 and need to be distributed across all (surface) grid points
+                 if (ocn_select(io_DIC)) locijk_focn(io_DIC,i,j,n_k) = loc_force_sign*par_force_FCaCO3/real(loc_n_k_tot)
+                 if (ocn_select(io_ALK)) locijk_focn(io_ALK,i,j,n_k) = 2.0*loc_force_sign*par_force_FCaCO3/real(loc_n_k_tot)
+                 if (ocn_select(io_Ca)) locijk_focn(io_Ca,i,j,n_k)   = loc_force_sign*par_force_FCaCO3/real(loc_n_k_tot)
+                 IF (ocn_select(io_DIC_13C)) then
+                    locijk_focn(io_DIC_13C,i,j,n_k) = locijk_focn(io_DIC,i,j,n_k)*ocn(io_DIC_13C,i,j,n_k)/ocn(io_DIC,i,j,n_k)
+                 end if
+                 IF (ocn_select(io_Ca_44Ca)) then
+                    locijk_focn(io_Ca_44Ca,i,j,n_k) = locijk_focn(io_Ca,i,j,n_k)*ocn(io_Ca_44Ca,i,j,n_k)/ocn(io_Ca,i,j,n_k)
+                 end if
+                 ! record total flux forcing
+                 diag_forcing_ocn(io_ALK)      = diag_forcing_ocn(io_ALK)    + locijk_focn(io_ALK,i,j,n_k)
+                 diag_forcing_ocn(io_DIC)     = diag_forcing_ocn(io_DIC)     + locijk_focn(io_DIC,i,j,n_k)
+                 diag_forcing_ocn(io_Ca)      = diag_forcing_ocn(io_Ca)      + locijk_focn(io_Ca,i,j,n_k)
+                 diag_forcing_ocn(io_DIC_13C) = diag_forcing_ocn(io_DIC_13C) + locijk_focn(io_DIC_13C,i,j,n_k)
+                 diag_forcing_ocn(io_Ca_44Ca) = diag_forcing_ocn(io_Ca_44Ca) + locijk_focn(io_Ca_44Ca,i,j,n_k)
+                 ! record diagnostics
+                 diag_misc_2D(idiag_misc_2D_FALK,i,j)     = locijk_focn(io_ALK,i,j,n_k)
+                 diag_misc_2D(idiag_misc_2D_FDIC,i,j)     = locijk_focn(io_DIC,i,j,n_k)
+                 diag_misc_2D(idiag_misc_2D_FDIC_13C,i,j) = locijk_focn(io_DIC_13C,i,j,n_k)
+                 diag_misc_2D(idiag_misc_2D_FCa,i,j)      = locijk_focn(io_Ca,i,j,n_k)
+              end if
+              
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** EXTERNAL FLUX FORCING ***'
               ! *** EXTERNAL FLUX FORCING ***
@@ -1131,7 +1171,7 @@ subroutine biogem(        &
                  locijk_focn(1,i,j,loc_k1) = locijk_focn(1,i,j,loc_k1) + &
                       & conv_yr_s*par_Fgeothermal*phys_ocn(ipo_A,i,j,loc_k1)/(conv_kg_g*const_Cp)
               end if
-
+              
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** INVERSIONS ***'
               if (force_restore_ocn_select(io_DIC_14C) .AND. force_flux_ocn_select(io_DIC_14C)) THEN

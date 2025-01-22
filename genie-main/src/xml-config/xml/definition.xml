@@ -6874,7 +6874,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="par_force_invert_ohmega">
 			<value datatype="real">0.0</value>
-                        <description>Surface ocean saturation state target</description>
+                        <description>Surface ocean saturation state target -- inversions</description>
+                    </param>
+                    <param name="par_force_restore_ohmega">
+			<value datatype="real">0.0</value>
+                        <description>Surface ocean saturation state target -- restoring</description>
                     </param>
                     <param name="par_force_invert_wtpctcaco3">
 			<value datatype="real">-99.9</value>
@@ -6907,6 +6911,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_force_ocn_age1">
 			<value datatype="boolean">.false.</value>
                         <description>Or ... automatic ocean age single-tracer tracer?</description>
+                    </param>
+                    <param name="par_force_FCaCO3">
+			<value datatype="real">1.0E15</value>
+                        <description> CaCO3 flux (for saturaton restoring) (mol yr-1)</description>
                     </param>
 <!-- TRANSPORT MATRIX  -->
 		<param name="ctrl_data_diagnose_TM">

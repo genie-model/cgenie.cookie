@@ -783,8 +783,9 @@ MODULE biogem_lib
   integer::par_force_point_j                                     ! 'j' coordinate of point forcing
   integer::par_force_point_k                                     ! 'k' coordinate of point forcing
   NAMELIST /ini_biogem_nml/par_force_point_i,par_force_point_j,par_force_point_k
-  REAL::par_force_invert_ohmega                                  ! surface ocean saturation state target
-  NAMELIST /ini_biogem_nml/par_force_invert_ohmega
+  REAL::par_force_invert_ohmega                                  ! surface ocean saturation target -- inversion
+  REAL::par_force_restore_ohmega                                 ! surface ocean saturation target -- restoring
+  NAMELIST /ini_biogem_nml/par_force_invert_ohmega,par_force_restore_ohmega
   REAL::par_force_invert_wtpctcaco3                              ! Sediment wt% CaCO3 target
   NAMELIST /ini_biogem_nml/par_force_invert_wtpctcaco3
   logical::ctrl_force_invert_noneg                              ! prevent negative inversion fluxes (i.e. no removal)
@@ -800,6 +801,8 @@ MODULE biogem_lib
   logical::ctrl_force_ocn_age                                   ! automatic ocean age tracer
   logical::ctrl_force_ocn_age1                                  ! Or ... automatic ocean age single-tracer tracer?
   NAMELIST /ini_biogem_nml/ctrl_force_ocn_age,ctrl_force_ocn_age1
+  REAL::par_force_FCaCO3                                        ! CaCO3 flux (for saturaton restoring) (mol yr-1)
+  NAMELIST /ini_biogem_nml/par_force_FCaCO3
   ! ---------------- TRANSPORT MATRIX---------------------------!
   LOGICAL::ctrl_data_diagnose_TM !                              ! diagnose matrix in run?
   NAMELIST /ini_biogem_nml/ctrl_data_diagnose_TM

@@ -31,6 +31,7 @@ bg_par_bio_red_POC_CaCO3_pP=0.8053406
 #
 # *** REMINERALIZATION *************************************************
 #
+
 # DOC lifetime (yrs)
 bg_par_bio_remin_DOMlifetime=0.5
 # initial fractional abundance of POC component #2
@@ -62,7 +63,7 @@ sg_ctrl_sed_bioturb=.FALSE.
 # NOTE: set to zero when applying a dust field (unless an additional detrital flux is required)
 sg_par_sed_fdet=0.0
 # sediment mixed layer thickness (cm)
-# NOTE: default is 1.0 cm /  set to 0.5 to shorten time to diagnose burial flux in a closed system (do not use for a restart)
+# NOTE: default is 1.0 cm / set to 0.5 to shorten time to diagnose burial flux in a closed system (do not use this for a restart!)
 sg_par_sed_top_th=1.0
 #
 # *** WEATHERING *******************************************************

@@ -29,7 +29,6 @@ CONTAINS
     !
     ! <genie_util>, ONLY: <check_unit>, <check_iostat>
 
-
     USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     integer::ios
@@ -54,6 +53,7 @@ CONTAINS
     par_outdir_name = trim(par_outdir_name)//'/'
     par_rstdir_name = trim(par_rstdir_name)//'/'
     if (ctrl_debug_init > 0) then
+       print*
        ! --- RUN CONTROL --------------------------------------------------------------------------------------------------------- !
        print*,'--- RUN CONTROL ---'
        print*,'Continuing run?                                     : ',ctrl_continuing
@@ -237,12 +237,28 @@ CONTAINS
        print*,'======================================================='
     end if
 
-    ! *** adjust units ***
+    ! -------------------------------------------------------- !
+    ! ADJUST PARAMETERS
+    ! -------------------------------------------------------- !
+    print*
+    print*,'    --- ROKGEM NAMELIST PARAMETER ADJUSTMENT ----------'
+    ! -------------------------------------------------------- ! adjust units
+    print*,'    * adjust units (par_ref_R0, par_data_R_0D)'
     ! convert par_weather_R0 to mm/s
     par_ref_R0 = par_ref_R0 / conv_yr_s
     ! convert par_data_R0 to mm/s
     par_data_R_0D = par_data_R_0D / conv_yr_s
-
+    ! -------------------------------------------------------- ! adjust dependent options
+    ! ensure that weathering short-cut is .true. for a closed system
+    ! (so that there are no atmospheric exchange fluxes not accounted for in the BIOGEM mass balance
+    !  weathering flux tracking of sedimentation)
+    ! NOTE: the default short-cut will become .true.
+    ! NOTE: the automatically-seeded closed system fluxes are so small (unit mol yr-1) that it shoudl nto in practice matter
+    if (ctrl_force_sed_closedsystem) then
+       print*,'    * opt_short_circuit_atm = .true. (for a closed system)'
+       opt_short_circuit_atm = .true.
+    end if
+    
   END SUBROUTINE sub_load_goin_rokgem
   ! ****************************************************************************************************************************** !
 
