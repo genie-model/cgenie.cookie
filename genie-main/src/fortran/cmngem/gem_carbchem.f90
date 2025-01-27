@@ -1618,18 +1618,6 @@ CONTAINS
     ! -------------------------------------------------------- !
     n = 0
     loc_DIC = dum_DIC + loc_dDIC
-    
-       ! solve for pH and OHMEGA ... request a finer pH tolorence than default
-       call sub_calc_carb(                                                               &
-            & loc_pHtol,                                                                 &
-            & loc_DIC,loc_ALK,dum_Ca,                                                    &
-            & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
-            & dum_carbconst,loc_carb,loc_carbalk)
-
-       print*,loc_ohm_cal_init,loc_carb(ic_ohm_cal)
-       !print*,dum_DIC,loc_DIC,dum_ALK,loc_ALK
-print*,'*'
-       
     DO
        n = n+1
        ! guess ALK value as mean of current limits
@@ -1643,10 +1631,6 @@ print*,'*'
             & loc_DIC,loc_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
-
-       print*,loc_ohm_cal_init,loc_carb(ic_ohm_cal)
-       !print*,dum_DIC,loc_DIC,dum_ALK,loc_ALK
-       
        ! test for OHMEGA estimate getting 'sufficiently' close to target value
        IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < 0.0001) then
           EXIT
