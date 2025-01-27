@@ -347,7 +347,7 @@ MODULE gem_cmn
   INTEGER,PARAMETER::ic_RF0                               = 10    ! Revelle factor
   INTEGER,PARAMETER::ic_RdDICdALK                         = 12    ! OAE ALK addition efficiency factor
   INTEGER,PARAMETER::ic_RdfCO2dDIC                        = 13    ! fCO2 sensitivity factor
-  INTEGER,PARAMETER::ic_RdCaCO3dDIC                       = 14    ! CaCO3 buffering factor factor
+  INTEGER,PARAMETER::ic_RdALKdDIC                         = 14    ! ALK (CaCO3 )buffering factor factor
   INTEGER,PARAMETER::ic_pH_n                              = 15    ! number of iterations taken to solve for pH
   ! (carbonate) chemistry descriptors array indices
   INTEGER,PARAMETER::icc_k                                = 01    ! 
@@ -515,7 +515,7 @@ MODULE gem_cmn
        & 'pHsws           ', &
        & 'RdDICdALK       ', &
        & 'RdfCO2dDIC      ', &
-       & 'RdCaCO3dDIC     ', &
+       & 'RdALKdDIC       ', &
        & 'pH_n            ' /)
   ! carbonate chemistry dissociation constants
   CHARACTER(len=16),DIMENSION(n_carbconst),PARAMETER::string_carbconst = (/ &

@@ -909,7 +909,7 @@ subroutine biogem(        &
                  carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
                  carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
                  ! surface-only properties only! -- estimate ALK addition efficiency factor
-                 ! NOTE: only user in time-series diagnostics ...
+                 ! NOTE: only used in time-series diagnostics ...
                  if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
                     carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
                          & ocn(io_DIC,i,j,n_k),  &
@@ -927,9 +927,9 @@ subroutine biogem(        &
                          & )
                  end if
                  ! surface-only properties only! -- estimate DIC addition CaCO3 neutralization factor
-                 ! NOTE: only user in time-series diagnostics ...
+                 ! NOTE: only used in time-series diagnostics ...
                  if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
-                    carb(ic_RdCaCO3dDIC,i,j,n_k) = fun_calc_carb_NF0( &
+                    carb(ic_RdALKdDIC,i,j,n_k) = fun_calc_carb_NF0( &
                          & ocn(io_DIC,i,j,n_k),  &
                          & ocn(io_ALK,i,j,n_k),  &
                          & ocn(io_Ca,i,j,n_k),   &
@@ -3451,7 +3451,7 @@ SUBROUTINE diag_biogem_timeslice( &
                                & carbisor(:,i,j,k)      &
                                & )
                        end IF
-                       ! re-calculate surface-ocean properties only!
+                       ! re-calculate -- surface-ocean properties only!
                        IF (k == n_k .AND. ctrl_data_save_buffering) THEN
                           ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
                           loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
@@ -3486,7 +3486,7 @@ SUBROUTINE diag_biogem_timeslice( &
                                & carb(:,i,j,k)       &
                                & )
                           ! estimate DIC addition CaCO3 neutralization factor
-                          carb(ic_RdCaCO3dDIC,i,j,k) = fun_calc_carb_NF0( &
+                          carb(ic_RdALKdDIC,i,j,k) = fun_calc_carb_NF0( &
                                & ocn(io_DIC,i,j,k),  &
                                & ocn(io_ALK,i,j,k),  &
                                & ocn(io_Ca,i,j,k),   &

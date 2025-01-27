@@ -625,10 +625,10 @@ CONTAINS
                   & 'gem_carbchem.f90','sub_calc_carb',                                     &
                   & 'Numerical instability at step; '//fun_conv_num_char_n(4,n)//           &
                   & ' / Data; dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,'//   &
-                  & 'pH(SWS), pH (OLD), pH (guess #1), pH (guess #2)',                      &
+                  & 'pH(SWS), pH (OLD), [H+] (guess #1), [H+] (guess #2)',                  &
                   & 'CARBONATE CHEMISTRY COULD NOT BE UPDATED :(',                          &
                   & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,              &
-                  & -LOG10(loc_H),-LOG10(loc_H_old),-LOG10(loc_H1),-LOG10(loc_H2)/),.false. &
+                  & -LOG10(loc_H),-LOG10(loc_H_old),loc_H1,loc_H2/),.false. &
                   & )
              Print*,' > WHAT-IT-MEANS (maybe ...): '
              Print*,'   (1) Check the FIRST TWO lines of the ERROR DATA (ocean DIC and ALK):'
@@ -1488,14 +1488,14 @@ CONTAINS
     ! NOTE: assuming dALK == carbonate alkalinity, then
     !       (a) dDIC cannot be > dALK (low CO32- limit)
     !       (b) dDIC cannot be < 0.5*ALK (high CO32- limit)
-    loc_DIC_low  = dum_DIC + 0.5*loc_dALK
+    loc_DIC_low  = dum_DIC + 0.0*loc_dALK
     loc_DIC_high = dum_DIC + 1.0*loc_dALK
     ! initialize carb chem 
     loc_carb = dum_carb
     ! set stricter pH tolorence
     loc_pHtol = 0.01*par_carbchem_pH_tolerance
     ! max iterations allowed
-    nmax = 100
+    nmax = 20
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
@@ -1523,24 +1523,9 @@ CONTAINS
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
        ! test for [CO2] estimate getting 'sufficiently' close to target value
-       IF (ABS(loc_carb(ic_conc_CO2) - loc_CO2_init) < 0.0001*loc_dALK) then
-          EXIT
-       end if
-       ! test for upper or lower bounds of search limit being approached
-       ! and return a non plausible EF0 value via setting loc_DIC = dum_DIC
-       if ( ((dum_DIC + 2.0*loc_dALK) - loc_DIC_low) < 0.01*loc_dALK ) then
-          loc_DIC = dum_DIC
-          exit
-       end if
-       if ( (loc_DIC_high - dum_DIC) < 0.01*loc_dALK ) then
-          loc_DIC = dum_DIC
-          exit
-       end if
+       IF (ABS(loc_carb(ic_conc_CO2) - loc_CO2_init) < 0.00001*loc_dALK) EXIT
        ! test for n exceeding max iterations allowed
-       if (n >= nmax) then
-          loc_DIC = dum_DIC
-          exit
-       end if
+       if (n >= nmax) exit
        ! update DIC bounds
        IF (loc_carb(ic_conc_CO2) < loc_CO2_init) THEN
           loc_DIC_low  = loc_DIC
@@ -1561,7 +1546,7 @@ CONTAINS
 
 
   ! ****************************************************************************************************************************** !
-  ! ESTIMATE NEUTRALIZATION EFFICIENCY FACTOR -- dCaCO3 from dDIC at constant OHMEGA 
+  ! ESTIMATE NEUTRALIZATION EFFICIENCY FACTOR -- dALK (or dCaCO3) from dDIC at constant OHMEGA 
   function fun_calc_carb_NF0(                                                       &
        & dum_DIC,dum_ALK,dum_Ca,                                                    &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
@@ -1590,18 +1575,21 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! define DIC perturbion
     loc_dDIC = 1.0E-6
-    ! initialize ALK (CaCO3) search limits
+    ! initialize ALK (or CaCO3) search limits
     ! NOTE: assuming dALK == carbonate alkalinity, and adding HCO3- (DIC+CaCO3) lowers saturation
-    !       (a) dCaCO3 cannot be > 2.0*DIC (4*ALK + 2*DIC (+DIC))
-    !       (b) dCaCO3 cannot be < 1.0*DIC (2*ALK + DIC (+DIC))
+    !       (a) dCaCO3 cannot be > 2.0*dDIC (4*ALK + 2*DIC (+DIC))
+    !       (b) dCaCO3 cannot be < 1.0*dDIC (2*ALK + DIC (+DIC))
+    !       for only ALK addition:
+    !       (a) dALK cannot be > 2.0*dDIC
+    !       (b) dALK cannot be < dDIC
     loc_ALK_low  = dum_ALK + 0.0*loc_dDIC
-    loc_ALK_high = dum_ALK + 4.0*loc_dDIC
+    loc_ALK_high = dum_ALK + 2.0*loc_dDIC
     ! initialize carb chem 
     loc_carb = dum_carb
     ! set stricter pH tolorence
     loc_pHtol = 0.01*par_carbchem_pH_tolerance
     ! max iterations allowed
-    nmax = 100
+    nmax = 20
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
@@ -1621,10 +1609,13 @@ CONTAINS
     DO
        n = n+1
        ! guess ALK value as mean of current limits
-       ! calculate as anomoly so that DIC can also be changed
-       loc_dALK = (loc_ALK_low + loc_ALK_high)/2.0 - loc_ALK
-       loc_ALK = loc_ALK + loc_dALK
-       loc_DIC = loc_DIC + 0.5*loc_dALK
+       ! calculate as anomoly so that DIC can also be changed (if requested)
+       ! NOTE: disable the 0.5*ALK addition as DIC for now
+       !       ... there is some memory issue and adding it ends up corrupting the value of loc_DIC
+!!$       loc_dALK = (loc_ALK_low + loc_ALK_high)/2.0 - loc_ALK
+!!$       loc_ALK = loc_ALK + loc_dALK
+!!$       loc_DIC = loc_DIC + 0.5*loc_dALK
+       loc_ALK = (loc_ALK_low + loc_ALK_high)/2.0
        ! solve for pH and OHMEGA ... request a finer pH tolorence than default
        call sub_calc_carb(                                                               &
             & loc_pHtol,                                                                 &
@@ -1632,24 +1623,9 @@ CONTAINS
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
        ! test for OHMEGA estimate getting 'sufficiently' close to target value
-       IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < 0.0001) then
-          EXIT
-       end if
-       ! test for upper or lower bounds of search limit being approached
-       ! and return a non plausible EF0 value via setting loc_DIC = dum_DIC
-       if ( ((dum_ALK + 4.0*loc_dDIC) - loc_ALK_low) < 0.001*2.0*loc_dDIC ) then
-          loc_ALK = dum_ALK
-          exit
-       end if
-       if ( (loc_ALK_high - dum_ALK) < 0.01*2.0*loc_dDIC ) then
-          loc_ALK = dum_ALK
-          exit
-       end if
+       IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < 0.00001) EXIT
        ! test for n exceeding max iterations allowed
-       if (n >= nmax) then
-          loc_ALK = dum_ALK
-          exit
-       end if
+       if (n >= nmax) exit
        ! update DIC bounds
        IF (loc_carb(ic_ohm_cal) < loc_ohm_cal_init) THEN
           loc_ALK_low  = loc_ALK
@@ -1660,14 +1636,11 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! RETURN FUNCTION VALUE
     ! -------------------------------------------------------- !
-    ! NOTE: 0.5 * dALK / dDIC
-    fun_calc_carb_NF0 = 0.5*(loc_ALK - dum_ALK)/loc_dDIC
+    ! NOTE: dALK / dDIC
+    fun_calc_carb_NF0 = (loc_ALK - dum_ALK)/loc_dDIC
     ! -------------------------------------------------------- !
     ! END
     ! -------------------------------------------------------- !
-
-print*,'-------'
-    
   END function fun_calc_carb_NF0
   ! ****************************************************************************************************************************** !
  
