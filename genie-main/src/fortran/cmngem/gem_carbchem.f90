@@ -1559,6 +1559,134 @@ CONTAINS
   END function fun_calc_carb_EF0
   ! ****************************************************************************************************************************** !
 
+
+  ! ****************************************************************************************************************************** !
+  ! ESTIMATE NEUTRALIZATION EFFICIENCY FACTOR -- dCaCO3 from dDIC at constant OHMEGA 
+  function fun_calc_carb_NF0(                                                       &
+       & dum_DIC,dum_ALK,dum_Ca,                                                    &
+       & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+       & dum_carbconst,dum_carb)
+    ! -------------------------------------------------------- !
+    ! RESULT VARIABLE
+    ! -------------------------------------------------------- !
+    REAL::fun_calc_carb_NF0
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_DIC,dum_ALK,dum_Ca
+    REAL,INTENT(in)::dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot
+    REAL,DIMENSION(n_carbconst),intent(in)::dum_carbconst
+    REAL,DIMENSION(n_carb),INTENT(in)::dum_carb
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    REAL::loc_ALK,loc_dALK,loc_DIC,loc_dDIC,loc_ALK_low,loc_ALK_high,loc_ohm_cal_init
+    REAL,DIMENSION(n_carb)::loc_carb
+    REAL,DIMENSION(n_carbalk)::loc_carbalk
+    integer::nmax,n
+    real::loc_pHtol
+    ! -------------------------------------------------------- !
+    ! INITIALIZE VARIABLES
+    ! -------------------------------------------------------- !
+    ! define DIC perturbion
+    loc_dDIC = 1.0E-6
+    ! initialize ALK (CaCO3) search limits
+    ! NOTE: assuming dALK == carbonate alkalinity, and adding HCO3- (DIC+CaCO3) lowers saturation
+    !       (a) dCaCO3 cannot be > 2.0*DIC (4*ALK + 2*DIC (+DIC))
+    !       (b) dCaCO3 cannot be < 1.0*DIC (2*ALK + DIC (+DIC))
+    loc_ALK_low  = dum_ALK + 0.0*loc_dDIC
+    loc_ALK_high = dum_ALK + 4.0*loc_dDIC
+    ! initialize carb chem 
+    loc_carb = dum_carb
+    ! set stricter pH tolorence
+    loc_pHtol = 0.01*par_carbchem_pH_tolerance
+    ! max iterations allowed
+    nmax = 100
+    ! -------------------------------------------------------- !
+    ! INITIAL CARB CHEM SOLUTION
+    ! -------------------------------------------------------- !
+    ! calculate and save initial [CO2] value
+    ! NOTE: solving for pH with the stricter local tolorence
+    call sub_calc_carb(                                                               &
+         & loc_pHtol,                                                                 &
+         & dum_DIC,dum_ALK,dum_Ca,                                                    &
+         & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+         & dum_carbconst,loc_carb,loc_carbalk)
+    loc_ohm_cal_init = loc_carb(ic_ohm_cal)
+    ! -------------------------------------------------------- !
+    ! SEARCH FOR dALK (dCaCO3) SOLUTION
+    ! -------------------------------------------------------- !
+    n = 0
+    loc_DIC = dum_DIC + loc_dDIC
+    
+       ! solve for pH and OHMEGA ... request a finer pH tolorence than default
+       call sub_calc_carb(                                                               &
+            & loc_pHtol,                                                                 &
+            & loc_DIC,loc_ALK,dum_Ca,                                                    &
+            & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+            & dum_carbconst,loc_carb,loc_carbalk)
+
+       print*,loc_ohm_cal_init,loc_carb(ic_ohm_cal)
+       !print*,dum_DIC,loc_DIC,dum_ALK,loc_ALK
+print*,'*'
+       
+    DO
+       n = n+1
+       ! guess ALK value as mean of current limits
+       ! calculate as anomoly so that DIC can also be changed
+       loc_dALK = (loc_ALK_low + loc_ALK_high)/2.0 - loc_ALK
+       loc_ALK = loc_ALK + loc_dALK
+       loc_DIC = loc_DIC + 0.5*loc_dALK
+       ! solve for pH and OHMEGA ... request a finer pH tolorence than default
+       call sub_calc_carb(                                                               &
+            & loc_pHtol,                                                                 &
+            & loc_DIC,loc_ALK,dum_Ca,                                                    &
+            & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+            & dum_carbconst,loc_carb,loc_carbalk)
+
+       print*,loc_ohm_cal_init,loc_carb(ic_ohm_cal)
+       !print*,dum_DIC,loc_DIC,dum_ALK,loc_ALK
+       
+       ! test for OHMEGA estimate getting 'sufficiently' close to target value
+       IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < 0.0001) then
+          EXIT
+       end if
+       ! test for upper or lower bounds of search limit being approached
+       ! and return a non plausible EF0 value via setting loc_DIC = dum_DIC
+       if ( ((dum_ALK + 4.0*loc_dDIC) - loc_ALK_low) < 0.001*2.0*loc_dDIC ) then
+          loc_ALK = dum_ALK
+          exit
+       end if
+       if ( (loc_ALK_high - dum_ALK) < 0.01*2.0*loc_dDIC ) then
+          loc_ALK = dum_ALK
+          exit
+       end if
+       ! test for n exceeding max iterations allowed
+       if (n >= nmax) then
+          loc_ALK = dum_ALK
+          exit
+       end if
+       ! update DIC bounds
+       IF (loc_carb(ic_ohm_cal) < loc_ohm_cal_init) THEN
+          loc_ALK_low  = loc_ALK
+       ELSE
+          loc_ALK_high = loc_ALK
+       ENDIF
+    ENDDO
+    ! -------------------------------------------------------- !
+    ! RETURN FUNCTION VALUE
+    ! -------------------------------------------------------- !
+    ! NOTE: 0.5 * dALK / dDIC
+    fun_calc_carb_NF0 = 0.5*(loc_ALK - dum_ALK)/loc_dDIC
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+
+print*,'-------'
+    
+  END function fun_calc_carb_NF0
+  ! ****************************************************************************************************************************** !
+ 
   
   ! ****************************************************************************************************************************** !
   ! ESTIMATE DIC GIVEN dCO3 AND ALK

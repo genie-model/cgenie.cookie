@@ -515,6 +515,7 @@ CONTAINS
        print*,'Create pre-formed tracers?                          : ',ctrl_bio_preformed
        print*,'Only include POC remin in Csoft (exclude DOC)?      : ',ctrl_bio_preformed_CsoftPOConly
        print*,'Create redox/remin data for saving?                 : ',ctrl_bio_remin_redox_save
+       print*,'Calculate various buffering metrics for saving?     : ',ctrl_data_save_buffering
        ! --- DATA SAVING: MISC --------------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: MISC -----------------------'
        print*,'Degree of comprehensivity of data saving            : ',par_data_save_level
