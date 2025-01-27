@@ -891,6 +891,7 @@ subroutine biogem(        &
                     end IF
                  end do
                  ! surface-only properties only! -- estimate Revelle (and 'sensitivity') factor
+                 ! NOTE: always calculate this -- needed in air-sea gas excahnge (limitation)
                  loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
                       & ocn(io_DIC,i,j,n_k),  &
                       & ocn(io_ALK,i,j,n_k),  &
@@ -909,8 +910,26 @@ subroutine biogem(        &
                  carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
                  ! surface-only properties only! -- estimate ALK addition efficiency factor
                  ! NOTE: only user in time-series diagnostics ...
-                 if (ctrl_data_save_sig_carb_sur) then
+                 if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
                     carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
+                         & ocn(io_DIC,i,j,n_k),  &
+                         & ocn(io_ALK,i,j,n_k),  &
+                         & ocn(io_Ca,i,j,n_k),   &
+                         & ocn(io_PO4,i,j,n_k),  &
+                         & ocn(io_SiO2,i,j,n_k), &
+                         & ocn(io_B,i,j,n_k),    &
+                         & ocn(io_SO4,i,j,n_k),  &
+                         & ocn(io_F,i,j,n_k),    &
+                         & ocn(io_H2S,i,j,n_k),  &
+                         & ocn(io_NH4,i,j,n_k),  &
+                         & carbconst(:,i,j,n_k), &
+                         & carb(:,i,j,n_k)       &
+                         & )
+                 end if
+                 ! surface-only properties only! -- estimate DIC addition CaCO3 neutralization factor
+                 ! NOTE: only user in time-series diagnostics ...
+                 if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
+                    carb(ic_RdCaCO3dDIC,i,j,n_k) = fun_calc_carb_NF0( &
                          & ocn(io_DIC,i,j,n_k),  &
                          & ocn(io_ALK,i,j,n_k),  &
                          & ocn(io_Ca,i,j,n_k),   &
@@ -3433,7 +3452,7 @@ SUBROUTINE diag_biogem_timeslice( &
                                & )
                        end IF
                        ! re-calculate surface-ocean properties only!
-                       IF (k == n_k) THEN
+                       IF (k == n_k .AND. ctrl_data_save_buffering) THEN
                           ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
                           loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
                                & ocn(io_DIC,i,j,k),  &
@@ -3453,6 +3472,21 @@ SUBROUTINE diag_biogem_timeslice( &
                           carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
                           ! estimate ALK addition efficiency factor
                           carb(ic_RdDICdALK,i,j,k) = fun_calc_carb_EF0( &
+                               & ocn(io_DIC,i,j,k),  &
+                               & ocn(io_ALK,i,j,k),  &
+                               & ocn(io_Ca,i,j,k),   &
+                               & ocn(io_PO4,i,j,k),  &
+                               & ocn(io_SiO2,i,j,k), &
+                               & ocn(io_B,i,j,k),    &
+                               & ocn(io_SO4,i,j,k),  &
+                               & ocn(io_F,i,j,k),    &
+                               & ocn(io_H2S,i,j,k),  &
+                               & ocn(io_NH4,i,j,k),  &
+                               & carbconst(:,i,j,k), &
+                               & carb(:,i,j,k)       &
+                               & )
+                          ! estimate DIC addition CaCO3 neutralization factor
+                          carb(ic_RdCaCO3dDIC,i,j,k) = fun_calc_carb_NF0( &
                                & ocn(io_DIC,i,j,k),  &
                                & ocn(io_ALK,i,j,k),  &
                                & ocn(io_Ca,i,j,k),   &

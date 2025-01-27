@@ -729,6 +729,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/ctrl_bio_preformed,ctrl_bio_preformed_CsoftPOConly
   LOGICAL::ctrl_bio_remin_redox_save                             ! Create redox/remin data for saving?
   NAMELIST /ini_biogem_nml/ctrl_bio_remin_redox_save
+  LOGICAL::ctrl_data_save_buffering                               ! Calculate various buffering metrics for saving?
+  NAMELIST /ini_biogem_nml/ctrl_data_save_buffering
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !
   integer::par_data_save_level                                   ! Degree of comprehensivity of data saving
   NAMELIST /ini_biogem_nml/par_data_save_level

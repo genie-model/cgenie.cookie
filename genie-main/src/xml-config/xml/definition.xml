@@ -5697,6 +5697,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>Create redox/remin data for saving?</description>
                     </param>
+                    <param name="ctrl_data_save_buffering">
+			<value datatype="boolean">.false.</value>
+                        <description>Calculate various buffering metrics for saving??</description>
+                    </param>
 <!-- DATA SAVING: MISC -->
                     <param name="par_data_save_level">
 			<value datatype="integer">-1</value>

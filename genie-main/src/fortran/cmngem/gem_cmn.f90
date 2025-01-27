@@ -84,7 +84,7 @@ MODULE gem_cmn
 
   ! *** array dimensions ***
   ! main biogeochem ocean array dimensions 
-  INTEGER,PARAMETER::n_carb                               = 14          ! number of ocean box chemistry descriptors
+  INTEGER,PARAMETER::n_carb                               = 15          ! number of ocean box chemistry descriptors
   INTEGER,PARAMETER::n_carbconst                          = 17          ! number of ocean box chemistry constants descriptors
   INTEGER,PARAMETER::n_carbalk                            = 13          ! number of alkalinty chemistry descriptors
   INTEGER,PARAMETER::n_carbisor                           = 08          ! number of carbonate isotopic ratio descriptors
@@ -347,7 +347,8 @@ MODULE gem_cmn
   INTEGER,PARAMETER::ic_RF0                               = 10    ! Revelle factor
   INTEGER,PARAMETER::ic_RdDICdALK                         = 12    ! OAE ALK addition efficiency factor
   INTEGER,PARAMETER::ic_RdfCO2dDIC                        = 13    ! fCO2 sensitivity factor
-  INTEGER,PARAMETER::ic_pH_n                              = 14    ! number of iterations taken to solve for pH
+  INTEGER,PARAMETER::ic_RdCaCO3dDIC                       = 14    ! CaCO3 buffering factor factor
+  INTEGER,PARAMETER::ic_pH_n                              = 15    ! number of iterations taken to solve for pH
   ! (carbonate) chemistry descriptors array indices
   INTEGER,PARAMETER::icc_k                                = 01    ! 
   INTEGER,PARAMETER::icc_k1                               = 02    ! 
@@ -514,6 +515,7 @@ MODULE gem_cmn
        & 'pHsws           ', &
        & 'RdDICdALK       ', &
        & 'RdfCO2dDIC      ', &
+       & 'RdCaCO3dDIC     ', &
        & 'pH_n            ' /)
   ! carbonate chemistry dissociation constants
   CHARACTER(len=16),DIMENSION(n_carbconst),PARAMETER::string_carbconst = (/ &
