@@ -81,7 +81,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - K1
   SUBROUTINE sub_load_gem_MyAMI_lookup_K1()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -94,7 +93,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -104,25 +102,24 @@ end if
              & )
      ENDIF
     ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_K1.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_K1.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_k1(a,b,d,e)
-                !print*, a,b,d,e,lookup_gem_MyAMI_k1(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_K1
   ! ****************************************************************************************************************************** !
 
@@ -131,7 +128,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - K2
   SUBROUTINE sub_load_gem_MyAMI_lookup_K2()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -144,7 +140,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -154,24 +149,24 @@ end if
              & )
      ENDIF
     ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_K2.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_K2.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_k2(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_K2
   ! ****************************************************************************************************************************** !
 
@@ -180,7 +175,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - Kcal
   SUBROUTINE sub_load_gem_MyAMI_lookup_Kcal()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -193,7 +187,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -203,24 +196,24 @@ end if
              & )
      ENDIF
     ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_KspC.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_KspC.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_kcal(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_Kcal
   ! ****************************************************************************************************************************** !
 
@@ -229,7 +222,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - Karg
   SUBROUTINE sub_load_gem_MyAMI_lookup_Karg()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -242,7 +234,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -252,24 +243,24 @@ end if
              & )
      ENDIF
     ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_KspA.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_KspA.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_karg(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_Karg
   ! ****************************************************************************************************************************** !
 
@@ -278,7 +269,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - Kw
   SUBROUTINE sub_load_gem_MyAMI_lookup_Kw()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -291,7 +281,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -301,24 +290,24 @@ end if
              & )
      ENDIF
     ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_Kw.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_Kw.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_kW(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_Kw
   ! ****************************************************************************************************************************** !
 
@@ -327,7 +316,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - K
   SUBROUTINE sub_load_gem_MyAMI_lookup_K0()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -340,7 +328,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -350,24 +337,24 @@ end if
              & )
      ENDIF
     ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_K0.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_K0.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_k(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_K0
   ! ****************************************************************************************************************************** !
 
@@ -376,7 +363,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - Kb
   SUBROUTINE sub_load_gem_MyAMI_lookup_Kb()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -389,7 +375,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -399,24 +384,24 @@ end if
              & )
      ENDIF
     ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_Kb.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_Kb.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_kb(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_Kb
   ! ****************************************************************************************************************************** !
 
@@ -425,7 +410,6 @@ end if
   ! LOAD CARBONATE CONSTANT LOOK-UP TABLES - KSO4
   SUBROUTINE sub_load_gem_MyAMI_lookup_KSO4()
     USE gem_util, ONLY: sub_report_error
-    !USE genie_util, ONLY: check_unit, check_iostat
     ! local variables
     INTEGER::a,b,d,e
     CHARACTER(len=255)::loc_filename
@@ -438,7 +422,6 @@ end if
          & lookup_i_sal_min:lookup_i_sal_max, &
          & lookup_i_temp_min:lookup_i_temp_max &
          & ),STAT=error)
-
      IF (error /= 0) THEN
         CALL sub_report_error( &
              & 'initialize_gem','initialise_gem', &
@@ -447,25 +430,25 @@ end if
              & (/const_real_zero/),.TRUE. &
              & )
      ENDIF
-    ! *** read in look-up data ***
-    loc_filename = '../../cgenie.muffin/genie-main/data/input/MyAMI_lookup_KSO4.dat'
-    !call check_unit(in,__LINE__,__FILE__)
+     ! *** read in look-up data ***
+    loc_filename = TRIM(par_gem_indir_name)//'MyAMI_lookup_KSO4.dat'
     OPEN(unit=in,file=loc_filename,action='read',iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
+    if (ios /= 0) then
+       print*,'ERROR: could not open GEM initialisation namelist file'
+       stop
+    end if
     ! read in data
     DO a = lookup_i_Ca_min,lookup_i_Ca_max,1
        DO b = lookup_i_Mg_min,lookup_i_Mg_max,1
           DO d = lookup_i_sal_min,lookup_i_sal_max,1
              DO e = lookup_i_temp_min,lookup_i_temp_max,1
                 READ(unit=in,FMT='(D23.16)',iostat=ios) lookup_gem_MyAMI_kSO4(a,b,d,e)
-                !call check_iostat(ios,__LINE__,__FILE__)
              END DO
           END DO
        END DO
     END DO
     ! close file pipe
     CLOSE(unit=in,iostat=ios)
-    !call check_iostat(ios,__LINE__,__FILE__)
   END SUBROUTINE sub_load_gem_MyAMI_lookup_KSO4
   ! ****************************************************************************************************************************** !
 
