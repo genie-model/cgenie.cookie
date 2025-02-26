@@ -113,6 +113,7 @@ CONTAINS
     !         NOTE: phys_sed(ips_mix_k0,dum_i,dum_j) is only used for passing to the Archer scheme
     !               => even if ctrl_sed_bioturb is false, a non-zero bioturbation rate needs to be specified in the Archer scheme
     !                  otherwise CaCO3 dissolution is reduced (Corg cannot be mixed down)
+    !         NOTE: phys_sed(ips_mix_k0,dum_i,dum_j) is not set sub_init_phys_sed (even if it perhaps should be ...)
     IF (ctrl_sed_bioturb) then
        if (ctrl_sed_bioturb_Archer) then
           call sub_calc_sed_mix(               &

@@ -468,6 +468,8 @@ CONTAINS
   ! NOTE: the lat-lon grid information is not critical, but sets the details of the grid associated with the saved data
   !       however, the depth set in this subroutine determinds the hydrostatic pressure on the sediments
   !       (and thus the stability of CaCO3 in the sediments)
+  ! NOTE: the value of ips_mix_k0 is not set here (even if if perhaps should be) ...
+  !       it is set in sedgem_box/sub_update_sed and serves to record the surface bioturbation rate applied in the Archer scheme
   SUBROUTINE sub_init_phys_sed()
     ! local variables
     INTEGER::i,j
@@ -2155,6 +2157,8 @@ CONTAINS
     !       loc_tot_FCaCO3_d13C*loc_tot_FCaCO3
     if (loc_tot_FPOC > const_real_nullsmall) then
        loc_FCaCO3_d13C = loc_tot_FCaCO3_d13C
+    elseif ((1.0-par_sed_diag_fracSiweath)*loc_tot_FCaCO3 < const_real_nullsmall) then
+       loc_FCaCO3_d13C = 0.0
     else
        loc_FCaCO3_d13C = (loc_tot_FCaCO3_d13C*loc_tot_FCaCO3 - par_sed_diag_volcanicd13C*loc_Foutgassing)/ &
             & ((1.0-par_sed_diag_fracSiweath)*loc_tot_FCaCO3)
