@@ -492,6 +492,14 @@ CONTAINS
             & loc_dis_sed(:),loc_new_sed(:),sed_top(:,dum_i,dum_j),                  &
             & phys_sed(ips_mix_k0,dum_i,dum_j)                                       &
             & )
+
+
+
+!!$       print*,'---------------------------------------------------------------'
+!!$       print*,dum_i,dum_j,sed_top(is_CaCO3,dum_i,dum_j),dum_sfcsumocn(io_O2)
+
+       
+       
        if (error_Archer .AND. ctrl_misc_report_err) then
           CALL sub_report_error(                                                                                           &
                & 'sedgem_box','sub_update_sed','Failure of Archer [1991] sediment scheme calculation (singular matrix)',   &
@@ -2154,6 +2162,7 @@ CONTAINS
     real::loc_O2               ! local bottom-water oxygen concentration
     real::loc_sed_new_frac
     !REAL,DIMENSION(par_nn_input)::loc_nn_inp,loc_nn_inpnorm     ! neural network variables
+    logical::loc_err
 
     ! *** USER-DEFINABLE OPTIONS ***
     ! NOTE: settings not included in the run-time configuration files for clarity
@@ -2186,8 +2195,13 @@ CONTAINS
     ! *** calculate potential calcite dissolution flux ***
     ! NOTE: the dissolution flux is calculated in units of (mol cm-2 yr-1);
     !       this must be converted to cm3 cm-2 per time step
-    ! NOTE: catch (sigular matrix) stability failures of the Archer scheme
+    ! NOTE: OLD: catch (sigular matrix) stability failures of the Archer scheme
     !       => assume no CaCO3 preservation (100% dissoution of rain flux)
+    !       NEW: catch failure to converge in co3ss
+    !            which includes both sigular matrix) issues and zero wt% CaCO3
+    !       => assume no dissolution (this seems to limit (remove?)) error occurrence)
+    !       no dissolution also changes wt% and hence diagenesis boundxary conditions, whereas
+    !       assuming no preservation might simply result in similar problem boundary conditions persisting
     select case (trim(par_sed_diagen_CaCO3opt))
     case ('archer1991explicit')
        ! CALCULATE SEDIMENT CACO3 DIAGENESIS EXPLICITLY
@@ -2196,10 +2210,11 @@ CONTAINS
             & loc_O2,loc_frac_CaCO3_top,loc_fPOC,                                                 &
             & dum_carb(ic_conc_CO2),dum_carb(ic_conc_HCO3),dum_carb(ic_conc_CO3),                 &
             & dum_carbconst(icc_k1),dum_carbconst(icc_k2),dum_carbconst(icc_kcal)/dum_ocn(io_Ca), &
-            & dum_sed_mix_k                                                                       &
+            & dum_sed_mix_k,loc_err                                                               &
             & )
        loc_dis = conv_cal_mol_cm3*loc_dis*dum_dtyr
-       if (error_Archer) loc_dis = dum_sed_new(is_CaCO3)
+!!$       if (error_Archer) loc_dis = dum_sed_new(is_CaCO3)
+       if (loc_err) loc_dis = 0.0
     case ('ridgwell2001lookup')
        ! CALCULATE SEDIMENT CACO3 DIAGENESIS VIA A LOOK-UP TABLE [Ridgwell, 2001]
        loc_dis = fun_interp_4D(                                                  &
