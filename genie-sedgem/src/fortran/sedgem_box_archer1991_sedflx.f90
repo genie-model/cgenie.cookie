@@ -32,7 +32,7 @@ CONTAINS
 ! and the organic carbon rain.  assumes that org
 ! adjusts quickly.
 
-  function fun_archer1991_sedflx(o2bw,calpc,rainorg,co2,hco3,co3,k1,k2,calsat,db)
+  function fun_archer1991_sedflx(o2bw,calpc,rainorg,co2,hco3,co3,k1,k2,calsat,db,err)
     ! result variable
     real::fun_archer1991_sedflx
     ! dummy variables
@@ -41,6 +41,7 @@ CONTAINS
     REAL,INTENT(IN)::k1,k2
     REAL,INTENT(IN)::calsat
     REAL,INTENT(IN)::db ! sediment mixing rate, cm2/yr
+    logical,INTENT(out)::err
     ! local variables
     INTEGER::j,l
     REAL::difo2,rc,dissc,dissn,expb,zrct
@@ -51,6 +52,8 @@ CONTAINS
     REAL,DIMENSION(nzmax)::z,o2,orgml,calml,orggg,calgg,form,pore
     REAL,DIMENSION(nzmax,3)::carb,resp_c
 
+    !
+    err = .false.
     !
     z(1) = 0.
     DO j = 2, kmax
@@ -91,7 +94,7 @@ CONTAINS
     CALL sldcon(calml,calgg,100.,pore)
     
     CALL co3ss(resp_c,dissc,dissn,calsat,k1,k2,difc,form, &
-      & pore,calgg,carb,ttrorg,ttrcal,ttral,ttrtc,diftc,difal)
+      & pore,calgg,carb,ttrorg,ttrcal,ttral,ttrtc,diftc,difal,err)
 
     fun_archer1991_sedflx = ttrcal
     
@@ -475,7 +478,7 @@ CONTAINS
 ! *************************************************************************************************
 
   SUBROUTINE co3ss(resp_c,dissc,dissn,csat,u1,u2,difc,form, &
-    & pore,calgg,carb,ttrorg,ttrcal,ttral,ttrtc,diftc,difal)
+    & pore,calgg,carb,ttrorg,ttrcal,ttral,ttrtc,diftc,difal,err)
 
     REAL,INTENT(inout)::dissc,dissn
     REAL,INTENT(in)::csat
@@ -485,6 +488,7 @@ CONTAINS
     REAL,INTENT(inout),DIMENSION(:)::form,pore
     REAL,INTENT(in),DIMENSION(:)::calgg
     REAL,INTENT(inout),DIMENSION(:,:)::resp_c,carb
+    logical,intent(inout)::err
     
     INTEGER::k,l
     REAL,DIMENSION(nzmax)::cal_c
@@ -502,13 +506,18 @@ CONTAINS
     carb(3,3) = ( carb(1,3) + 2 * csat ) / 3
     
     DO l=1,20
-      CALL calc_co3(resp_c,dissc,dissn,csat,u1,u2,dcpls,dcmin, &
-        & pore,calgg,carb,cal_c)
-      CALL diag(ttral,difal,ttrtc,diftc,ttrcal,ttrorg,resp_c,cal_c,carb, &
-        & pore,dcmin(2,1),dcmin(2,2),dcmin(2,3))
-      IF((diftc.NE.0).AND.(difal.NE.0)) THEN
-        IF(( ABS(1 - ABS(ttrtc / diftc)) .LT. 0.03 ) .AND. ( ABS(1 - ABS(ttral / difal)) .LT. 0.03 )) EXIT
-      ENDIF
+       CALL calc_co3(resp_c,dissc,dissn,csat,u1,u2,dcpls,dcmin, &
+            & pore,calgg,carb,cal_c)
+       CALL diag(ttral,difal,ttrtc,diftc,ttrcal,ttrorg,resp_c,cal_c,carb, &
+            & pore,dcmin(2,1),dcmin(2,2),dcmin(2,3))
+       IF((diftc.NE.0).AND.(difal.NE.0)) THEN
+          IF(( ABS(1 - ABS(ttrtc / diftc)) .LT. 0.03 ) .AND. ( ABS(1 - ABS(ttral / difal)) .LT. 0.03 )) then
+             EXIT
+          elseif (l.EQ.20) then
+             err = .true.
+          end if
+       ENDIF
+
     END DO
     
   END SUBROUTINE co3ss
