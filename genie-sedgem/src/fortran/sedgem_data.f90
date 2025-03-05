@@ -132,6 +132,7 @@ CONTAINS
        print*,'dissolution rate order                              : ',par_sed_archer1991_dissn
        print*,'organic degradation rate constant, 1/s              : ',par_sed_archer1991_rc
        print*,'loop limit in <o2org> subroutine                    : ',par_sed_archer1991_iterationmax
+       print*,'Use old error-catching scheme?                      : ',ctrl_sed_diagen_error_Archer_OLD
        ! --- DIAGENESIS SCHEME: opal --------------------------------------------------------------------------------------------- !
        print*,'base opal KSi value (yr-1)                          : ',par_sed_opal_KSi0
        ! --- CaCO3 PRODUCTION ---------------------------------------------------------------------------------------------------- !
