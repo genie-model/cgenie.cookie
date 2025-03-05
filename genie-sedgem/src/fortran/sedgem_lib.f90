@@ -134,7 +134,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_dissc,par_sed_archer1991_disscpct,par_sed_archer1991_dissn,par_sed_archer1991_rc
   integer::par_sed_archer1991_iterationmax                       ! loop limit in 'o2org' subroutine
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
-  NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
+  logical::ctrl_sed_diagen_error_Archer_OLD                      ! Use old error-catching scheme?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD
   ! ------------------- DIAGENESIS SCHEME: opal ---------------------------------------------------------------------------------- !
   REAL::par_sed_opal_KSi0                                        ! base opal KSi value (yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_opal_KSi0
@@ -495,6 +496,10 @@ MODULE sedgem_lib
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_porg               ! alt Porg preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_rr                 ! alt preservation (burial) rain ratio (C/P) field
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag                  ! sediment diagnostics
+  ! allocatable 2-D sediment arrays -- time-averaging
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_fsed               ! AVERAGED rain flux to sediments (mol cm-2 yr-1)
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_fdis               ! AVERAGED sediment dissolution flux - solids tracers (mol cm-2 yr-1)
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_coretop            ! AVERAGED top sedimentary layer composition
   ! allocatable sedcoe arrays
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sedcore                   ! sedcore sediment layer stack (num sedcores x layers x variables)
   ! sediments - conversion
