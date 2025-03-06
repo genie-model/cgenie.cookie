@@ -2286,7 +2286,16 @@ CONTAINS
     end if
     Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# -------------------------------'
-
+    Write(unit=out,fmt=*) ''
+    ! optional/additional SEDGEM parameters
+    Write(unit=out,fmt=*) '# --- SEDGEM USER-CONFIG --------'
+    Write(unit=out,fmt=*) '#'
+    Write(unit=out,fmt=*) '# scale factor for reefal precipitation rate (mol cm-2 yr-1) to achieve a global burial rate of: ', &
+         & 1.0E-12*par_sed_CaCO3burialTOT,' (Tmol yr-1):'
+    Write(unit=out,fmt=*) 'sg_par_sed_reef_CaCO3precip_sf=',par_sed_reef_CaCO3precip_sf
+    Write(unit=out,fmt=*) '#'
+    Write(unit=out,fmt=*) '# -------------------------------'
+    Write(unit=out,fmt=*) ''
     ! close file
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)

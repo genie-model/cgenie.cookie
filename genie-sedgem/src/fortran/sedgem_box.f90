@@ -1055,11 +1055,17 @@ CONTAINS
     ! calculate CaCO3 production
     ! NOTE: CaCO3 precipitation calculated as mol cm-2 per time-step
     !       (precipitation rate scaling constants are mol cm-2 yr-1)
-    if (par_sed_CaCO3burial > const_real_nullsmall) then
-       ! (1) imposed production
+    if ( (par_sed_CaCO3burialTOT > const_real_nullsmall) .AND. (par_sed_reef_CaCO3precip_sf < const_real_nullsmall) ) then
+       ! (1a) imposed production
        ! NOTE: par_sed_CaCO3burial is over-ridded by the value of parameter par_sed_CaCO3burialTOT if non-zero
        !       (par_sed_CaCO3burial is set from par_sed_CaCO3burialTOT in sedgem)
        sed_fsed(is_CaCO3,dum_i,dum_j) = par_sed_CaCO3burial
+    elseif ( (par_sed_CaCO3burialTOT > const_real_nullsmall) .AND. (par_sed_reef_CaCO3precip_sf > const_real_nullsmall) ) then
+       ! (1b) imposed (reef only) production ... but saturation-dependent
+       ! NOTE: the value of par_sed_reef_CaCO3precip_sf is re-scaled (each year) in the main sedgem subroutine
+       !       to ensure global reefal production == par_sed_CaCO3burialTOT
+       sed_fsed(is_CaCO3,dum_i,dum_j) = &
+	   & dum_dtyr*par_sed_reef_CaCO3precip_sf*(loc_ohm - 1.0)**par_sed_reef_CaCO3precip_exp
     elseif (loc_ohm > par_sed_CaCO3_abioticohm_min) then
        ! (2) abiotic + reef production
        sed_fsed(is_CaCO3,dum_i,dum_j) = &
