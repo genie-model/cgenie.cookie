@@ -38,7 +38,7 @@ SUBROUTINE sedgem(          &
   real::loc_187Os,loc_188Os
   real::loc_alpha,loc_R,loc_delta
   real::loc_depsilon                                           ! 
-  real::loc_fsed                                               !
+  real::loc_fsed,loc_tot_fsed                                  !
   real::loc_tot_Mg,loc_tot_Ca                                  ! mean (simply area-weighted) benthic cation concentrations
   real,DIMENSION(n_sed,n_i,n_j)::loc_sfxsumsed_OLD                      ! sediment rain flux interface array (COPY)
   real,DIMENSION(n_sed,n_i,n_j)::loc_sed_fsed_OLD                      ! 
@@ -59,8 +59,9 @@ SUBROUTINE sedgem(          &
   loc_fhydrothermal(:)           = 0.0
   loc_flowTalteration(:)         = 0.0
   loc_phys_sed_mask_deepsea(:,:) = 0.0
-  loc_tot_Mg = 0.0
-  loc_tot_Ca = 0.0
+  loc_tot_Mg                     = 0.0
+  loc_tot_Ca                     = 0.0
+  loc_tot_fsed                   = 0.0
 
   ! *** CALCULATE SEDGEM TIME STEP ***
   IF (ctrl_misc_debug4) print*,'*** CALCULATE SEDGEM TIME ***'
@@ -209,6 +210,7 @@ SUBROUTINE sedgem(          &
   ! *** EARLY DIAGENESIS PROCESSES ***
   ! NOTE: <dum_sfxsumsed> in units of (mol m-2 per time-step)
   ! NOTE: dum_sfxocn(io,:,:) in units of (mol m-2 s-1)
+  loc_tot_fsed = 0.0
   DO i=1,n_i
      DO j=1,n_j
         IF (sed_mask(i,j)) THEN
@@ -295,15 +297,32 @@ SUBROUTINE sedgem(          &
               end if
            end if
         end IF
+        ! make global reefal CaCO3 flux estimate (mol yr-1)
+        ! NOTE: precipitation rate scaling constant units is (mol cm-2 yr-1)
+        if (sed_mask_reef(i,j)) then
+           if (par_sed_reef_calcite) then
+              loc_tot_fsed = loc_tot_fsed + phys_sed(ips_A,i,j) * &
+                   & conv_m2_cm2*par_sed_reef_CaCO3precip_sf*(sed_carb(ic_ohm_cal,i,j) - 1.0)**par_sed_reef_CaCO3precip_exp
+           else
+              loc_tot_fsed = loc_tot_fsed + phys_sed(ips_A,i,j) * &
+                   & conv_m2_cm2*par_sed_reef_CaCO3precip_sf*(sed_carb(ic_ohm_arg,i,j) - 1.0)**par_sed_reef_CaCO3precip_exp
+           end if
+        end IF
      end DO
   end DO
   ! deselect ash fall
   if (sed_select(is_ash)) then
      if (par_sed_ashevent) par_sed_ashevent = .false.
   endif
+  ! adjust reefal precipitation scaling so that global precip == par_sed_CaCO3burialTOT
+  if ( (par_sed_CaCO3burialTOT > const_real_nullsmall) .AND. (par_sed_reef_CaCO3precip_sf > const_real_nullsmall) ) then
+     if (loc_tot_fsed > const_real_nullsmall) then
+        par_sed_reef_CaCO3precip_sf = par_sed_reef_CaCO3precip_sf*(par_sed_CaCO3burialTOT/loc_tot_fsed)
+     end if
+  end if
 
-  ! *** FORAM TRACERS ***
-  ! 
+  ! *** ADD FORAM TRACERS ***
+  IF (ctrl_misc_debug4) print*,'*** ADD FORAM TRACERS ***'
   DO i=1,n_i
      DO j=1,n_j
         IF (sed_mask(i,j)) THEN
