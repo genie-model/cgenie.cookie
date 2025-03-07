@@ -320,12 +320,14 @@ MODULE sedgem_lib
   LOGICAL::ctrl_debug_lvl1                                       ! report 'level #1' debug?
   NAMELIST /ini_atchem_nml/ctrl_debug_lvl1 
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !
-  LOGICAL::ctrl_ncrst                                          ! restart as netCDF format?
+  LOGICAL::ctrl_ncrst                                            ! restart as netCDF format?
   NAMELIST /ini_sedgem_nml/ctrl_ncrst
-  CHARACTER(len=127)::par_ncrst_name                           ! 
+  CHARACTER(len=127)::par_ncrst_name                             ! 
   NAMELIST /ini_sedgem_nml/par_ncrst_name
   CHARACTER(len=127)::par_ncsedcore_name
   NAMELIST /ini_sedgem_nml/par_ncsedcore_name
+  real::par_sed_save_av_dtyr                                     ! time interval for averaging final sed data over (yr)
+  NAMELIST /ini_sedgem_nml/par_sed_save_av_dtyr
   ! ############################################################################################################################## !
 
 

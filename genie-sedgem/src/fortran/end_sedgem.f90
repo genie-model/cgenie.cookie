@@ -116,6 +116,12 @@ SUBROUTINE end_sedgem( &
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_diag,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_av_fsed,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_av_fdis,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_av_coretop,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)  
   ! ---------------------------------------------------------- ! deallocate arrays -- lookup tables
   if (par_sed_diagen_CaCO3opt == 'ridgwell2001lookup' .OR. par_sed_diagen_CaCO3opt == 'ridgwell2001lookupvec') then
      DEALLOCATE(lookup_sed_dis_cal,STAT=dealloc_error)
