@@ -260,6 +260,7 @@ CONTAINS
        print*,'--- DATA SAVING: MISC ------------------------------'
        print*,'Restart in netCDF format?                           : ',ctrl_ncrst
        print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
+       print*,'time interval for averaging final data over (yr)    : ',par_sed_save_av_dtyr
        ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ########################################################################## !
        !
        ! ######################################################################################################################### !
@@ -856,6 +857,11 @@ CONTAINS
     sed_Psed_rr = loc_ij
     ! initialize diagnostics data array
     sed_diag(:,:,:) = 0.0
+    ! initialize average sediment data arrays
+    sed_av_fsed(:,:,:)    = 0.0
+    sed_av_fdis(:,:,:)    = 0.0
+    sed_av_coretop(:,:,:) = 0.0
+    
   END SUBROUTINE sub_init_sed
   ! ****************************************************************************************************************************** !
 

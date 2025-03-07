@@ -7976,6 +7976,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedcore.nc</value>
                         <description>netCDF sedcore file name</description>
                     </param>
+                    <param name="par_sed_save_av_dtyr">
+			<value datatype="real">0.0</value>
+                        <description>time interval for averaging final sed data over (yr) [0.0 to disable]</description>
+                    </param>
                 </namelist>
             </file>
         </model>

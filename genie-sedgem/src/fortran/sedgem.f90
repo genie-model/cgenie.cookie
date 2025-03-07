@@ -732,6 +732,29 @@ SUBROUTINE sedgem(          &
   ! update sediment interface composition data
   dum_sfcsed(:,:,:) = fun_sed_coretop()
 
+  ! *** CREATE LONG-TERM AVERAGE ***
+  IF (ctrl_misc_debug4) print*,'*** CREATE LONG-TERM AVERAGE ***'
+  if (par_sed_save_av_dtyr > sed_age) then
+     sed_av_fsed(:,:,:)    = sed_av_fsed(:,:,:)    + (loc_dtyr/par_sed_save_av_dtyr)*sed_fsed(:,:,:)
+     sed_av_fdis(:,:,:)    = sed_av_fdis(:,:,:)    + (loc_dtyr/par_sed_save_av_dtyr)*sed_fdis(:,:,:)
+     sed_av_coretop(:,:,:) = sed_av_coretop(:,:,:) + (loc_dtyr/par_sed_save_av_dtyr)*dum_sfcsed(:,:,:)
+  end if
+
+  ! *** UPDATE SEDGEM TIME ***
+  IF (ctrl_misc_debug4) print*,'*** UPDATE SEDGEM TIME ***'
+  ! update sediment age (== current time in years)
+  sed_age = sed_age - loc_dtyr
+  
+  ! *** CHECK FOR EXIT ***
+  ! catch any carbonate chemistry errors arising in sub_update_sed
+  IF (ctrl_misc_debug4) print*,'*** CHECK FOR EXIT ***'
+  if (error_stop) then
+     call end_sedgem(     &
+          & dum_dts,      &
+          & dum_sfcsumocn &
+          & )
+  end if
+  
   ! *** DEBUG ***
   ! print some debugging info if 'ctrl_misc_debug1' option is selected
   IF (ctrl_misc_debug1) THEN
@@ -765,42 +788,6 @@ SUBROUTINE sedgem(          &
      print*,'---'
      print*,''
   end if
-  ! catch any carbonate chemistry errors arising in sub_update_sed
-  if (error_stop) then
-     call end_sedgem(     &
-          & dum_dts,      &
-          & dum_sfcsumocn &
-          & )
-  end if
-
-!!$  ! *** RUN-TIME OUTPUT ***
-!!$  ! GHC 20/05/09 - Save time-series output
-!!$  IF (ctrl_timeseries_output) THEN
-!!$     ! increment timestep counter  
-!!$     tstep_count = tstep_count + 1  
-!!$     ! if output due then change year  
-!!$     CALL sub_output_year()  
-!!$     IF (tstep_count.eq.output_tsteps_0d(output_counter_0d)) THEN
-!!$        call sub_data_save_seddiag_GLOBAL(loc_dtyr,dum_sfcsumocn)  
-!!$     ENDIF
-!!$     IF (tstep_count.eq.output_tsteps_2d(output_counter_2d)) THEN
-!!$        ! save requested sediment cores as ASCII     
-!!$        ! call sub_sedgem_save_sedcore()
-!!$        ! save oecan-sediment interface properties
-!!$        !if (ctrl_data_save_ascii) call sub_data_save_seddiag_2D(loc_dtyr,dum_sfcsumocn)
-!!$        call sub_save_netcdf(year)
-!!$        call sub_save_netcdf_sed2d(loc_dtyr,dum_sfcsumocn)
-!!$        call sub_closefile(ntrec_siou)
-!!$        ntrec_sout = ntrec_sout + 1  
-!!$     ENDIF
-!!$     ! if output then increment output counter  
-!!$     CALL sub_output_counters()
-!!$  ENDIF
-
-  ! *** UPDATE SEDGEM TIME ***
-  IF (ctrl_misc_debug4) print*,'*** UPDATE SEDGEM TIME ***'
-  ! update sediment age (== current time in years)
-  sed_age = sed_age - loc_dtyr
 
 end SUBROUTINE sedgem
 ! ******************************************************************************************************************************** !

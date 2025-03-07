@@ -1240,7 +1240,7 @@ CONTAINS
     INTEGER::i,j,l,io,is,ic,idiag
     CHARACTER(len=255)::loc_unitsname
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_coretop
-    REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_burial
+    REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_burial,loc_sed_av_burial
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_preservation
     REAL,DIMENSION(n_i,n_j)::loc_ij,loc_mask
     REAL,DIMENSION(n_i,n_j)::loc_mask_reef,loc_mask_muds       ! 
@@ -1253,6 +1253,9 @@ CONTAINS
     loc_c0 = 0.
     loc_c1 = 1.
     io = 0
+    ! initialize local arrays
+    loc_sed_burial(:,:,:)    = 0.0
+    loc_sed_av_burial(:,:,:) = 0.0
     ! initialize local masks
     loc_mask(:,:)      = phys_sed(ips_mask_sed,:,:)
     loc_mask_reef(:,:) = phys_sed(ips_mask_sed_reef,:,:)
@@ -1265,7 +1268,8 @@ CONTAINS
        is = conv_iselected_is(l)
        DO i=1,n_i
           DO j=1,n_j
-             loc_sed_burial(is,i,j) = sed_fsed(is,i,j) - sed_fdis(is,i,j)
+             loc_sed_burial(is,i,j)    = sed_fsed(is,i,j)    - sed_fdis(is,i,j)
+             loc_sed_av_burial(is,i,j) = sed_av_fsed(is,i,j) - sed_av_fdis(is,i,j)
              IF (sed_fsed(is,i,j) > 0.0) THEN
                 loc_sed_preservation(is,i,j) = 100.0*(sed_fsed(is,i,j) - sed_fdis(is,i,j))/sed_fsed(is,i,j)
              else
@@ -1582,6 +1586,129 @@ CONTAINS
           end SELECT
        END IF
     END DO
+    
+    ! TIME-AVERAGED DATA
+    ! tedious copy of above code for average sediment properties ...
+    if (par_sed_save_av_dtyr > const_real_nullsmall) then
+       ! interface flux data -- rain flux
+       DO l=1,n_l_sed
+          is = conv_iselected_is(l)
+          loc_ij(:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                SELECT CASE (sed_type(is))
+                CASE (par_sed_type_bio,par_sed_type_abio, &
+                     & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det,par_sed_type_scavenged)
+                   loc_ij(i,j) = sed_av_fsed(is,i,j)/dum_dtyr
+                   loc_unitsname = 'mol cm-2 yr-1'
+                case (n_itype_min:n_itype_max)
+                   loc_tot  = sed_av_fsed(sed_dep(is),i,j)
+                   loc_frac = sed_av_fsed(is,i,j)
+                   loc_standard = const_standards(sed_type(is))
+                   loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
+                   loc_unitsname = 'o/oo'
+                CASE (par_sed_type_frac)
+                   loc_ij(i,j) = sed_av_fsed(is,i,j)
+                   loc_unitsname = 'n/a'
+                END SELECT
+             end do
+          end do
+          SELECT CASE (sed_type(is))
+          CASE (par_sed_type_bio,par_sed_type_abio, &
+               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det,par_sed_type_scavenged, &
+               & n_itype_min:n_itype_max, &
+               & par_sed_type_frac)
+             call sub_adddef_netcdf(ntrec_siou,3,'av_fsed_'//trim(string_sed(is)), &
+                  & 'TIME-AVERAGED sediment rain flux - '//trim(string_sed(is)), &
+                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+             call sub_putvar2d('av_fsed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          END SELECT
+       END DO
+       ! interface flux data -- dissolution flux
+       DO l=1,n_l_sed
+          is = conv_iselected_is(l)
+          loc_ij(:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                SELECT CASE (sed_type(is))
+                CASE (par_sed_type_bio,par_sed_type_abio, &
+                     & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det)
+                   loc_ij(i,j) = sed_av_fdis(is,i,j)/dum_dtyr
+                   loc_unitsname = 'mol cm-2 yr-1'
+                case (n_itype_min:n_itype_max)
+                   loc_tot  = sed_av_fsed(sed_dep(is),i,j)
+                   loc_frac = sed_av_fsed(is,i,j)
+                   loc_standard = const_standards(sed_type(is))
+                   loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_real_null)
+                   loc_unitsname = 'o/oo'
+                END SELECT
+             end do
+          end do
+          SELECT CASE (sed_type(is))
+          CASE (par_sed_type_bio,par_sed_type_abio, &
+               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+               & n_itype_min:n_itype_max)
+             call sub_adddef_netcdf(ntrec_siou,3,'av_fdis_'//trim(string_sed(is)), &
+                  & 'TIME-AVERAGED sediment dissolution flux - '//trim(string_sed(is)), &
+                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+             call sub_putvar2d('av_fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          END SELECT
+       END DO
+       ! interface flux data -- burial flux
+       DO l=1,n_l_sed
+          is = conv_iselected_is(l)
+          loc_ij(:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                SELECT CASE (sed_type(is))
+                CASE (par_sed_type_bio,par_sed_type_abio, &
+                     & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det)
+                   loc_ij(i,j) = loc_sed_av_burial(is,i,j)/dum_dtyr
+                   loc_unitsname = 'mol cm-2 yr-1'
+                case (n_itype_min:n_itype_max)
+                   loc_tot  = loc_sed_av_burial(sed_dep(is),i,j)
+                   loc_frac = loc_sed_av_burial(is,i,j)
+                   loc_standard = const_standards(sed_type(is))
+                   loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_real_null)
+                   loc_unitsname = 'o/oo'
+                END SELECT
+             end do
+          end do
+          SELECT CASE (sed_type(is))
+          CASE (par_sed_type_bio,par_sed_type_abio, &
+               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+               & n_itype_min:n_itype_max)
+             call sub_adddef_netcdf(ntrec_siou,3,'av_fburial_'//trim(string_sed(is)), &
+                  & 'TIME-AVERAGED sediment burial flux - '//trim(string_sed(is)), &
+                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+             call sub_putvar2d('av_fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          END SELECT
+       END DO
+       ! core-top data
+       DO is=1,n_sed
+          IF (sed_select(is)) THEN
+             SELECT CASE (sed_type(is))
+             CASE (par_sed_type_bio,par_sed_type_abio, &
+                  & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det)
+                loc_unitsname = 'wt%'
+             CASE (n_itype_min:n_itype_max)
+                loc_unitsname = 'o/oo'
+             CASE (par_sed_type_age)
+                loc_unitsname = 'years'
+             END SELECT
+             SELECT CASE (sed_type(is))
+             CASE (par_sed_type_bio,par_sed_type_abio,par_sed_type_age, &
+                  & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+                  & n_itype_min:n_itype_max)
+                call sub_adddef_netcdf(ntrec_siou,3,'av_sed_'//trim(string_sed(is)), &
+                     & 'TIME-AVERAGED surface sediment composition - '//trim(string_sed(is)), &
+                     & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+                call sub_putvar2d('av_sed_'//trim(string_sed(is)), &
+                     & ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea)
+             end SELECT
+          END IF
+       END DO
+    end if
 
     ! SAVE REEF SEDIMENTS
     ! bulk composition
@@ -1717,7 +1844,7 @@ CONTAINS
           end SELECT
        END IF
     END DO
-
+    
   end SUBROUTINE sub_save_netcdf_sed2d
 
 
