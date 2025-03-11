@@ -93,11 +93,15 @@ SUBROUTINE initialise_sedgem( &
   call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed_diag(n_diag_sed,n_i,n_j),STAT=alloc_error)
   call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_diag_err(n_diag_sed_err,n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed_av_fsed(n_sed,n_i,n_j),STAT=alloc_error)
   call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed_av_fdis(n_sed,n_i,n_j),STAT=alloc_error)
   call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed_av_coretop(n_sed,n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_av_diag_err(n_diag_sed_err,n_i,n_j),STAT=alloc_error)
   call check_iostat(alloc_error,__LINE__,__FILE__)
 
   ! ---------------------------------------------------------- ! initialize allocated arrays
@@ -108,6 +112,7 @@ SUBROUTINE initialise_sedgem( &
   sedocn_fnet(:,:,:)   = 0.0   !
   sed_carb(:,:,:)      = 0.0   !
   sed_carbconst(:,:,:) = 0.0   !
+  sed_diag_err(:,:,:)  = 0.0   !
   ! ---------------------------------------------------------- ! main initialization
   IF (ctrl_misc_debug2) print*, 'main initialization'
   ! setup SedGeM grid

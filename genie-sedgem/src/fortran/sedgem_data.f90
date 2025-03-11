@@ -133,6 +133,7 @@ CONTAINS
        print*,'organic degradation rate constant, 1/s              : ',par_sed_archer1991_rc
        print*,'loop limit in <o2org> subroutine                    : ',par_sed_archer1991_iterationmax
        print*,'Use old error-catching scheme?                      : ',ctrl_sed_diagen_error_Archer_OLD
+       print*,'Allow re-try of Archer model with higher [O2]?      : ',ctrl_sed_diagen_CaCO3opt_Archer1991_retry
        ! --- DIAGENESIS SCHEME: opal --------------------------------------------------------------------------------------------- !
        print*,'base opal KSi value (yr-1)                          : ',par_sed_opal_KSi0
        ! --- CaCO3 PRODUCTION ---------------------------------------------------------------------------------------------------- !
@@ -858,9 +859,10 @@ CONTAINS
     ! initialize diagnostics data array
     sed_diag(:,:,:) = 0.0
     ! initialize average sediment data arrays
-    sed_av_fsed(:,:,:)    = 0.0
-    sed_av_fdis(:,:,:)    = 0.0
-    sed_av_coretop(:,:,:) = 0.0
+    sed_av_fsed(:,:,:)     = 0.0
+    sed_av_fdis(:,:,:)     = 0.0
+    sed_av_coretop(:,:,:)  = 0.0
+    sed_av_diag_err(:,:,:) = 0.0
     
   END SUBROUTINE sub_init_sed
   ! ****************************************************************************************************************************** !

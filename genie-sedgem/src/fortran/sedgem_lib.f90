@@ -135,7 +135,8 @@ MODULE sedgem_lib
   integer::par_sed_archer1991_iterationmax                       ! loop limit in 'o2org' subroutine
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
   logical::ctrl_sed_diagen_error_Archer_OLD                      ! Use old error-catching scheme?
-  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD
+  logical::ctrl_sed_diagen_CaCO3opt_Archer1991_retry             ! Allow re-try of Archer model with higher [O2]?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD,ctrl_sed_diagen_CaCO3opt_Archer1991_retry
   ! ------------------- DIAGENESIS SCHEME: opal ---------------------------------------------------------------------------------- !
   REAL::par_sed_opal_KSi0                                        ! base opal KSi value (yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_opal_KSi0
@@ -345,6 +346,7 @@ MODULE sedgem_lib
   INTEGER,PARAMETER::n_opt_sed      = 26                       ! 
   ! 
   integer,parameter::n_diag_sed     = 3
+  integer,parameter::n_diag_sed_err = 5
 
   ! *** array index values ***
   ! sediment grid properties array indices
@@ -372,6 +374,12 @@ MODULE sedgem_lib
   INTEGER,PARAMETER::idiag_OMEN_wtpct_top                 = 01    !
   INTEGER,PARAMETER::idiag_OMEN_wtpct_bot                 = 02    !
   INTEGER,PARAMETER::idiag_OMEN_bur                       = 03    !
+  ! diagnostics - sediements - error codes
+  INTEGER,PARAMETER::idiag_err_calc_co3                   = 01    !
+  INTEGER,PARAMETER::idiag_err_loc_err_gaussj             = 02    !
+  INTEGER,PARAMETER::idiag_err_co3ss                      = 03    !
+  INTEGER,PARAMETER::idiag_err_NULL                       = 04    !
+  INTEGER,PARAMETER::idiag_err_MOD                        = 05    !
 
   ! *** look-up table constants ***
   ! CaCO3 (calcite)
@@ -432,7 +440,12 @@ MODULE sedgem_lib
        & 'OMEN_wtpct_top  ', &
        & 'OMEN_wtpct_bot  ', &
        & 'OMEN_bur        ' /)
-
+  CHARACTER(len=24),DIMENSION(n_diag_sed_err),PARAMETER::string_diag_sed_err = (/ &
+       & 'err_calc_co3            ', &
+       & 'err_loc_err_gaussj      ', &
+       & 'err_co3ss               ', &
+       & 'err_NULL                ', &
+       & 'err_MOD                 ' /)
 
   ! ****************************************************************************************************************************** !
   ! GLOBAL VARIABLE AND RUN-TIME SET PARAMETER ARRAYS
@@ -458,8 +471,6 @@ MODULE sedgem_lib
   ! I/O - netCDF parameters
   integer::ntrec_sout                                          ! count for netcdf datasets
   integer::ntrec_siou                                          ! io for netcdf datasets
-  ! flag for Archer sediment iteration (singular matrix) failure error
-  logical::error_Archer = .FALSE.
 
   ! *** Array definitions ***
   ! bioturbation mixing rate array
@@ -498,10 +509,12 @@ MODULE sedgem_lib
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_porg               ! alt Porg preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_rr                 ! alt preservation (burial) rain ratio (C/P) field
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag                  ! sediment diagnostics
+  real,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag_err              ! sediment diagnostics -- diagenesis errors
   ! allocatable 2-D sediment arrays -- time-averaging
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_fsed               ! AVERAGED rain flux to sediments (mol cm-2 yr-1)
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_fdis               ! AVERAGED sediment dissolution flux - solids tracers (mol cm-2 yr-1)
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_coretop            ! AVERAGED top sedimentary layer composition
+  real,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_diag_err           ! sediment diagnostics -- diagenesis errors
   ! allocatable sedcoe arrays
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sedcore                   ! sedcore sediment layer stack (num sedcores x layers x variables)
   ! sediments - conversion

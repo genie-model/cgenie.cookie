@@ -735,11 +735,12 @@ SUBROUTINE sedgem(          &
   ! *** CREATE LONG-TERM AVERAGE ***
   IF (ctrl_misc_debug4) print*,'*** CREATE LONG-TERM AVERAGE ***'
   if (par_sed_save_av_dtyr > sed_age) then
-     sed_av_fsed(:,:,:)    = sed_av_fsed(:,:,:)    + (loc_dtyr/par_sed_save_av_dtyr)*sed_fsed(:,:,:)
-     sed_av_fdis(:,:,:)    = sed_av_fdis(:,:,:)    + (loc_dtyr/par_sed_save_av_dtyr)*sed_fdis(:,:,:)
-     sed_av_coretop(:,:,:) = sed_av_coretop(:,:,:) + (loc_dtyr/par_sed_save_av_dtyr)*dum_sfcsed(:,:,:)
+     sed_av_fsed(:,:,:)     = sed_av_fsed(:,:,:)     + (loc_dtyr/par_sed_save_av_dtyr)*sed_fsed(:,:,:)
+     sed_av_fdis(:,:,:)     = sed_av_fdis(:,:,:)     + (loc_dtyr/par_sed_save_av_dtyr)*sed_fdis(:,:,:)
+     sed_av_coretop(:,:,:)  = sed_av_coretop(:,:,:)  + (loc_dtyr/par_sed_save_av_dtyr)*dum_sfcsed(:,:,:)
+     sed_av_diag_err(:,:,:) = sed_av_diag_err(:,:,:) + (loc_dtyr/par_sed_save_av_dtyr)*sed_diag_err(:,:,:)
   end if
-
+  
   ! *** UPDATE SEDGEM TIME ***
   IF (ctrl_misc_debug4) print*,'*** UPDATE SEDGEM TIME ***'
   ! update sediment age (== current time in years)

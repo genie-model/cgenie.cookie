@@ -7498,6 +7498,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.true.</value>
                         <description>Use old error-catching scheme?</description>
                     </param>
+                    <param name="ctrl_sed_diagen_CaCO3opt_Archer1991_retry">
+			<value datatype="boolean">.false.</value>
+                        <description>Allow re-try of Archer model with higher [O2]?</description>
+                    </param>
 <!-- DIAGENESIS SCHEME: opal  -->
                     <param name="par_sed_opal_KSi0">
 			<value datatype="real">1.25</value>
