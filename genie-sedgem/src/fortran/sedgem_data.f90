@@ -133,7 +133,7 @@ CONTAINS
        print*,'organic degradation rate constant, 1/s              : ',par_sed_archer1991_rc
        print*,'loop limit in <o2org> subroutine                    : ',par_sed_archer1991_iterationmax
        print*,'Use old error-catching scheme?                      : ',ctrl_sed_diagen_error_Archer_OLD
-       print*,'Allow re-try of Archer model with higher [O2]?      : ',ctrl_sed_diagen_CaCO3opt_Archer1991_retry
+       print*,'Replace Archer model calc with lookup estimate?     : ',ctrl_sed_diagen_error_Archer2lookup
        ! --- DIAGENESIS SCHEME: opal --------------------------------------------------------------------------------------------- !
        print*,'base opal KSi value (yr-1)                          : ',par_sed_opal_KSi0
        ! --- CaCO3 PRODUCTION ---------------------------------------------------------------------------------------------------- !
@@ -711,7 +711,8 @@ CONTAINS
     end do
     ! allocate size of look-up tables and load data -- CaCO3
     ! NOTE: check for problems allocating array space
-    if (par_sed_diagen_CaCO3opt == 'ridgwell2001lookup' .OR. par_sed_diagen_CaCO3opt == 'ridgwell2001lookupvec') then
+    SELECT CASE (par_sed_diagen_CaCO3opt)
+    CASE ('ridgwell2001lookup','ridgwell2001lookupvec','archer1991explicit')
        ALLOCATE(lookup_sed_dis_cal( &
             & lookup_i_D_min:lookup_i_D_max, &
             & lookup_i_dCO3_min:lookup_i_dCO3_max, &
@@ -727,10 +728,11 @@ CONTAINS
                & )
        ENDIF
        call sub_load_sed_dis_lookup_CaCO3()
-    ENDIF
+    END select
     ! allocate and populate lookup table vectors
     ! NOTE: check for problems allocating array space
-    if (par_sed_diagen_CaCO3opt == 'ridgwell2001lookupvec') then
+    SELECT CASE (par_sed_diagen_CaCO3opt)
+    CASE ('ridgwell2001lookupvec')
        ALLOCATE(lookup_vec_D(lookup_i_D_min:lookup_i_D_max),STAT=error)
        ALLOCATE(lookup_vec_dco3(lookup_i_dCO3_min:lookup_i_dCO3_max),STAT=error)
        ALLOCATE(lookup_vec_frac(lookup_i_frac_min:lookup_i_frac_max),STAT=error)
@@ -747,10 +749,11 @@ CONTAINS
        lookup_vec_dco3  = (lookup_dCO3_max/lookup_i_dCO3_max)*(/ (n,n=lookup_i_dCO3_min,lookup_i_dCO3_max) /)
        lookup_vec_frac  = (lookup_frac_max/lookup_i_frac_max)*(/ (n,n=lookup_i_frac_min,lookup_i_frac_max) /)
        lookup_vec_fCorg = (lookup_fCorg_max/lookup_i_fCorg_max)*(/ (n,n=lookup_i_fCorg_min,lookup_i_fCorg_max) /)
-    end if
+    end select
     ! allocate size of look-up tables and load data -- CaCO3
     ! NOTE: check for problems allocating array space
-    if (par_sed_diagen_opalopt == 'ridgwelletal2003lookup') then
+    SELECT CASE (par_sed_diagen_opalopt)
+    CASE ('ridgwelletal2003lookup')
        ALLOCATE(lookup_sed_dis_opal( &
             & lookup_i_opalpc_min:lookup_i_opalpc_max, &
             & lookup_i_concSi_min:lookup_i_concSi_max, &
@@ -767,7 +770,7 @@ CONTAINS
                & )
        ENDIF
        call sub_load_sed_dis_lookup_opal()
-    ENDIF
+    END select
     ! load and initialize neutral network
     if (par_sed_diagen_CaCO3opt == 'ridgwell2001nn') then
        call sub_init_neuralnetwork()
@@ -863,7 +866,7 @@ CONTAINS
     sed_av_fdis(:,:,:)     = 0.0
     sed_av_coretop(:,:,:)  = 0.0
     sed_av_diag_err(:,:,:) = 0.0
-    
+
   END SUBROUTINE sub_init_sed
   ! ****************************************************************************************************************************** !
 

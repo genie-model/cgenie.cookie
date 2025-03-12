@@ -100,9 +100,9 @@ CONTAINS
       & pore,calgg,carb,ttrorg,ttrcal,ttral,ttrtc,diftc,difal)
 
     ! set error states to be returned
-    err(idiag_err_calc_co3)       = loc_err_calc_co3
-    err(idiag_err_loc_err_gaussj) = loc_err_gaussj
-    err(idiag_err_co3ss)          = loc_err_co3ss
+    err(idiag_err_calc_co3) = loc_err_calc_co3
+    err(idiag_err_gaussj)   = loc_err_gaussj
+    err(idiag_err_co3ss)    = loc_err_co3ss
   
     ! return function value
     fun_archer1991_sedflx = ttrcal

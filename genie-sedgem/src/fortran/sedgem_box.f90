@@ -2161,83 +2161,130 @@ CONTAINS
             & )
        ! convert units
        loc_dis = conv_cal_mol_cm3*loc_dis*dum_dtyr
-       ! record errors / test for, and deal with, failures to solve the 1D sed system
-       if (loc_err(idiag_err_calc_co3) .OR. loc_err(idiag_err_loc_err_gaussj)) then
-          loc_err(idiag_err_NULL) = .true.
-          ! option to maintain original error-catching behaviour
-          if (ctrl_sed_diagen_error_Archer_OLD) loc_dis = dum_sed_new(is_CaCO3)
-       else
-          if (loc_err(idiag_err_co3ss)) then
-             ! more common co3ss error has occurred
+       ! option to maintain original error-catching behaviour
+       if (ctrl_sed_diagen_error_Archer_OLD) then
+          ! record errors / test for, and deal with, failures to solve the 1D sed system
+          if (loc_err(idiag_err_calc_co3) .OR. loc_err(idiag_err_gaussj)) then
              loc_err(idiag_err_NULL) = .true.
-             if ( (loc_frac_CaCO3 < const_real_nullsmall) .OR. (loc_frac_CaCO3_top < const_real_nullsmall) ) then
-                ! deal with a zero carbonate content case
-                ! if over-saturated  => preserve all new CaCO3
-                ! if under-saturated => dissolve all new CaCo3
-                if (dum_carb(ic_ohm_cal) >= 1.0) then
-                   loc_dis = 0.0
-                else
-                   loc_dis = dum_sed_new(is_CaCO3)
-                endif
+             loc_dis = dum_sed_new(is_CaCO3)
+          end if
+       else
+          if ( loc_err(idiag_err_calc_co3) .OR. loc_err(idiag_err_gaussj) .OR. loc_err(idiag_err_co3ss) ) then
+             if (ctrl_sed_diagen_error_Archer2lookup) then
+                ! replace with lookup table derived estimate
+                ! CALCULATE SEDIMENT CACO3 DIAGENESIS VIA A LOOK-UP TABLE [Ridgwell, 2001]
+                loc_dis = fun_interp_4D(                                                  &
+                     & lookup_sed_dis_cal,dum_D,dum_dCO3_cal,loc_frac_CaCO3_top,loc_fPOC, &
+                     & lookup_D_max,lookup_dCO3_max,lookup_frac_max,lookup_fCorg_max,     &
+                     & lookup_i_D_min,lookup_i_D_max,                                     &
+                     & lookup_i_dCO3_min,lookup_i_dCO3_max,                               &
+                     & lookup_i_frac_min,lookup_i_frac_max,                               &
+                     & lookup_i_fCorg_min,lookup_i_fCorg_max                              &
+                     & )
+                loc_dis = conv_cal_mol_cm3*loc_dis*dum_dtyr
                 ! mark as 'solved' but record that a modified daigenesis calculation was used
                 loc_err(idiag_err_NULL) = .false.
                 loc_err(idiag_err_MOD)  = .true.
              else
-                if (ctrl_sed_diagen_CaCO3opt_Archer1991_retry) then 
-                   ! retry the Archer model with more oxic boundary conditions
-                   loc_dis = fun_archer1991_sedflx(                                                           &
-                        & 100.0E-6+loc_O2,loc_frac_CaCO3,loc_fPOC,                                            &
-                        & dum_carb(ic_conc_CO2),dum_carb(ic_conc_HCO3),dum_carb(ic_conc_CO3),                 &
-                        & dum_carbconst(icc_k1),dum_carbconst(icc_k2),dum_carbconst(icc_kcal)/dum_ocn(io_Ca), &
-                        & dum_sed_mix_k,loc_err                                                               &
-                        & )
-                   ! convert units
-                   loc_dis = conv_cal_mol_cm3*loc_dis*dum_dtyr
-                   ! if not error => mark as 'solved' but record that a modified daigenesis calculation was used
-                   if (.NOT. loc_err(idiag_err_co3ss)) then
-                      loc_err(idiag_err_NULL) = .false.
-                      loc_err(idiag_err_MOD)  = .true.
-                   else
-                      loc_err(idiag_err_NULL) = .true.
-                      loc_err(idiag_err_MOD)  = .false.
-                   end if
+                ! simply maintain current wt%
+                ! rain frac = dum_sed_new(is_CaCO3)/(dum_sed_new(is_CaCO3) + dum_sed_new(is_det))
+                ! top frac  = loc_frac_CaCO3_top
+                ! pres frac = FCaCO3/(FCaCO3 + dum_sed_new(is_det))
+                !           = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
+                !           => loc_frac_CaCO3_top = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
+                !           => (1 + dum_sed_new(is_det)/FCaCO3)*loc_frac_CaCO3_top = 1
+                !           => (FCaCO3 + dum_sed_new(is_det))*loc_frac_CaCO3_top = FCaCO3
+                !           => dum_sed_new(is_det)*loc_frac_CaCO3_top = FCaCO3 - FCaCO3*loc_frac_CaCO3_top
+                !           => (dum_sed_new(is_det)*loc_frac_CaCO3_top)/(1 - loc_frac_CaCO3_top) = FCaCO3
+                !           => FCaCO3 = dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1)
+                ! NOTE: strictly: loc_sed_wt_rain-conv_cal_cm3_g*dum_sed_new(is_CaCO3) rather than dum_sed_new(is_det)
+                !       also      conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det) rather than dum_sed_new(is_det)
+                if (loc_frac_CaCO3_top < const_real_nullsmall) then
+                   loc_dis = dum_sed_new(is_CaCO3)
+                elseif ((1.0 - loc_frac_CaCO3_top) < const_real_nullsmall) then
+                   loc_dis = 0.0
+                else
+                   loc_dis = min( dum_sed_new(is_CaCO3), &
+                        & conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1) )
                 end if
-                ! if not solved yet ...
-                if (loc_err(idiag_err_NULL)) then
-                   ! maintain current wt%
-                   ! rain frac = dum_sed_new(is_CaCO3)/(dum_sed_new(is_CaCO3) + dum_sed_new(is_det))
-                   ! top frac  = loc_frac_CaCO3_top
-                   ! pres frac = FCaCO3/(FCaCO3 + dum_sed_new(is_det))
-                   !           = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
-                   !           => loc_frac_CaCO3_top = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
-                   !           => (1 + dum_sed_new(is_det)/FCaCO3)*loc_frac_CaCO3_top = 1
-                   !           => (FCaCO3 + dum_sed_new(is_det))*loc_frac_CaCO3_top = FCaCO3
-                   !           => dum_sed_new(is_det)*loc_frac_CaCO3_top = FCaCO3 - FCaCO3*loc_frac_CaCO3_top
-                   !           => (dum_sed_new(is_det)*loc_frac_CaCO3_top)/(1 - loc_frac_CaCO3_top) = FCaCO3
-                   !           => FCaCO3 = dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1)
-                   ! NOTE: strictly: loc_sed_wt_rain-conv_cal_cm3_g*dum_sed_new(is_CaCO3) rather than dum_sed_new(is_det)
-                   !       also      conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det) rather than dum_sed_new(is_det)
-                   if (loc_frac_CaCO3_top < const_real_nullsmall) then
-                      loc_dis = dum_sed_new(is_CaCO3)
-                   elseif ((1.0 - loc_frac_CaCO3_top) < const_real_nullsmall) then
-                      loc_dis = 0.0
-                   else
-                      loc_dis = min( dum_sed_new(is_CaCO3), &
-                           & conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1) )
-                   end if
-                   ! record that a modified daigenesis calculation was used
-                   loc_err(idiag_err_MOD) = .true.
-                end if
+                ! record that a modified daigenesis calculation was used but the problem was not really solved in any way
+                loc_err(idiag_err_NULL) = .true.
+                loc_err(idiag_err_MOD)  = .true.
              end if
           else
-             ! no co3ss errors either! :)
+             ! no  errors occurred! :)
              ! => DO NOTHING
           end if
+          ! record errors
+          DO idiag=1,n_diag_sed_err
+             if (loc_err(idiag)) then
+                dum_err(idiag) = 1.0
+             else
+                dum_err(idiag) = 0.0
+             end if
+          end do
        end if
-       ! record errors
-       DO idiag=1,n_diag_sed_err
-          if (loc_err(idiag)) dum_err(idiag) = 1.0
-       end do
+       ! SAVED CODE ...
+!!$             ! more common co3ss error has occurred
+!!$             loc_err(idiag_err_NULL) = .true.
+!!$             if ( (loc_frac_CaCO3 < const_real_nullsmall) .OR. (loc_frac_CaCO3_top < const_real_nullsmall) ) then
+!!$                ! deal with a zero carbonate content case
+!!$                ! if over-saturated  => preserve all new CaCO3
+!!$                ! if under-saturated => dissolve all new CaCo3
+!!$                if (dum_carb(ic_ohm_cal) >= 1.0) then
+!!$                   loc_dis = 0.0
+!!$                else
+!!$                   loc_dis = dum_sed_new(is_CaCO3)
+!!$                endif
+!!$                ! mark as 'solved' but record that a modified daigenesis calculation was used
+!!$                loc_err(idiag_err_NULL) = .false.
+!!$                loc_err(idiag_err_MOD)  = .true.
+!!$             else
+!!$                if (ctrl_sed_diagen_CaCO3opt_Archer1991_retry) then 
+!!$                   ! retry the Archer model with more oxic boundary conditions
+!!$                   loc_dis = fun_archer1991_sedflx(                                                           &
+!!$                        & 100.0E-6+loc_O2,loc_frac_CaCO3,loc_fPOC,                                            &
+!!$                        & dum_carb(ic_conc_CO2),dum_carb(ic_conc_HCO3),dum_carb(ic_conc_CO3),                 &
+!!$                        & dum_carbconst(icc_k1),dum_carbconst(icc_k2),dum_carbconst(icc_kcal)/dum_ocn(io_Ca), &
+!!$                        & dum_sed_mix_k,loc_err                                                               &
+!!$                        & )
+!!$                   ! convert units
+!!$                   loc_dis = conv_cal_mol_cm3*loc_dis*dum_dtyr
+!!$                   ! if not error => mark as 'solved' but record that a modified daigenesis calculation was used
+!!$                   if (.NOT. loc_err(idiag_err_co3ss)) then
+!!$                      loc_err(idiag_err_NULL) = .false.
+!!$                      loc_err(idiag_err_MOD)  = .true.
+!!$                   else
+!!$                      loc_err(idiag_err_NULL) = .true.
+!!$                      loc_err(idiag_err_MOD)  = .false.
+!!$                   end if
+!!$                end if
+!!$                ! if not solved yet ...
+!!$                if (loc_err(idiag_err_NULL)) then
+!!$                   ! maintain current wt%
+!!$                   ! rain frac = dum_sed_new(is_CaCO3)/(dum_sed_new(is_CaCO3) + dum_sed_new(is_det))
+!!$                   ! top frac  = loc_frac_CaCO3_top
+!!$                   ! pres frac = FCaCO3/(FCaCO3 + dum_sed_new(is_det))
+!!$                   !           = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
+!!$                   !           => loc_frac_CaCO3_top = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
+!!$                   !           => (1 + dum_sed_new(is_det)/FCaCO3)*loc_frac_CaCO3_top = 1
+!!$                   !           => (FCaCO3 + dum_sed_new(is_det))*loc_frac_CaCO3_top = FCaCO3
+!!$                   !           => dum_sed_new(is_det)*loc_frac_CaCO3_top = FCaCO3 - FCaCO3*loc_frac_CaCO3_top
+!!$                   !           => (dum_sed_new(is_det)*loc_frac_CaCO3_top)/(1 - loc_frac_CaCO3_top) = FCaCO3
+!!$                   !           => FCaCO3 = dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1)
+!!$                   ! NOTE: strictly: loc_sed_wt_rain-conv_cal_cm3_g*dum_sed_new(is_CaCO3) rather than dum_sed_new(is_det)
+!!$                   !       also      conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det) rather than dum_sed_new(is_det)
+!!$                   if (loc_frac_CaCO3_top < const_real_nullsmall) then
+!!$                      loc_dis = dum_sed_new(is_CaCO3)
+!!$                   elseif ((1.0 - loc_frac_CaCO3_top) < const_real_nullsmall) then
+!!$                      loc_dis = 0.0
+!!$                   else
+!!$                      loc_dis = min( dum_sed_new(is_CaCO3), &
+!!$                           & conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1) )
+!!$                   end if
+!!$                   ! record that a modified daigenesis calculation was used
+!!$                   loc_err(idiag_err_MOD) = .true.
+!!$                end if
     case ('ridgwell2001lookup')
        ! CALCULATE SEDIMENT CACO3 DIAGENESIS VIA A LOOK-UP TABLE [Ridgwell, 2001]
        loc_dis = fun_interp_4D(                                                  &

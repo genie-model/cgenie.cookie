@@ -135,8 +135,8 @@ MODULE sedgem_lib
   integer::par_sed_archer1991_iterationmax                       ! loop limit in 'o2org' subroutine
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
   logical::ctrl_sed_diagen_error_Archer_OLD                      ! Use old error-catching scheme?
-  logical::ctrl_sed_diagen_CaCO3opt_Archer1991_retry             ! Allow re-try of Archer model with higher [O2]?
-  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD,ctrl_sed_diagen_CaCO3opt_Archer1991_retry
+  logical::ctrl_sed_diagen_error_archer2lookup                  ! Replace Archer model calc with lookup estimate?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD,ctrl_sed_diagen_error_archer2lookup
   ! ------------------- DIAGENESIS SCHEME: opal ---------------------------------------------------------------------------------- !
   REAL::par_sed_opal_KSi0                                        ! base opal KSi value (yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_opal_KSi0
@@ -376,7 +376,7 @@ MODULE sedgem_lib
   INTEGER,PARAMETER::idiag_OMEN_bur                       = 03    !
   ! diagnostics - sediements - error codes
   INTEGER,PARAMETER::idiag_err_calc_co3                   = 01    !
-  INTEGER,PARAMETER::idiag_err_loc_err_gaussj             = 02    !
+  INTEGER,PARAMETER::idiag_err_gaussj                     = 02    !
   INTEGER,PARAMETER::idiag_err_co3ss                      = 03    !
   INTEGER,PARAMETER::idiag_err_NULL                       = 04    !
   INTEGER,PARAMETER::idiag_err_MOD                        = 05    !
@@ -440,12 +440,12 @@ MODULE sedgem_lib
        & 'OMEN_wtpct_top  ', &
        & 'OMEN_wtpct_bot  ', &
        & 'OMEN_bur        ' /)
-  CHARACTER(len=24),DIMENSION(n_diag_sed_err),PARAMETER::string_diag_sed_err = (/ &
-       & 'err_calc_co3            ', &
-       & 'err_loc_err_gaussj      ', &
-       & 'err_co3ss               ', &
-       & 'err_NULL                ', &
-       & 'err_MOD                 ' /)
+  CHARACTER(len=16),DIMENSION(n_diag_sed_err),PARAMETER::string_diag_sed_err = (/ &
+       & 'err_calc_co3    ', &
+       & 'err_gaussj      ', &
+       & 'err_co3ss       ', &
+       & 'err_NULL        ', &
+       & 'err_MOD         ' /)
 
   ! ****************************************************************************************************************************** !
   ! GLOBAL VARIABLE AND RUN-TIME SET PARAMETER ARRAYS
