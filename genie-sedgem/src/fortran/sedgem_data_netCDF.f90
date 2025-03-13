@@ -1242,16 +1242,16 @@ CONTAINS
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_coretop
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_burial,loc_sed_av_burial
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_preservation
-    REAL,DIMENSION(n_i,n_j)::loc_ij,loc_mask,loc_mask_NULL 
+    REAL,DIMENSION(n_i,n_j)::loc_ij,loc_mask,loc_mask_err 
     REAL,DIMENSION(n_i,n_j)::loc_mask_reef,loc_mask_muds       ! 
-    REAL,DIMENSION(n_i,n_j)::loc_mask_dsea,loc_mask_dsea_NULL  ! 
+    REAL,DIMENSION(n_i,n_j)::loc_mask_dsea,loc_mask_dsea_err   ! 
     real::loc_tot,loc_frac,loc_standard                        ! 
     real::loc_c0,loc_c1                                        !
 
     ! *** INITIALIZE ***
     ! initialize local variables
-    loc_c0 = 0.
-    loc_c1 = 1.
+    loc_c0 = 0.0
+    loc_c1 = 1.0
     io = 0
     ! initialize local arrays
     loc_sed_burial(:,:,:)    = 0.0
@@ -1262,14 +1262,13 @@ CONTAINS
     loc_mask_muds(:,:) = phys_sed(ips_mask_sed_muds,:,:)
     loc_mask_dsea(:,:) = phys_sed(ips_mask_sed,:,:)*(1.0 - loc_mask_reef(:,:))*(1.0 - loc_mask_muds(:,:))
     ! initialize mask excluding points at which sediment daigenesis has failed to be solved
+    loc_mask_err(:,:)      = loc_mask(:,:)
+    loc_mask_dsea_err(:,:) = loc_mask_dsea(:,:)
     DO i=1,n_i
        DO j=1,n_j
           if ( (sed_diag_err(idiag_err_NULL,i,j) > const_rns) .OR. (sed_av_diag_err(idiag_err_NULL,i,j) > const_rns) ) then
-             loc_mask_NULL(i,j)      = 0.0
-             loc_mask_dsea_NULL(i,j) = 0.0
-          else
-             loc_mask_NULL(i,j)      = loc_mask(i,j)
-             loc_mask_dsea_NULL(i,j) = loc_mask_dsea(i,j)
+             loc_mask_err(i,j)      = 0.0
+             loc_mask_dsea_err(i,j) = 0.0
           end if
        end do
     end do
@@ -1356,8 +1355,7 @@ CONTAINS
           end do
        end do
        call sub_adddef_netcdf(ntrec_siou,3,'sedocn_fnet_'//trim(string_ocn(io)), &
-            & 'benthic interface exchange flux - '//trim(string_ocn(io)), &
-            & trim(loc_unitsname),loc_c0,loc_c0)
+            & 'benthic interface exchange flux - '//trim(string_ocn(io)),trim(loc_unitsname),loc_c0,loc_c0)
        call sub_putvar2d('sedocn_fnet_'//trim(string_ocn(io)),ntrec_siou,n_i, n_j,ntrec_sout,loc_ij(:,:),loc_mask)
     END DO
 
@@ -1391,8 +1389,7 @@ CONTAINS
             & n_itype_min:n_itype_max, &
             & par_sed_type_frac)
           call sub_adddef_netcdf(ntrec_siou,3,'fsed_'//trim(string_sed(is)), &
-               & 'sediment rain flux - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+               & 'sediment rain flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
           call sub_putvar2d('fsed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
        END SELECT
     END DO
@@ -1421,13 +1418,13 @@ CONTAINS
             & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
             & n_itype_min:n_itype_max)
           call sub_adddef_netcdf(ntrec_siou,3,'fdis_'//trim(string_sed(is)), &
-               & 'sediment dissolution flux - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          if (sed_type(is) == par_sed_type_CaCO3) then
-             call sub_putvar2d('fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_NULL)
-          else
+               & 'sediment dissolution flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
+          SELECT CASE (sed_dep(is))
+          case (is_CaCO3)
+             call sub_putvar2d('fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
+          case default
              call sub_putvar2d('fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-          end if
+          end select
        END SELECT
     END DO
     ! interface flux data -- burial flux
@@ -1455,13 +1452,13 @@ CONTAINS
             & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
             & n_itype_min:n_itype_max)
           call sub_adddef_netcdf(ntrec_siou,3,'fburial_'//trim(string_sed(is)), &
-               & 'sediment burial flux - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          if (sed_type(is) == par_sed_type_CaCO3) then
-             call sub_putvar2d('fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_NULL)
-          else
+               & 'sediment burial flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
+          SELECT CASE (sed_dep(is))
+          case (is_CaCO3)
+             call sub_putvar2d('fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
+          case default
              call sub_putvar2d('fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-          end if
+          end select
        END SELECT
     END DO
     ! interface flux data -- % preservation
@@ -1482,13 +1479,13 @@ CONTAINS
        CASE (par_sed_type_bio,par_sed_type_abio, &
             & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det)
           call sub_adddef_netcdf(ntrec_siou,3,'fpres_'//trim(string_sed(is)), &
-               & 'sediment burial (% preservation) - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          if (sed_type(is) == par_sed_type_CaCO3) then
-             call sub_putvar2d('fpres_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_NULL)
-          else
+               & 'sediment burial (% preservation) - '//trim(string_sed(is)),trim(loc_unitsname),-100.0,100.0)
+          SELECT CASE (sed_dep(is))
+          case (is_CaCO3)
+             call sub_putvar2d('fpres_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
+          case default
              call sub_putvar2d('fpres_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-          end if
+          end select
        end SELECT
     END DO
     ! save interface flux data -- detrital (log10)
@@ -1591,9 +1588,9 @@ CONTAINS
        loc_unitsname = 'n/a'
        DO idiag=1,n_diag_sed_err
           loc_ij(:,:) = sed_diag_err(idiag,:,:)
-          call sub_adddef_netcdf(ntrec_siou,3,'misc_'//trim(string_diag_sed_err(idiag)), &
+          call sub_adddef_netcdf(ntrec_siou,3,''//trim(string_diag_sed_err(idiag)), &
                & 'diagenesis error code: '//trim(string_diag_sed_err(idiag)),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d('misc_'//trim(string_diag_sed_err(idiag)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(''//trim(string_diag_sed_err(idiag)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
        end do
     end select
 
@@ -1617,13 +1614,14 @@ CONTAINS
              call sub_adddef_netcdf(ntrec_siou,3,'sed_'//trim(string_sed(is)), &
                   & 'surface sediment composition - '//trim(string_sed(is)), &
                   & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-             if (sed_type(is) == par_sed_type_CaCO3) then
+             SELECT CASE (sed_dep(is))
+             case (is_CaCO3)
                 call sub_putvar2d('sed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_sed_coretop(is,:,:), &
-                     & loc_mask_dsea_NULL)
-             else
+                     & loc_mask_dsea_err)
+             case default
                 call sub_putvar2d('sed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_sed_coretop(is,:,:), &
                      & loc_mask_dsea)
-             end if
+             end select
           end SELECT
        END IF
     END DO
@@ -1660,8 +1658,7 @@ CONTAINS
                & n_itype_min:n_itype_max, &
                & par_sed_type_frac)
              call sub_adddef_netcdf(ntrec_siou,3,'av_fsed_'//trim(string_sed(is)), &
-                  & 'TIME-AVERAGED sediment rain flux - '//trim(string_sed(is)), &
-                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+                  & 'TIME-AVERAGED sediment rain flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
              call sub_putvar2d('av_fsed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
           END SELECT
        END DO
@@ -1690,13 +1687,13 @@ CONTAINS
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
                & n_itype_min:n_itype_max)
              call sub_adddef_netcdf(ntrec_siou,3,'av_fdis_'//trim(string_sed(is)), &
-                  & 'TIME-AVERAGED sediment dissolution flux - '//trim(string_sed(is)), &
-                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-             if (sed_type(is) == par_sed_type_CaCO3) then
-                call sub_putvar2d('av_fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_NULL)
-             else
+                  & 'TIME-AVERAGED sediment dissolution flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
+             SELECT CASE (sed_dep(is))
+             case (is_CaCO3)
+                call sub_putvar2d('av_fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
+             case default
                 call sub_putvar2d('av_fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-             end if
+             end select
           END SELECT
        END DO
        ! interface flux data -- burial flux
@@ -1724,13 +1721,13 @@ CONTAINS
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
                & n_itype_min:n_itype_max)
              call sub_adddef_netcdf(ntrec_siou,3,'av_fburial_'//trim(string_sed(is)), &
-                  & 'TIME-AVERAGED sediment burial flux - '//trim(string_sed(is)), &
-                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-             if (sed_type(is) == par_sed_type_CaCO3) then
-                call sub_putvar2d('av_fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_NULL)
-             else
+                  & 'TIME-AVERAGED sediment burial flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
+             SELECT CASE (sed_dep(is))
+             case (is_CaCO3)
+                call sub_putvar2d('av_fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
+             case default
                 call sub_putvar2d('av_fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-             end if
+             end select
           END SELECT
        END DO
        ! core-top data
@@ -1752,13 +1749,14 @@ CONTAINS
                 call sub_adddef_netcdf(ntrec_siou,3,'av_sed_'//trim(string_sed(is)), &
                      & 'TIME-AVERAGED surface sediment composition - '//trim(string_sed(is)), &
                      & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-                if (sed_type(is) == par_sed_type_CaCO3) then
+                SELECT CASE (sed_dep(is))
+                case (is_CaCO3)
                    call sub_putvar2d('av_sed_'//trim(string_sed(is)), &
-                        & ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea_NULL)
-                else
+                        & ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea_err)
+                case default
                    call sub_putvar2d('av_sed_'//trim(string_sed(is)), &
                         & ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea)
-                end if
+                end select
              end SELECT
           END IF
        END DO
@@ -1768,9 +1766,9 @@ CONTAINS
           loc_unitsname = 'n/a'
           DO idiag=1,n_diag_sed_err
              loc_ij(:,:) = sed_av_diag_err(idiag,:,:)
-             call sub_adddef_netcdf(ntrec_siou,3,'av_misc_'//trim(string_diag_sed_err(idiag)), &
+             call sub_adddef_netcdf(ntrec_siou,3,'av_'//trim(string_diag_sed_err(idiag)), &
                   & 'diagenesis error code: '//trim(string_diag_sed_err(idiag)),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d('av_misc_'//trim(string_diag_sed_err(idiag)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d('av_'//trim(string_diag_sed_err(idiag)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
           end do
        end select
     end if
