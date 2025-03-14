@@ -1481,11 +1481,6 @@ CONTAINS
           call sub_adddef_netcdf(ntrec_siou,3,'fpres_'//trim(string_sed(is)), &
                & 'sediment burial (% preservation) - '//trim(string_sed(is)),trim(loc_unitsname),-100.0,100.0)
           call sub_putvar2d('fpres_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-          if (sed_dep(is)==is_CaCO3) then
-             call sub_adddef_netcdf(ntrec_siou,3,'err_fpres_'//trim(string_sed(is)), &
-                  & 'masked sediment burial (% preservation) - '//trim(string_sed(is)),trim(loc_unitsname),-100.0,100.0)
-             call sub_putvar2d('err_fpres_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
-          end if
        end SELECT
     END DO
     ! save interface flux data -- detrital (log10)
@@ -1617,10 +1612,10 @@ CONTAINS
              call sub_putvar2d('sed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_sed_coretop(is,:,:), &
                   & loc_mask_dsea)
              if (sed_dep(is)==is_CaCO3) then
-                call sub_adddef_netcdf(ntrec_siou,3,'err_sed_'//trim(string_sed(is)), &
+                call sub_adddef_netcdf(ntrec_siou,3,'errmask_sed_'//trim(string_sed(is)), &
                      & 'masked surface sediment composition - '//trim(string_sed(is)), &
                      & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-                call sub_putvar2d('err_sed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_sed_coretop(is,:,:), &
+                call sub_putvar2d('errmask_sed_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_sed_coretop(is,:,:), &
                      & loc_mask_dsea_err)
              end if
           end SELECT
@@ -1691,9 +1686,9 @@ CONTAINS
                   & 'TIME-AVERAGED sediment dissolution flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
              call sub_putvar2d('av_fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
              if (sed_dep(is)==is_CaCO3) then
-                call sub_adddef_netcdf(ntrec_siou,3,'err_av_fdis_'//trim(string_sed(is)), &
+                call sub_adddef_netcdf(ntrec_siou,3,'errmask_av_fdis_'//trim(string_sed(is)), &
                      & 'masked TIME-AVERAGED sediment dissolution flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
-                call sub_putvar2d('err_av_fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
+                call sub_putvar2d('errmask_av_fdis_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
              end if
           END SELECT
        END DO
@@ -1725,9 +1720,9 @@ CONTAINS
                   & 'TIME-AVERAGED sediment burial flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
              call sub_putvar2d('av_fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
              if (sed_dep(is)==is_CaCO3) then
-                call sub_adddef_netcdf(ntrec_siou,3,'err_av_fburial_'//trim(string_sed(is)), &
+                call sub_adddef_netcdf(ntrec_siou,3,'errmask_av_fburial_'//trim(string_sed(is)), &
                      & 'masked TIME-AVERAGED sediment burial flux - '//trim(string_sed(is)),trim(loc_unitsname),loc_c0,loc_c0)
-                call sub_putvar2d('err_av_fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
+                call sub_putvar2d('errmask_av_fburial_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_err)
              end if
           END SELECT
        END DO
@@ -1753,10 +1748,10 @@ CONTAINS
                 call sub_putvar2d('av_sed_'//trim(string_sed(is)), &
                      & ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea)
                 if (sed_dep(is)==is_CaCO3) then
-                   call sub_adddef_netcdf(ntrec_siou,3,'err_av_sed_'//trim(string_sed(is)), &
+                   call sub_adddef_netcdf(ntrec_siou,3,'errmask_av_sed_'//trim(string_sed(is)), &
                         & 'masked TIME-AVERAGED surface sediment composition - '//trim(string_sed(is)), &
                         & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-                   call sub_putvar2d('err_av_sed_'//trim(string_sed(is)), &
+                   call sub_putvar2d('errmask_av_sed_'//trim(string_sed(is)), &
                         & ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea_err)
                 end if
              end SELECT
