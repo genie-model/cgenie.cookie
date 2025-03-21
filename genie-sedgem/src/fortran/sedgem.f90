@@ -220,9 +220,13 @@ SUBROUTINE sedgem(          &
            ! NOTE: add a switch for excluding pelagic (dust) detrital flux reaching the seafloor
            !       automatically combine prescribed (uniform) sed det flux PLUS a spatial burial flux
            ! NOTE: if an opal flux is provided but opal is not selected as a tracer, add to the detrital field
+           ! NOTE: dum_sfxsumsed(is_det,i,j) == det flux form BIOGEM
+           !       par_sed_fdet              == uniform prescibed additional flux
+           !       sed_Fsed_det              == alternative prescibed detrital flux field
+           !       at sedcore locations, sed_Fsed_det is over-written by ncMAR if defined
            if (sed_select(is_det)) then
               if (ctrl_sed_det_NOdust) then
-                 ! zero det flux, which at this point is assumed to be all pelagic (dust)
+                 ! set zero det flux, which as passed form BIOGEM is assumed to be all pelagic (dust)
                  dum_sfxsumsed(is_det,i,j) = 0.0
               endif
               if (ctrl_sed_Fdet) then
@@ -241,6 +245,12 @@ SUBROUTINE sedgem(          &
                       & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet              
               endif
            endif
+           ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
+           ! NOTE: in the case of ctrl_sed_Fdet==.true, sedcore ncMAR has already replaced sed_Fsed_det at those locations
+           if (ctrl_sed_Fdet_sedcore .AND. sed_save_mask(i,j)) then
+                 dum_sfxsumsed(is_det,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
+           end if
+           ! assign det age
            if (sed_select(is_det_age)) then
               if (ctrl_sed_Fdet) then
                  dum_sfxsumsed(is_det_age,i,j) = sed_age*conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)

@@ -944,7 +944,7 @@ CONTAINS
     ! DEFINE LOCAL VARIABLES
     ! -------------------------------------------------------- !
     INTEGER::i,j,n
-    integer::loc_len,loc_nmax
+    integer::loc_len_pindir_name,loc_nmax
     CHARACTER(len=255)::loc_filename
     REAL,DIMENSION(n_i,n_j)::loc_ij
     integer,ALLOCATABLE,DIMENSION(:,:)::loc_vij                ! (i,j) vector
@@ -955,28 +955,21 @@ CONTAINS
     ! -------------------------------------------------------- !
     loc_ij(:,:) = 0.0
     sed_save_mask(:,:) = .FALSE.
-    ! set alt dir path string length
-    loc_len = LEN_TRIM(par_pindir_name)
+    ! determine paleo dir path string length (otherwise zero for original directory structure)
+    loc_len_pindir_name = LEN_TRIM(par_pindir_name)
     ! -------------------------------------------------------- !
     ! DETERMINE SEDCORES TO BE SAVED
     ! -------------------------------------------------------- !
-    ! -------------------------------------------------------- ! load sediment core save mask
-    if (loc_len > 0) then
-       loc_filename = TRIM(par_pindir_name)//TRIM(par_sedcore_save_mask_name)
-    else
-       loc_filename = TRIM(par_indir_name)//TRIM(par_sedcore_save_mask_name)
-    endif
-    CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
     ! -------------------------------------------------------- ! load alt sediment core save data (if filename exists)
+    !                                                            otherwise load sediment core save mask
+    loc_ij(:,:) = 0.0
     if (LEN_TRIM(par_sedcore_save_list_name) > 0) then
        ! accommodate alt paleo data directory structure
-       if (loc_len > 0) then
+       if (loc_len_pindir_name > 0) then
           loc_filename = TRIM(par_pindir_name)//TRIM(par_sedcore_save_list_name)
        else
           loc_filename = TRIM(par_indir_name)//TRIM(par_sedcore_save_list_name)
        endif
-       ! remove any 2D file defined sedcores
-       loc_ij(:,:) = 0.0
        ! determine number of data elements
        loc_nmax = fun_calc_data_n(loc_filename)
        ! allocate local vectors
@@ -1015,6 +1008,15 @@ CONTAINS
        call check_iostat(dealloc_error,__LINE__,__FILE__)
        DEALLOCATE(loc_vmar,STAT=dealloc_error)
        call check_iostat(dealloc_error,__LINE__,__FILE__)
+    else
+       if (LEN_TRIM(par_sedcore_save_mask_name) > 0) then
+          if (loc_len_pindir_name > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sedcore_save_mask_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sedcore_save_mask_name)
+          endif
+          CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+       end if
     end if
     ! -------------------------------------------------------- ! set sediment save mask & count number of sedcores
     nv_sedcore = 0
