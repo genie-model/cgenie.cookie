@@ -3117,7 +3117,7 @@ CONTAINS
        ! ocean
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
-          if (force_flux_ocn_select(io) .OR. ((par_force_restore_ohmega > const_real_nullsmall) .AND. ocn_select(io))) then
+          if ( force_flux_ocn_select(io) .OR. ((par_force_restore_ohmega > const_real_nullsmall) .AND. ocn_select(io)))  then
              loc_filename=fun_data_timeseries_filename( &
                   & dum_t,par_outdir_name, &
                   & trim(par_outfile_name)//'_series_diag','fluxforcing_ocn_'//TRIM(string_ocn(io)),string_results_ext &
@@ -3135,7 +3135,7 @@ CONTAINS
                 CLOSE(unit=out,iostat=ios)
                 call check_iostat(ios,__LINE__,__FILE__)
              case (n_itype_min:n_itype_max)
-                loc_tot = int_diag_forcing_ocn_sig(atm_dep(io))/int_t_sig
+                loc_tot = int_diag_forcing_ocn_sig(ocn_dep(io))/int_t_sig
                 loc_frac = int_diag_forcing_ocn_sig(io)/int_t_sig
                 loc_standard = const_standards(ocn_type(io))
                 loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
