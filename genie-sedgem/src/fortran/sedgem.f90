@@ -210,6 +210,7 @@ SUBROUTINE sedgem(          &
   ! *** EARLY DIAGENESIS PROCESSES ***
   ! NOTE: <dum_sfxsumsed> in units of (mol m-2 per time-step)
   ! NOTE: dum_sfxocn(io,:,:) in units of (mol m-2 s-1)
+  ! NOTE: par_sed_fdet, <sed_fsed_det(:,:)> in units of (mol cm-2)
   loc_tot_fsed = 0.0
   DO i=1,n_i
      DO j=1,n_j
@@ -242,13 +243,14 @@ SUBROUTINE sedgem(          &
               else
                  ! add prescribed (uniform) sed det flux to whatever pelagic source reaches the seafloor
                  dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
-                      & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet              
+                      & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet
+
               endif
            endif
            ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
            ! NOTE: in the case of ctrl_sed_Fdet==.true, sedcore ncMAR has already replaced sed_Fsed_det at those locations
            if (ctrl_sed_Fdet_sedcore .AND. sed_save_mask(i,j)) then
-                 dum_sfxsumsed(is_det,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
+              dum_sfxsumsed(is_det,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
            end if
            ! assign det age
            if (sed_select(is_det_age)) then

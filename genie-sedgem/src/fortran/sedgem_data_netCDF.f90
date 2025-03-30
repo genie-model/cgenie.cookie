@@ -1369,8 +1369,13 @@ CONTAINS
              SELECT CASE (sed_type(is))
              CASE (par_sed_type_bio,par_sed_type_abio, &
                   & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det,par_sed_type_scavenged)
-                loc_ij(i,j) = sed_fsed(is,i,j)/dum_dtyr
-                loc_unitsname = 'mol cm-2 yr-1'
+                if (is == is_det) then
+                   loc_ij(i,j) = sed_fsed(is,i,j)/(conv_det_g_mol*(conv_yr_kyr*dum_dtyr))
+                   loc_unitsname = 'g cm-2 kyr-1'
+                else
+                   loc_ij(i,j) = sed_fsed(is,i,j)/dum_dtyr
+                   loc_unitsname = 'mol cm-2 yr-1'
+                end if
              case (n_itype_min:n_itype_max)
                 loc_tot  = sed_fsed(sed_dep(is),i,j)
                 loc_frac = sed_fsed(is,i,j)
@@ -1402,8 +1407,13 @@ CONTAINS
              SELECT CASE (sed_type(is))
              CASE (par_sed_type_bio,par_sed_type_abio, &
                   & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det)
-                loc_ij(i,j) = sed_fdis(is,i,j)/dum_dtyr
-                loc_unitsname = 'mol cm-2 yr-1'
+                if (is == is_det) then
+                   loc_ij(i,j) = sed_fdis(is,i,j)/(conv_det_g_mol*(conv_yr_kyr*dum_dtyr))
+                   loc_unitsname = 'g cm-2 kyr-1'
+                else
+                   loc_ij(i,j) = sed_fdis(is,i,j)/dum_dtyr
+                   loc_unitsname = 'mol cm-2 yr-1'
+                end if
              case (n_itype_min:n_itype_max)
                 loc_tot  = sed_fsed(sed_dep(is),i,j)
                 loc_frac = sed_fsed(is,i,j)
@@ -1436,8 +1446,13 @@ CONTAINS
              SELECT CASE (sed_type(is))
              CASE (par_sed_type_bio,par_sed_type_abio, &
                   & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det)
-                loc_ij(i,j) = loc_sed_burial(is,i,j)/dum_dtyr
-                loc_unitsname = 'mol cm-2 yr-1'
+                if (is == is_det) then
+                   loc_ij(i,j) = loc_sed_burial(is,i,j)/(conv_det_g_mol*(conv_yr_kyr*dum_dtyr))
+                   loc_unitsname = 'g cm-2 kyr-1'
+                else
+                   loc_ij(i,j) = loc_sed_burial(is,i,j)/dum_dtyr
+                   loc_unitsname = 'mol cm-2 yr-1'
+                end if
              case (n_itype_min:n_itype_max)
                 loc_tot  = loc_sed_burial(sed_dep(is),i,j)
                 loc_frac = loc_sed_burial(is,i,j)
