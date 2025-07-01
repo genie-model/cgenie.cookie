@@ -220,6 +220,8 @@ CONTAINS
        print*,'Assumed fraction of silicate vs. total weathering   : ',par_sed_diag_fracSiweath
        print*,'Assumed d13C of volcanic emissions                  : ',par_sed_diag_volcanicd13C
        print*,'Assumed implicit P:ALK of weathering                : ',par_sed_diag_P2ALK
+       print*,'Assumed implicit C:O2 of kerogen weathering         : ',par_sed_diag_C2O2
+       print*,'Update kerogen O2 weathering consumption ratio?     : ',ctrl_sed_diag_balanceO2
        ! --- I/O: DIRECTORY DEFINITIONS ------------------------------------------------------------------------------------------ !
        print*,'--- I/O: DIRECTORY DEFINITIONS ---------------------'
        print*,'(Paleo config) input dir. name                      : ',trim(par_pindir_name)
@@ -1535,7 +1537,7 @@ CONTAINS
     real::loc_tot_FCaCO3,loc_tot_FPOC,loc_tot_FPOP
     real::loc_tot_FCaCO3_d13C,loc_tot_FPOC_d13C
     real::loc_gamma,loc_Foutgassing,loc_Fkerogen
-    real::loc_FCaCO3_d13C
+    real::loc_FCaCO3_d13C,loc_tot_FO2
     
     ! *** INITIALIZE LOCAL VARIABLES ***
     ! averaging time-step
@@ -2232,6 +2234,10 @@ CONTAINS
        loc_FCaCO3_d13C = (loc_tot_FCaCO3_d13C*loc_tot_FCaCO3 - par_sed_diag_volcanicd13C*loc_Foutgassing)/ &
             & ((1.0-par_sed_diag_fracSiweath)*loc_tot_FCaCO3)
     end if
+    ! for updating kerogen weathering O2:C -- calculate O2 gain (mol yr-1) associated with the bural of reduced species
+    ! NOTE: the value of sg_par_sed_diag_red_POC_O2 excludes the contribution from P (and N etc.)
+    loc_tot_FO2 = (-par_sed_diag_C2O2)*loc_tot_FPOC + 2.0*loc_tot_FPOP
+    
     ! write out data
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- DERIVED PARAMETER VALUES ----'
@@ -2277,6 +2283,10 @@ CONTAINS
     if (loc_Fkerogen > const_real_nullsmall) then
        write(unit=out,fmt='(A28,e14.6)',iostat=ios) &
             & ' kerogen ALK/C ratio       =',par_sed_diag_P2ALK*loc_tot_FPOP/loc_Fkerogen
+    end if
+    if (loc_Fkerogen > const_real_nullsmall) then
+       write(unit=out,fmt='(A28,e14.6)',iostat=ios) &
+            & ' O2 consumption ratio      =',loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '---------------------------------'
 
@@ -2351,6 +2361,10 @@ CONTAINS
        Write(unit=out,fmt=*) '# WARNING: could not be calculated'
        Write(unit=out,fmt=*) 'rg_par_weather_kerogen_fracP=0.0'
        Write(unit=out,fmt=*) 'rg_par_weather_kerogen_fracALK=0.0'
+    end if
+    if (ctrl_sed_diag_balanceO2 .AND. (loc_Fkerogen > const_real_nullsmall)) then
+       Write(unit=out,fmt=*) '# updated kerogen O2 weathering consumption ratio to balance global (Corg) O2 budget'
+       Write(unit=out,fmt=*) 'rg_par_weather_kerogen_fracO2=',loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# -------------------------------'

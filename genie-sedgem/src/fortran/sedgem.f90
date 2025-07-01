@@ -248,7 +248,7 @@ SUBROUTINE sedgem(          &
               endif
            endif
            ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
-           ! NOTE: in the case of ctrl_sed_Fdet==.true, sedcore ncMAR has already replaced sed_Fsed_det at those locations
+           ! NOTE: in the case of ctrl_sed_Fdet==.true. and a 2D sed_Fsed_det field, sedcore ncMAR has already replaced sed_Fsed_det at those locations
            if (ctrl_sed_Fdet_sedcore .AND. sed_save_mask(i,j)) then
               dum_sfxsumsed(is_det,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
            end if

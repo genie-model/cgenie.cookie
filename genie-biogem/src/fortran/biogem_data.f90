@@ -3328,6 +3328,7 @@ CONTAINS
        ctrl_data_save_slice_phys_ocn = .true.
     case (10)
        ! OCEAN ACIDIFICATION & FOSSIL FUEL GAMES
+       ctrl_data_save_buffering = .true.
        ctrl_data_save_slice_focnatm = .true.
        ctrl_data_save_slice_bio = .true.
        ctrl_data_save_slice_carb = .true.

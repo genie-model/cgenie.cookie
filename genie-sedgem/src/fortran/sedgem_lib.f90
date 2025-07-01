@@ -273,7 +273,10 @@ MODULE sedgem_lib
   real::par_sed_diag_volcanicd13C                                ! assumed d13C of volcanic emissions
   NAMELIST /ini_sedgem_nml/par_sed_diag_fracSiweath,par_sed_diag_volcanicd13C
   real::par_sed_diag_P2ALK                                       ! assumed implicit P:ALK (non zero makes no sense for weathering)
-  NAMELIST /ini_sedgem_nml/par_sed_diag_P2ALK
+  real::par_sed_diag_C2O2                                        ! assumed implicit C:O2 of kerogen weathering
+  NAMELIST /ini_sedgem_nml/par_sed_diag_P2ALK,par_sed_diag_C2O2
+  logical::ctrl_sed_diag_balanceO2                               ! Update kerogen O2 weathering consumption ratio?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diag_balanceO2
   ! ------------------- I/O: DIRECTORY DEFINITIONS ------------------------------------------------------------------------------- !
   CHARACTER(len=255)::par_pindir_name                            ! 
   CHARACTER(len=255)::par_indir_name                             ! 
