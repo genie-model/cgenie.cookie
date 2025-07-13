@@ -2286,7 +2286,7 @@ CONTAINS
     end if
     if (loc_Fkerogen > const_real_nullsmall) then
        write(unit=out,fmt='(A28,e14.6)',iostat=ios) &
-            & ' O2 consumption ratio      =',loc_tot_FO2/loc_Fkerogen
+            & ' O2 consumption ratio      =',-loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '---------------------------------'
 
@@ -2364,7 +2364,7 @@ CONTAINS
     end if
     if (ctrl_sed_diag_balanceO2 .AND. (loc_Fkerogen > const_real_nullsmall)) then
        Write(unit=out,fmt=*) '# updated kerogen O2 weathering consumption ratio to balance global (Corg) O2 budget'
-       Write(unit=out,fmt=*) 'rg_par_weather_kerogen_fracO2=',loc_tot_FO2/loc_Fkerogen
+       Write(unit=out,fmt=*) 'rg_par_weather_kerogen_fracO2=',-loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# -------------------------------'

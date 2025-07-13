@@ -280,6 +280,7 @@ CONTAINS
        print*,'NO2 -> N2O reduction option                         : ',trim(opt_bio_remin_reduce_NO2toN2O)
        print*,'N2O -> N2 reduction option                          : ',trim(opt_bio_remin_reduce_N2OtoN2)
        print*,'Oxidation rate constant for H2S -> SO4              : ',par_bio_remin_kH2StoSO4
+       print*,'Oxidation rate constant for H2S -> SO4 (M-2 hr-1)   : ',par_bio_remin_kH2StoSO4_perM2perhr
        print*,'Oxidation rate constant for NH4 -> NO2              : ',par_bio_remin_kNH4toNO2
        print*,'Oxidation rate constant for NO2 -> NO3              : ',par_bio_remin_kNO2toNO3
        print*,'Oxidation rate constant for NO2 -> N2O              : ',par_bio_remin_kNO2toN2O
@@ -304,6 +305,7 @@ CONTAINS
        print*,'Thermodynamic drive ID string for AOM               : ',par_bio_remin_AOM_thermo
        print*,'Std Gibbs free energy of AOM (kJ mol-1)             : ',par_bio_remin_AOM_dG0
        print*,'Biological energy quantum (BEQ) for AOM (kJ mol-1)  : ',par_bio_remin_AOM_BEQ
+       print*,'Use old (muffin) zero [O2] threshold for AOM?       : ',ctrl_bio_remin_AOM_OLD       
        print*,'Gas constant for thermo calculations (kJ K-1 mol-1) : ',par_bio_remin_Rgas
        print*,'Activity coefficient for O2                         : ',par_bio_remin_gammaO2
        print*,'Activity coefficient for CO2                        : ',par_bio_remin_gammaCO2

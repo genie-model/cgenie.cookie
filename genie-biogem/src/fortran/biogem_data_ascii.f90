@@ -3630,6 +3630,453 @@ CONTAINS
   ! ****************************************************************************************************************************** !
 
 
+!!$  ! ****************************************************************************************************************************** !
+!!$  ! SAVE GLOBAL DATA
+!!$  SUBROUTINE sub_data_save_global_av()
+!!$    USE genie_util, ONLY:check_unit,check_iostat
+!!$    ! local variables
+!!$    INTEGER::i,j,k,l,ia,io,is,ios,ic
+!!$    integer::loc_k1
+!!$    real::loc_t,loc_dt,loc_K
+!!$    real::loc_tot,loc_frac,loc_standard
+!!$    real::loc_atm_ave,loc_ocn_ave,loc_sed_ave
+!!$    real::loc_ocn_tot_M,loc_ocn_tot_A,loc_ocnatm_tot_A
+!!$    CHARACTER(len=255)::loc_filename
+!!$    REAL,DIMENSION(n_phys_ocn,n_i,n_j,n_k)::loc_phys_ocn       !
+!!$    REAL,DIMENSION(n_ocn,n_i,n_j,n_k)::loc_ocn                 !
+!!$    REAL,DIMENSION(n_carbconst,n_i,n_j,n_k)::loc_carbconst     !
+!!$    REAL,DIMENSION(n_carb,n_i,n_j,n_k)::loc_carb               !
+!!$    REAL,DIMENSION(n_carbalk,n_i,n_j,n_k)::loc_carbalk         !
+!!$
+!!$    ! *** initialize local variables ***
+!!$    loc_phys_ocn(:,:,:,:)  = 0.0
+!!$    loc_ocn(:,:,:,:)       = 0.0
+!!$    loc_carbconst(:,:,:,:) = 0.0
+!!$    loc_carb(:,:,:,:)      = 0.0
+!!$    loc_carbalk(:,:,:,:)   = 0.0
+!!$
+!!$    ! *** set local parameters ***
+!!$    loc_dt = int_t_timeslice
+!!$    loc_filename= &
+!!$         & fun_data_timeslice_filename( &
+!!$         & par_outdir_name,trim(par_outfile_name)//'_year','diag_GLOBAL_AVERAGE',string_results_ext)
+!!$    IF (ctrl_misc_t_BP) THEN
+!!$       loc_t = par_data_save_timeslice(par_data_save_timeslice_i) + par_misc_t_end
+!!$    ELSE
+!!$       loc_t = par_misc_t_end - par_data_save_timeslice(par_data_save_timeslice_i)
+!!$    END IF
+!!$    ! ocean physics
+!!$    If (ctrl_data_save_slice_phys_ocn) then
+!!$       loc_phys_ocn(:,:,:,:) = int_phys_ocn_timeslice(:,:,:,:)/int_t_timeslice
+!!$    else
+!!$       loc_phys_ocn(:,:,:,:) = phys_ocn(:,:,:,:)
+!!$    end If
+!!$    ! ocean tracers
+!!$    If (ctrl_data_save_slice_ocn) then
+!!$       loc_ocn(:,:,:,:) = int_ocn_timeslice(:,:,:,:)/int_t_timeslice
+!!$    else
+!!$       loc_ocn(:,:,:,:) = ocn(:,:,:,:)
+!!$    end if
+!!$    ! total ocean mass
+!!$    loc_ocn_tot_M = sum(phys_ocn(ipo_M,:,:,:))
+!!$    ! ocean surface area
+!!$    loc_ocn_tot_A = sum(phys_ocn(ipo_A,:,:,n_k))
+!!$    ! ocean surface area
+!!$    loc_ocnatm_tot_A = sum(phys_ocnatm(ipoa_A,:,:))
+!!$
+!!$    ! *** solve carbonate system ***
+!!$    IF (opt_select(iopt_select_carbchem)) THEN
+!!$       DO i=1,n_i
+!!$          DO j=1,n_j
+!!$             loc_k1 = goldstein_k1(i,j)
+!!$             DO k=goldstein_k1(i,j),n_k
+!!$                ! calculate carbonate dissociation constants
+!!$                CALL sub_calc_carbconst(           &
+!!$                     & loc_phys_ocn(ipo_Dmid,i,j,k), &
+!!$                     & loc_ocn(io_T,i,j,k),          &
+!!$                     & loc_ocn(io_S,i,j,k),          &
+!!$                     & loc_carbconst(:,i,j,k)        &
+!!$                     & )
+!!$                ! adjust carbonate constants
+!!$                if (ocn_select(io_Ca) .AND. ocn_select(io_Mg)) then
+!!$                   call sub_adj_carbconst(   &
+!!$                        & loc_ocn(io_Ca,i,j,k),  &
+!!$                        & loc_ocn(io_Mg,i,j,k),  &
+!!$                        & ocn(io_S,i,j,k), &
+!!$                        & ocn(io_T,i,j,k),&
+!!$                        & loc_phys_ocn(ipo_Dmid,i,j,k), &
+!!$                        & loc_carbconst(:,i,j,k) &
+!!$                        & )
+!!$                end if
+!!$                ! re-estimate Ca and borate concentrations from salinity (if not selected and therefore explicitly treated)
+!!$                IF (.NOT. ocn_select(io_Ca))  loc_ocn(io_Ca,i,j,n_k)  = fun_calc_Ca(loc_ocn(io_S,i,j,n_k))
+!!$                IF (.NOT. ocn_select(io_B))   loc_ocn(io_B,i,j,n_k)   = fun_calc_Btot(loc_ocn(io_S,i,j,n_k))
+!!$                IF (.NOT. ocn_select(io_SO4)) loc_ocn(io_SO4,i,j,n_k) = fun_calc_SO4tot(loc_ocn(io_S,i,j,n_k))
+!!$                IF (.NOT. ocn_select(io_F))   loc_ocn(io_F,i,j,n_k)   = fun_calc_Ftot(loc_ocn(io_S,i,j,n_k))
+!!$                ! seed default initial ocean pH
+!!$                loc_carb(ic_H,i,j,k) = 10**(-7.8)
+!!$                ! calculate carbonate chemistry
+!!$                CALL sub_calc_carb(            &
+!!$                     & par_carbchem_pH_tolerance,  &
+!!$                     & loc_ocn(io_DIC,i,j,k),  &
+!!$                     & loc_ocn(io_ALK,i,j,k),  &
+!!$                     & loc_ocn(io_Ca,i,j,k),   &
+!!$                     & loc_ocn(io_PO4,i,j,k),  &
+!!$                     & loc_ocn(io_SiO2,i,j,k), &
+!!$                     & loc_ocn(io_B,i,j,k),    &
+!!$                     & loc_ocn(io_SO4,i,j,k),  &
+!!$                     & loc_ocn(io_F,i,j,k),    &
+!!$                     & loc_ocn(io_H2S,i,j,k),  &
+!!$                     & loc_ocn(io_NH4,i,j,k),  &
+!!$                     & loc_carbconst(:,i,j,k), &
+!!$                     & loc_carb(:,i,j,k),      &
+!!$                     & loc_carbalk(:,i,j,k)    &
+!!$                     & )
+!!$             end do
+!!$          end DO
+!!$       end DO
+!!$    end IF
+!!$
+!!$    ! *** save data - OPEN FILE ***
+!!$    call check_unit(out,__LINE__,__FILE__)
+!!$    OPEN(unit=out,file=TRIM(loc_filename),action='write',iostat=ios)
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$
+!!$    ! *** save data - OPEN FILE HEADER ***
+!!$    ! write header
+!!$    Write(unit=out,fmt=*) '=========================='
+!!$    Write(unit=out,fmt=*) 'GLOBAL DIAGNOSTICS'
+!!$    Write(unit=out,fmt=*) '=========================='
+!!$    Write(unit=out,fmt=*) ' '
+!!$    write(unit=out,fmt='(A23,f12.3)',iostat=ios) &
+!!$         & ' Year ............... : ',              &
+!!$         & loc_t
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    write(unit=out,fmt='(A23,f12.3,A6)',iostat=ios) &
+!!$         & ' Integration interval : ',              &
+!!$         & int_t_timeslice,                        &
+!!$         & ' yr'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$
+!!$    ! *** save data - MISC / GLOBAL PHYSICAL PROPERTIES ***
+!!$    ! write misc data
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '--------------------------'
+!!$    Write(unit=out,fmt=*) 'MISCELLANEOUS PROPERTIES'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt='(A52,E15.7,A3)',iostat=ios) &
+!!$         & ' Global surface area ............................ : ', &
+!!$         & loc_ocnatm_tot_A, &
+!!$         & ' m2'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    Write(unit=out,fmt='(A52,E15.7,A3)',iostat=ios) &
+!!$         & ' Global ocean k = n_k (surface) area ............ : ', &
+!!$         & SUM(loc_phys_ocn(ipo_A,:,:,n_k)), &
+!!$         & ' m2'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    Write(unit=out,fmt='(A52,E15.7,A3)',iostat=ios) &
+!!$         & ' Global ocean k=(n_k-1) (sub-surface layer) area  : ', &
+!!$         & SUM(loc_phys_ocn(ipo_A,:,:,n_k - 1)), &
+!!$         & ' m2'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    Write(unit=out,fmt='(A52,E15.7,A3)',iostat=ios) &
+!!$         & ' Global ocean volume ............................ : ', &
+!!$         & SUM(loc_phys_ocn(ipo_V,:,:,:)), &
+!!$         & ' m3'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    loc_K = sum( &
+!!$         & phys_ocnatm(ipoa_A,:,:)*int_phys_ocnatm_timeslice(ipoa_KCO2,:,:)* &
+!!$         & (1.0 - int_phys_ocnatm_timeslice(ipoa_seaice,:,:)) &
+!!$         & ) &
+!!$         & / &
+!!$         & sum( &
+!!$         & phys_ocnatm(ipoa_A,:,:)*int_phys_ocn_timeslice(ipo_mask_ocn,:,:,n_k)* &
+!!$         & (1.0 - int_phys_ocnatm_timeslice(ipoa_seaice,:,:)) &
+!!$         & )
+!!$    Write(unit=out,fmt='(A52,f8.6,A24)',iostat=ios) &
+!!$         & ' Global mean air-sea coefficient, K(CO2) ........ : ', &
+!!$         & loc_K, &
+!!$         & '     mol m-2 yr-1 uatm-1'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$
+!!$    ! *** save data - ATMOSPHERIC TRACER PROPERTIES ***
+!!$    ! write atmospheric data
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '--------------------------'
+!!$    Write(unit=out,fmt=*) 'ATMOSPHERIC PROPERTIES'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    DO l=3,n_l_atm
+!!$       ia = conv_iselected_ia(l)
+!!$       SELECT CASE (atm_type(ia))
+!!$       CASE (1)
+!!$          loc_atm_ave = &
+!!$               & SUM(phys_ocnatm(ipoa_A,:,:)*int_sfcatm1_timeslice(ia,:,:)/int_t_timeslice)/SUM(phys_ocnatm(ipoa_A,:,:))
+!!$          write(unit=out,fmt='(A13,A16,A3,f10.3,A5)',iostat=ios) &
+!!$               & ' Atmospheric ',string_atm(ia),' : ', &
+!!$               & conv_mol_umol*loc_atm_ave, &
+!!$               & ' uatm'
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       case (n_itype_min:n_itype_max)
+!!$          loc_tot = &
+!!$               & SUM(phys_ocnatm(ipoa_A,:,:)*int_sfcatm1_timeslice(atm_dep(ia),:,:)/int_t_timeslice)/SUM(phys_ocnatm(ipoa_A,:,:))
+!!$          loc_frac =  &
+!!$               & SUM(phys_ocnatm(ipoa_A,:,:)*int_sfcatm1_timeslice(ia,:,:)/int_t_timeslice)/SUM(phys_ocnatm(ipoa_A,:,:))
+!!$          loc_standard = const_standards(atm_type(ia))
+!!$          loc_atm_ave = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+!!$          write(unit=out,fmt='(A13,A16,A3,f10.3,A5)',iostat=ios) &
+!!$               & ' Atmospheric ',string_atm(ia),' : ', &
+!!$               & loc_atm_ave, &
+!!$               & ' o/oo'
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       end SELECT
+!!$    END DO
+!!$
+!!$    ! *** save data - OCEAN TRACER PROPERTIES ***
+!!$    ! write ocean data
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '--------------------------'
+!!$    Write(unit=out,fmt=*) 'BULK OCEAN PROPERTIES'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    DO l=1,n_l_ocn
+!!$       io = conv_iselected_io(l)
+!!$       SELECT CASE (ocn_type(io))
+!!$       CASE (0)
+!!$          loc_ocn_ave = &
+!!$               & SUM(loc_phys_ocn(ipo_M,:,:,:)*loc_ocn(io,:,:,:))/loc_ocn_tot_M
+!!$          if (io == io_T) then
+!!$             write(unit=out,fmt='(A7,A16,A9,f10.3,A10)',iostat=ios) &
+!!$                  & ' Ocean ',string_ocn(io),' ..... : ',           &
+!!$                  & loc_ocn_ave - const_zeroC,                      &
+!!$                  & ' degrees C'
+!!$             call check_iostat(ios,__LINE__,__FILE__)
+!!$          else
+!!$             write(unit=out,fmt='(A7,A16,A9,f10.3,A4)',iostat=ios) &
+!!$                  & ' Ocean ',string_ocn(io),' ..... : ',          &
+!!$                  & loc_ocn_ave,                                   &
+!!$                  & ' PSU'
+!!$          end if
+!!$       CASE (1)
+!!$          loc_ocn_ave = &
+!!$               & SUM(loc_phys_ocn(ipo_M,:,:,:)*loc_ocn(io,:,:,:))/loc_ocn_tot_M
+!!$          write(unit=out,fmt='(A7,A16,A9,f10.3,A10,A5,E15.7,A4)',iostat=ios) &
+!!$               & ' Ocean ',string_ocn(io),' ..... : ', &
+!!$               & conv_mol_umol*loc_ocn_ave, &
+!!$               & ' umol kg-1', &
+!!$               & ' <-> ', &
+!!$               & loc_ocn_tot_M*loc_ocn_ave, &
+!!$               & ' mol'
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       case (n_itype_min:n_itype_max)
+!!$          loc_tot = &
+!!$               & SUM(loc_phys_ocn(ipo_M,:,:,:)*loc_ocn(ocn_dep(io),:,:,:))/loc_ocn_tot_M
+!!$          loc_frac =  &
+!!$               & SUM(loc_phys_ocn(ipo_M,:,:,:)*loc_ocn(io,:,:,:))/loc_ocn_tot_M
+!!$          loc_standard = const_standards(ocn_type(io))
+!!$          loc_ocn_ave = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+!!$          write(unit=out,fmt='(A7,A16,A9,f10.3,A10)',iostat=ios) &
+!!$               & ' Ocean ',string_ocn(io),' ..... : ', &
+!!$               & loc_ocn_ave, &
+!!$               & ' o/oo     '
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       end SELECT
+!!$    END DO
+!!$
+!!$    ! *** save data - CARBONATE CHEMSITRY ***
+!!$    ! write carbonate chemsitry data
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '--------------------------'
+!!$    Write(unit=out,fmt=*) 'BULK OCEAN CARBONATE CHEMSITRY'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    DO ic=1,n_carb
+!!$       SELECT CASE (ic)
+!!$       CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
+!!$          loc_ocn_ave = &
+!!$               & SUM(loc_phys_ocn(ipo_M,:,:,:)*loc_carb(ic,:,:,:))/loc_ocn_tot_M
+!!$          write(unit=out,fmt='(A11,A16,A5,f10.3,A10,A5,E15.7,A4)',iostat=ios) &
+!!$               & ' Carb chem ',string_carb(ic),' . : ', &
+!!$               & conv_mol_umol*loc_ocn_ave, &
+!!$               & ' umol kg-1', &
+!!$               & ' <-> ', &
+!!$               & loc_ocn_tot_M*loc_ocn_ave, &
+!!$               & ' mol'
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       end SELECT
+!!$    END DO
+!!$
+!!$    ! *** save data - BIOLOGICAL EXPLORT ***
+!!$    ! write export data
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '------------------------------'
+!!$    Write(unit=out,fmt=*) 'SURFACE EXPORT PRODUCTION'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    DO l=1,n_l_sed
+!!$       is = conv_iselected_is(l)
+!!$       SELECT CASE (sed_type(is))
+!!$       CASE (1:7)
+!!$          ! NOTE:
+!!$          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+!!$          !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
+!!$          !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
+!!$          !      '4' -> assigned to elemental components associated with CaCO3; Cd
+!!$          !      '5' -> assigned to elemental components associated with opal; Ge
+!!$          !      '6' -> assigned to elemental components associated with det; Li
+!!$          !      '7' -> assigned to particle-reactive scavenged elements; 231Pa, 230Th, Fe
+!!$          loc_sed_ave = SUM(int_bio_settle_timeslice(is,:,:,n_k))/int_t_timeslice/loc_ocn_tot_A
+!!$          write(unit=out,fmt='(A13,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
+!!$               & ' Export flux ',string_sed(is),' : ', &
+!!$               & conv_mol_umol*loc_sed_ave/conv_m2_cm2, &
+!!$               & ' umol cm-2 yr-1', &
+!!$               & ' <-> ', &
+!!$               & loc_ocn_tot_A*loc_sed_ave, &
+!!$               & ' mol yr-1'
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       case (n_itype_min:n_itype_max)
+!!$          ! (isotope tracers types)
+!!$          loc_tot  = SUM(int_bio_settle_timeslice(sed_dep(is),:,:,n_k))/int_t_timeslice/loc_ocn_tot_A
+!!$          loc_frac = SUM(int_bio_settle_timeslice(is,:,:,n_k))/int_t_timeslice/loc_ocn_tot_A
+!!$          loc_standard = const_standards(sed_type(is))
+!!$          loc_sed_ave = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+!!$          write(unit=out,fmt='(A13,A16,A3,f10.3,A10)',iostat=ios) &
+!!$               & ' Export flux ',string_sed(is),' : ', &
+!!$               & loc_sed_ave, &
+!!$               & ' o/oo     '
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       end SELECT
+!!$    END DO
+!!$
+!!$    ! *** save data - SEDIMENTATION FLUX ***
+!!$    ! write sedimentation flux
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '------------------------------'
+!!$    Write(unit=out,fmt=*) 'SEDIMENTATION'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    DO l=1,n_l_sed
+!!$       is = conv_iselected_is(l)
+!!$       SELECT CASE (sed_type(is))
+!!$       CASE (1:7)
+!!$          ! NOTE:
+!!$          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+!!$          !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
+!!$          !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
+!!$          !      '4' -> assigned to elemental components associated with CaCO3; Cd
+!!$          !      '5' -> assigned to elemental components associated with opal; Ge
+!!$          !      '6' -> assigned to elemental components associated with det; Li
+!!$          !      '7' -> assigned to particle-reactive scavenged elements; 231Pa, 230Th, Fe
+!!$          loc_sed_ave = SUM(int_focnsed_timeslice(is,:,:))/int_t_timeslice/loc_ocn_tot_A
+!!$          write(unit=out,fmt='(A13,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
+!!$               & ' Bottom flux ',string_sed(is),' : ', &
+!!$               & conv_mol_umol*loc_sed_ave/conv_m2_cm2, &
+!!$               & ' umol cm-2 yr-1', &
+!!$               & ' <-> ', &
+!!$               & loc_ocn_tot_A*loc_sed_ave, &
+!!$               & ' mol yr-1'
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       case (n_itype_min:n_itype_max)
+!!$          ! (isotope tracers types)
+!!$          loc_tot  = SUM(int_focnsed_timeslice(sed_dep(is),:,:))/int_t_timeslice/loc_ocn_tot_A
+!!$          loc_frac = SUM(int_focnsed_timeslice(is,:,:))/int_t_timeslice/loc_ocn_tot_A
+!!$          loc_standard = const_standards(sed_type(is))
+!!$          loc_sed_ave = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+!!$          write(unit=out,fmt='(A13,A16,A3,f10.3,A10)',iostat=ios) &
+!!$               & ' Bottom flux ',string_sed(is),' : ', &
+!!$               & loc_sed_ave, &
+!!$               & ' o/oo     '
+!!$          call check_iostat(ios,__LINE__,__FILE__)
+!!$       end SELECT
+!!$    END DO
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '------------------------------'
+!!$    Write(unit=out,fmt=*) 'SURFACE EXPORT & SEDIMENT DEPOSITION (RAIN) FLUX SUMMARY'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
+!!$         & ' Total POC export   : ', &
+!!$         & SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
+!!$         & ' mol yr-1 = ', &
+!!$         & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
+!!$         & ' PgC yr-1'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
+!!$         & ' Total CaCO3 export : ', &
+!!$         & SUM(int_bio_settle_timeslice(is_CaCO3,:,:,n_k))/int_t_timeslice, &
+!!$         & ' mol yr-1 = ', &
+!!$         & 1.0E-12*conv_CaCO3_mol_kgC*SUM(int_bio_settle_timeslice(is_CaCO3,:,:,n_k))/int_t_timeslice, &
+!!$         & ' PgC yr-1'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    Write(unit=out,fmt=*) ' '
+!!$    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
+!!$         & ' Total POC rain     : ', &
+!!$         & SUM(int_focnsed_timeslice(is_POC,:,:))/int_t_timeslice, &
+!!$         & ' mol yr-1 = ', &
+!!$         & 1.0E-12*conv_C_mol_kg*SUM(int_focnsed_timeslice(is_POC,:,:))/int_t_timeslice, &
+!!$         & ' PgC yr-1'
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
+!!$         & ' Total CaCO3 rain   : ', &
+!!$         & SUM(int_focnsed_timeslice(is_CaCO3,:,:))/int_t_timeslice, &
+!!$         & ' mol yr-1 = ', &
+!!$         & 1.0E-12*conv_CaCO3_mol_kgC*SUM(int_focnsed_timeslice(is_CaCO3,:,:))/int_t_timeslice, &
+!!$         & ' PgC yr-1'
+!!$    Write(unit=out,fmt=*) ' '
+!!$    IF (sed_select(is_POP)) THEN
+!!$       loc_tot = SUM(int_bio_settle_timeslice(is_POP,:,:,n_k))
+!!$       IF (loc_tot > const_real_nullsmall) THEN
+!!$          write(unit=out,fmt='(A22,f7.3)',iostat=ios) &
+!!$               & ' Export C/P         : ',            &
+!!$               & SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/loc_tot
+!!$       else
+!!$          write(unit=out,fmt='(A22,A3)',iostat=ios) &
+!!$               & ' Export C/P         : ',          &
+!!$               & 'NaN'
+!!$       end if
+!!$       loc_tot = SUM(int_focnsed_timeslice(is_POP,:,:))
+!!$       IF (loc_tot > const_real_nullsmall) THEN
+!!$          write(unit=out,fmt='(A22,f7.3)',iostat=ios) &
+!!$               & ' Sediment rain C/P  : ',          &
+!!$               & SUM(int_focnsed_timeslice(is_POC,:,:))/loc_tot
+!!$       else
+!!$          write(unit=out,fmt='(A22,A3)',iostat=ios) &
+!!$               & ' Sediment rain C/P  : ',          &
+!!$               & 'NaN'
+!!$       end if
+!!$    end if
+!!$    if (int_diag_bio_sig(idiag_bio_dPO4) < const_real_nullsmall) then
+!!$       int_diag_bio_sig(idiag_bio_dPO4) = const_real_nullsmall
+!!$    end if
+!!$    select case (par_bio_prodopt)
+!!$    CASE (                        &
+!!$         & 'bio_PFeSi',           &
+!!$         & 'bio_PFeSi_Ridgwell02' &
+!!$         & )
+!!$       Write(unit=out,fmt=*) ' '
+!!$       write(unit=out,fmt='(A22,e15.7,A12,f7.3,A13)',iostat=ios) &
+!!$            & ' Total opal export  : ', &
+!!$            & SUM(int_bio_settle_timeslice(is_opal,:,:,n_k))/int_t_timeslice, &
+!!$            & ' mol yr-1 = ', &
+!!$            & 1.0E-12*SUM(int_bio_settle_timeslice(is_opal,:,:,n_k))/int_t_timeslice, &
+!!$            & ' Tmol Si yr-1'
+!!$       write(unit=out,fmt='(A22,f7.3,A13)',iostat=ios) &
+!!$            & ' -> sp POC export   : ', &
+!!$            & (int_diag_bio_sig(idiag_bio_dPO4_1)/int_diag_bio_sig(idiag_bio_dPO4))* &
+!!$            & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
+!!$            & ' PgC yr-1'
+!!$       write(unit=out,fmt='(A22,f7.3,A13)',iostat=ios) &
+!!$            & ' -> nsp POC export  : ', &
+!!$            & (int_diag_bio_sig(idiag_bio_dPO4_2)/int_diag_bio_sig(idiag_bio_dPO4))* &
+!!$            & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
+!!$            & ' PgC yr-1'
+!!$    end select
+!!$
+!!$    !
+!!$    Write(unit=out,fmt=*) ' '
+!!$    Write(unit=out,fmt=*) '=========================='
+!!$    ! *** save data - CLOSE FILE ***
+!!$    call check_iostat(ios,__LINE__,__FILE__)
+!!$    CLOSE(unit=out)
+!!$
+!!$  END SUBROUTINE sub_data_save_global_av
+!!$  ! ****************************************************************************************************************************** !
+
+  
   ! ****************************************************************************************************************************** !
   ! SAVE GLOBAL DATA
   SUBROUTINE sub_data_save_global_av()
@@ -3641,6 +4088,7 @@ CONTAINS
     real::loc_tot,loc_frac,loc_standard
     real::loc_atm_ave,loc_ocn_ave,loc_sed_ave
     real::loc_ocn_tot_M,loc_ocn_tot_A,loc_ocnatm_tot_A
+    real::loc_tot_POM,loc_tot_DOM
     CHARACTER(len=255)::loc_filename
     REAL,DIMENSION(n_phys_ocn,n_i,n_j,n_k)::loc_phys_ocn       !
     REAL,DIMENSION(n_ocn,n_i,n_j,n_k)::loc_ocn                 !
@@ -3793,10 +4241,10 @@ CONTAINS
          & phys_ocnatm(ipoa_A,:,:)*int_phys_ocn_timeslice(ipo_mask_ocn,:,:,n_k)* &
          & (1.0 - int_phys_ocnatm_timeslice(ipoa_seaice,:,:)) &
          & )
-    Write(unit=out,fmt='(A52,f8.6,A24)',iostat=ios) &
+    Write(unit=out,fmt='(A52,f10.6,A25)',iostat=ios) &
          & ' Global mean air-sea coefficient, K(CO2) ........ : ', &
          & loc_K, &
-         & '     mol m-2 yr-1 uatm-1'
+         & '      mol m-2 yr-1 uatm-1'
     call check_iostat(ios,__LINE__,__FILE__)
 
     ! *** save data - ATMOSPHERIC TRACER PROPERTIES ***
@@ -3902,6 +4350,158 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end SELECT
     END DO
+    
+    ! *** save data - WATER COLUMN REDOX AND REMINERALIZATION ***
+    ! NOTE: indexing of the remin array is: conv_lslo2idP(ls,lo) = n
+    !       time-series saving is: int_diag_redox_sig(id)/int_t_sig / loc_ocn_tot_M*loc_sig
+    ! write ocean data
+    Write(unit=out,fmt=*) ' '
+    Write(unit=out,fmt=*) '--------------------------'
+    Write(unit=out,fmt=*) 'REMINERALIZATION'
+    Write(unit=out,fmt=*) ' '
+    if (ctrl_bio_remin_redox_save) then
+       if (ocn_select(io_O2)) then
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_O2)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_O2)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_O2)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_O2)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global O2 consumtpion rate (POM+DOM) ..... : ',            &
+                  & -loc_tot_POM,-loc_tot_DOM,                                 &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
+                  & '                                            : ',          &
+                  & -sum(int_fsedocn_timeslice(io_O2,:,:)),'               ',  &
+                  & ' mol yr-1',' (sedimentary consumption)                '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            = ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_O2,:,:)) ),  &
+                  & ' Tmol yr-1 O2 TOTAL '
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global O2 consumtpion rate (POM+DOM) ..... : ',          &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            = ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM ),                      &
+                  & ' Tmol yr-1 O2 TOTAL '
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+       if (ocn_select(io_NO3)) then
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_NO3)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_NO3)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_NO3)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_NO3)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global NO3 consumtpion rate (POM+DOM) .... : ',          &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
+                  & '                                            : ',          &
+                  & -sum(int_fsedocn_timeslice(io_NO3,:,:)),'               ', &
+                  & ' mol yr-1',' (sedimentary consumption)                '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            = ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_NO3,:,:)) ),  &
+                  & ' Tmol yr-1 NO3 TOTAL'
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global NO3 consumtpion rate (POM, DOM) ... : ',    &
+                  & -loc_tot_POM,-loc_tot_DOM,                                 &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            : ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
+                  & ' Tmol yr-1 NO3 TOTAL'
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+       if (ocn_select(io_SO4)) then
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_SO4)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_SO4)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_SO4)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_SO4)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global SO4 consumtpion rate (POM, DOM) ... : ',         &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
+                  & '                                            : ',         &
+                  & -sum(int_fsedocn_timeslice(io_SO4,:,:)),'               ',&
+                  & ' mol yr-1',' (sedimentary consumption)                '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_SO4,:,:)) ),  &
+                  & ' Tmol yr-1 SO4 TOTAL'
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global SO4 consumtpion rate (POM, DOM) ... : ',         &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM ),                     &
+                  & ' Tmol yr-1 SO4 TOTl'
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+       if (ocn_select(io_CH4)) then
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_CH4)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_CH4)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_CH4)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_CH4)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global CH4 production rate (POM, DOM) .... : ',         &
+                  & loc_tot_POM,loc_tot_DOM, &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
+                  & '                                                  : ',   &
+                  & sum(int_fsedocn_timeslice(io_CH4,:,:)),'               ', &
+                  & ' mol yr-1',' (sedimentary production)                 '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+              1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_CH4,:,:)) ),  &
+                  & ' Tmol yr-1'
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global CH4 production rate (POM, DOM) .... : ',         &
+                  & loc_tot_POM,loc_tot_DOM, &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+                  & 1.0E-12*( loc_tot_POM+loc_tot_DOM ),                      &
+                  & ' Tmol yr-1 CH4 TOTAL'
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+    else
+       Write(unit=out,fmt=*) 'No remineralization summary output saved -- choose a save option that includes redox saving:'
+       Write(unit=out,fmt=*) 'bg_par_data_save_level=[14,15,16,99]'
+       Write(unit=out,fmt=*) 'or set:'
+       Write(unit=out,fmt=*) 'bg_ctrl_bio_remin_redox_save=.true.'
+    end if
 
     ! *** save data - BIOLOGICAL EXPLORT ***
     ! write export data
@@ -3914,7 +4514,7 @@ CONTAINS
        SELECT CASE (sed_type(is))
        CASE (1:7)
           ! NOTE:
-          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+          !      '1' -> assigned to primary biogenic phases; POM (POC), CaCO3, opal (all contributing to bulk composition)
           !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
           !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
           !      '4' -> assigned to elemental components associated with CaCO3; Cd
@@ -3955,7 +4555,7 @@ CONTAINS
        SELECT CASE (sed_type(is))
        CASE (1:7)
           ! NOTE:
-          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+          !      '1' -> assigned to primary biogenic phases; POM (POC), CaCO3, opal (all contributing to bulk composition)
           !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
           !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
           !      '4' -> assigned to elemental components associated with CaCO3; Cd
@@ -3963,8 +4563,8 @@ CONTAINS
           !      '6' -> assigned to elemental components associated with det; Li
           !      '7' -> assigned to particle-reactive scavenged elements; 231Pa, 230Th, Fe
           loc_sed_ave = SUM(int_focnsed_timeslice(is,:,:))/int_t_timeslice/loc_ocn_tot_A
-          write(unit=out,fmt='(A13,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
-               & ' Bottom flux ',string_sed(is),' : ', &
+          write(unit=out,fmt='(A14,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
+               & ' Benthic flux ',string_sed(is),' : ', &
                & conv_mol_umol*loc_sed_ave/conv_m2_cm2, &
                & ' umol cm-2 yr-1', &
                & ' <-> ', &
@@ -4065,8 +4665,8 @@ CONTAINS
             & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
             & ' PgC yr-1'
     end select
-
-    !
+    
+    ! END
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '=========================='
     ! *** save data - CLOSE FILE ***

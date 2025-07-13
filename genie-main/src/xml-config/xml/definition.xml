@@ -4560,6 +4560,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <value datatype="real">15.0</value>
                         <description>AOM bio energy quantum (kJ mol-1)</description>
                     </param>
+                    <param name="ctrl_bio_remin_AOM_OLD">
+			<value datatype="boolean">.false.</value>
+                        <description>Use old (muffin) zero [O2] threshold for AOM to proceed?</description>
+                    </param>
                     <param name="par_bio_remin_Rgas">
                         <value datatype="real">8.3144598E-03</value>
                         <description>Gas constant for thermo calculations (kJ K-1 mol-1)</description>
@@ -4769,7 +4773,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Catch mis-behaving rapidly-oxidizing species going less than 0.0?</description>
                     </param>
                     <param name="opt_bio_remin_oxidize_H2StoSO4">
-			<value datatype="string">linear</value>
+			<value datatype="string">2ndorder</value>
                         <description>H2S -> SO4 oxidation option</description>
                     </param>
                     <param name="opt_bio_remin_scavenge_H2StoPOMS">
@@ -4885,6 +4889,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_bio_remin_kH2StoSO4">
                         <value datatype="real">1.0E7</value>
                         <description>Oxidation rate constant for H2S -> SO4 :: -d[H2S]/dt = k1[H2S][O2] [6e8 M-1 yr-1; Jourabchi et al., 2005] [3e8 M-1 yr-1; Boudreau, 1996] [5.4e7 M-1 yr-1; Romaniello and Derry, 2010] [3.65E6 Ozaki and Tajika, 2011] [0.81E6 M-1 yr-1 :: ln k1 = 0.44 @ 212 uM O2 == 1.55 M-1 min-1; Zhang and Millero, 1993]</description>
+                    </param>
+                    <param name="par_bio_remin_kH2StoSO4_perM2perhr">
+                        <value datatype="real">0.625E6 </value>
+                        <description>2nd order oxidation rate constant for H2S as per van de Velde et al. [2021] -- 0.625E6 M-2 hr-1 [Zhang and Millero, 1993]-</description>
                     </param>
                     <param name="par_bio_remin_kH2StoPOMS">
                         <value datatype="real">1.0</value>

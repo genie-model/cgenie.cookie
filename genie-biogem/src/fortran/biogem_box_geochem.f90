@@ -1748,12 +1748,25 @@ CONTAINS
           ! calculate H2S oxidation, and cap value at H2S, O2 concentration if necessary
           SELECT CASE (opt_bio_remin_oxidize_H2StoSO4)
           CASE ('linear')
+             ! muffin DEFAULT scheme ...with default constant value = 1.0E7
+             ! ... which is much faster than the 'OLD' scheme and might explain excessive H2S oxidation and ALK/carchem issues(?)
              ! NOTE: par_bio_remin_kH2StoSO4 units are (M-1 yr-1)
              loc_H2S_oxidation_const = par_bio_remin_kH2StoSO4
              loc_H2S_oxidation = dum_dtyr*loc_H2S_oxidation_const*loc_H2S*loc_O2
+          CASE ('2ndorder')
+             ! cookie DEFAULT scheme
+             ! canonical sulfide oxidation (CSO) as defined in van de Velde et al. [2021]
+             ! NOTE: units of par_bio_remin_kH2StoSO4_perM2perhr units are (M-2 yr-1)
+             !       => kCSO = 0.625E6 M-2 h-1 (Zhang and Millero, 1993)
+             !       -> 24*365.25*0.625E6 = 5.47875e+09 -- the exact same as OLD (same reference!) !!!
+             loc_H2S_oxidation_const = par_bio_remin_kH2StoSO4_perM2perhr/conv_hr_yr
+             loc_H2S_oxidation = dum_dtyr*loc_H2S_oxidation_const*loc_H2S*loc_O2**2.0
           CASE ('OLD')
              ! change units of H2S oxidation constant from mM-2 hr-1 to M-2 yr-1
              ! and convert from O2 consumption units to H2S units (i.e., divide by 2)
+             ! NOTE: the value of const_oxidation_coeff_H2S (H2S oxidation coefficient) is fixed = 1.25
+             !       and is in terms of O2 consumed not H2S oxidized (mM-2 O2 hr-1) [Zhang and Millero, 1993]
+             !        -> 0.5*24*365.25*1.25/1.0E-6 =  5.47875e+09
              loc_H2S_oxidation_const = 0.5*const_oxidation_coeff_H2S/conv_hr_yr/(conv_mmol_mol)**2.0
              loc_H2S_oxidation = dum_dtyr*loc_H2S_oxidation_const*loc_H2S*loc_O2**2.0
           case ('complete')
@@ -2035,7 +2048,7 @@ CONTAINS
     ! CH4 + 2O2 -> CO2 + 2H2O
     DO k=n_k,dum_k1,-1
        ! pull relevant tracers
-       loc_O2 = ocn(io_O2,dum_i,dum_j,k)
+       loc_O2  = ocn(io_O2,dum_i,dum_j,k)
        loc_CH4 = ocn(io_CH4,dum_i,dum_j,k)
        if ((loc_CH4 > const_real_nullsmall) .AND. (loc_O2 > const_real_nullsmall)) then
           SELECT CASE (par_bio_remin_AER_thermo)
@@ -2132,7 +2145,7 @@ CONTAINS
     real::loc_SO4,loc_H2S
     real::loc_T,loc_TC,loc_kT
     real::loc_dG,loc_Ft,loc_Ft_min
-    real::loc_MM,loc_AOM
+    real::loc_MM,loc_AOM,loc_ki
     real::loc_r13C,loc_r14C,loc_r34S,loc_R_34S
     real,dimension(n_ocn,n_k)::loc_bio_remin
     real::loc_f
@@ -2154,7 +2167,7 @@ CONTAINS
     ! CH4 + SO4 --> HCO3- + HS- + H2O
     DO k=n_k,dum_k1,-1
        ! pull relevant tracers, and check for the presence of O2
-       loc_O2 = ocn(io_O2,dum_i,dum_j,k)
+       loc_O2  = ocn(io_O2,dum_i,dum_j,k)
        loc_SO4 = ocn(io_SO4,dum_i,dum_j,k)
        loc_CH4 = ocn(io_CH4,dum_i,dum_j,k)
        if ((loc_O2 < const_real_nullsmall) .AND. (loc_SO4 > const_real_nullsmall) .AND. (loc_CH4 > const_real_nullsmall)) then
@@ -2184,6 +2197,17 @@ CONTAINS
              loc_Ft = 1.0
           END SELECT
           ! allow CH4 oxidation coupled to SO4 reduction (units: mol CH4 kg-1)
+          ! [O2] inhibition term (using the same parameter as for SO4 reduction during Corg remin)
+          ! NOTE: ctrl_bio_remin_AOM_OLD=.true. simulates original muffin code with (loc_O2 < const_real_nullsmall)
+          if (ctrl_bio_remin_AOM_OLD) then
+             if (loc_O2 < const_real_nullsmall) then
+                loc_ki = 1.0
+             else
+                loc_ki = 0.0
+             end if
+          else
+             loc_ki = par_bio_remin_ci_O2/(par_bio_remin_ci_O2 + loc_O2)
+          end if
           ! Michaelis-Menten term
           loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
           ! temperature term
@@ -2191,7 +2215,7 @@ CONTAINS
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
           ! rate of AOM 
           ! (first-order term for 'bloom' conditions, Michaelis-Menten kinetics, temperature, and thermodynamic control)
-          loc_AOM = par_bio_remin_AOM_kAOM*loc_CH4*loc_MM*loc_kT*loc_Ft*dum_dtyr
+          loc_AOM = par_bio_remin_AOM_kAOM*loc_CH4*loc_ki*loc_MM*loc_kT*loc_Ft*dum_dtyr
           ! but don't oxidize too much CH4!
           loc_AOM = min(loc_AOM,loc_f*loc_CH4,loc_f*loc_SO4)
           ! calculate isotopic ratios

@@ -328,6 +328,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_bio_remin_AOM_dG0
   real::par_bio_remin_AOM_BEQ                                    ! AOM biological energy quantum (kJ mol-1)
   NAMELIST /ini_biogem_nml/par_bio_remin_AOM_BEQ
+  LOGICAL::ctrl_bio_remin_AOM_OLD                                ! Use old (muffin) zero [O2] threshold for AOM to proceed?
+  NAMELIST /ini_biogem_nml/ctrl_bio_remin_AOM_OLD
   real::par_bio_remin_Rgas                                       ! Gas constant for thermo calculations (kJ K-1 mol-1)
   NAMELIST /ini_biogem_nml/par_bio_remin_Rgas
   real::par_bio_remin_gammaO2                                    ! Activity coefficient for dissolved O2
@@ -379,8 +381,9 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_bio_remin_ci_O2,par_bio_remin_ci_NO3,par_bio_remin_ci_FeOOH,par_bio_remin_ci_SO4
   ! S
   real::par_bio_remin_kH2StoSO4
+  real::par_bio_remin_kH2StoSO4_perM2perhr
   real::par_bio_remin_kH2StoPOMS
-  NAMELIST /ini_biogem_nml/par_bio_remin_kH2StoSO4,par_bio_remin_kH2StoPOMS
+  NAMELIST /ini_biogem_nml/par_bio_remin_kH2StoSO4,par_bio_remin_kH2StoPOMS,par_bio_remin_kH2StoSO4_perM2perhr
   ! N
   CHARACTER(len=63)::opt_bio_remin_oxidize_NH4toNO3              ! NH4 -> NO3 oxidation option
   NAMELIST /ini_biogem_nml/opt_bio_remin_oxidize_NH4toNO3
