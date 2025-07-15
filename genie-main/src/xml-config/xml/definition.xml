@@ -1367,13 +1367,13 @@
                         <value datatype="real">0.001</value>
                         <description>pH solution tolerance</description>
                     </param>
-                    <param name="par_carbchem_pH_iterationmax">
-                        <value datatype="integer">100</value>
-                        <description>pH solution maximum number of iterations</description>
+                    <param name="par_carbchem_dpH_tolerance">
+                        <value datatype="real">10.0</value>
+                        <description>factor relaxation in pH solution tolerance for re-try</description>
                     </param>
-                    <param name="ctrl_carbchem_pHseed_retry">
-                        <value datatype="boolean">.false.</value>
-                        <description>Attempt pH re-seed if solution fails (else exit)?</description>
+                    <param name="par_carbchem_pH_iterationmax">
+                        <value datatype="integer">10</value>
+                        <description>pH solution maximum number of iterations</description>
                     </param>
                     <param name="ctrl_carbchem_noH3SiO4">
                         <value datatype="boolean">.false.</value>

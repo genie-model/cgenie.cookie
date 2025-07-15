@@ -38,41 +38,41 @@ CONTAINS
     par_carbconstset_name = trim(par_carbconstset_name)
     par_adj_carbconst_option = trim(par_adj_carbconst_option)
     par_gem_indir_name = trim(par_gem_indir_name)//'/'
- 
-if (ctrl_debug_init > 0) then
-    ! --- TRACER SELECTION  ------------------------------------------------------------------------------------------------------ !
-    ! NOTE: reported at end of initialise_gem when tracer name information is available
-    ! --- GEOCHEM CONTROLS ------------------------------------------------------------------------------------------------------- !
-    print*,'--- GEOCHEM CONTROLS ---'
-    print*,'carbonate dissociation constants set                : ',trim(par_carbconstset_name)
-    print*,'OLD pH solution tolerance test?                     : ',ctrl_carbchem_pH_tolerance_OLD
-    print*,'pH solution tolerance                               : ',par_carbchem_pH_tolerance
-    print*,'pH solution maximum number of iterations            : ',par_carbchem_pH_iterationmax
-    print*,'Attempt pH re-seed if solution fails (else exit)?   : ',ctrl_carbchem_pHseed_retry
-    print*,'Ignore H3SiO4 in the calculation of carbonate ALK   : ',ctrl_carbchem_noH3SiO4
-    ! --- MISC CONTROLS  --------------------------------------------------------------------------------------------------------- !
-    print*,'--- MISC CONTROLS ---'
-    print*,'minimum T used in empirical geochem calculations    : ',par_geochem_Tmin 
-    print*,'maximum T used in empirical geochem calculations    : ',par_geochem_Tmax
-    print*,'minimum S used in empirical geochem calculations    : ',par_geochem_Smin 
-    print*,'maximum S used in empirical geochem calculations    : ',par_geochem_Smax 
-    print*,'minimum T used in empirical carbchem calculations   : ',par_carbchem_Tmin 
-    print*,'maximum T used in empirical carbchem calculations   : ',par_carbchem_Tmax
-    print*,'minimum S used in empirical carbchem calculations   : ',par_carbchem_Smin 
-    print*,'maximum S used in empirical carbchem calculations   : ',par_carbchem_Smax 
-    print*,'assumed longitudinal offset of the grid             : ',par_grid_lon_offset
-    print*,'Debug (initialization) level                        : ',ctrl_debug_init
-    print*,'Debug (loop) level                                  : ',ctrl_debug_loop
-    print*,'Debug (end) level                                   : ',ctrl_debug_end
-    print*,'Report all run-time warnings?                       : ',ctrl_debug_reportwarnings
-    ! --- I/O: DIRECTORY DEFINITIONS --------------------------------------------------------------------------------------------- !
-    print*,'--- I/O: DIRECTORY DEFINITIONS ---'
-    print*,'Input dir. name                                     : ',trim(par_gem_indir_name)
-    print*,'filetype for series output files for GEM modules    : ',trim(string_results_ext)
-    ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ############################################################################# !
-    !
-    ! ############################################################################################################################ !
-end if
+
+    if (ctrl_debug_init > 0) then
+       ! --- TRACER SELECTION  ------------------------------------------------------------------------------------------------------ !
+       ! NOTE: reported at end of initialise_gem when tracer name information is available
+       ! --- GEOCHEM CONTROLS ------------------------------------------------------------------------------------------------------- !
+       print*,'--- GEOCHEM CONTROLS ---'
+       print*,'carbonate dissociation constants set                : ',trim(par_carbconstset_name)
+       print*,'OLD pH solution tolerance test?                     : ',ctrl_carbchem_pH_tolerance_OLD
+       print*,'pH solution tolerance                               : ',par_carbchem_pH_tolerance
+       print*,'factor relaxation in pH tolerance for re-try        : ',par_carbchem_dpH_tolerance
+       print*,'pH solution maximum number of iterations            : ',par_carbchem_pH_iterationmax
+       print*,'Ignore H3SiO4 in the calculation of carbonate ALK   : ',ctrl_carbchem_noH3SiO4
+       ! --- MISC CONTROLS  --------------------------------------------------------------------------------------------------------- !
+       print*,'--- MISC CONTROLS ---'
+       print*,'minimum T used in empirical geochem calculations    : ',par_geochem_Tmin 
+       print*,'maximum T used in empirical geochem calculations    : ',par_geochem_Tmax
+       print*,'minimum S used in empirical geochem calculations    : ',par_geochem_Smin 
+       print*,'maximum S used in empirical geochem calculations    : ',par_geochem_Smax 
+       print*,'minimum T used in empirical carbchem calculations   : ',par_carbchem_Tmin 
+       print*,'maximum T used in empirical carbchem calculations   : ',par_carbchem_Tmax
+       print*,'minimum S used in empirical carbchem calculations   : ',par_carbchem_Smin 
+       print*,'maximum S used in empirical carbchem calculations   : ',par_carbchem_Smax 
+       print*,'assumed longitudinal offset of the grid             : ',par_grid_lon_offset
+       print*,'Debug (initialization) level                        : ',ctrl_debug_init
+       print*,'Debug (loop) level                                  : ',ctrl_debug_loop
+       print*,'Debug (end) level                                   : ',ctrl_debug_end
+       print*,'Report all run-time warnings?                       : ',ctrl_debug_reportwarnings
+       ! --- I/O: DIRECTORY DEFINITIONS --------------------------------------------------------------------------------------------- !
+       print*,'--- I/O: DIRECTORY DEFINITIONS ---'
+       print*,'Input dir. name                                     : ',trim(par_gem_indir_name)
+       print*,'filetype for series output files for GEM modules    : ',trim(string_results_ext)
+       ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ############################################################################# !
+       !
+       ! ############################################################################################################################ !
+    end if
   END SUBROUTINE sub_load_goin_gem
   ! ****************************************************************************************************************************** !
 

@@ -186,6 +186,8 @@ CONTAINS
     ! area available for air-sea gas transfer
     loc_A = (1.0 - phys_ocnatm(ipoa_seaice,dum_i,dum_j))*phys_ocnatm(ipoa_A,dum_i,dum_j)
     ! maximum fraction consumed in any given geochemical reaction
+    ! NOTE: this is only applied to the implicit H2S transfer to the atmosphere and associated instantanneous and complete oxidation
+    !       i.e., effectively placing a limit on the maximum rate of H2S consumption as per in other true aqueous reactions
     loc_f = dum_dtyr/par_bio_geochem_tau
     ! -------------------------------------------------------- !
     ! calculate air-sea gas exchange fluxes
@@ -229,14 +231,14 @@ CONTAINS
              elseif (io == io_H2S) then
                 ! make special case of H2S if it is being implicitly oxidized in the atmosphere
                 loc_ocn = ocn(io,dum_i,dum_j,n_k)
-                 select case (opt_ocnatmH2S_fix)
-                 case ('KMM','KMM_lowO2') ! default
-                    ! set 'buffer' to maximum fraction allowed in a geochem reaction
-                    ! (becasue we are implicitly allowing an oxidation reaction to occur in the atmosphere)
-                    loc_buff = loc_f                
-                 case default
-                    loc_buff = 1.0
-                 end select
+                select case (opt_ocnatmH2S_fix)
+                case ('KMM','KMM_lowO2') ! default
+                   ! set 'buffer' to maximum fraction allowed in a geochem reaction
+                   ! (becasue we are implicitly allowing an oxidation reaction to occur in the atmosphere)
+                   loc_buff = loc_f                
+                case default
+                   loc_buff = 1.0
+                end select
              else
                 loc_ocn = ocn(io,dum_i,dum_j,n_k)
                 loc_buff = 1.0
