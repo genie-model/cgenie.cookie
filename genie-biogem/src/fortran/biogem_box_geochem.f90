@@ -2170,7 +2170,7 @@ CONTAINS
        loc_O2  = ocn(io_O2,dum_i,dum_j,k)
        loc_SO4 = ocn(io_SO4,dum_i,dum_j,k)
        loc_CH4 = ocn(io_CH4,dum_i,dum_j,k)
-       if ((loc_O2 < const_real_nullsmall) .AND. (loc_SO4 > const_real_nullsmall) .AND. (loc_CH4 > const_real_nullsmall)) then
+       if ((loc_CH4 > const_real_nullsmall) .AND. (loc_SO4 > const_real_nullsmall)) then
           SELECT CASE (par_bio_remin_AOM_thermo)
           CASE('off')
              ! thermo term disabled
