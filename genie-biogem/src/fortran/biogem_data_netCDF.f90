@@ -210,7 +210,7 @@ CONTAINS
     loc_it(1) = loc_id_time
     call sub_defvar ('time', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'T', 'D' &
          &, 'Year', 'time', trim(loc_timunit))
-    call sub_defvar ('year', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'F','year', ' ',' ')
+    call sub_defvar ('year', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'T', 'F','year', ' ',' ')
     !-----------------------------------------------------------------------
     !       define 1d data (x, y or z)
     !-----------------------------------------------------------------------
@@ -230,19 +230,19 @@ CONTAINS
     call sub_defvar ('yu', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Y', 'D' , &
          &'latitude of the u grid', 'latitude', 'degrees_north')
     loc_it(1) = loc_id_lon_e
-    call sub_defvar ('lon_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('lon_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'X', 'D' , &
          &'longitude of t grid edges', ' ', 'degrees')
     loc_it(1) = loc_id_lat_e
-    call sub_defvar ('lat_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('lat_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Y', 'D' , &
          &'latitude of t grid edges', ' ', 'degrees')
     loc_it(1) = loc_id_zt_e
-    call sub_defvar ('zt_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('zt_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Z', 'D' , &
          &'depth of t grid edges', ' ', 'm')
     loc_it(1) = loc_id_xu_e
-    call sub_defvar ('xu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('xu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'X', 'D' , &
          &'longitude of u grid edges', ' ', 'degrees')
     loc_it(1) = loc_id_yu_e
-    call sub_defvar ('yu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('yu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Y', 'D' , &
          &'latitude of u grid edges', ' ', 'degrees')
     SELECT CASE (dum_dd)
     CASE (2)

@@ -294,10 +294,6 @@ CONTAINS
        endif
        i = nf90_put_att (dum_ncid, loc_iv, 'missing_value', nf90_fill_double)
        call sub_checkerror (i,'defvar fill_value double '//trim(dum_name))
-       if (dum_axis .eq. 'Z') then
-          i = nf90_put_att (dum_ncid, loc_iv, 'positive', 'down')
-       	  call sub_checkerror (i,'defvar positive string '//trim(dum_name))
-       end if
     elseif (dum_type .eq. 'F') then
        i = nf90_def_var (dum_ncid, dum_name, nf90_float, dum_id(1:dum_nd), loc_iv)
        call sub_checkerror (i,'defvar real '//dum_name)
@@ -358,6 +354,10 @@ CONTAINS
        i = nf90_put_att (dum_ncid,loc_iv,'units', dum_units)
        call sub_checkerror(i,'defvar units '//trim(dum_name))
     endif
+    if (dum_axis .eq. 'Z') then
+       i = nf90_put_att (dum_ncid, loc_iv, 'positive', 'down')
+       call sub_checkerror (i,'defvar positive string '//trim(dum_name))
+    end if
 
   end subroutine sub_defvar
 
