@@ -889,6 +889,8 @@ subroutine biogem(        &
                             & carbisor(:,i,j,k)      &
                             & )
                     end IF
+                    ! update accumulated carbchem error occurrence array
+                    diag_carb_err(i,j,k) = diag_carb_err(i,j,k) + carb(ic_err_n,i,j,k)
                  end do
                  ! surface-only properties only! -- estimate Revelle (and 'sensitivity') factor
                  ! NOTE: always calculate this -- needed in air-sea gas excahnge (limitation)
@@ -3320,7 +3322,7 @@ SUBROUTINE diag_biogem_timeslice( &
   logical,intent(in)::dum_gemlite                                ! in GEMlite phase of cycle?
   ! local variables
   INTEGER::i,j,k,l,io,ia,is
-  integer::loc_k1                                                !
+  integer::loc_k1                                               !
   real::loc_t,loc_dts,loc_dtyr                                   !
   real::loc_yr_save                                              !
   REAL,DIMENSION(0:n_j,0:n_k)::loc_opsi,loc_zpsi,loc_opsia,loc_opsip !
@@ -3371,6 +3373,7 @@ SUBROUTINE diag_biogem_timeslice( &
               DO i=1,n_i
                  DO j=1,n_j
                     loc_k1 = goldstein_k1(i,j)
+                    ! only calculate at ocean surface
                     IF (n_k >= loc_k1) THEN
                        ! ocn->atm
                        ! NOTE: convert units from (mol m-2 s-1) to (mol yr-1)
@@ -3391,7 +3394,8 @@ SUBROUTINE diag_biogem_timeslice( &
                           locij_fsedocn(io,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxocn1(io,i,j)
                        end do
                     end IF
-                    DO k=goldstein_k1(i,j),n_k
+                    ! calculate full water column        
+                    DO k=loc_k1,n_k
                        ! calculate carbonate dissociation constants
                        CALL sub_calc_carbconst(           &
                             & phys_ocn(ipo_Dmid,i,j,k), &

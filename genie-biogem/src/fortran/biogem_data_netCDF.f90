@@ -998,7 +998,7 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','d13C of CO2(aq)','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo',const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_CO2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           loc_ijk(:,:,:) = const_real_zero
           DO i=1,n_i
@@ -1014,7 +1014,7 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','d13C of HCO3-','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo',const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_HCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           loc_ijk(:,:,:) = const_real_zero
           DO i=1,n_i
@@ -1030,7 +1030,7 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','d13C of CO32-','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo',const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_CO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        end if
     end If
@@ -2292,7 +2292,7 @@ CONTAINS
     integer::ib,id,ip,ic
     integer::loc_k1
     integer::loc_iou,loc_ntrec
-    CHARACTER(len=255)::loc_unitsname,loc_longname
+    CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
     real,DIMENSION(n_i,n_j)::loc_ij,loc_mask_surf,loc_mask_surf_ALL
     real::loc_tot,loc_frac,loc_standard
     real::loc_d13C,loc_d14C
@@ -2717,8 +2717,8 @@ CONTAINS
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_diag_proxy) then
        IF (opt_select(iopt_select_carbchem)) THEN
-          loc_ij(:,:) = const_real_zero
           DO ic=1,n_carb
+             loc_ij(:,:) = const_real_zero
              DO i=1,n_i
                 DO j=1,n_j
                    loc_k1 = goldstein_k1(i,j)
@@ -2733,15 +2733,26 @@ CONTAINS
                 end DO
              end DO
              SELECT CASE (ic)
-             CASE (ic_ohm_cal,ic_ohm_arg)
-                loc_unitsname = ' '
+             CASE (ic_pHsws)
+                loc_unitsname = 'pH(sws)'                
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err_n)
+                loc_unitsname = 'n/a'
+             CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+                loc_unitsname = 'n/a' 
              case default
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_sur_'//trim(string_carb(ic)), &
-                  & 'surface '//trim(string_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'surface ocean carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_sur_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           END DO
+          ! save accumulated carbchem error occurrence array
+          loc_ij(:,:) = diag_carb_err(:,:,n_k)
+          loc_shortname = 'carb_sur_err_n_sum'
+          loc_longname  = 'surface ocean carbonate chemistry properties - '//'Accumulated occurrence of failure of the pH calculation.'
+          loc_unitsname = 'n/a'
+          call sub_adddef_netcdf(loc_iou,3,trim(loc_shortname),trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
        end if
     end if
     !----------------------------------------------------------------
@@ -2749,8 +2760,8 @@ CONTAINS
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_diag_proxy) then
        IF (opt_select(iopt_select_carbchem)) THEN
-          loc_ij(:,:) = const_real_zero
           DO ic=1,n_carb
+             loc_ij(:,:) = const_real_zero
              DO i=1,n_i
                 DO j=1,n_j
                    loc_k1 = goldstein_k1(i,j)
@@ -2765,13 +2776,17 @@ CONTAINS
                 end DO
              end DO
              SELECT CASE (ic)
-             CASE (ic_ohm_cal,ic_ohm_arg)
-                loc_unitsname = ' '
+             CASE (ic_pHsws)
+                loc_unitsname = 'pH(sws)'                
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err_n)
+                loc_unitsname = 'n/a'
+             CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+                loc_unitsname = 'n/a' 
              case default
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_ben_'//trim(string_carb(ic)), &
-                  & 'bottom-water '//trim(string_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'benthic carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_ben_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           END DO
        end if
@@ -3157,7 +3172,7 @@ CONTAINS
        end IF
     end if
     !----------------------------------------------------------------
-    !       save overlying ocean carbonate chemistry data
+    !       save sediment-overlying ocean carbonate chemistry data
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_carb .AND. (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_ocnsed)) then
        IF (opt_select(iopt_select_carbchem)) THEN
@@ -3183,7 +3198,7 @@ CONTAINS
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_ben_'//trim(string_carb(ic)), &
-                  & 'bottom-water '//trim(string_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'benthic carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_ben_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_sed_mask)
           END DO
        end if
@@ -3316,7 +3331,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     INTEGER::l,i,j,k,io,is,ip,ic,icc,loc_iou,loc_ntrec
     integer::id
-    CHARACTER(len=255)::loc_unitsname
+    CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
     real,DIMENSION(n_i,n_j)::loc_ij
     real,DIMENSION(n_i,n_j,n_k)::loc_ijk,loc_mask,loc_sed_mask
     real::loc_ocn_mean_S
@@ -3514,7 +3529,6 @@ CONTAINS
     !       OCEAN 'PHYSICS'
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_phys_ocn) then
-       loc_ijk(:,:,:) = const_real_zero
        DO ip=1,n_phys_ocn
           loc_ijk(:,:,:) = int_phys_ocn_timeslice(ip,:,:,:)/int_t_timeslice
           call sub_adddef_netcdf(loc_iou,4,'phys_ocn_'//trim(string_phys_ocn(ip)), &
@@ -3527,21 +3541,35 @@ CONTAINS
     !       CARBONATE CHEMISTRY FIELD
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_carb) then
-       loc_ijk(:,:,:) = const_real_zero
        DO ic=1,n_carb
           loc_ijk(:,:,:) = int_carb_timeslice(ic,:,:,:)/int_t_timeslice
+             SELECT CASE (ic)
+             CASE (ic_pHsws)
+                loc_unitsname = 'pH(sws)'                
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err_n)
+                loc_unitsname = 'n/a'
+             CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+                loc_unitsname = 'n/a' 
+             case default
+                loc_unitsname = 'mol kg-1'
+             end SELECT
           call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
-               & 'carbonate chemistry properties - '//trim(string_carb(ic)),' ',const_real_zero,const_real_zero)
+               & 'carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_'//trim(string_carb(ic)),loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        END DO
+       ! save accumulated carbchem error occurrence array
+       loc_ijk(:,:,:) = diag_carb_err(:,:,:)
+       loc_shortname = 'carb_err_n_sum'
+       loc_longname  = 'carbonate chemistry properties - '//'Accumulated occurrence of failure of the pH calculation.'
+       call sub_adddef_netcdf(loc_iou,4,trim(loc_shortname),trim(loc_longname),' ',const_real_zero,const_real_zero)
+       call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end if
     !----------------------------------------------------------------
     !       CARBONATE CHEMISTRY CONSTANTS (YAWN)
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_carbconst) then
        DO icc=1,n_carbconst
-          loc_ijk(:,:,:) = const_real_zero
           loc_ijk(:,:,:) = int_carbconst_timeslice(icc,:,:,:)/int_t_timeslice
           call sub_adddef_netcdf(loc_iou,4, 'carb_const_'//trim(string_carbconst(icc)), &
                & 'carbonate chemistry dissociation constants - '//trim(string_carbconst(icc)),' ',const_real_zero,const_real_zero)

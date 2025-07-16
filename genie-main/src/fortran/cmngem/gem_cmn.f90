@@ -83,7 +83,7 @@ MODULE gem_cmn
 
   ! *** array dimensions ***
   ! main biogeochem ocean array dimensions 
-  INTEGER,PARAMETER::n_carb                               = 15          ! number of ocean box chemistry descriptors
+  INTEGER,PARAMETER::n_carb                               = 16          ! number of ocean box chemistry descriptors
   INTEGER,PARAMETER::n_carbconst                          = 17          ! number of ocean box chemistry constants descriptors
   INTEGER,PARAMETER::n_carbalk                            = 13          ! number of alkalinty chemistry descriptors
   INTEGER,PARAMETER::n_carbisor                           = 08          ! number of carbonate isotopic ratio descriptors
@@ -348,6 +348,7 @@ MODULE gem_cmn
   INTEGER,PARAMETER::ic_RdfCO2dDIC                        = 13    ! fCO2 sensitivity factor
   INTEGER,PARAMETER::ic_RdALKdDIC                         = 14    ! ALK (CaCO3 )buffering factor factor
   INTEGER,PARAMETER::ic_pH_n                              = 15    ! number of iterations taken to solve for pH
+  INTEGER,PARAMETER::ic_err_n                             = 16    ! number of errors
   ! (carbonate) chemistry descriptors array indices
   INTEGER,PARAMETER::icc_k                                = 01    ! 
   INTEGER,PARAMETER::icc_k1                               = 02    ! 
@@ -515,7 +516,8 @@ MODULE gem_cmn
        & 'RdDICdALK       ', &
        & 'RdfCO2dDIC      ', &
        & 'RdALKdDIC       ', &
-       & 'pH_n            ' /)
+       & 'pH_n            ', &
+       & 'err_n           ' /)
   ! carbonate chemistry dissociation constants
   CHARACTER(len=16),DIMENSION(n_carbconst),PARAMETER::string_carbconst = (/ &
        & 'k               ', &
@@ -560,6 +562,26 @@ MODULE gem_cmn
        & 'CO2_r14C        ', &
        & 'CO3_r14C        ', &
        & 'HCO3_r14C       ' /)
+  
+  ! *** netCDF longnames ***
+  ! carbonate chemistry
+  CHARACTER(len=63),DIMENSION(n_carb),PARAMETER::string_longname_carb = (/  &
+       & 'Hydrogen ion concentration -- [H+]                             ', &
+       & 'CO2 fugacity -- fCO2                                           ', &
+       & 'CO2 aqueous concentration -- [CO2(aq)]                         ', &
+       & 'Carbonate ion concentration -- [CO32-]                         ', &
+       & 'Bicarbonate ion concentration -- [HCO3-]                       ', &
+       & 'Saturation state for calcite -- OHM(cal)                       ', &
+       & 'Saturation state for aragonite -- OHM(arg)                     ', &
+       & 'CO32- deviation from saturation (calcite)                      ', &
+       & 'CO32- deviation from saturation (aragonite)                    ', &
+       & 'Revelle Factor (RF)                                            ', &
+       & 'pH on the seawater scale -- pH(sws)                            ', &
+       & 'Sensitivity of DIC to an ALK perturbation at fixed pCO2        ', &
+       & 'Sensitivity of fCO2 to a DIC perturbation at fixed ALK         ', &
+       & 'Sensitivity of ALK to a DIC perturbation at fixed OHM          ', &
+       & 'Mean number of iterations required to converge pH              ', &
+       & 'Mean number of failures of pH convergence                      '/)
 
   ! *** I/O ***
   ! default I/O parameters

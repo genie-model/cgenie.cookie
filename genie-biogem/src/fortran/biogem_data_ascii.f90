@@ -25,7 +25,7 @@ CONTAINS
     INTEGER::l,io,ia,is,ic,ios,idm2D
     integer::ib,id
     CHARACTER(len=255)::loc_filename
-    CHARACTER(len=255)::loc_string
+    CHARACTER(len=255)::loc_string,loc_string_title
     CHARACTER(len=12)::loc_string_Dmin
     real::loc_t = 0.0
     logical::loc_save
@@ -323,6 +323,7 @@ CONTAINS
           loc_filename=fun_data_timeseries_filename( &
                & loc_t,par_outdir_name,trim(par_outfile_name)//'_series','carb_sur_'//TRIM(string_carb(ic)),string_results_ext &
                & )
+          loc_string_title = '% surface ocean carbonate chemistry properties (and isotopic composition where relevant) - '//string_longname_carb(ic)
           SELECT CASE (ic)
           CASE (ic_ohm_cal,ic_ohm_arg)
              loc_string = '% time (yr) / ' //&
@@ -356,6 +357,8 @@ CONTAINS
           end SELECT
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+          call check_iostat(ios,__LINE__,__FILE__)
+          write(unit=out,fmt=*,iostat=ios) trim(loc_string_title)
           call check_iostat(ios,__LINE__,__FILE__)
           write(unit=out,fmt=*,iostat=ios) trim(loc_string)
           call check_iostat(ios,__LINE__,__FILE__)

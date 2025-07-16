@@ -3485,11 +3485,12 @@ CONTAINS
     ! zero arrays
     ! NOTE: leave carb_TSn array at its initialized state
     !       so that a full update of carb constants etc is ALWAYS performed upon the first call to tstep_biogem
-    carbconst(:,:,:,:) = 0.0
-    carb(:,:,:,:)      = 0.0
-    carbalk(:,:,:,:)   = 0.0
-    carbisor(:,:,:,:)  = 0.0
-    carb_TSn(:,:,:,:)  = 0.0
+    carbconst(:,:,:,:)   = 0.0
+    carb(:,:,:,:)        = 0.0
+    carbalk(:,:,:,:)     = 0.0
+    carbisor(:,:,:,:)    = 0.0
+    carb_TSn(:,:,:,:)    = 0.0
+    diag_carb_err(:,:,:) = 0.0 ! accumulated carbchem error occurrence
     ! initialize arrays
     DO i=1,n_i
        DO j=1,n_j

@@ -1317,6 +1317,8 @@ MODULE biogem_lib
   real,DIMENSION(:,:,:,:),ALLOCATABLE::diag_redox                ! redox diagnostics
   REAL,DIMENSION(n_sed,n_i,n_j)::diag_ecogem_part                !
   REAL,DIMENSION(n_ocn,n_i,n_j)::diag_ecogem_remin               !
+  ! MISC
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_err                     ! accumulated carbchem error occurrence
 
   ! *** integrated (time-averaged) time-series storage scalars and vectors ***
   !
