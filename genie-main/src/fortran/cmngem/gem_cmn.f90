@@ -45,9 +45,11 @@ MODULE gem_cmn
   logical::ctrl_carbchem_pH_tolerance_OLD                               ! OLD pH solution tolerance test?
   NAMELIST /ini_gem_nml/ctrl_carbchem_pH_tolerance_OLD
   real::par_carbchem_pH_tolerance                                       ! pH solution tolerance
-  real::par_carbchem_dpH_tolerance                                      ! pH solution maximum number of iterations
+  real::par_carbchem_pH_tolerance_buffering                             ! pH solution tolerance for calculating buffering  
+  real::par_carbchem_dpH_tolerance                                      ! relaxation factor in pH solution tolerance for re-try
+  NAMELIST /ini_gem_nml/par_carbchem_pH_tolerance,par_carbchem_dpH_tolerance,par_carbchem_pH_tolerance_buffering
   integer::par_carbchem_pH_iterationmax                                 ! pH solution maximum number of iterations
-  NAMELIST /ini_gem_nml/par_carbchem_pH_tolerance,par_carbchem_dpH_tolerance,par_carbchem_pH_iterationmax
+  NAMELIST /ini_gem_nml/par_carbchem_pH_iterationmax
   real::par_geochem_Tmin                                                ! minimum T used in empirical geochem calculations
   real::par_geochem_Tmax                                                ! maximum T used in empirical geochem calculations
   NAMELIST /ini_gem_nml/par_geochem_Tmin,par_geochem_Tmax

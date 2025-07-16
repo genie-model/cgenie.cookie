@@ -1367,9 +1367,13 @@
                         <value datatype="real">0.001</value>
                         <description>pH solution tolerance</description>
                     </param>
+                    <param name="par_carbchem_pH_tolerance_buffering">
+                        <value datatype="real">0.001</value>
+                        <description>pH solution tolerance for calculating buffering</description>
+                    </param>
                     <param name="par_carbchem_dpH_tolerance">
                         <value datatype="real">10.0</value>
-                        <description>factor relaxation in pH solution tolerance for re-try</description>
+                        <description>relaxation factor in pH solution tolerance for re-try</description>
                     </param>
                     <param name="par_carbchem_pH_iterationmax">
                         <value datatype="integer">10</value>

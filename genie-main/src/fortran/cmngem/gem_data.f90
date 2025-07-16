@@ -47,6 +47,7 @@ CONTAINS
        print*,'carbonate dissociation constants set                : ',trim(par_carbconstset_name)
        print*,'OLD pH solution tolerance test?                     : ',ctrl_carbchem_pH_tolerance_OLD
        print*,'pH solution tolerance                               : ',par_carbchem_pH_tolerance
+       print*,'pH solution tolerance for calciulating buffering    : ',par_carbchem_pH_tolerance_buffering
        print*,'factor relaxation in pH tolerance for re-try        : ',par_carbchem_dpH_tolerance
        print*,'pH solution maximum number of iterations            : ',par_carbchem_pH_iterationmax
        print*,'Ignore H3SiO4 in the calculation of carbonate ALK   : ',ctrl_carbchem_noH3SiO4

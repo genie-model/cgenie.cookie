@@ -744,7 +744,7 @@ CONTAINS
              if (.NOT. loc_flag_pHtol_updated) then
                 CALL sub_report_error(                                                                            &
                      & 'gem_carbchem.f90','sub_calc_carb',                                                        &
-                     & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(4,n)// &
+                     & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
                      & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
                      & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
                      & ' pH (NEW), pH (OLD), pH (guess #1), pH (guess #2)',                                       &
@@ -752,7 +752,7 @@ CONTAINS
                      & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                                 &
                      & -LOG10(loc_H),-LOG10(loc_H_old),-LOG10(loc_H1),-LOG10(loc_H2)/),.false.                    &
                      & )
-                ! try relaxing pH tolerance and re-try (re-set iteration counter)
+                ! relax pH tolerance and re-try (re-set iteration counter) but flag this
                 ! NOTE: relax pH tolerance (dum_pHtol) by a factor of: par_carbchem_dpH_tolerance
                 loc_pHtol = 10.0*dum_pHtol
                 loc_flag_pHtol_updated = .true.
@@ -760,7 +760,7 @@ CONTAINS
              else
                 CALL sub_report_error(                                                                            &
                      & 'gem_carbchem.f90','sub_calc_carb',                                                        &
-                     & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(4,n)// &
+                     & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
                      & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
                      & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
                      & ' pH (NEW), pH (OLD), pH (guess #1), pH (guess #2)',                                       &
@@ -1337,24 +1337,19 @@ CONTAINS
     ! INITIALIZE VARIABLES
     ! -------------------------------------------------------- !
     ! initialize local concentrations that could remain undefined if dum_H2Stot or dum_NH4tot are negative
-    loc_HS = 0.0
+    loc_HS  = 0.0
     loc_NH3 = 0.0
     ! define DIC perturbion
     loc_dDIC = 1.0E-6;
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set stricter pH tolorence
-    if (.NOT. ctrl_carbchem_pH_tolerance_OLD) then
-       loc_pHtol = 0.01*par_carbchem_pH_tolerance
-    else
-       loc_pHtol = par_carbchem_pH_tolerance
-    end if
+    ! set potentially stricter pH tolorence
+    loc_pHtol = par_carbchem_pH_tolerance_buffering
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
     ! calculate and save initial [H] value
-    ! NOTE: omit call to sub_calc_carb for back-compatability
-    ! NOTE: solving for pH with the stricter local tolorence
+    ! NOTE: omit this call to sub_calc_carb for back-compatability
     if (.NOT. ctrl_carbchem_pH_tolerance_OLD) then
        call sub_calc_carb(                                                               &
             & loc_pHtol,                                                                 &
@@ -1462,7 +1457,7 @@ CONTAINS
           n = n + 1
        end if
        if ((loc_H1 < const_real_nullsmall) .OR. (loc_H2 < const_real_nullsmall) .OR. (n > par_carbchem_pH_iterationmax)) THEN
-          ! create negative (null) Revelle factor
+          ! write zero (null) Revelle factor
           loc_DIC_RFO = 0.0
           exit
        end if
@@ -1483,6 +1478,7 @@ CONTAINS
 
   ! ****************************************************************************************************************************** !
   ! ESTIMATE OAE EFFICIENCY FACTOR -- dDIC from dALK at constant [CO2(aq)] 
+  ! NOTE: co-opt pH tolorence and max number of pH iterations for carb chem tolorence and max iterations
   function fun_calc_carb_EF0(                                                       &
        & dum_DIC,dum_ALK,dum_Ca,                                                    &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
@@ -1504,7 +1500,7 @@ CONTAINS
     REAL::loc_ALK,loc_dALK,loc_DIC,loc_DIC_low,loc_DIC_high,loc_CO2_init
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
-    integer::nmax,n
+    integer::n
     real::loc_pHtol
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
@@ -1519,10 +1515,8 @@ CONTAINS
     loc_DIC_high = dum_DIC + 1.0*loc_dALK
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set stricter pH tolorence
-    loc_pHtol = 0.01*par_carbchem_pH_tolerance
-    ! max iterations allowed
-    nmax = 20
+    ! set potentially stricter pH tolorence
+    loc_pHtol = par_carbchem_pH_tolerance_buffering
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
@@ -1550,9 +1544,9 @@ CONTAINS
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
        ! test for [CO2] estimate getting 'sufficiently' close to target value
-       IF (ABS(loc_carb(ic_conc_CO2) - loc_CO2_init) < 0.00001*loc_dALK) EXIT
+       IF (ABS(loc_carb(ic_conc_CO2) - loc_CO2_init) < loc_pHtol*loc_dALK) EXIT
        ! test for n exceeding max iterations allowed
-       if (n >= nmax) exit
+       if (n >= par_carbchem_pH_iterationmax) exit
        ! update DIC bounds
        IF (loc_carb(ic_conc_CO2) < loc_CO2_init) THEN
           loc_DIC_low  = loc_DIC
@@ -1573,7 +1567,8 @@ CONTAINS
 
 
   ! ****************************************************************************************************************************** !
-  ! ESTIMATE NEUTRALIZATION EFFICIENCY FACTOR -- dALK (or dCaCO3) from dDIC at constant OHMEGA 
+  ! ESTIMATE NEUTRALIZATION EFFICIENCY FACTOR -- dALK (or dCaCO3) from dDIC at constant OHMEGA
+  ! NOTE: co-opt pH tolorence and max number of pH iterations for OHM tolorence and max iterations
   function fun_calc_carb_NF0(                                                       &
        & dum_DIC,dum_ALK,dum_Ca,                                                    &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
@@ -1595,7 +1590,7 @@ CONTAINS
     REAL::loc_ALK,loc_dALK,loc_DIC,loc_dDIC,loc_ALK_low,loc_ALK_high,loc_ohm_cal_init
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
-    integer::nmax,n
+    integer::n
     real::loc_pHtol
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
@@ -1613,10 +1608,8 @@ CONTAINS
     loc_ALK_high = dum_ALK + 2.0*loc_dDIC
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set stricter pH tolorence
-    loc_pHtol = 0.01*par_carbchem_pH_tolerance
-    ! max iterations allowed
-    nmax = 20
+    ! set potentially stricter pH tolorence
+    loc_pHtol = par_carbchem_pH_tolerance_buffering
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
@@ -1647,9 +1640,9 @@ CONTAINS
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
        ! test for OHMEGA estimate getting 'sufficiently' close to target value
-       IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < 0.00001) EXIT
+       IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < loc_pHtol) EXIT
        ! test for n exceeding max iterations allowed
-       if (n >= nmax) exit
+       if (n >= par_carbchem_pH_iterationmax) exit
        ! update DIC bounds
        IF (loc_carb(ic_ohm_cal) < loc_ohm_cal_init) THEN
           loc_ALK_low  = loc_ALK
