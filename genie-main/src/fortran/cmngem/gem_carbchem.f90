@@ -1344,8 +1344,12 @@ CONTAINS
     loc_dDIC = 1.0E-6;
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set potentially stricter pH tolorence
-    loc_pHtol = par_carbchem_pH_tolerance_buffering
+    ! set pH tolorence
+    if (ctrl_carbchem_pH_OLD) then
+       loc_pHtol = par_carbchem_pH_tolerance
+    else
+       loc_pHtol = par_carbchem_pH_tolerance_buffering
+    end if
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
@@ -1516,7 +1520,7 @@ CONTAINS
     loc_DIC_high = dum_DIC + 1.0*loc_dALK
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set potentially stricter pH tolorence
+    ! set pH tolorence
     loc_pHtol = par_carbchem_pH_tolerance_buffering
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
@@ -1609,7 +1613,7 @@ CONTAINS
     loc_ALK_high = dum_ALK + 2.0*loc_dDIC
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set potentially stricter pH tolorence
+    ! set pH tolorence
     loc_pHtol = par_carbchem_pH_tolerance_buffering
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION

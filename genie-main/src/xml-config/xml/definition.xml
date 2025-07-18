@@ -1368,7 +1368,7 @@
                         <description>pH solution tolerance</description>
                     </param>
                     <param name="par_carbchem_pH_tolerance_buffering">
-                        <value datatype="real">0.001</value>
+                        <value datatype="real">0.0001</value>
                         <description>pH solution tolerance for calculating buffering</description>
                     </param>
                     <param name="par_carbchem_dpH_tolerance">
