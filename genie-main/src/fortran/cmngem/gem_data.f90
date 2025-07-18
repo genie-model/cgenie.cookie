@@ -45,7 +45,7 @@ CONTAINS
        ! --- GEOCHEM CONTROLS ------------------------------------------------------------------------------------------------------- !
        print*,'--- GEOCHEM CONTROLS ---'
        print*,'carbonate dissociation constants set                : ',trim(par_carbconstset_name)
-       print*,'OLD pH solution tolerance test?                     : ',ctrl_carbchem_pH_tolerance_OLD
+       print*,'OLD pH solution scheme?                             : ',ctrl_carbchem_pH_OLD
        print*,'pH solution tolerance                               : ',par_carbchem_pH_tolerance
        print*,'pH solution tolerance for calciulating buffering    : ',par_carbchem_pH_tolerance_buffering
        print*,'factor relaxation in pH tolerance for re-try        : ',par_carbchem_dpH_tolerance

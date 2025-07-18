@@ -42,8 +42,8 @@ MODULE gem_cmn
   NAMELIST /ini_gem_nml/par_carbconstset_name
   CHARACTER(len=63)::par_adj_carbconst_option                           ! adjustment of carbonate dissociation constants to Mg/Ca
   NAMELIST /ini_gem_nml/par_adj_carbconst_option
-  logical::ctrl_carbchem_pH_tolerance_OLD                               ! OLD pH solution tolerance test?
-  NAMELIST /ini_gem_nml/ctrl_carbchem_pH_tolerance_OLD
+  logical::ctrl_carbchem_pH_OLD                                         ! OLD pH solution scheme?
+  NAMELIST /ini_gem_nml/ctrl_carbchem_pH_OLD
   real::par_carbchem_pH_tolerance                                       ! pH solution tolerance
   real::par_carbchem_pH_tolerance_buffering                             ! pH solution tolerance for calculating buffering  
   real::par_carbchem_dpH_tolerance                                      ! relaxation factor in pH solution tolerance for re-try

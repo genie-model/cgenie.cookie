@@ -4466,35 +4466,35 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end if
        if (ocn_select(io_CH4)) then
+          ! NOTE: there is no relationship between CH4 and POP
+          ! NOTE: CH4 product is recorded as POC consumption and hence negative
           loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
-               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_CH4)),:,:,:) + &
-               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_CH4)),:,:,:) &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_CH4)),:,:,:) &
                & ))/int_t_timeslice
           loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
-               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_CH4)),:,:,:) + &
-               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_CH4)),:,:,:) &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_CH4)),:,:,:) &
                & ))/int_t_timeslice
           If (flag_sedgem) then
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
                   & ' Global CH4 production rate (POM, DOM) .... : ',         &
-                  & loc_tot_POM,loc_tot_DOM, &
+                  & -loc_tot_POM,-loc_tot_DOM, &
                   & ' mol yr-1',' (water-column only)                      '
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
                   & '                                                  : ',   &
-                  & sum(int_fsedocn_timeslice(io_CH4,:,:)),'               ', &
+                  & -sum(int_fsedocn_timeslice(io_CH4,:,:)),'               ', &
                   & ' mol yr-1',' (sedimentary production)                 '
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
                   & '                                            = ',         &
-              1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_CH4,:,:)) ),  &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_CH4,:,:)) ),  &
                   & ' Tmol yr-1'
           else
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
                   & ' Global CH4 production rate (POM, DOM) .... : ',         &
-                  & loc_tot_POM,loc_tot_DOM, &
+                  & -loc_tot_POM,-loc_tot_DOM, &
                   & ' mol yr-1',' (including reflective boundary condition)'
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
                   & '                                            = ',         &
-                  & 1.0E-12*( loc_tot_POM+loc_tot_DOM ),                      &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM ),                      &
                   & ' Tmol yr-1 CH4 TOTAL'
           end if
           call check_iostat(ios,__LINE__,__FILE__)

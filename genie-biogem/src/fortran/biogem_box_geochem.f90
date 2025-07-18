@@ -2180,12 +2180,16 @@ CONTAINS
              loc_H2S = ocn(io_H2S,dum_i,dum_j,k)
              loc_HCO3 = carb(ic_conc_HCO3,dum_i,dum_j,k)
              loc_T = ocn(io_T,dum_i,dum_j,k)
-             loc_dG = par_bio_remin_AOM_dG0 +                                                        &
-                  & ( par_bio_remin_Rgas *                                                        &
-                  &   loc_T *                                                                     &
-                  &   LOG( ((par_bio_remin_gammaHS*loc_H2S)*(par_bio_remin_gammaHCO3*loc_HCO3)) / &
-                  &        ((par_bio_remin_gammaSO4*loc_SO4)*(par_bio_remin_gammaCH4*loc_CH4)) )  &
-                  & )
+             if ((loc_H2S > const_real_nullsmall) .AND. (loc_HCO3 > const_real_nullsmall)) then
+                loc_dG = par_bio_remin_AOM_dG0 +                                                        &
+                     & ( par_bio_remin_Rgas *                                                        &
+                     &   loc_T *                                                                     &
+                     &   LOG( ((par_bio_remin_gammaHS*loc_H2S)*(par_bio_remin_gammaHCO3*loc_HCO3)) / &
+                     &        ((par_bio_remin_gammaSO4*loc_SO4)*(par_bio_remin_gammaCH4*loc_CH4)) )  &
+                     & )
+             else
+                loc_dG = 0.0
+             end if
              ! calculate thermodynamic drive
              loc_Ft_min = 0
              loc_Ft = max(loc_Ft_min,1 - exp((loc_dG+par_bio_remin_AOM_BEQ)/(par_bio_remin_Rgas*loc_T)))
@@ -2196,21 +2200,21 @@ CONTAINS
           CASE default
              loc_Ft = 1.0
           END SELECT
-          ! allow CH4 oxidation coupled to SO4 reduction (units: mol CH4 kg-1)
-          ! [O2] inhibition term (using the same parameter as for SO4 reduction during Corg remin)
+          ! calculate CH4 oxidation coupled to SO4 reduction (units: mol CH4 kg-1)
+          ! (1) inhibition term (using the same parameter as for SO4 reduction during Corg remin)
           ! NOTE: ctrl_bio_remin_AOM_OLD=.true. simulates original muffin code with (loc_O2 < const_real_nullsmall)
-          if (ctrl_bio_remin_AOM_OLD) then
-             if (loc_O2 < const_real_nullsmall) then
-                loc_ki = 1.0
-             else
-                loc_ki = 0.0
-             end if
+          if (loc_O2 < const_real_nullsmall) then
+             loc_ki = 1.0
           else
-             loc_ki = par_bio_remin_ci_O2/(par_bio_remin_ci_O2 + loc_O2)
+             if (ctrl_bio_remin_AOM_OLD) then
+                loc_ki = 0.0
+             else
+                loc_ki = par_bio_remin_ci_O2/(par_bio_remin_ci_O2 + loc_O2)
+             end if
           end if
-          ! Michaelis-Menten term
+          ! (2) Michaelis-Menten term
           loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
-          ! temperature term
+          ! (3) temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
           ! rate of AOM 

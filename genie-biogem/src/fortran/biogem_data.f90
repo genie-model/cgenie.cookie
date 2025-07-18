@@ -650,7 +650,6 @@ CONTAINS
     if (sed_select(is_FeCO3))    ctrl_carbchemupdate_full = .true.
     if (sed_select(is_Fe3Si2O4)) ctrl_carbchemupdate_full = .true.
     if (ocn_select(io_CH4))      ctrl_carbchemupdate_full = .true.
-    ! set uniform solubility parameter
     ! -------------------------------------------------------- !
     ! MISC
     ! -------------------------------------------------------- !
@@ -1657,9 +1656,20 @@ CONTAINS
     !       conv_sed_ocn(io_O2,is_POC) + conv_sed_ocn(io_O2,is_POP) + conv_sed_ocn(io_O2,is_PON)
     !       == par_bio_red_POP_PO2/par_bio_red_POP_POC
     !       => this has to be balanced by O2 consumded by CH4 oxidation
+    !       where: conv_sed_ocn(io_O2,is_POC) is the O2 demand of the carbon component only
     ! NOTE: in the alternative N transformations -- *no* O2 is involved
-    ! NOTE: assume that in POP --> PO4, the O2 comes from 'elsewhere' (O in organic matter, or H2O)
-    !       (and don't explicitly account for O2 changing hands)
+    ! NOTE: assume that in POP --> PO4, O2 is still removed ... other we have an O2 imbalance in the system
+    !       the fix to prevent the generaiton of -ve ogune in an almost anoxic environment, i.e., if we assumed:
+    !       conv_sed_ocn_meth(io_O2,is_POP)  = -4.0/2.0
+    !       conv_sed_ocn_meth(io_CH4,is_POC) = 1.0/2.0
+    !       the alternative is to increased the fraction of CH4 production to account for the O2 needed by P remin:
+    !       conv_sed_ocn_meth(io_O2,is_POP)  = 0.0
+    !       conv_sed_ocn_meth(io_CH4,is_POC) = 1.0/2.0 + (4.0/2.0)*1.0/par_bio_red_POP_POC
+    !       knowing that the CH4 will be oxidized later and hence balance the O2 budget
+    !       BUT this assumes that organic matter always has  a constant and uniform par_bio_red_POP_POC
+    ! NOTE: original muffin code:
+    !       conv_sed_ocn_meth(io_O2,is_POP)  = 0.0
+    !       conv_sed_ocn_meth(io_CH4,is_POC) = -(1.0/2.0)*par_bio_red_POP_PO2/par_bio_red_POP_POC
     if (ocn_select(io_CH4)) then
        conv_sed_ocn_meth(:,:) = conv_sed_ocn(:,:)
        loc_alpha = 1.0 + par_d13C_Corg_CH4_epsilon/1000.0
@@ -1680,8 +1690,8 @@ CONTAINS
           conv_sed_ocn_meth(io_N2_15N,is_PON_15N)  = conv_sed_ocn_meth(io_N2,is_PON)
        end if
        ! > P,C
-       conv_sed_ocn_meth(io_O2,is_POP)  = 0.0
-       conv_sed_ocn_meth(io_CH4,is_POC) = -(1.0/2.0)*par_bio_red_POP_PO2/par_bio_red_POP_POC
+       conv_sed_ocn_meth(io_O2,is_POP)  = -4.0/2.0
+       conv_sed_ocn_meth(io_CH4,is_POC) = 1.0/2.0
        conv_sed_ocn_meth(io_DIC,is_POC) = 1.0 - conv_sed_ocn_meth(io_CH4,is_POC)
        conv_sed_ocn_meth(io_O2,is_POC)  = 0.0
        ! > C isotopes
@@ -3538,25 +3548,6 @@ CONTAINS
                      & carb(:,i,j,k),      &
                      & carbalk(:,i,j,k)    &
                      & )
-                ! estimate Revelle (and 'sensitivity') factor
-                ! NOTE: although this is only meaningful for the surface, retain full depth initializaion for now
-                !       for back-compatablity
-                loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
-                     & ocn(io_DIC,i,j,k),  &
-                     & ocn(io_ALK,i,j,k),  &
-                     & ocn(io_Ca,i,j,k),   &
-                     & ocn(io_PO4,i,j,k),  &
-                     & ocn(io_SiO2,i,j,k), &
-                     & ocn(io_B,i,j,k),    &
-                     & ocn(io_SO4,i,j,k),  &
-                     & ocn(io_F,i,j,k),    &
-                     & ocn(io_H2S,i,j,k),  &
-                     & ocn(io_NH4,i,j,k),  &
-                     & carbconst(:,i,j,k), &
-                     & carb(:,i,j,k)    &
-                     & )
-                carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)
-                carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
                 ! calculate carbonate system isotopic properties
                 if (ocn_select(io_DIC_13C)) then
                    call sub_calc_carb_r13C(      &
@@ -3576,6 +3567,26 @@ CONTAINS
                         & carbisor(:,i,j,k)      &
                         & )
                 end IF
+                ! estimate Revelle (and 'sensitivity') factor
+                ! NOTE: this is only meaningful for the surface, but calculate over full depth when utilizing the OLD pH solving scheme
+                IF ((k == n_k) .OR. ctrl_carbchem_pH_OLD) THEN
+                   loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
+                        & ocn(io_DIC,i,j,k),  &
+                        & ocn(io_ALK,i,j,k),  &
+                        & ocn(io_Ca,i,j,k),   &
+                        & ocn(io_PO4,i,j,k),  &
+                        & ocn(io_SiO2,i,j,k), &
+                        & ocn(io_B,i,j,k),    &
+                        & ocn(io_SO4,i,j,k),  &
+                        & ocn(io_F,i,j,k),    &
+                        & ocn(io_H2S,i,j,k),  &
+                        & ocn(io_NH4,i,j,k),  &
+                        & carbconst(:,i,j,k), &
+                        & carb(:,i,j,k)    &
+                        & )
+                   carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)
+                   carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
+                end if
              end if
           END DO
        END DO

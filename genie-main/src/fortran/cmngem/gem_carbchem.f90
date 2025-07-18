@@ -692,7 +692,7 @@ CONTAINS
        !       ABS(1.0 - loc_H/loc_H_old) < (1.0E-8/loc_H)*par_carbchem_pH_tolerance
        !       i.e., at higher pH and lower [H], pH was considered solved for, for a larger relative change in [H]
        ! NOTE: in the calculation of RF0, the pH tolerance was not scaled
-       if (ctrl_carbchem_pH_tolerance_OLD) then
+       if (ctrl_carbchem_pH_OLD) then
           loc_dpH = ABS(1.0 - loc_H/loc_H_old)/(1.0E-8/loc_H)
        else
           loc_dpH = ABS(log10(loc_H_old)-log10(loc_H))
@@ -711,10 +711,10 @@ CONTAINS
           if (loc_flag_pHtol_updated) then
              dum_carb(ic_pH_n)   = par_carbchem_pH_iterationmax + n
           else
-             dum_carb(ic_pH_n)  = n
+             dum_carb(ic_pH_n)   = n
           end if
           ! flag no errors
-          dum_carb(ic_err_n)      = 0.0
+          dum_carb(ic_err_n)     = 0.0
           ! calculate value of [CO3--] at calcite and aragonite saturation
           ! NOTE: this assumes that the value of omega is unity at saturation (definition!)
           loc_sat_cal = dum_carbconst(icc_kcal) * 1.0/dum_Ca
@@ -1218,6 +1218,7 @@ CONTAINS
   END FUNCTION fun_calc_lnk1_Luecker
   ! ****************************************************************************************************************************** !
 
+  
   ! ****************************************************************************************************************************** !
   ! CALCULATE ln(K2) DISSOCIATION CONSTANT
   FUNCTION fun_calc_lnk2_Luecker(dum_rT,dum_T_ln,dum_S,dum_S_p20)
@@ -1350,7 +1351,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! calculate and save initial [H] value
     ! NOTE: omit this call to sub_calc_carb for back-compatability
-    if (.NOT. ctrl_carbchem_pH_tolerance_OLD) then
+    if (.NOT. ctrl_carbchem_pH_OLD) then
        call sub_calc_carb(                                                               &
             & loc_pHtol,                                                                 &
             & dum_DIC,dum_ALK,dum_Ca,                                                    &
@@ -1446,18 +1447,18 @@ CONTAINS
        ! the implicit bit!
        loc_H = SQRT(loc_H1*loc_H2)
        ! test for the relative change in [H] falling below some criterion (at which point the solution is assumed stable)
-       if (ctrl_carbchem_pH_tolerance_OLD) then
+       if (ctrl_carbchem_pH_OLD) then
           loc_dpH = ABS(1.0 - loc_H/loc_H_old)
        else
           loc_dpH = ABS(log10(loc_H_old)-log10(loc_H))
        end if
-      if ( loc_dpH < loc_pHtol ) then
+       if ( loc_dpH < loc_pHtol ) then
           EXIT
        else
           n = n + 1
        end if
        if ((loc_H1 < const_real_nullsmall) .OR. (loc_H2 < const_real_nullsmall) .OR. (n > par_carbchem_pH_iterationmax)) THEN
-          ! write zero (null) Revelle factor
+          ! incude (null) Revelle factor by making (loc_DIC_RFO/dum_DIC - 1.0) and hence fun_calc_carb_RF0_SF0(1), negative
           loc_DIC_RFO = 0.0
           exit
        end if
