@@ -2213,7 +2213,7 @@ CONTAINS
              end if
           end if
           ! (2) Michaelis-Menten term
-          loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
+          loc_MM = loc_SO4/(loc_SO4+par_bio_remin_AOM_Km_SO4)
           ! (3) temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
