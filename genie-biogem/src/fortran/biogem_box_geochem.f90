@@ -2067,7 +2067,7 @@ CONTAINS
                   & )
              ! calculate thermodynamic drive
              loc_Ft_min = 0
-             loc_Ft = max(loc_Ft_min,1-exp((loc_dG+par_bio_remin_AER_BEQ)/(par_bio_remin_Rgas*loc_T)))
+             loc_Ft = max(loc_Ft_min,1-exp((loc_dG + par_bio_remin_AER_BEQ)/(par_bio_remin_Rgas*loc_T)))
              if (loc_Ft > 1 .OR. loc_Ft < 0) then
                 print*,' WARNING: AER thermodynamic drive out of bounds; DIC = ',ocn(io_DIC,dum_i,dum_j,k), &
                      &' ALK = ',ocn(io_ALK,dum_i,dum_j,k),' Ft = ',loc_Ft,'.'
@@ -2077,7 +2077,7 @@ CONTAINS
           END SELECT
           ! allow CH4 oxidation with O2 (units: mol CH4 kg-1)
           ! Michaelis-Menten term
-          loc_MM = loc_O2/(loc_O2+par_bio_remin_AER_Km_O2)
+          loc_MM = loc_O2/(loc_O2 + par_bio_remin_AER_Km_O2)
           ! temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
@@ -2192,7 +2192,7 @@ CONTAINS
              end if
              ! calculate thermodynamic drive
              loc_Ft_min = 0
-             loc_Ft = max(loc_Ft_min,1 - exp((loc_dG+par_bio_remin_AOM_BEQ)/(par_bio_remin_Rgas*loc_T)))
+             loc_Ft = max(loc_Ft_min,1 - exp((loc_dG + par_bio_remin_AOM_BEQ)/(par_bio_remin_Rgas*loc_T)))
              if (loc_Ft > 1 .OR. loc_Ft < 0) then
                 print*,' WARNING: AOM thermodynamic drive out of bounds; DIC = ',ocn(io_DIC,dum_i,dum_j,k), &
                      &' ALK = ',ocn(io_ALK,dum_i,dum_j,k),' Ft = ',loc_Ft,'.'
@@ -2213,7 +2213,7 @@ CONTAINS
              end if
           end if
           ! (2) Michaelis-Menten term
-          loc_MM = loc_SO4/(loc_SO4+par_bio_remin_AOM_Km_SO4)
+          loc_MM = loc_SO4/(loc_SO4 + par_bio_remin_AOM_Km_SO4)
           ! (3) temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
