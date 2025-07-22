@@ -3322,7 +3322,7 @@ SUBROUTINE diag_biogem_timeslice( &
   logical,intent(in)::dum_gemlite                                ! in GEMlite phase of cycle?
   ! local variables
   INTEGER::i,j,k,l,io,ia,is
-  integer::loc_k1                                               !
+  integer::loc_k1,loc_k                                               !
   real::loc_t,loc_dts,loc_dtyr                                   !
   real::loc_yr_save                                              !
   REAL,DIMENSION(0:n_j,0:n_k)::loc_opsi,loc_zpsi,loc_opsia,loc_opsip !
@@ -3340,9 +3340,17 @@ SUBROUTINE diag_biogem_timeslice( &
   REAL,DIMENSION(n_carb,n_i,n_j,n_k)::loc_carb               !
   REAL,DIMENSION(n_carbconst,n_i,n_j,n_k)::loc_carbconst     !
   REAL,DIMENSION(n_carbalk,n_i,n_j,n_k)::loc_carbalk         !
-  REAL,DIMENSION(n_carbisor,n_i,n_j,n_k)::loc_carbisor       ! 
-  ! diagnostics
+  REAL,DIMENSION(n_carbisor,n_i,n_j,n_k)::loc_carbisor       !
 
+  ! ---------------------------------------------------------- !
+  ! INITIALIZE LOCAL VARIABLES
+  ! ---------------------------------------------------------- !
+  loc_carb(:,:,:,:)      = 0.0
+  loc_carbconst(:,:,:,:) = 0.0
+  loc_carbalk(:,:,:,:)   = 0.0
+  loc_carbisor(:,:,:,:)  = 0.0
+ 
+  
   ! *** TIME-SLICE DATA UPDATE ***
   IF (ctrl_debug_lvl1) print*, '*** TIME-SLICE DATA UPDATE ***'
   ! update time slice data
@@ -3405,14 +3413,38 @@ SUBROUTINE diag_biogem_timeslice( &
            end if    
 
            ! update whole-ocean carbonate equilibrium
-           ! NOTE: update seperate arrays from those used in the time-stepping to aoid time-slice saving impacting on evolving ocean pH
+           ! NOTE: update seperate arrays from those used in the time-stepping
+           !       to avoid time-slice saving impacting on evolving ocean pH
            IF (opt_select(iopt_select_carbchem) .AND. ctrl_data_save_slice_carb_update) THEN
               DO i=1,n_i
                  DO j=1,n_j
                     loc_k1 = goldstein_k1(i,j)
                     IF (n_k >= loc_k1) THEN
-                       ! calculate carb chem across full water column -- use loc arrays   
-                       DO k=loc_k1,n_k
+                       ! NOTE: surface carb chem is updated in the surface layer every time-step
+                       !       => only the remainder of the water column needs solving for IF not already updated
+                       if (ctrl_carbchem_pH_OLD) then
+                          ! flag for whole water-column updating
+                          loc_k = n_k
+                          ! copy values from entire water column
+                          loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
+                          loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
+                       elseif (.NOT. ctrl_carbchemupdate_full) then
+                          ! flag surface not to be repeated and set upper k limit to sub-surface / check for surface == seafloor
+                          loc_k = n_k - 1
+                          if (loc_k == loc_k1) loc_k = 0
+                          ! copy values from surface only
+                          loc_carbconst(:,i,j,n_k) = carbconst(:,i,j,n_k)
+                          loc_carb(:,i,j,n_k)      = carb(:,i,j,n_k)
+                       else
+                          ! flag for no additional carb chem updating anywhere in the water column
+                          loc_k = 0
+                          ! copy values from entire water column
+                          loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
+                          loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
+                       end if
+                       ! calculate carb chem across required portion of water column (if any)
+                       ! NOTE: use loc arrays   
+                       DO k=loc_k1,loc_k
                           ! calculate carbonate dissociation constants
                           CALL sub_calc_carbconst(         &
                                & phys_ocn(ipo_Dmid,i,j,k), &
@@ -3431,13 +3463,11 @@ SUBROUTINE diag_biogem_timeslice( &
                                   & loc_carbconst(:,i,j,k) &
                                   & )
                           end if
-                          ! re-estimate Ca and borate concentrations from salinity (if not selected and therefore explicitly treated)
+                          ! re-estimate Ca and borate concentrations from salinity (if not selected and explicitly treated)
                           IF (.NOT. ocn_select(io_Ca))  ocn(io_Ca,i,j,k)  = fun_calc_Ca(ocn(io_S,i,j,k))
                           IF (.NOT. ocn_select(io_B))   ocn(io_B,i,j,k)   = fun_calc_Btot(ocn(io_S,i,j,k))
                           IF (.NOT. ocn_select(io_SO4)) ocn(io_SO4,i,j,k) = fun_calc_SO4tot(ocn(io_S,i,j,k))
                           IF (.NOT. ocn_select(io_F))   ocn(io_F,i,j,k)   = fun_calc_Ftot(ocn(io_S,i,j,k))
-                          ! seed ocean pH
-                          loc_carb(ic_H,i,j,k) = carb(ic_H,i,j,k)
                           ! re-calculate ocean carbonate chemistry
                           CALL sub_calc_carb(        &
                                & par_carbchem_pH_tolerance, &
@@ -3474,80 +3504,82 @@ SUBROUTINE diag_biogem_timeslice( &
                                   & loc_carbisor(:,i,j,k)      &
                                   & )
                           end IF
-                          ! re-calculate -- surface-ocean properties only!
-                          IF ( (k == n_k) .AND. ctrl_data_save_buffering) THEN
-                             ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
+                          if (ctrl_carbchem_pH_OLD) then 
+                             ! enable back-compatability for general pH (and pCO2, climate)
+                             ! NOTE: in the original code, the recalculation of carb chem for netCDF saving,
+                             !       altered the pH used to calculate the carb chem for the net BIOGEM calculation step,
+                             !       affecting pCO2 and hence climate etc.
+                             ! NOTE also for back-compatability with muffin,
+                             !      the surface value (n_k) is repeatadly re-calculated throughout the water-column loop ...
                              loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
-                                  & ocn(io_DIC,i,j,k),  &
-                                  & ocn(io_ALK,i,j,k),  &
-                                  & ocn(io_Ca,i,j,k),   &
-                                  & ocn(io_PO4,i,j,k),  &
-                                  & ocn(io_SiO2,i,j,k), &
-                                  & ocn(io_B,i,j,k),    &
-                                  & ocn(io_SO4,i,j,k),  &
-                                  & ocn(io_F,i,j,k),    &
-                                  & ocn(io_H2S,i,j,k),  &
-                                  & ocn(io_NH4,i,j,k),  &
-                                  & loc_carbconst(:,i,j,k), &
-                                  & loc_carb(:,i,j,k)       &
+                                  & ocn(io_DIC,i,j,n_k),                  &
+                                  & ocn(io_ALK,i,j,n_k),                  &
+                                  & ocn(io_Ca,i,j,n_k),                   &
+                                  & ocn(io_PO4,i,j,n_k),                  &
+                                  & ocn(io_SiO2,i,j,n_k),                 &
+                                  & ocn(io_B,i,j,n_k),                    &
+                                  & ocn(io_SO4,i,j,n_k),                  &
+                                  & ocn(io_F,i,j,n_k),                    &
+                                  & ocn(io_H2S,i,j,n_k),                  &
+                                  & ocn(io_NH4,i,j,n_k),                  &
+                                  & loc_carbconst(:,i,j,n_k),             &
+                                  & loc_carb(:,i,j,n_k)                   &
                                   & )
-                             loc_carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)
-                             loc_carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
-                             ! estimate ALK addition efficiency factor
-                             loc_carb(ic_RdDICdALK,i,j,k) = fun_calc_carb_EF0( &
-                                  & ocn(io_DIC,i,j,k),  &
-                                  & ocn(io_ALK,i,j,k),  &
-                                  & ocn(io_Ca,i,j,k),   &
-                                  & ocn(io_PO4,i,j,k),  &
-                                  & ocn(io_SiO2,i,j,k), &
-                                  & ocn(io_B,i,j,k),    &
-                                  & ocn(io_SO4,i,j,k),  &
-                                  & ocn(io_F,i,j,k),    &
-                                  & ocn(io_H2S,i,j,k),  &
-                                  & ocn(io_NH4,i,j,k),  &
-                                  & loc_carbconst(:,i,j,k), &
-                                  & loc_carb(:,i,j,k)       &
-                                  & )
-                             ! estimate DIC addition CaCO3 neutralization factor
-                             loc_carb(ic_RdALKdDIC,i,j,k) = fun_calc_carb_NF0( &
-                                  & ocn(io_DIC,i,j,k),  &
-                                  & ocn(io_ALK,i,j,k),  &
-                                  & ocn(io_Ca,i,j,k),   &
-                                  & ocn(io_PO4,i,j,k),  &
-                                  & ocn(io_SiO2,i,j,k), &
-                                  & ocn(io_B,i,j,k),    &
-                                  & ocn(io_SO4,i,j,k),  &
-                                  & ocn(io_F,i,j,k),    &
-                                  & ocn(io_H2S,i,j,k),  &
-                                  & ocn(io_NH4,i,j,k),  &
-                                  & loc_carbconst(:,i,j,k), &
-                                  & loc_carb(:,i,j,k)       &
-                                  & )
-                          elseif (ctrl_carbchem_pH_OLD) then                             
-                             ! enable back-compatability with muffin -- this is for the RF0 field back-compatability
-                             loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
-                                  & ocn(io_DIC,i,j,n_k),  &
-                                  & ocn(io_ALK,i,j,n_k),  &
-                                  & ocn(io_Ca,i,j,k),     &
-                                  & ocn(io_PO4,i,j,n_k),  &
-                                  & ocn(io_SiO2,i,j,n_k), &
-                                  & ocn(io_B,i,j,n_k),    &
-                                  & ocn(io_SO4,i,j,n_k),  &
-                                  & ocn(io_F,i,j,n_k),    &
-                                  & ocn(io_H2S,i,j,n_k),  &
-                                  & ocn(io_NH4,i,j,n_k),  &
-                                  & loc_carbconst(:,i,j,n_k), &
-                                  & loc_carb(:,i,j,n_k)       &
-                                  & )
-                             loc_carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)                 
-                          end if
-                          ! enable back-compatability with muffin -- this is for general pH (and pCO2, climate) back-compatability
-                          ! NOTE: in the original code, the recalculation of carb chem for netCDF saving,
-                          !       altered the pH used to calculate the carb chem for the net BIOGEM calculation step, affecting pCO2 and hence climate etc.
-                          if (ctrl_carbchem_pH_OLD) then
+                             loc_carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)   
+                             ! write updated pH to time-stepping array
                              carb(ic_H,i,j,k) = loc_carb(ic_H,i,j,k)
                           end if
                        end do
+                       ! re-calculate -- surface-ocean properties only!
+                       IF (ctrl_data_save_buffering .AND. (.NOT. ctrl_carbchem_pH_OLD)) THEN
+                          ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
+                          loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
+                               & ocn(io_DIC,i,j,n_k),  &
+                               & ocn(io_ALK,i,j,n_k),  &
+                               & ocn(io_Ca,i,j,n_k),   &
+                               & ocn(io_PO4,i,j,n_k),  &
+                               & ocn(io_SiO2,i,j,n_k), &
+                               & ocn(io_B,i,j,n_k),    &
+                               & ocn(io_SO4,i,j,n_k),  &
+                               & ocn(io_F,i,j,n_k),    &
+                               & ocn(io_H2S,i,j,n_k),  &
+                               & ocn(io_NH4,i,j,n_k),  &
+                               & loc_carbconst(:,i,j,n_k), &
+                               & loc_carb(:,i,j,n_k)       &
+                               & )
+                          loc_carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
+                          loc_carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
+                          ! estimate ALK addition efficiency factor
+                          loc_carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
+                               & ocn(io_DIC,i,j,n_k),  &
+                               & ocn(io_ALK,i,j,n_k),  &
+                               & ocn(io_Ca,i,j,n_k),   &
+                               & ocn(io_PO4,i,j,n_k),  &
+                               & ocn(io_SiO2,i,j,n_k), &
+                               & ocn(io_B,i,j,n_k),    &
+                               & ocn(io_SO4,i,j,n_k),  &
+                               & ocn(io_F,i,j,n_k),    &
+                               & ocn(io_H2S,i,j,n_k),  &
+                               & ocn(io_NH4,i,j,n_k),  &
+                               & loc_carbconst(:,i,j,n_k), &
+                               & loc_carb(:,i,j,n_k)       &
+                               & )
+                          ! estimate DIC addition CaCO3 neutralization factor
+                          loc_carb(ic_RdALKdDIC,i,j,n_k) = fun_calc_carb_NF0( &
+                               & ocn(io_DIC,i,j,n_k),  &
+                               & ocn(io_ALK,i,j,n_k),  &
+                               & ocn(io_Ca,i,j,n_k),   &
+                               & ocn(io_PO4,i,j,n_k),  &
+                               & ocn(io_SiO2,i,j,n_k), &
+                               & ocn(io_B,i,j,n_k),    &
+                               & ocn(io_SO4,i,j,n_k),  &
+                               & ocn(io_F,i,j,n_k),    &
+                               & ocn(io_H2S,i,j,n_k),  &
+                               & ocn(io_NH4,i,j,n_k),  &
+                               & loc_carbconst(:,i,j,n_k), &
+                               & loc_carb(:,i,j,n_k)       &
+                               & )           
+                       end if
                     end IF
                  end DO
               end DO
