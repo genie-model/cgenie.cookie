@@ -3568,7 +3568,8 @@ CONTAINS
                         & )
                 end IF
                 ! estimate Revelle (and 'sensitivity') factor
-                ! NOTE: this is only meaningful for the surface, but calculate over full depth when utilizing the OLD pH solving scheme
+                ! NOTE: this is only meaningful for the surface,
+                !       but calculate over full depth when utilizing the OLD pH solving scheme
                 IF ((k == n_k) .OR. ctrl_carbchem_pH_OLD) THEN
                    loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
                         & ocn(io_DIC,i,j,k),  &

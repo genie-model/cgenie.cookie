@@ -998,7 +998,8 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo', &
+               & const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_CO2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           loc_ijk(:,:,:) = const_real_zero
           DO i=1,n_i
@@ -1014,7 +1015,8 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo', &
+               & const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_HCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           loc_ijk(:,:,:) = const_real_zero
           DO i=1,n_i
@@ -1030,7 +1032,8 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo', &
+               & const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_CO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        end if
     end If
@@ -3554,14 +3557,15 @@ CONTAINS
                 loc_unitsname = 'mol kg-1'
              end SELECT
           call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
-               & 'carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+               & 'carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_'//trim(string_carb(ic)),loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        END DO
        ! save accumulated carbchem error occurrence array
        loc_ijk(:,:,:) = diag_carb_err(:,:,:)
        loc_shortname = 'carb_err_n_sum'
-       loc_longname  = 'carbonate chemistry properties - '//'Accumulated occurrence of failure of the pH calculation.'
+       loc_longname  = 'carbonate chemistry -- '//'Accumulated occurrence of failure of the pH calculation.'
        call sub_adddef_netcdf(loc_iou,4,trim(loc_shortname),trim(loc_longname),' ',const_real_zero,const_real_zero)
        call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end if

@@ -3341,15 +3341,6 @@ SUBROUTINE diag_biogem_timeslice( &
   REAL,DIMENSION(n_carbconst,n_i,n_j,n_k)::loc_carbconst     !
   REAL,DIMENSION(n_carbalk,n_i,n_j,n_k)::loc_carbalk         !
   REAL,DIMENSION(n_carbisor,n_i,n_j,n_k)::loc_carbisor       !
-
-  ! ---------------------------------------------------------- !
-  ! INITIALIZE LOCAL VARIABLES
-  ! ---------------------------------------------------------- !
-  loc_carb(:,:,:,:)      = 0.0
-  loc_carbconst(:,:,:,:) = 0.0
-  loc_carbalk(:,:,:,:)   = 0.0
-  loc_carbisor(:,:,:,:)  = 0.0
- 
   
   ! *** TIME-SLICE DATA UPDATE ***
   IF (ctrl_debug_lvl1) print*, '*** TIME-SLICE DATA UPDATE ***'
@@ -3422,25 +3413,22 @@ SUBROUTINE diag_biogem_timeslice( &
                     IF (n_k >= loc_k1) THEN
                        ! NOTE: surface carb chem is updated in the surface layer every time-step
                        !       => only the remainder of the water column needs solving for IF not already updated
+                       ! copy values from entire water column for all permutations of saving
+                       ! NOTE: when pH is not updated during time-stepping, it has still be solved during initialization,
+                       !       and this needs to be propagated
+                       loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
+                       loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
+                       ! set water column interval for solving pH
                        if (ctrl_carbchem_pH_OLD) then
                           ! flag for whole water-column updating
                           loc_k = n_k
-                          ! copy values from entire water column
-                          loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
-                          loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
                        elseif (.NOT. ctrl_carbchemupdate_full) then
                           ! flag surface not to be repeated and set upper k limit to sub-surface / check for surface == seafloor
                           loc_k = n_k - 1
                           if (loc_k == loc_k1) loc_k = 0
-                          ! copy values from surface only
-                          loc_carbconst(:,i,j,n_k) = carbconst(:,i,j,n_k)
-                          loc_carb(:,i,j,n_k)      = carb(:,i,j,n_k)
                        else
                           ! flag for no additional carb chem updating anywhere in the water column
                           loc_k = 0
-                          ! copy values from entire water column
-                          loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
-                          loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
                        end if
                        ! calculate carb chem across required portion of water column (if any)
                        ! NOTE: use loc arrays   
@@ -3526,7 +3514,7 @@ SUBROUTINE diag_biogem_timeslice( &
                                   & loc_carb(:,i,j,n_k)                   &
                                   & )
                              loc_carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)   
-                             ! write updated pH to time-stepping array
+                             ! write updated pH to time-stepping array (if OLD pH scheme)
                              carb(ic_H,i,j,k) = loc_carb(ic_H,i,j,k)
                           end if
                        end do
