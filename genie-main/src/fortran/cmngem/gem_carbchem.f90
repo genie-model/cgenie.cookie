@@ -319,13 +319,12 @@ CONTAINS
     REAL,INTENT(in)::dum_Ca,dum_Mg,dum_sal,dum_temp,dum_D
     REAL,DIMENSION(n_carbconst),intent(inout)::dum_carbconst
     ! local variables
-    real::loc_conv_molaritytoconc,loc_conv_freetoSWS,loc_conv_freetototal,loc_conv_totaltoSWS
+    real::loc_conv_freetoSWS,loc_conv_freetototal,loc_conv_totaltoSWS
     real::loc_Ftot,loc_SO4tot,loc_T,loc_S
     REAL::loc_P ! pressure (bar)
     real::loc_rRtimesT, loc_TC
     real::loc_alpha
     real::loc_ratio
-    real::loc_k0,loc_kSO4
     ! make correction to K values
     select case ((par_adj_carbconst_option))
     case ('TyrrellZeebe2004')
@@ -505,11 +504,13 @@ CONTAINS
   ! NOTE: the potential for rapidly oxidzing species such as NH4 and esp. H2S to have a negative concentration is tested for
   !       + also saves unnecessary calculation when NH4 and H2S are not selected as tracers (and have zero concentrations)
   SUBROUTINE sub_calc_carb( &
-       & dum_pHtol, &
+       & dum_originstr,dum_erraction,dum_pHtol, &
        & dum_DIC,dum_ALK,dum_Ca, &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
        & dum_carbconst,dum_carb,dum_carbalk)
     ! dummy variables
+    CHARACTER(len=*)::dum_originstr
+    logical,INTENT(in)::dum_erraction
     REAL,INTENT(in)::dum_pHtol
     REAL,INTENT(in)::dum_DIC,dum_ALK,dum_Ca
     REAL,INTENT(in)::dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot
@@ -523,7 +524,6 @@ CONTAINS
     REAL::loc_ALK_DIC,loc_conc_CO2,loc_conc_CO3,loc_conc_HCO3
     REAL::loc_H,loc_H_old,loc_H1,loc_H2,loc_H_p2,loc_H_p3,loc_H_free,loc_H_total
     REAL::loc_sat_cal,loc_sat_arg
-    real::loc_r
     real::loc_dpH,loc_pHtol
     logical::loc_flag_pHtol_updated
     ! initialize loop variables
@@ -625,7 +625,7 @@ CONTAINS
           ! test for -vs. DIC or ALK
           IF ((dum_DIC < const_real_nullsmall) .OR. (dum_ALK < const_real_nullsmall)) THEN
              CALL sub_report_error(                                                            &
-                  & 'gem_carbchem.f90','sub_calc_carb',                                        &
+                  & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                      &
                   & 'Carbchem failutre at step; '//fun_conv_num_char_n(4,n)//                  &
                   & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'// &
                   & ' pH (OLD), pH (OLD), [H+] (guess #1), [H+] (guess #2)',                   &
@@ -634,15 +634,15 @@ CONTAINS
                   & -LOG10(loc_H),-LOG10(loc_H_old),loc_H1,loc_H2/),.false.                    &
                   & )
              if (ctrl_debug_reportwarnings) then
-                Print*,' > NEGATIVE DIC OR ALK. Possibilities: '
+                Print*,' > Negative DIC OR ALK. Possibilities include: '
                 Print*,'   (1) Instability in ocean circulation'
-                Print*,'   (2) Failutre to solve sea-ice cover.'
-                Print*,'   (3) Extreme redox at low ALK, esp. [H2S]'
+                Print*,'   (2) Failutre to solve for sea-ice cover.'
+                Print*,'   (3) Extreme redox / low ALK (high [H2S]), causing instability in air-sea gas exchange (and -ve. DIC)'
                 Print*,' '
              end if
           else
              CALL sub_report_error(                                                            &
-                  & 'gem_carbchem.f90','sub_calc_carb',                                        &
+                  & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                      &
                   & 'Numerical instability at step; '//fun_conv_num_char_n(4,n)//              &
                   & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'// &
                   & ' pH (OLD), pH (OLD), [H+] (guess #1), [H+] (guess #2)',                   &
@@ -652,7 +652,7 @@ CONTAINS
                   & )
              if (ctrl_debug_reportwarnings) then
                 Print*,' > WHAT-IT-MEANS (maybe ...): '
-                Print*,'   (1) Check the FIRST TWO lines of the ERROR DATA (ocean DIC and ALK):'
+                Print*,'   (1) Check the FIRST TWO lines of the DATA (ocean DIC and ALK):'
                 Print*,'       -> These should be ... reasonable ... of order a few thousand umol kg-1'
                 Print*,'          (units reported are mol kg-1)'
                 Print*,'       -> NaNs, negative values, obsenely low (<< a few hundred umol kg-1) or,'
@@ -682,7 +682,8 @@ CONTAINS
           end if
           ! flag error occurrence
           ! NOTE: carbonate chemsitry has not been updated at this point
-          dum_carb(ic_err_n) = 1.0
+          ! NOTE: do not count error unless requested (e.g., to avoid flagging during time-slice calculation)
+          if (dum_erraction) dum_carb(ic_err_n) = 1.0
           exit
        ENDIF
        ! the implicit bit!
@@ -743,7 +744,7 @@ CONTAINS
           IF (n > par_carbchem_pH_iterationmax) THEN
              if (.NOT. loc_flag_pHtol_updated) then
                 CALL sub_report_error(                                                                            &
-                     & 'gem_carbchem.f90','sub_calc_carb',                                                        &
+                     & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                                      &
                      & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
                      & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
                      & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
@@ -759,7 +760,7 @@ CONTAINS
                 n = 1
              else
                 CALL sub_report_error(                                                                            &
-                     & 'gem_carbchem.f90','sub_calc_carb',                                                        &
+                     & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                                      &
                      & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
                      & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
                      & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
@@ -770,7 +771,8 @@ CONTAINS
                      & )
                 ! flag error occurrence
                 ! NOTE: carbonate chemsitry has not been updated at this point
-                dum_carb(ic_err_n) = 1.0
+                ! NOTE: do not count error unless requested (e.g., to avoid flagging during time-slice calculation)
+                if (dum_erraction) dum_carb(ic_err_n) = 1.0
                 exit
              end if
           END IF
@@ -1330,7 +1332,7 @@ CONTAINS
     REAL::loc_zed
     REAL::loc_ALK_DIC,loc_conc_CO2,loc_conc_CO3,loc_conc_HCO3
     REAL::loc_H,loc_H_old,loc_H1,loc_H2,loc_H_p2,loc_H_p3,loc_H_free,loc_H_total
-    real::loc_DIC_RFO,loc_pH_tolerance,loc_dDIC
+    real::loc_DIC_RFO,loc_dDIC
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
     real::loc_dpH,loc_pHtol
@@ -1355,9 +1357,10 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! calculate and save initial [H] value
     ! NOTE: omit this call to sub_calc_carb for back-compatability
+    ! NOTE: do not flag carb chem errors associated with diagnostics calculations
     if (.NOT. ctrl_carbchem_pH_OLD) then
        call sub_calc_carb(                                                               &
-            & loc_pHtol,                                                                 &
+            & 'gem_carbchem.f90/fun_calc_carb_RF0_SF0',.false.,loc_pHtol,                &
             & dum_DIC,dum_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
@@ -1527,8 +1530,9 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! calculate and save initial [CO2] value
     ! NOTE: solving for pH with the stricter local tolorence
+    ! NOTE: do not flag carb chem errors associated with diagnostics calculations
     call sub_calc_carb(                                                               &
-         & loc_pHtol,                                                                 &
+         & 'gem_carbchem.f90/fun_calc_carb_EF0',.false.,loc_pHtol,                    &
          & dum_DIC,dum_ALK,dum_Ca,                                                    &
          & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
          & dum_carbconst,loc_carb,loc_carbalk)
@@ -1543,8 +1547,9 @@ CONTAINS
        ! guess DIC value as mean of current limits
        loc_DIC = (loc_DIC_low + loc_DIC_high)/2.0
        ! solve for pH and [CO2] ... request a 1000x finer pH tolorence than default
+       ! NOTE: do not flag carb chem errors associated with diagnostics calculations
        call sub_calc_carb(                                                               &
-            & loc_pHtol,                                                                 &
+            & 'gem_carbchem.f90/fun_calc_carb_EF0',.false.,loc_pHtol,                    &
             & loc_DIC,loc_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
@@ -1592,7 +1597,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DEFINE LOCAL VARIABLES
     ! -------------------------------------------------------- !
-    REAL::loc_ALK,loc_dALK,loc_DIC,loc_dDIC,loc_ALK_low,loc_ALK_high,loc_ohm_cal_init
+    REAL::loc_ALK,loc_DIC,loc_dDIC,loc_ALK_low,loc_ALK_high,loc_ohm_cal_init
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
     integer::n
@@ -1620,8 +1625,9 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! calculate and save initial [CO2] value
     ! NOTE: solving for pH with the stricter local tolorence
+    ! NOTE: do not flag carb chem errors associated with diagnostics calculations
     call sub_calc_carb(                                                               &
-         & loc_pHtol,                                                                 &
+         & 'gem_carbchem.f90/fun_calc_carb_NF0',.false.,loc_pHtol,                    &
          & dum_DIC,dum_ALK,dum_Ca,                                                    &
          & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
          & dum_carbconst,loc_carb,loc_carbalk)
@@ -1639,8 +1645,9 @@ CONTAINS
        !       ... there is some memory issue and adding it ends up corrupting the value of loc_DIC
        loc_ALK = (loc_ALK_low + loc_ALK_high)/2.0
        ! solve for pH and OHMEGA ... request a finer pH tolorence than default
+       ! NOTE: do not flag carb chem errors associated with diagnostics calculations
        call sub_calc_carb(                                                               &
-            & loc_pHtol,                                                                 &
+            & 'gem_carbchem.f90/fun_calc_carb_NF0',.false.,loc_pHtol,                    &
             & loc_DIC,loc_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
@@ -1687,10 +1694,11 @@ CONTAINS
     loc_DIC_low  = dum_DIC_low
     loc_DIC_high = dum_DIC_high
     ! carry out DIC search
+    ! NOTE: do not flag carb chem errors associated with diagnostics calculations
     DO
        loc_DIC = (loc_DIC_low + loc_DIC_high)/2.0
        call sub_calc_carb(                                                               &
-            & par_carbchem_pH_tolerance,                                                 &
+            & 'gem_carbchem.f90/fun_find_DIC_from_dCO3',.false.,par_carbchem_pH_tolerance, &
             & loc_DIC,dum_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
@@ -1737,10 +1745,11 @@ CONTAINS
     loc_ALK_low  = dum_ALK_low
     loc_ALK_high = dum_ALK_high
     ! carry out ALK search
+    ! NOTE: do not flag carb chem errors associated with diagnostics calculations
     DO
        loc_ALK = (loc_ALK_low + loc_ALK_high)/2.0
        call sub_calc_carb(                                                               &
-            & par_carbchem_pH_tolerance,                                                 &
+            & 'gem_carbchem.f90/fun_find_ALK_from_dCO3',.false.,par_carbchem_pH_tolerance, &
             & dum_DIC,loc_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)

@@ -145,7 +145,7 @@ SUBROUTINE initialise_sedgem( &
   sed_time      = 0.0
   sed_time_save = 0.0
   ! check averaging time interval vs. (maximum) age
-  if (par_sed_save_av_dtyr > sed_age) par_sed_save_av_dtyr = sed_age
+  if (par_sed_save_av_dtyr > par_misc_t_runtime) par_sed_save_av_dtyr = par_misc_t_runtime
   ! ---------------------------------------------------------- ! INITIALIZE netCDF OUTPUT
   IF (ctrl_misc_debug2) print*, 'INITIALIZE netCDF OUTPUT'
   string_ncout2d   = TRIM(par_outdir_name)//'fields_sedgem_2d.nc'

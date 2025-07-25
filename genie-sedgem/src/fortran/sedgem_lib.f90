@@ -449,11 +449,23 @@ MODULE sedgem_lib
        & 'err_co3ss       ', &
        & 'err_NULL        ', &
        & 'err_MOD         ' /)
-
+  
+  ! *** netCDF long names ***
+  ! sediment diagnostics
+  CHARACTER(len=63),DIMENSION(n_diag_sed),PARAMETER::string_longname_diag_sed = (/ &
+       & 'OMEN_wtpct_top                                                 ', &
+       & 'OMEN_wtpct_bot                                                 ', &
+       & 'OMEN_bur                                                       ' /)
+  CHARACTER(len=63),DIMENSION(n_diag_sed_err),PARAMETER::string_longname_diag_sed_err = (/  &
+       & 'errors yr-1 occurring in Archer subproc: calc_co3              ', &
+       & 'errors yr-1 occurring in Archer subproc: gaussj                ', &
+       & 'errors yr-1 occurring in Archer subproc: co3ss                 ', &
+       & 'total errors yr-1 occurring in Archer model                    ', &
+       & 'replacements yr-1 of dissolution flux with lookup table value  '/)
+  
   ! ****************************************************************************************************************************** !
   ! GLOBAL VARIABLE AND RUN-TIME SET PARAMETER ARRAYS
   ! ****************************************************************************************************************************** !
-
 
   ! *** GRid parameters ***
   ! I/O - strings

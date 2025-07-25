@@ -3533,6 +3533,8 @@ CONTAINS
                 carb(ic_H,i,j,k) = 10**(-7.8)
                 ! calculate carbonate chemistry
                 CALL sub_calc_carb(        &
+                     & 'biogem_data.f90/sub_init_carb', &
+                     & .true.,             &
                      & par_carbchem_pH_tolerance, &
                      & ocn(io_DIC,i,j,k),  &
                      & ocn(io_ALK,i,j,k),  &

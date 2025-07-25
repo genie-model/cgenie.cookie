@@ -149,6 +149,7 @@ SUBROUTINE sedgem(          &
   IF (ctrl_misc_debug4) print*,'*** UPDATE CARBONATE CHEMSITRY ***'
   ! NOTE: do not update carbonate chemsitry if it is not 'needed' -- i.e. mud cells when OMENSED is not used
   !       (should help with carbonate chemsitry stability in some cases)
+  ! NOTE: log carb chem errors (which are reported as part of the SEDGEM netCDF output)
   DO i=1,n_i
      DO j=1,n_j
         IF ( sed_mask(i,j) .AND. ( (.NOT. sed_mask_muds(i,j)) .OR. (par_sed_diagen_Corgopt=='huelse2016') ) ) then
@@ -169,6 +170,8 @@ SUBROUTINE sedgem(          &
                    & )
            end if
            call sub_calc_carb(                &
+                & 'sedgem.f90/sedgem',        &
+                & .true.,                     &
                 & par_carbchem_pH_tolerance,  &
                 & dum_sfcsumocn(io_DIC,i,j),  &
                 & dum_sfcsumocn(io_ALK,i,j),  &
@@ -248,7 +251,8 @@ SUBROUTINE sedgem(          &
               endif
            endif
            ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
-           ! NOTE: in the case of ctrl_sed_Fdet==.true. and a 2D sed_Fsed_det field, sedcore ncMAR has already replaced sed_Fsed_det at those locations
+           ! NOTE: in the case of ctrl_sed_Fdet==.true. and a 2D sed_Fsed_det field,
+           !       sedcore ncMAR has already replaced sed_Fsed_det at those locations
            if (ctrl_sed_Fdet_sedcore .AND. sed_save_mask(i,j)) then
               dum_sfxsumsed(is_det,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
            end if

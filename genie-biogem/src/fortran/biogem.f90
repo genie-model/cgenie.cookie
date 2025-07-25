@@ -855,6 +855,8 @@ subroutine biogem(        &
                     IF (.NOT. ocn_select(io_F))   ocn(io_F,i,j,k)   = fun_calc_Ftot(ocn(io_S,i,j,k))
                     ! re-calculate surface ocean carbonate chemistry
                     CALL sub_calc_carb(        &
+                         & 'biogem.f90/biogem', &
+                         & .true.,             &
                          & par_carbchem_pH_tolerance, &
                          & ocn(io_DIC,i,j,k),  &
                          & ocn(io_ALK,i,j,k),  &
@@ -3458,6 +3460,8 @@ SUBROUTINE diag_biogem_timeslice( &
                           IF (.NOT. ocn_select(io_F))   ocn(io_F,i,j,k)   = fun_calc_Ftot(ocn(io_S,i,j,k))
                           ! re-calculate ocean carbonate chemistry
                           CALL sub_calc_carb(        &
+                               & 'biogem.f90/diag_biogem_timeslice', &
+                               & .false.,            &
                                & par_carbchem_pH_tolerance, &
                                & ocn(io_DIC,i,j,k),  &
                                & ocn(io_ALK,i,j,k),  &

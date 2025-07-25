@@ -191,7 +191,10 @@ subroutine gemlite(    &
                  ! seed default initial ocean pH
                  if (carb(ic_H,i,j) <= const_real_nullsmall) carb(ic_H,i,j) = 10**(-7.8)
                  ! re-calculate surface ocean carbonate chemistry
+                 ! NOTE: carb chem is not reported (saved/netCDF) from GEMLITE, so don't bother logging errors
                  CALL sub_calc_carb(                            &
+                      & 'gemlite.f90/gemlite',                  &
+                      & .false.,                                &
                       & par_carbchem_pH_tolerance,              &
                       & ocn(conv_io_lselected(io_DIC),i,j,n_k), &
                       & ocn(conv_io_lselected(io_ALK),i,j,n_k), &
