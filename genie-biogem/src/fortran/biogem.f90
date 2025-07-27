@@ -892,7 +892,12 @@ subroutine biogem(        &
                             & )
                     end IF
                     ! update accumulated carbchem error occurrence array
-                    diag_carb_err(i,j,k) = diag_carb_err(i,j,k) + carb(ic_err_n,i,j,k)
+                    diag_carb_errsum(i,j,k) = diag_carb_errsum(i,j,k) + carb(ic_err,i,j,k)
+                    ! update accumulated carbchem errors since last time-series save point
+                    diag_carb_derr_pH(i,j,k) = diag_carb_derr_pH(i,j,k) + carb(ic_err,i,j,k)
+                    if (carb(ic_pH_n,i,j,k) > par_carbchem_pH_iterationmax) then
+                       diag_carb_derr_it(i,j,k) = diag_carb_derr_it(i,j,k) + 1.0
+                    end if
                  end do
                  ! surface-only properties only! -- estimate Revelle (and 'sensitivity') factor
                  ! NOTE: always calculate this -- needed in air-sea gas excahnge (limitation)
@@ -3239,20 +3244,22 @@ subroutine diag_biogem( &
        & .OR. &
        & (error_stop) &
        & ) then
-     IF (ctrl_debug_lvl1) print*, '*** RUN-TIME REPORTING ***'
-     ! run-time data echo-ing
-     ! ### UN-COMMENT TO PERIODICALLY RE-PRINT HEADER INFORMATION ############################################################### !
-     ! if (mod(par_data_save_sig_i,50) == 0) par_misc_t_echo_header = .TRUE.
-     ! ########################################################################################################################## !
-     if (error_stop) par_misc_t_echo_header = .TRUE.
-     CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax)
-     call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
-     ! carry out tracer audit + echo max,min ocean tracer values (and location)
-     ! NOTE: use audit switch to turn on/off
-     IF (ctrl_audit) THEN
-        CALL sub_echo_maxmin()
-        CALL sub_audit_update()
-     END IF
+     if (.NOT. ctrl_data_echo_runtime_NEW) then
+        IF (ctrl_debug_lvl1) print*, '*** RUN-TIME REPORTING ***'
+        ! run-time data echo-ing
+        if (error_stop) par_misc_t_echo_header = .TRUE.
+        CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax)
+        call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
+        ! carry out tracer audit + echo max,min ocean tracer values (and location)
+        ! NOTE: use audit switch to turn on/off
+        IF (ctrl_audit) THEN
+           CALL sub_echo_maxmin()
+           CALL sub_audit_update()
+        END IF
+     else        
+        ! print runtime header
+        call sub_echo_runtimehead()
+     end if
   end IF if_report
 
 end subroutine diag_biogem
@@ -3807,7 +3814,6 @@ SUBROUTINE diag_biogem_timeslice( &
               ! save global diagnostics
               If (ctrl_data_save_GLOBAL) call sub_data_save_global_av()
               If (ctrl_data_save_GLOBAL .AND. ctrl_data_save_derived) call sub_data_save_global_snap(loc_t,dum_sfcatm1(:,:,:))
-
               ! save orbits data
               if ((n_orb_pts_nloc > 0) .and. (n_orb_pts > 0)) then
                  WRITE(unit=6,fmt='(A57,f12.3)') &
@@ -3914,7 +3920,7 @@ SUBROUTINE diag_biogem_timeseries( &
   real::loc_tot_A,loc_tot_EP                                     !
   real::loc_sig                                                  !
   REAL,DIMENSION(2)::loc_opsia_minmax,loc_opsip_minmax           !
-  real::loc_opsi_scale,loc_opsi_D                                !
+  real::loc_opsi_D                                !
 
   ! *** TIME-SERIES DATA UPDATE ***
   IF (ctrl_debug_lvl1) print*, '*** RUN-TIME DATA UPDATE ***'
@@ -4098,14 +4104,14 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_ocnatm) THEN
+           IF (ctrl_data_save_sig_ocnatm .OR. ctrl_data_echo_runtime_NEW) THEN
               DO l=1,n_l_atm
                  ia = conv_iselected_ia(l)
                  int_ocnatm_sig(ia) = int_ocnatm_sig(ia) + &
                       & loc_dtyr*SUM(phys_ocnatm(ipoa_A,:,:)*dum_sfcatm1(ia,:,:))*loc_ocnatm_rtot_A
               END DO
            end if
-           IF (ctrl_data_save_sig_fexport) THEN
+           IF (ctrl_data_save_sig_fexport .OR. ctrl_data_echo_runtime_NEW) THEN
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  int_fexport_sig(is) = int_fexport_sig(is) + &
@@ -4134,7 +4140,7 @@ SUBROUTINE diag_biogem_timeseries( &
                       & SUM(phys_ocn(ipo_A,:,:,n_k)*dum_sfxocn1(io,:,:))
               END DO
            end if
-           IF (ctrl_data_save_sig_ocn_sur) THEN
+           IF (ctrl_data_save_sig_ocn_sur .OR. ctrl_data_echo_runtime_NEW) THEN
               DO l=1,n_l_ocn
                  io = conv_iselected_io(l)
                  int_ocn_sur_sig(io) = int_ocn_sur_sig(io) + loc_dtyr*&
@@ -4166,7 +4172,7 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_carb_sur) THEN
+           IF (ctrl_data_save_sig_carb_sur .OR. ctrl_data_echo_runtime_NEW) THEN
               DO ic=1,n_carb
                  int_carb_sur_sig(ic) = int_carb_sur_sig(ic) + loc_dtyr*&
                       & SUM(phys_ocn(ipo_A,:,:,n_k)*carb(ic,:,:,n_k))*loc_ocn_rtot_A
@@ -4204,7 +4210,7 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_misc) THEN
+           IF (ctrl_data_save_sig_misc .OR. ctrl_data_echo_runtime_NEW) THEN
               ! record GEMlite phase
               if (dum_gemlite) int_misc_gemlite_sig = int_misc_gemlite_sig + loc_dtyr
               ! sea-ice
@@ -4441,48 +4447,28 @@ SUBROUTINE diag_biogem_timeseries( &
         !             (-2147483.648 ended up being reported)
         loc_yr_save = &
              & real(int(loc_yr_save)) + real(int(1000.0*(loc_yr_save - real(int(loc_yr_save)) + 0.0005)))/1000.00
-
         if (dum_save) then
-
-           WRITE(unit=6,fmt='(A57,f12.3)') &
-                & '>>> SAVING BIOGEM TIME-SERIES AVERAGE CENTERED @ year : ', &
-                & loc_yr_save
-           ! check that there is no chance of dividing-by-zero ...
-           IF (int_t_sig > const_real_nullsmall) then
-              IF (ctrl_misc_t_BP) THEN
-                 loc_yr = loc_t + par_misc_t_end
-              ELSE
-                 loc_yr = par_misc_t_end - loc_t
-              END IF
-              ! ### OPTIONAL CODE ################################################################################################ !
-              ! NOTE: netCDF time-series saving is disabled by default, partly because updating has lagged behind the ASCII version
-              !       (and partly because personally, I never used the data files ...)
-              ! ################################################################################################################## !
-              IF (ctrl_data_save_sig_ascii) then
-                 CALL sub_data_save_runtime(loc_yr_save,loc_t)
-              else
-                 CALL sub_save_netcdf_runtime(loc_yr_save)
-              end IF
-              ! re-open netcdf file, update record number, close file -- high resolution 3D
-              if (ctrl_data_save_3d_sig) then
-                 call sub_save_netcdf(loc_yr_save,4)
-                 CALL sub_save_netcdf_3d_sig()
-                 ncout3dsig_ntrec = ncout3dsig_ntrec + 1
-                 call sub_closefile(ncout3dsig_iou)
-              end if
-              if (.NOT. ctrl_debug_lvl0) then
-                 loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6
-                 CALL sub_calc_psi( &
-                      & phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax &
-                      & )
-                 call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
-              endif
-              ! preserve SLT
-              int_SLT = int_misc_SLT_sig/int_t_sig
+           IF (ctrl_misc_t_BP) THEN
+              loc_yr = loc_t + par_misc_t_end
+           ELSE
+              loc_yr = par_misc_t_end - loc_t
+           END IF
+           ! save time-series data (ASCII format)
+           ! NOTE: netCDF time-series saving has been removed in cookie
+           CALL sub_data_save_runtime(loc_yr_save,loc_t)
+           ! if high-resolution netCDF output is reuired -- re-open netcdf file, update record number, close file
+           if (ctrl_data_save_3d_sig) then
+              call sub_save_netcdf(loc_yr_save,4)
+              CALL sub_save_netcdf_3d_sig()
+              ncout3dsig_ntrec = ncout3dsig_ntrec + 1
+              call sub_closefile(ncout3dsig_iou)
            end if
-
-        else
-           IF (ctrl_debug_lvl1) PRINT*,'>>> *SKIPPING* SAVING BIOGEM TIME-SERIES AVERAGE CENTERED @ year : ',loc_yr_save
+           ! test for and report carb chem errors
+           call sub_echo_runtimeerrs(loc_yr_save)
+           ! print runtime data
+           call sub_echo_runtimedata(loc_yr_save)
+           ! preserve SLT
+           int_SLT = int_misc_SLT_sig/int_t_sig
         end if
         ! update save array index if not forced
         if (.NOT.dum_forcesave) par_data_save_sig_i = par_data_save_sig_i - 1

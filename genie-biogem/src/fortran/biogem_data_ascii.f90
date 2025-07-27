@@ -323,7 +323,8 @@ CONTAINS
           loc_filename=fun_data_timeseries_filename( &
                & loc_t,par_outdir_name,trim(par_outfile_name)//'_series','carb_sur_'//TRIM(string_carb(ic)),string_results_ext &
                & )
-          loc_string_title = '% surface ocean carbonate chemistry properties (and isotopic composition where relevant) - '//string_longname_carb(ic)
+          loc_string_title = '% surface ocean carbonate chemistry properties (and isotopic composition where relevant) - '// &
+               & string_longname_carb(ic)
           SELECT CASE (ic)
           CASE (ic_ohm_cal,ic_ohm_arg)
              loc_string = '% time (yr) / ' //&
@@ -4233,8 +4234,202 @@ CONTAINS
 
   END SUBROUTINE sub_data_save_global_av
   ! ****************************************************************************************************************************** !
+  
+
+  ! ****************************************************************************************************************************** !
+  ! RUN-TIME REPORTING
+  SUBROUTINE sub_echo_runtimehead()
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! PRINT HEADER
+    ! -------------------------------------------------------- !
+    ! NOTE: once printed, reset par_misc_t_echo_header to .false. so it is only printed before the first data line
+    !       (unless set elsewhere to repeat the header line)
+    if (par_misc_t_echo_header) then
+       print*,' '
+       IF (.NOT. opt_select(iopt_select_carbchem)) THEN
+          PRINT'(A3,A12,A3,A12,A10,A3,4A10)', &
+               & ' > ',          &
+               & '  model year', &
+               & ' | ',          &
+               & '            ', &
+               & '   SAT(oC)', &
+               & ' | ',          &
+               & '  AMOC(Sv)', &
+               & '    ice(%)', &
+               & '   SST(oC)', &
+               & '  SSS(PSU)'
+          elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14)', &
+               & ' > ',          &
+               & '  model year', &
+               & ' | ',          &
+               & '  pCO2(uatm)', &
+               & '   SAT(oC)', &
+               & ' | ',          &
+               & '  AMOC(Sv)', &
+               & '    ice(%)', &
+               & '   SST(oC)', &
+               & '  SSS(PSU)', &
+               & ' | ',           &
+               & '      pH', &
+               & '  OHMEGA', &
+               & ' | ',           &
+               & '  [O2](uM)', &
+               & '  fPOC(PgC/yr)'
+       else
+          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8)', &
+               & ' > ',          &
+               & '  model year', &
+               & ' | ',          &
+               & '  pCO2(uatm)', &
+               & '   SAT(oC)', &
+               & ' | ',          &
+               & '  AMOC(Sv)', &
+               & '    ice(%)', &
+               & '   SST(oC)', &
+               & '  SSS(PSU)', &
+               & ' | ',           &
+               & '      pH', &
+               & '  OHMEGA'
+       end if
+       print*,' '
+       par_misc_t_echo_header = .FALSE.
+    end if
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+     END SUBROUTINE sub_echo_runtimehead
+  ! ****************************************************************************************************************************** !
 
 
+  ! ****************************************************************************************************************************** !
+  ! RUN-TIME REPORTING
+  SUBROUTINE sub_echo_runtimedata(dum_yr)
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_yr
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    real::loc_opsi_scale
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6 ! local opsi conversion constant
+    ! -------------------------------------------------------- !
+    ! PRINT DATA!
+    ! -------------------------------------------------------- !
+    IF (.NOT. opt_select(iopt_select_carbchem)) THEN
+       PRINT'(A3,F12.1,A3,A12,F10.3,A3,4F10.3)', &
+            & ' > ', &
+            & dum_yr, &
+            & ' | ', &
+            & '            ', &
+            & int_ocnatm_sig(ia_T), &
+            & ' | ', &
+            & loc_opsi_scale*int_misc_opsia_max_sig, &
+            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+            & int_ocn_sur_sig(io_T), &
+            & int_ocn_sur_sig(io_S)
+    elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+       PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3)', &
+            & ' > ', &
+            & dum_yr, &
+            & ' | ', &
+            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+            & int_ocnatm_sig(ia_T), &
+            & ' | ', &
+            & loc_opsi_scale*int_misc_opsia_max_sig, &
+            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+            & int_ocn_sur_sig(io_T) - const_zeroC, &
+            & int_ocn_sur_sig(io_S), &
+            & ' | ', &
+            & int_carb_opn_sig(ic_pHsws), &
+            & int_carb_opn_sig(ic_ohm_cal), &
+            & ' | ', &
+            & 1.0E6*int_ocn_sig(io_O2), &
+            & 12.0E-15*int_fexport_sig(is_POC)
+       else
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3)', &
+            & ' > ', &
+            & dum_yr, &
+            & ' | ', &
+            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+            & int_ocnatm_sig(ia_T), &
+            & ' | ', &
+            & loc_opsi_scale*int_misc_opsia_max_sig, &
+            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+            & int_ocn_sur_sig(io_T) - const_zeroC, &
+            & int_ocn_sur_sig(io_S), &
+            & ' | ', &
+            & int_carb_opn_sig(ic_pHsws), &
+            & int_carb_opn_sig(ic_ohm_cal)
+       end if
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+     END SUBROUTINE sub_echo_runtimedata
+  ! ****************************************************************************************************************************** !
+
+     
+  ! ****************************************************************************************************************************** !
+  ! ERROR REPORTING
+  SUBROUTINE sub_echo_runtimeerrs(dum_yr)
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_yr
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! ASSESS ERRORS!
+    ! -------------------------------------------------------- !
+    if (sum(diag_carb_derr_pH(:,:,:)) > const_real_nullsmall) then
+       ! write message
+!!$       PRINT'(A5,F10.1,A100)', &
+!!$            & ' >>> ', &
+!!$            & dum_yr, &
+!!$            & ' WARNING: One or more grid points have failed to solve for pH since the last time-series save point.'
+       PRINT'(A5,A62)', &
+            & ' >>> ', &
+            & ' WARNING: One or more grid points have failed to solve for pH.'
+       ! reset array
+       diag_carb_derr_pH(:,:,:) = 0.0
+    end if
+    if (sum(diag_carb_derr_it(:,:,:)) > const_real_nullsmall) then
+       ! write message
+!!$       PRINT'(A5,F10.1,A136)', &
+!!$            & ' >>> ', &
+!!$            & dum_yr, &
+!!$            & ' WARNING: One or more grid points have required an excessive number of iterations to solve for pH '// &
+!!$            & 'since the last time-series save point.'
+       PRINT'(A5,A98)', &
+            & ' >>> ', &
+            & ' WARNING: One or more grid points have required an excessive number of iterations to solve for pH.'
+       ! reset array
+       diag_carb_derr_it(:,:,:) = 0.0
+    end if
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  END SUBROUTINE sub_echo_runtimeerrs
+  ! ****************************************************************************************************************************** !
+
+  
   ! ****************************************************************************************************************************** !
   ! RUN-TIME REPORTING
   SUBROUTINE sub_echo_runtime(dum_yr,dum_opsi_scale,dum_opsia_minmax,dum_sfcatm1,dum_gemlite)
@@ -4268,6 +4463,8 @@ CONTAINS
        select case (fname_topo)
        case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
           ! print header (if necessary)
+          ! NOTE: once printed, reset par_misc_t_echo_header to .false. so it is only printed before the first data line
+          !       (unless set elsewhere to repeat the header line)
           if (par_misc_t_echo_header) then
              print*,' '
              ! ### MAKE MODIFICATIONS TO SCREEN PRINTING INFORMATION HERE ####################################################### !

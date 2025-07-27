@@ -5798,6 +5798,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_infile_orb_pts_var_name">
 			<value datatype="string">orb_pts_var.dat</value>
                         <description></description>
+                    </param>                    
+                    <param name="ctrl_data_echo_runtime_NEW">
+			<value datatype="boolean">.true.</value>
+                        <description>NEW format runtime output?</description>
                     </param>
 <!-- TRACER AUDITING AND DEBUGGING OPTIONS -->
                     <param name="ctrl_audit">

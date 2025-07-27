@@ -624,66 +624,34 @@ CONTAINS
        IF ((loc_H1 < const_real_nullsmall) .OR. (loc_H2 < const_real_nullsmall)) THEN
           ! test for -vs. DIC or ALK
           IF ((dum_DIC < const_real_nullsmall) .OR. (dum_ALK < const_real_nullsmall)) THEN
-             CALL sub_report_error(                                                            &
-                  & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                      &
-                  & 'Carbchem failutre at step; '//fun_conv_num_char_n(4,n)//                  &
-                  & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'// &
-                  & ' pH (OLD), pH (OLD), [H+] (guess #1), [H+] (guess #2)',                   &
-                  & 'CARBONATE CHEMISTRY COULD NOT BE UPDATED due to negative DIC or ALK :(',  &
-                  & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                 &
-                  & -LOG10(loc_H),-LOG10(loc_H_old),loc_H1,loc_H2/),.false.                    &
-                  & )
              if (ctrl_debug_reportwarnings) then
-                Print*,' > Negative DIC OR ALK. Possibilities include: '
-                Print*,'   (1) Instability in ocean circulation'
-                Print*,'   (2) Failutre to solve for sea-ice cover.'
-                Print*,'   (3) Extreme redox / low ALK (high [H2S]), causing instability in air-sea gas exchange (and -ve. DIC)'
-                Print*,' '
+                CALL sub_report_error(                                                            &
+                     & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                      &
+                     & 'Carbchem failutre at step; '//fun_conv_num_char_n(4,n)//                  &
+                     & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'// &
+                     & ' pH (OLD), pH (OLD), [H+] (guess #1), [H+] (guess #2)',                   &
+                     & 'CARBONATE CHEMISTRY COULD NOT BE UPDATED due to negative DIC or ALK :(',  &
+                     & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                 &
+                     & -LOG10(loc_H),-LOG10(loc_H_old),loc_H1,loc_H2/),.false.                    &
+                     & )
              end if
           else
-             CALL sub_report_error(                                                            &
-                  & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                      &
-                  & 'Numerical instability at step; '//fun_conv_num_char_n(4,n)//              &
-                  & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'// &
-                  & ' pH (OLD), pH (OLD), [H+] (guess #1), [H+] (guess #2)',                   &
-                  & 'CARBONATE CHEMISTRY COULD NOT BE UPDATED :(',                             &
-                  & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                 &
-                  & -LOG10(loc_H),-LOG10(loc_H_old),loc_H1,loc_H2/),.false.                    &
-                  & )
              if (ctrl_debug_reportwarnings) then
-                Print*,' > WHAT-IT-MEANS (maybe ...): '
-                Print*,'   (1) Check the FIRST TWO lines of the DATA (ocean DIC and ALK):'
-                Print*,'       -> These should be ... reasonable ... of order a few thousand umol kg-1'
-                Print*,'          (units reported are mol kg-1)'
-                Print*,'       -> NaNs, negative values, obsenely low (<< a few hundred umol kg-1) or,'
-                Print*,'          high (>> tens of thousands) are indicative of array bounds problems.'
-                Print*,'          Array bounds problems are mostly commonly due to'
-                Print*,'          (A) incorrect ocean dimension compared to the compiled executable,'
-                Print*,'          (B) incorrect number of biogeochem tracers in the ocean '
-                Print*,'              compared to compiled executable.'
-                Print*,'          => Carry out a *** make cleanall *** (from ~/genie/genie-main).' 
-                Print*,'   (2) If the relative values of DIC and ALK differ by factor of ca. 2'
-                Print*,'       it may not be possible to solve for aqueous carbonate chemsitry.' 
-                Print*,'       => View the netCDF distribution of DIC, ALK (or other tracers);'
-                Print*,'          -> Extreme hotspots or minima may reflect problems associated with'
-                Print*,'             circulation or sea-ice instabilities.'
-                Print*,'             Extreme freshening (or salinity) in topographically restricted'
-                Print*,'             (and/or shallow) seas can also cause problems.'
-                Print*,'   (3) Extreme values of Ca and SO4 (#3, #4) are only vanishingly possible' 
-                Print*,'       except due to incorrect compiled array dimension or extreme salinity.' 
-                Print*,' > NOTE: The circulation model is very robust and will not easily fall over.'
-                Print*,'         BIOGEM is something of a canary in this respect and will report'
-                Print*,'         unrealistic chemistries diagnostic of problems elsewhere.' 
-                Print*,'         *** THIS ERROR MESSAGE THUS DOES NOT NECESSARILY INDICATE ***'
-                Print*,'         *** SOMETHING AMISS WITH THE BIOGEOCHEMSITRY CODE PER SE. ***'
-                Print*,' > Refer to user-manual for info on altering the error behavior.'
-                Print*,' '
+                CALL sub_report_error(                                                            &
+                     & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                      &
+                     & 'Numerical instability at step; '//fun_conv_num_char_n(4,n)//              &
+                     & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'// &
+                     & ' pH (OLD), pH (OLD), [H+] (guess #1), [H+] (guess #2)',                   &
+                     & 'CARBONATE CHEMISTRY COULD NOT BE UPDATED :(',                             &
+                     & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                 &
+                     & -LOG10(loc_H),-LOG10(loc_H_old),loc_H1,loc_H2/),.false.                    &
+                     & )
              end if
           end if
           ! flag error occurrence
           ! NOTE: carbonate chemsitry has not been updated at this point
           ! NOTE: do not count error unless requested (e.g., to avoid flagging during time-slice calculation)
-          if (dum_erraction) dum_carb(ic_err_n) = 1.0
+          if (dum_erraction) dum_carb(ic_err) = 1.0
           exit
        ENDIF
        ! the implicit bit!
@@ -715,7 +683,7 @@ CONTAINS
              dum_carb(ic_pH_n)   = n
           end if
           ! flag no errors
-          dum_carb(ic_err_n)     = 0.0
+          dum_carb(ic_err)       = 0.0
           ! calculate value of [CO3--] at calcite and aragonite saturation
           ! NOTE: this assumes that the value of omega is unity at saturation (definition!)
           loc_sat_cal = dum_carbconst(icc_kcal) * 1.0/dum_Ca
@@ -743,36 +711,40 @@ CONTAINS
           ! test for whether we are likely to be waiting all bloody day for the algorithm to solve sweet FA
           IF (n > par_carbchem_pH_iterationmax) THEN
              if (.NOT. loc_flag_pHtol_updated) then
-                CALL sub_report_error(                                                                            &
-                     & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                                      &
-                     & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
-                     & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
-                     & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
-                     & ' pH (NEW), pH (OLD), pH (guess #1), pH (guess #2)',                                       &
-                     & 'Relaxing pH tolerance ... re-trying.',                                                    &
-                     & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                                 &
-                     & -LOG10(loc_H),-LOG10(loc_H_old),-LOG10(loc_H1),-LOG10(loc_H2)/),.false.                    &
-                     & )
+                if (ctrl_debug_reportwarnings) then
+                   CALL sub_report_error(                                                                            &
+                        & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                                      &
+                        & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
+                        & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
+                        & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
+                        & ' pH (NEW), pH (OLD), pH (guess #1), pH (guess #2)',                                       &
+                        & 'Relaxing pH tolerance ... re-trying.',                                                    &
+                        & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                                 &
+                        & -LOG10(loc_H),-LOG10(loc_H_old),-LOG10(loc_H1),-LOG10(loc_H2)/),.false.                    &
+                        & )
+                end if
                 ! relax pH tolerance and re-try (re-set iteration counter) but flag this
                 ! NOTE: relax pH tolerance (dum_pHtol) by a factor of: par_carbchem_dpH_tolerance
                 loc_pHtol = 10.0*dum_pHtol
                 loc_flag_pHtol_updated = .true.
                 n = 1
              else
-                CALL sub_report_error(                                                                            &
-                     & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                                      &
-                     & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
-                     & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
-                     & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
-                     & ' pH (NEW), pH (OLD), pH (guess #1), pH (guess #2)',                                       &
-                     & 'CARBONATE CHEMISTRY COULD NOT BE UPDATED (even after relaxing pH tolerance) :(',          &
-                     & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                                 &
-                     & -LOG10(loc_H),-LOG10(loc_H_old),-LOG10(loc_H1),-LOG10(loc_H2)/),.false.                    &
-                     & )
+                if (ctrl_debug_reportwarnings) then
+                   CALL sub_report_error(                                                                            &
+                        & 'gem_carbchem.f90/sub_calc_carb',trim(dum_originstr),                                      &
+                        & 'Number of steps taken without successfully solving for pH = '//fun_conv_num_char_n(3,n-1)// &
+                        & ' out of: '//fun_conv_num_char_n(4,par_carbchem_pH_iterationmax)//' maximum allowed'//     &
+                        & ' / Data; dum_DIC, dum_ALK, dum_Ca, dum_SO4tot, dum_H2Stot, dum_NH4tot,'//                 &
+                        & ' pH (NEW), pH (OLD), pH (guess #1), pH (guess #2)',                                       &
+                        & 'CARBONATE CHEMISTRY COULD NOT BE UPDATED (even after relaxing pH tolerance) :(',          &
+                        & (/dum_DIC,dum_ALK,dum_Ca,dum_SO4tot,dum_H2Stot,dum_NH4tot,                                 &
+                        & -LOG10(loc_H),-LOG10(loc_H_old),-LOG10(loc_H1),-LOG10(loc_H2)/),.false.                    &
+                        & )
+                end if
                 ! flag error occurrence
                 ! NOTE: carbonate chemsitry has not been updated at this point
                 ! NOTE: do not count error unless requested (e.g., to avoid flagging during time-slice calculation)
-                if (dum_erraction) dum_carb(ic_err_n) = 1.0
+                if (dum_erraction) dum_carb(ic_err) = 1.0
                 exit
              end if
           END IF

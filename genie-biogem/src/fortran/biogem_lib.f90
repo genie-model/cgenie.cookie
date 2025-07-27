@@ -767,6 +767,8 @@ MODULE biogem_lib
   CHARACTER(len=127)::par_infile_orb_pts_loc_name                        !
   CHARACTER(len=127)::par_infile_orb_pts_var_name                        !
   NAMELIST /ini_biogem_nml/n_orb_pts_nmax,par_infile_orb_pts_loc_name,par_infile_orb_pts_var_name
+  LOGICAL::ctrl_data_echo_runtime_NEW                             ! NEW format runtime output?
+  NAMELIST /ini_biogem_nml/ctrl_data_echo_runtime_NEW  
   ! ------------------- TRACER AUDITING AND DEBUGGING OPTIONS -------------------------------------------------------------------- !
   LOGICAL::ctrl_audit                                            ! audit tracer inventory?
   LOGICAL::ctrl_audit_fatal                                      ! halt on audit fail?
@@ -1318,7 +1320,9 @@ MODULE biogem_lib
   REAL,DIMENSION(n_sed,n_i,n_j)::diag_ecogem_part                !
   REAL,DIMENSION(n_ocn,n_i,n_j)::diag_ecogem_remin               !
   ! MISC
-  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_err                     ! accumulated carbchem error occurrence
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_errsum                  ! total sum of accumulated occurrence of falures to solve pH 
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_pH                 ! change in the sum of occurrences of falure to solve pH 
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_it                 ! change in the sum of occurrences of excessive pH iterations
 
   ! *** integrated (time-averaged) time-series storage scalars and vectors ***
   !

@@ -2738,7 +2738,7 @@ CONTAINS
              SELECT CASE (ic)
              CASE (ic_pHsws)
                 loc_unitsname = 'pH(sws)'                
-             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err_n)
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
                 loc_unitsname = 'n/a'
              CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
                 loc_unitsname = 'n/a' 
@@ -2746,15 +2746,17 @@ CONTAINS
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_sur_'//trim(string_carb(ic)), &
-                  & 'surface ocean carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'Ocean surface carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_sur_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           END DO
           ! save accumulated carbchem error occurrence array
-          loc_ij(:,:) = diag_carb_err(:,:,n_k)
-          loc_shortname = 'carb_sur_err_n_sum'
-          loc_longname  = 'surface ocean carbonate chemistry properties - '//'Accumulated occurrence of failure of the pH calculation.'
+          loc_ij(:,:) = diag_carb_errsum(:,:,n_k)
+          loc_shortname = 'carb_errsum'
+          loc_longname  = 'Ocean surface carbonate chemistry -- '//'Summed occurrence of failure of the pH calculation.'
           loc_unitsname = 'n/a'
-          call sub_adddef_netcdf(loc_iou,3,trim(loc_shortname),trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,3,trim(loc_shortname),trim(loc_longname), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
        end if
     end if
@@ -2781,7 +2783,7 @@ CONTAINS
              SELECT CASE (ic)
              CASE (ic_pHsws)
                 loc_unitsname = 'pH(sws)'                
-             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err_n)
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
                 loc_unitsname = 'n/a'
              CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
                 loc_unitsname = 'n/a' 
@@ -2789,7 +2791,8 @@ CONTAINS
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_ben_'//trim(string_carb(ic)), &
-                  & 'benthic carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'Benthic carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_ben_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           END DO
        end if
@@ -3549,7 +3552,7 @@ CONTAINS
              SELECT CASE (ic)
              CASE (ic_pHsws)
                 loc_unitsname = 'pH(sws)'                
-             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err_n)
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
                 loc_unitsname = 'n/a'
              CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
                 loc_unitsname = 'n/a' 
@@ -3563,9 +3566,9 @@ CONTAINS
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        END DO
        ! save accumulated carbchem error occurrence array
-       loc_ijk(:,:,:) = diag_carb_err(:,:,:)
-       loc_shortname = 'carb_err_n_sum'
-       loc_longname  = 'carbonate chemistry -- '//'Accumulated occurrence of failure of the pH calculation.'
+       loc_ijk(:,:,:) = diag_carb_errsum(:,:,:)
+       loc_shortname = 'carb_errsum'
+       loc_longname  = 'carbonate chemistry -- '//'Summed occurrence of failure of the pH calculation.'
        call sub_adddef_netcdf(loc_iou,4,trim(loc_shortname),trim(loc_longname),' ',const_real_zero,const_real_zero)
        call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end if

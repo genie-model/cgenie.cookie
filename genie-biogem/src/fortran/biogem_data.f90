@@ -542,6 +542,7 @@ CONTAINS
        print*,'                                                    : ',trim(par_infile_orb_pts_loc_name)
        print*,'                                                    : ',trim(par_infile_orb_pts_var_name)
        print*,'Align netCDF filenames with experiment name?        : ',ctrl_ncout_expid_name
+       print*,'NEW format runtime output?                          : ',ctrl_data_echo_runtime_NEW       
        ! --- TRACER AUDITING AND DEBUGGING OPTIONS ------------------------------------------------------------------------------- !
        print*,'--- TRACER AUDITING AND DEBUGGING OPTIONS ----------'
        print*,'Audit tracer inventory?                             : ',ctrl_audit
@@ -3495,12 +3496,14 @@ CONTAINS
     ! zero arrays
     ! NOTE: leave carb_TSn array at its initialized state
     !       so that a full update of carb constants etc is ALWAYS performed upon the first call to tstep_biogem
-    carbconst(:,:,:,:)   = 0.0
-    carb(:,:,:,:)        = 0.0
-    carbalk(:,:,:,:)     = 0.0
-    carbisor(:,:,:,:)    = 0.0
-    carb_TSn(:,:,:,:)    = 0.0
-    diag_carb_err(:,:,:) = 0.0 ! accumulated carbchem error occurrence
+    carbconst(:,:,:,:)    = 0.0
+    carb(:,:,:,:)         = 0.0
+    carbalk(:,:,:,:)      = 0.0
+    carbisor(:,:,:,:)     = 0.0
+    carb_TSn(:,:,:,:)     = 0.0
+    diag_carb_errsum(:,:,:)  = 0.0 ! total sum of accumulated occurrence of falures to solve pH 
+    diag_carb_derr_pH(:,:,:) = 0.0 ! change in the sum of occurrences of falure to solve pH
+    diag_carb_derr_it(:,:,:) = 0.0 ! change in the sum of occurrences of excessive pH iterations
     ! initialize arrays
     DO i=1,n_i
        DO j=1,n_j

@@ -350,7 +350,7 @@ MODULE gem_cmn
   INTEGER,PARAMETER::ic_RdfCO2dDIC                        = 13    ! fCO2 sensitivity factor
   INTEGER,PARAMETER::ic_RdALKdDIC                         = 14    ! ALK (CaCO3 )buffering factor factor
   INTEGER,PARAMETER::ic_pH_n                              = 15    ! number of iterations taken to solve for pH
-  INTEGER,PARAMETER::ic_err_n                             = 16    ! number of errors
+  INTEGER,PARAMETER::ic_err                               = 16    ! failure to solve for pH
   ! (carbonate) chemistry descriptors array indices
   INTEGER,PARAMETER::icc_k                                = 01    ! 
   INTEGER,PARAMETER::icc_k1                               = 02    ! 
@@ -519,7 +519,7 @@ MODULE gem_cmn
        & 'RdfCO2dDIC      ', &
        & 'RdALKdDIC       ', &
        & 'pH_n            ', &
-       & 'err_n           ' /)
+       & 'err             ' /)
   ! carbonate chemistry dissociation constants
   CHARACTER(len=16),DIMENSION(n_carbconst),PARAMETER::string_carbconst = (/ &
        & 'k               ', &
@@ -582,8 +582,8 @@ MODULE gem_cmn
        & 'Sensitivity of DIC to an ALK perturbation at fixed pCO2        ', &
        & 'Sensitivity of fCO2 to a DIC perturbation at fixed ALK         ', &
        & 'Sensitivity of ALK to a DIC perturbation at fixed OHM          ', &
-       & 'Mean number of iterations required to converge pH              ', &
-       & 'Mean number of failures of pH convergence                      '/)
+       & 'Number of iterations required to converge pH                   ', &
+       & 'Failure to solve for pH                                        '/)
 
   ! *** I/O ***
   ! default I/O parameters
