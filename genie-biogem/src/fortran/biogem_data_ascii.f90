@@ -4392,34 +4392,42 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DEFINE LOCAL VARIABLES
     ! -------------------------------------------------------- !
+    integer::loc_sum_derr_pH
+    integer::loc_sum_derr_it
     ! -------------------------------------------------------- !
     ! INITIALIZE LOCAL VARIABLES
     ! -------------------------------------------------------- !
+    loc_sum_derr_pH = int(sum(diag_carb_derr_pH(:,:,:)))
+    loc_sum_derr_it = int(sum(diag_carb_derr_it(:,:,:)))
     ! -------------------------------------------------------- !
     ! ASSESS ERRORS!
     ! -------------------------------------------------------- !
-    if (sum(diag_carb_derr_pH(:,:,:)) > const_real_nullsmall) then
+    if (loc_sum_derr_pH > 0) then
        ! write message
 !!$       PRINT'(A5,F10.1,A100)', &
 !!$            & ' >>> ', &
 !!$            & dum_yr, &
 !!$            & ' WARNING: One or more grid points have failed to solve for pH since the last time-series save point.'
-       PRINT'(A5,A62)', &
+       PRINT'(A5,A10,I6,A41)', &
             & ' >>> ', &
-            & ' WARNING: One or more grid points have failed to solve for pH.'
+            & ' WARNING: ', &
+            & loc_sum_derr_pH, &
+            & ' grid points have failed to solve for pH.'
        ! reset array
        diag_carb_derr_pH(:,:,:) = 0.0
     end if
-    if (sum(diag_carb_derr_it(:,:,:)) > const_real_nullsmall) then
+    if (loc_sum_derr_it > 0) then
        ! write message
 !!$       PRINT'(A5,F10.1,A136)', &
 !!$            & ' >>> ', &
 !!$            & dum_yr, &
 !!$            & ' WARNING: One or more grid points have required an excessive number of iterations to solve for pH '// &
 !!$            & 'since the last time-series save point.'
-       PRINT'(A5,A98)', &
+       PRINT'(A5,A10,I6,A77)', &
             & ' >>> ', &
-            & ' WARNING: One or more grid points have required an excessive number of iterations to solve for pH.'
+            & ' WARNING: ', &
+            & loc_sum_derr_it, &
+            & ' grid points have required an excessive number of iterations to solve for pH.'
        ! reset array
        diag_carb_derr_it(:,:,:) = 0.0
     end if
