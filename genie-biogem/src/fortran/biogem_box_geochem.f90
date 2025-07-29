@@ -2202,7 +2202,7 @@ CONTAINS
           END SELECT
           ! calculate CH4 oxidation coupled to SO4 reduction (units: mol CH4 kg-1)
           ! (1) inhibition term (using the same parameter as for SO4 reduction during Corg remin)
-          ! NOTE: ctrl_bio_remin_AOM_OLD=.true. simulates original muffin code with (loc_O2 < const_real_nullsmall)
+          !     NOTE: ctrl_bio_remin_AOM_OLD=.true. simulates original muffin code with (loc_O2 < const_real_nullsmall)
           if (loc_O2 < const_real_nullsmall) then
              loc_ki = 1.0
           else
@@ -2213,6 +2213,8 @@ CONTAINS
              end if
           end if
           ! (2) Michaelis-Menten term
+          !     NOTE: original published code was incorrect:
+          !           loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
           loc_MM = loc_SO4/(loc_SO4 + par_bio_remin_AOM_Km_SO4)
           ! (3) temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
