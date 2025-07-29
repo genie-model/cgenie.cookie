@@ -1623,17 +1623,27 @@ CONTAINS
     ! diagnostics -- diagenesis errors
     select case (trim(par_sed_diagen_CaCO3opt))
     case ('archer1991explicit')
-       DO idiag=1,n_diag_sed_err
-          loc_unitsname = 'n/a'
-          loc_shortname = 'diag_'//trim(string_diag_sed_err(idiag))
-          loc_longname  = 'Archer model diagenesis error -- '//trim(string_longname_diag_sed_err(idiag))      
-          loc_ij(:,:)   = sed_diag_err(idiag,:,:)
+       if (ctrl_sed_diagen_error_save) then
+          DO idiag=1,n_diag_sed_err
+             loc_unitsname = 'n/a'
+             loc_shortname = 'diag_'//trim(string_diag_sed_err(idiag))
+             loc_longname  = 'Archer model diagenesis error -- '//trim(string_longname_diag_sed_err(idiag))      
+             loc_ij(:,:)   = sed_diag_err(idiag,:,:)
+             call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
+                  & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+             call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          end do
+       else
+          loc_unitsname = 'yr-1'
+          loc_shortname = 'misc_sed_err'
+          loc_longname  = 'Occurrence of error in calculation of CaCO3 diagenesis'    
+          loc_ij(:,:)   = sed_diag_err(idiag_err_NULL,:,:)
           call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
                & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
           call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-       end do
+       end if
     end select
-    
+
     ! SAVE DEEP-SEA SEDIMENT DATA
     ! core-top data
     DO is=1,n_sed
@@ -1803,12 +1813,12 @@ CONTAINS
                      & sed_mima(is2l(is),1),sed_mima(is2l(is),2))
                 call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea)
                 if (sed_dep(is)==is_CaCO3) then
-                loc_shortname = 'AVE_sed_'//trim(string_sed(is))//'--errormasked'
-                loc_longname  = 'Average over '//loc_str_dtyr//' -- '// &
-                     & trim(string_sed(is))//' sediment burial flux (masked for error occurrence)'
-                call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname),trim(loc_longname),trim(loc_unitsname), &
-                     & sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-                call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea_err)
+                   loc_shortname = 'AVE_sed_'//trim(string_sed(is))//'--errormasked'
+                   loc_longname  = 'Average over '//loc_str_dtyr//' -- '// &
+                        & trim(string_sed(is))//' sediment burial flux (masked for error occurrence)'
+                   call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname),trim(loc_longname),trim(loc_unitsname), &
+                        & sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+                   call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,sed_av_coretop(is,:,:),loc_mask_dsea_err)
                 end if
              end SELECT
           END IF
@@ -1816,15 +1826,27 @@ CONTAINS
        ! diagnostics -- diagenesis errors
        select case (trim(par_sed_diagen_CaCO3opt))
        case ('archer1991explicit')
-          DO idiag=1,n_diag_sed_err
-             loc_unitsname = 'n/a'
-             loc_shortname = 'AVE_diag_'//trim(string_diag_sed_err(idiag))
+          if (ctrl_sed_diagen_error_save) then
+             DO idiag=1,n_diag_sed_err
+                loc_unitsname = 'n/a'
+                loc_shortname = 'AVE_diag_'//trim(string_diag_sed_err(idiag))
+                loc_longname  = 'Average over '//loc_str_dtyr//' -- '// &
+                     & 'Archer model diagenesis error occurrence -- '//trim(string_longname_diag_sed_err(idiag))
+                loc_ij(:,:)   = sed_av_diag_err(idiag,:,:)
+                call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+                call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             end do
+          else
+             loc_unitsname = 'yr-1'
+             loc_shortname = 'AVE_misc_sed_err'
+             loc_longname  = 'Occurrence of error in calculation of CaCO3 diagenesis' 
              loc_longname  = 'Average over '//loc_str_dtyr//' -- '// &
-                  & 'Archer model diagenesis error occurrence -- '//trim(string_longname_diag_sed_err(idiag))
-             loc_ij(:,:)   = sed_av_diag_err(idiag,:,:)
-             call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-          end do
+                  & 'Occurrence of error in calculation of CaCO3 diagenesis'
+             loc_ij(:,:)   = sed_av_diag_err(idiag_err_NULL,:,:)
+             call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
+                  & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+             call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          end if
        end select
     end if
 

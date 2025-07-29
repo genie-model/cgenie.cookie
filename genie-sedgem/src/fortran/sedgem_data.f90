@@ -264,6 +264,7 @@ CONTAINS
        print*,'Restart in netCDF format?                           : ',ctrl_ncrst
        print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
        print*,'time interval for averaging final data over (yr)    : ',par_sed_save_av_dtyr
+       print*,'Save diagenesis error details?                      : ',ctrl_sed_diagen_error_save
        ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ########################################################################## !
        !
        ! ######################################################################################################################### !

@@ -8008,6 +8008,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">0.0</value>
                         <description>time interval for averaging final sed data over (yr) [0.0 to disable]</description>
                     </param>
+                    <param name="ctrl_sed_diagen_error_save">
+			<value datatype="boolean">.false.</value>
+                        <description>Save diagenesis error details?</description>
+                    </param>
                 </namelist>
             </file>
         </model>

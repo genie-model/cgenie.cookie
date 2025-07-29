@@ -332,6 +332,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_ncsedcore_name
   real::par_sed_save_av_dtyr                                     ! time interval for averaging final sed data over (yr)
   NAMELIST /ini_sedgem_nml/par_sed_save_av_dtyr
+  logical::ctrl_sed_diagen_error_save                            ! Save diagenesis error details?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_save
   ! ############################################################################################################################## !
 
 
