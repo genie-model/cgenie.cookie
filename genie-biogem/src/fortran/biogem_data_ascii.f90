@@ -533,8 +533,8 @@ CONTAINS
        select case (fname_topo)
        case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
           loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(n_k/2)) //'] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(n_k/2)) //'] / '// &
+               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(real(n_k)/2.0)) //'] / '// &
+               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(real(n_k)/2.0)) //'] / '// &
                & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
                & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
        case default
@@ -4734,40 +4734,46 @@ CONTAINS
           loc_opsi(j,k) = loc_opsi(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
        END DO
     END DO
-    ! Pacific overturning streamfunction
-    loc_ominp = 0.0
-    loc_omaxp = 0.0
-    DO j=goldstein_jsf+1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=goldstein_ips(j),goldstein_ipf(j)
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+    select case (fname_topo)
+    case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       ! Pacific overturning streamfunction
+       loc_ominp = 0.0
+       loc_omaxp = 0.0
+       DO j=goldstein_jsf+1,n_j-1
+          DO k=1,n_k-1
+             loc_ou(j,k) = 0.0
+             DO i=goldstein_ips(j),goldstein_ipf(j)
+                loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+             ENDDO
+             loc_opsip(j,k) = loc_opsip(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
+             IF(loc_opsip(j,k) < loc_ominp) loc_ominp = loc_opsip(j,k)
+             IF(loc_opsip(j,k) > loc_omaxp) loc_omaxp = loc_opsip(j,k)
           ENDDO
-          loc_opsip(j,k) = loc_opsip(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          IF(loc_opsip(j,k) < loc_ominp) loc_ominp = loc_opsip(j,k)
-          IF(loc_opsip(j,k) > loc_omaxp) loc_omaxp = loc_opsip(j,k)
        ENDDO
-    ENDDO
-    dum_opsip_minmax(1) = loc_ominp
-    dum_opsip_minmax(2) = loc_omaxp
-    ! Atlantic overturning streamfunction
-    ! NOTE: Atlantic calculation hacked so that only the deeper 1/2 of the maximum is calculated
-    loc_omina = 0.0
-    loc_omaxa = 0.0
-    DO j=goldstein_jsf+1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=goldstein_ias(j),goldstein_iaf(j)
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+       dum_opsip_minmax(1) = loc_ominp
+       dum_opsip_minmax(2) = loc_omaxp
+       ! Atlantic overturning streamfunction
+       ! NOTE: Atlantic calculation hacked so that only the deeper 1/2 of the maximum is calculated
+       loc_omina = 0.0
+       loc_omaxa = 0.0
+       DO j=goldstein_jsf+1,n_j-1
+          DO k=1,n_k-1
+             loc_ou(j,k) = 0.0
+             DO i=goldstein_ias(j),goldstein_iaf(j)
+                loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+             ENDDO
+             loc_opsia(j,k) = loc_opsia(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
+             IF((loc_opsia(j,k) < loc_omina) .AND. (k <= int(real(n_k)/2.0))) loc_omina = loc_opsia(j,k)
+             IF((loc_opsia(j,k) > loc_omaxa) .AND. (k <= int(real(n_k)/2.0))) loc_omaxa = loc_opsia(j,k)
           ENDDO
-          loc_opsia(j,k) = loc_opsia(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          IF((loc_opsia(j,k) < loc_omina) .AND. (k <= n_k/2)) loc_omina = loc_opsia(j,k)
-          IF((loc_opsia(j,k) > loc_omaxa) .AND. (k <= n_k/2)) loc_omaxa = loc_opsia(j,k)
        ENDDO
-    ENDDO
-    dum_opsia_minmax(1) = loc_omina
-    dum_opsia_minmax(2) = loc_omaxa
-    !
+       dum_opsia_minmax(1) = loc_omina
+       dum_opsia_minmax(2) = loc_omaxa
+    case default
+       dum_opsip_minmax(:) = -999
+       dum_opsia_minmax(:) = -999
+    end select
+    ! PSI
     loc_zpsi(:,:) = 0.0
     DO i=1,n_i-1
        DO k=1,n_k-1

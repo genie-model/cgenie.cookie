@@ -3204,7 +3204,8 @@ CONTAINS
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_ben_'//trim(string_carb(ic)), &
-                  & 'benthic carbonate chemistry properties - '//trim(string_longname_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'benthic carbonate chemistry properties - '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_ben_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_sed_mask)
           END DO
        end if
