@@ -3729,13 +3729,13 @@ SUBROUTINE diag_biogem_timeslice( &
            int_diag_react_timeslice(:,:,:,:)       = int_diag_react_timeslice(:,:,:,:)       + diag_react(:,:,:,:)
            int_diag_redox_timeslice(:,:,:,:)       = int_diag_redox_timeslice(:,:,:,:)       + diag_redox(:,:,:,:)
            int_diag_iron_timeslice(:,:,:,:)        = int_diag_iron_timeslice(:,:,:,:)        + loc_dtyr*diag_iron(:,:,:,:)
+           int_diag_airsea_timeslice(:,:,:)        = int_diag_airsea_timeslice(:,:,:)        + loc_dtyr*diag_airsea(:,:,:)
            ! gemlite
            if (dum_gemlite) then
               int_diag_weather_timeslice(:,:,:)   = int_diag_weather_timeslice(:,:,:) + loc_dtyr*dum_sfxsumrok1(:,:,:)
            else
               int_diag_weather_timeslice(:,:,:)   = int_diag_weather_timeslice(:,:,:) + dum_sfxsumrok1(:,:,:)
            end if
-           int_diag_airsea_timeslice(:,:,:)    = int_diag_airsea_timeslice(:,:,:)     + loc_dtyr*diag_airsea(:,:,:)
            ! eceogem
            if (flag_ecogem) then
               int_diag_ecogem_part(:,:,:)  = int_diag_ecogem_part(:,:,:)  + loc_dtyr*diag_ecogem_part(:,:,:)

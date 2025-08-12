@@ -2215,7 +2215,13 @@ CONTAINS
           ! (2) Michaelis-Menten term
           !     NOTE: original published code was incorrect:
           !           loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
-          loc_MM = loc_SO4/(loc_SO4 + par_bio_remin_AOM_Km_SO4)
+          !           although this was a bug -> enable as part of the ctrl_bio_remin_AOM_OLD option
+          !           so that the original paper results can be reporduced
+          if (ctrl_bio_remin_AOM_OLD) then
+             loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
+          else
+             loc_MM = loc_SO4/(loc_SO4 + par_bio_remin_AOM_Km_SO4)
+          end if
           ! (3) temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
