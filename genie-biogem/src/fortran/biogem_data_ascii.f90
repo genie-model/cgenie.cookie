@@ -4408,11 +4408,11 @@ CONTAINS
 !!$            & ' >>> ', &
 !!$            & dum_yr, &
 !!$            & ' WARNING: One or more grid points have failed to solve for pH since the last time-series save point.'
-       PRINT'(A5,A10,I6,A41)', &
+       PRINT'(A5,A10,I6,A48)', &
             & ' >>> ', &
             & ' WARNING: ', &
             & loc_sum_derr_pH, &
-            & ' grid points have failed to solve for pH.'
+            & ' failures to solve for pH in this time interval.'
        ! reset array
        diag_carb_derr_pH(:,:,:) = 0.0
     end if
@@ -4423,11 +4423,11 @@ CONTAINS
 !!$            & dum_yr, &
 !!$            & ' WARNING: One or more grid points have required an excessive number of iterations to solve for pH '// &
 !!$            & 'since the last time-series save point.'
-       PRINT'(A5,A10,I6,A77)', &
+       PRINT'(A5,A10,I6,A98)', &
             & ' >>> ', &
             & ' WARNING: ', &
             & loc_sum_derr_it, &
-            & ' grid points have required an excessive number of iterations to solve for pH.'
+            & ' times an excessive number of iterations have been required to solve for pH in this time interval.'
        ! reset array
        diag_carb_derr_it(:,:,:) = 0.0
     end if

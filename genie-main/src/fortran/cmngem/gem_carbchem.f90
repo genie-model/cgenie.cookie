@@ -725,7 +725,7 @@ CONTAINS
                 end if
                 ! relax pH tolerance and re-try (re-set iteration counter) but flag this
                 ! NOTE: relax pH tolerance (dum_pHtol) by a factor of: par_carbchem_dpH_tolerance
-                loc_pHtol = 10.0*dum_pHtol
+                loc_pHtol = par_carbchem_dpH_tolerance*dum_pHtol
                 loc_flag_pHtol_updated = .true.
                 n = 1
              else
@@ -1281,7 +1281,11 @@ CONTAINS
   ! CALCULATE REVELLE FACTOR
   ! NOTE: as per sub_calc_carb
   ! NOTE: carb chem is re-solved at the outset to the same accuracy as needed for the perturbation
+  ! NOTE: this is a simplified version of the origianl fun_calc_carb_RF0_SF0 scheme
+  !       in which the pH solution criteria differed from in sub_calc_carb ... so make testbiogem will fail:
+  !       **ERROR: Differing values in variable carb_RF0
   function fun_calc_carb_RF0_SF0( &
+       & dum_pHtol, &
        & dum_DIC,dum_ALK,dum_Ca, &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
        & dum_carbconst,dum_carb)
@@ -1292,6 +1296,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DUMMY ARGUMENTS
     ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_pHtol
     REAL,INTENT(in)::dum_DIC,dum_ALK,dum_Ca
     REAL,INTENT(in)::dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot
     REAL,DIMENSION(n_carbconst),intent(in)::dum_carbconst
@@ -1299,156 +1304,52 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DEFINE LOCAL VARIABLES
     ! -------------------------------------------------------- !
-    INTEGER::n
-    real::loc_OH,loc_H3SiO4,loc_H4BO4,loc_HSO4,loc_HF,loc_H3PO4,loc_H2PO4,loc_HPO4,loc_PO4,loc_HS,loc_NH3
-    REAL::loc_zed
-    REAL::loc_ALK_DIC,loc_conc_CO2,loc_conc_CO3,loc_conc_HCO3
-    REAL::loc_H,loc_H_old,loc_H1,loc_H2,loc_H_p2,loc_H_p3,loc_H_free,loc_H_total
-    real::loc_DIC_RFO,loc_dDIC
+    real::loc_DIC_RFO,loc_dDIC,loc_conc_CO2
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
-    real::loc_dpH,loc_pHtol
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
     ! -------------------------------------------------------- !
-    ! initialize local concentrations that could remain undefined if dum_H2Stot or dum_NH4tot are negative
-    loc_HS  = 0.0
-    loc_NH3 = 0.0
     ! define DIC perturbion
-    loc_dDIC = 1.0E-6;
+    loc_dDIC = 10.0E-6;
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set pH tolorence
-    if (ctrl_carbchem_pH_OLD) then
-       loc_pHtol = par_carbchem_pH_tolerance
-    else
-       loc_pHtol = par_carbchem_pH_tolerance_buffering
-    end if
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
-    ! calculate and save initial [H] value
-    ! NOTE: omit this call to sub_calc_carb for back-compatability
+    ! solve for initial [H] at higher accuracy
     ! NOTE: do not flag carb chem errors associated with diagnostics calculations
-    if (.NOT. ctrl_carbchem_pH_OLD) then
-       call sub_calc_carb(                                                               &
-            & 'gem_carbchem.f90/fun_calc_carb_RF0_SF0',.false.,loc_pHtol,                &
-            & dum_DIC,dum_ALK,dum_Ca,                                                    &
-            & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
-            & dum_carbconst,loc_carb,loc_carbalk)
-    end if
-    loc_H = loc_carb(ic_H)
+    call sub_calc_carb(                                                               &
+         & 'gem_carbchem.f90/fun_calc_carb_RF0_SF0',.false.,dum_pHtol,                &
+         & dum_DIC,dum_ALK,dum_Ca,                                                    &
+         & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+         & dum_carbconst,loc_carb,loc_carbalk)
+    ! store initial (pre DIC perturbation) [CO2] value
+    loc_conc_CO2 = loc_carb(ic_conc_CO2)
     ! -------------------------------------------------------- !
     ! RE_SOLVE pH
     ! -------------------------------------------------------- !
-    n = 1
     ! perturb DIC
+    ! NOTE: flag carb chem errors so that problems calculating a valid RF0 value can be caught
     loc_DIC_RFO = dum_DIC + loc_dDIC
-    ! LOOP
-    block_solvehloop: DO
-       ! make a copy of the [H] value from the previous iteration (or seeded value if first iteration)
-       loc_H_old = loc_H
-       ! local pre-calculated powers
-       loc_H_p2 = loc_H*loc_H
-       loc_H_p3 = loc_H*loc_H_p2
-       ! [H+] on alternative pH scales
-       loc_H_free = loc_H/(1.0 + dum_SO4tot/dum_carbconst(icc_kHSO4) + dum_Ftot/dum_carbconst(icc_kHF))
-       loc_H_total = loc_H_free*(1.0 + dum_SO4tot/dum_carbconst(icc_kHSO4))
-       ! ion product of water; H2O <-kW-> H+ + OH-
-       loc_OH = dum_carbconst(icc_kW)/loc_H
-       ! boric acid; B(OH)3 + H2O <-kB-> B(OH)4- + H+
-       loc_H4BO4 = dum_Btot/(1.0 + loc_H/dum_carbconst(icc_kB))
-       ! SiO2 + 2H2O <-kSi-> H+ + Si(OH)3O-
-       loc_H3SiO4 = dum_SiO2tot/(1.0 + loc_H/dum_carbconst(icc_kSi))
-       ! bisulphate; HSO4- <-kHSO4-> H+ + SO42-
-       loc_HSO4 = dum_SO4tot/(1.0 + dum_carbconst(icc_kHSO4)/loc_H)
-       ! hydrogen floride; HF <-kHF-> H+ + F-
-       loc_HF = dum_Ftot/(1.0 + dum_carbconst(icc_kHF)/loc_H)
-       ! hydrogen sulphide; H2S <-kH2S-> H+ + HS-
-       if (dum_H2Stot > const_real_nullsmall) loc_HS = dum_H2Stot/(1.0 + loc_H/dum_carbconst(icc_kH2S))
-       ! ammonium; NH4+ <-kNH4-> H+ + NH3
-       if (dum_NH4tot > const_real_nullsmall) loc_NH3 = dum_NH4tot/(1.0 + loc_H/dum_carbconst(icc_kNH4))
-       ! phosphoric acid
-       loc_H3PO4 = dum_PO4tot/( &
-            & 1.0 + &
-            & dum_carbconst(icc_kP1)/loc_H + &
-            & (dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2))/loc_H_p2 + &
-            & (dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3))/loc_H_p3 &
-            & )
-       loc_H2PO4 = dum_PO4tot/( &
-            & 1.0 + &
-            & loc_H/dum_carbconst(icc_kP1) + &
-            & dum_carbconst(icc_kP2)/loc_H + &
-            & (dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3))/loc_H_p2 &
-            & )
-       loc_HPO4 = dum_PO4tot/( &
-            & 1.0 + &
-            & loc_H/dum_carbconst(icc_kP2) + &
-            & loc_H_p2/(dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2)) + &
-            & dum_carbconst(icc_kP3)/loc_H &
-            & )
-       loc_PO4 = dum_PO4tot/( &
-            & 1.0 + &
-            & loc_H/dum_carbconst(icc_kP3) + &
-            & loc_H_p2/(dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3)) + &
-            & loc_H_p3/(dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3)) &
-            & )
-       ! calculate carbonate alkalinity
-       if (ctrl_carbchem_noH3SiO4) then
-          loc_ALK_DIC = dum_ALK &
-               & - loc_H4BO4 - loc_OH - loc_HPO4 - 2.0*loc_PO4 - loc_NH3 - loc_HS &
-               & + loc_H + loc_HSO4 + loc_HF + loc_H3PO4
-       else
-          loc_ALK_DIC = dum_ALK &
-               & - loc_H4BO4 - loc_OH - loc_HPO4 - 2.0*loc_PO4 - loc_H3SiO4 - loc_NH3 - loc_HS &
-               & + loc_H + loc_HSO4 + loc_HF + loc_H3PO4
-       end if
-       ! estimate the partitioning between the aqueous carbonate species, and then make two independent estimates of [H]
-       loc_zed = ( &
-            &   (4.0*loc_ALK_DIC + loc_DIC_RFO*dum_carbconst(icc_k) - loc_ALK_DIC*dum_carbconst(icc_k))**2 + &
-            &   4.0*(dum_carbconst(icc_k) - 4.0)*loc_ALK_DIC**2 &
-            & )**0.5
-       loc_conc_HCO3 = (loc_DIC_RFO*dum_carbconst(icc_k) - loc_zed)/(dum_carbconst(icc_k) - 4.0)
-       loc_conc_CO3 = &
-            & ( &
-            &   loc_ALK_DIC*dum_carbconst(icc_k) - loc_DIC_RFO*dum_carbconst(icc_k) - &
-            &   4.0*loc_ALK_DIC + loc_zed &
-            & ) &
-            & /(2.0*(dum_carbconst(icc_k) - 4.0))
-       loc_conc_CO2 = loc_DIC_RFO - loc_ALK_DIC + &
-            & ( &
-            &   loc_ALK_DIC*dum_carbconst(icc_k) - loc_DIC_RFO*dum_carbconst(icc_k) - &
-            &   4.0*loc_ALK_DIC + loc_zed &
-            & ) &
-            & /(2.0*(dum_carbconst(icc_k) - 4.0))        
-       loc_H1 = dum_carbconst(icc_k1)*loc_conc_CO2/loc_conc_HCO3
-       loc_H2 = dum_carbconst(icc_k2)*loc_conc_HCO3/loc_conc_CO3
-       ! the implicit bit!
-       loc_H = SQRT(loc_H1*loc_H2)
-       ! test for the relative change in [H] falling below some criterion (at which point the solution is assumed stable)
-       if (ctrl_carbchem_pH_OLD) then
-          loc_dpH = ABS(1.0 - loc_H/loc_H_old)
-       else
-          loc_dpH = ABS(log10(loc_H_old)-log10(loc_H))
-       end if
-       if ( loc_dpH < loc_pHtol ) then
-          EXIT
-       else
-          n = n + 1
-       end if
-       if ((loc_H1 < const_real_nullsmall) .OR. (loc_H2 < const_real_nullsmall) .OR. (n > par_carbchem_pH_iterationmax)) THEN
-          ! incude (null) Revelle factor by making (loc_DIC_RFO/dum_DIC - 1.0) and hence fun_calc_carb_RF0_SF0(1), negative
-          loc_DIC_RFO = 0.0
-          exit
-       end if
-    END DO block_solvehloop
+    call sub_calc_carb(                                                               &
+         & 'gem_carbchem.f90/fun_calc_carb_RF0_SF0',.true.,dum_pHtol,                 &
+         & loc_DIC_RFO,dum_ALK,dum_Ca,                                                &
+         & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+         & dum_carbconst,loc_carb,loc_carbalk)
     ! -------------------------------------------------------- !
     ! RETURN FUNCTION VALUE
     ! -------------------------------------------------------- !
     ! NOTE: == ((loc_conc_CO2-dum_carb(ic_conc_CO2)/dum_carb(ic_conc_CO2)) / ((loc_DIC_RFO-dum_DIC)/dum_DIC)
     ! NOTE: dum_carb(ic_fug_CO2)   = loc_conc_CO2/dum_carbconst(icc_QCO2) 
-    fun_calc_carb_RF0_SF0(1) = (loc_conc_CO2/dum_carb(ic_conc_CO2) - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
-    fun_calc_carb_RF0_SF0(2) = (loc_conc_CO2 - dum_carb(ic_conc_CO2))/dum_carbconst(icc_QCO2)/loc_dDIC
+    ! test for issues ... do not update RF0 if there is an issue (and set SF0 to null)
+    if (loc_carb(ic_err) > const_real_nullsmall) then
+       fun_calc_carb_RF0_SF0(1) = loc_carb(ic_RF0)
+       fun_calc_carb_RF0_SF0(2) = const_real_null
+    else
+       fun_calc_carb_RF0_SF0(1) = (loc_carb(ic_conc_CO2)/loc_conc_CO2 - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
+       fun_calc_carb_RF0_SF0(2) = (loc_carb(ic_conc_CO2) - loc_conc_CO2)/dum_carbconst(icc_QCO2)/loc_dDIC
+    end if
     ! -------------------------------------------------------- !
     ! END
     ! -------------------------------------------------------- !
@@ -1460,6 +1361,7 @@ CONTAINS
   ! ESTIMATE OAE EFFICIENCY FACTOR -- dDIC from dALK at constant [CO2(aq)] 
   ! NOTE: co-opt pH tolorence and max number of pH iterations for carb chem tolorence and max iterations
   function fun_calc_carb_EF0(                                                       &
+       & dum_pHtol, &
        & dum_DIC,dum_ALK,dum_Ca,                                                    &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
        & dum_carbconst,dum_carb)
@@ -1470,6 +1372,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DUMMY ARGUMENTS
     ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_pHtol
     REAL,INTENT(in)::dum_DIC,dum_ALK,dum_Ca
     REAL,INTENT(in)::dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot
     REAL,DIMENSION(n_carbconst),intent(in)::dum_carbconst
@@ -1481,12 +1384,11 @@ CONTAINS
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
     integer::n
-    real::loc_pHtol
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
     ! -------------------------------------------------------- !
     ! define ALK perturbion
-    loc_dALK = 1.0E-6;
+    loc_dALK = 10.0E-6;
     ! initialize DIC search limits
     ! NOTE: assuming dALK == carbonate alkalinity, then
     !       (a) dDIC cannot be > dALK (low CO32- limit)
@@ -1495,8 +1397,6 @@ CONTAINS
     loc_DIC_high = dum_DIC + 1.0*loc_dALK
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set pH tolorence
-    loc_pHtol = par_carbchem_pH_tolerance_buffering
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
@@ -1504,7 +1404,7 @@ CONTAINS
     ! NOTE: solving for pH with the stricter local tolorence
     ! NOTE: do not flag carb chem errors associated with diagnostics calculations
     call sub_calc_carb(                                                               &
-         & 'gem_carbchem.f90/fun_calc_carb_EF0',.false.,loc_pHtol,                    &
+         & 'gem_carbchem.f90/fun_calc_carb_EF0',.false.,dum_pHtol,                    &
          & dum_DIC,dum_ALK,dum_Ca,                                                    &
          & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
          & dum_carbconst,loc_carb,loc_carbalk)
@@ -1521,12 +1421,13 @@ CONTAINS
        ! solve for pH and [CO2] ... request a 1000x finer pH tolorence than default
        ! NOTE: do not flag carb chem errors associated with diagnostics calculations
        call sub_calc_carb(                                                               &
-            & 'gem_carbchem.f90/fun_calc_carb_EF0',.false.,loc_pHtol,                    &
+            & 'gem_carbchem.f90/fun_calc_carb_EF0',.false.,dum_pHtol,                    &
             & loc_DIC,loc_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
        ! test for [CO2] estimate getting 'sufficiently' close to target value
-       IF (ABS(loc_carb(ic_conc_CO2) - loc_CO2_init) < loc_pHtol*loc_dALK) EXIT
+       ! NOTE: using pH tolarance to scale a [CO2] threshold
+       IF (ABS(loc_carb(ic_conc_CO2) - loc_CO2_init) < dum_pHtol*loc_CO2_init) EXIT
        ! test for n exceeding max iterations allowed
        if (n >= par_carbchem_pH_iterationmax) exit
        ! update DIC bounds
@@ -1552,6 +1453,7 @@ CONTAINS
   ! ESTIMATE NEUTRALIZATION EFFICIENCY FACTOR -- dALK (or dCaCO3) from dDIC at constant OHMEGA
   ! NOTE: co-opt pH tolorence and max number of pH iterations for OHM tolorence and max iterations
   function fun_calc_carb_NF0(                                                       &
+       & dum_pHtol, &
        & dum_DIC,dum_ALK,dum_Ca,                                                    &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
        & dum_carbconst,dum_carb)
@@ -1562,6 +1464,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DUMMY ARGUMENTS
     ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_pHtol
     REAL,INTENT(in)::dum_DIC,dum_ALK,dum_Ca
     REAL,INTENT(in)::dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot
     REAL,DIMENSION(n_carbconst),intent(in)::dum_carbconst
@@ -1573,12 +1476,11 @@ CONTAINS
     REAL,DIMENSION(n_carb)::loc_carb
     REAL,DIMENSION(n_carbalk)::loc_carbalk
     integer::n
-    real::loc_pHtol
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
     ! -------------------------------------------------------- !
     ! define DIC perturbion
-    loc_dDIC = 1.0E-6
+    loc_dDIC = 10.0E-6
     ! initialize ALK (or CaCO3) search limits
     ! NOTE: assuming dALK == carbonate alkalinity, and adding HCO3- (DIC+CaCO3) lowers saturation
     !       (a) dCaCO3 cannot be > 2.0*dDIC (4*ALK + 2*DIC (+DIC))
@@ -1590,8 +1492,6 @@ CONTAINS
     loc_ALK_high = dum_ALK + 2.0*loc_dDIC
     ! initialize carb chem 
     loc_carb = dum_carb
-    ! set pH tolorence
-    loc_pHtol = par_carbchem_pH_tolerance_buffering
     ! -------------------------------------------------------- !
     ! INITIAL CARB CHEM SOLUTION
     ! -------------------------------------------------------- !
@@ -1599,7 +1499,7 @@ CONTAINS
     ! NOTE: solving for pH with the stricter local tolorence
     ! NOTE: do not flag carb chem errors associated with diagnostics calculations
     call sub_calc_carb(                                                               &
-         & 'gem_carbchem.f90/fun_calc_carb_NF0',.false.,loc_pHtol,                    &
+         & 'gem_carbchem.f90/fun_calc_carb_NF0',.false.,dum_pHtol,                    &
          & dum_DIC,dum_ALK,dum_Ca,                                                    &
          & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
          & dum_carbconst,loc_carb,loc_carbalk)
@@ -1619,12 +1519,13 @@ CONTAINS
        ! solve for pH and OHMEGA ... request a finer pH tolorence than default
        ! NOTE: do not flag carb chem errors associated with diagnostics calculations
        call sub_calc_carb(                                                               &
-            & 'gem_carbchem.f90/fun_calc_carb_NF0',.false.,loc_pHtol,                    &
+            & 'gem_carbchem.f90/fun_calc_carb_NF0',.false.,dum_pHtol,                    &
             & loc_DIC,loc_ALK,dum_Ca,                                                    &
             & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
             & dum_carbconst,loc_carb,loc_carbalk)
        ! test for OHMEGA estimate getting 'sufficiently' close to target value
-       IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < loc_pHtol) EXIT
+       ! NOTE: using pH tolarance to scale a saturation threshold
+       IF (ABS(loc_carb(ic_ohm_cal) - loc_ohm_cal_init) < dum_pHtol*loc_ohm_cal_init) EXIT
        ! test for n exceeding max iterations allowed
        if (n >= par_carbchem_pH_iterationmax) exit
        ! update DIC bounds
@@ -1938,6 +1839,170 @@ CONTAINS
     ! END
     ! -------------------------------------------------------- !
   END FUNCTION fun_Corg_Rfrac_Poppetal
+  ! ****************************************************************************************************************************** !
+
+ 
+  ! ****************************************************************************************************************************** !
+  ! OLD
+  ! ****************************************************************************************************************************** !
+
+  
+  ! ****************************************************************************************************************************** !
+  ! CALCULATE REVELLE FACTOR
+  ! NOTE: as per sub_calc_carb
+  ! NOTE: carb chem is re-solved at the outset to the same accuracy as needed for the perturbation
+  function fun_calc_carb_RF0_SF0_OLD( &
+       & dum_DIC,dum_ALK,dum_Ca, &
+       & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+       & dum_carbconst,dum_carb)
+    ! -------------------------------------------------------- !
+    ! RESULT VARIABLE
+    ! -------------------------------------------------------- !
+    REAL,DIMENSION(2)::fun_calc_carb_RF0_SF0_OLD
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_DIC,dum_ALK,dum_Ca
+    REAL,INTENT(in)::dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot
+    REAL,DIMENSION(n_carbconst),intent(in)::dum_carbconst
+    REAL,DIMENSION(n_carb),INTENT(in)::dum_carb
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    INTEGER::n
+    real::loc_OH,loc_H3SiO4,loc_H4BO4,loc_HSO4,loc_HF,loc_H3PO4,loc_H2PO4,loc_HPO4,loc_PO4,loc_HS,loc_NH3
+    REAL::loc_zed
+    REAL::loc_ALK_DIC,loc_conc_CO2,loc_conc_CO3,loc_conc_HCO3
+    REAL::loc_H,loc_H_old,loc_H1,loc_H2,loc_H_p2,loc_H_p3,loc_H_free,loc_H_total
+    real::loc_DIC_RFO,loc_dDIC
+    REAL,DIMENSION(n_carb)::loc_carb
+    REAL,DIMENSION(n_carbalk)::loc_carbalk
+    real::loc_dpH,loc_pHtol
+    ! -------------------------------------------------------- !
+    ! INITIALIZE VARIABLES
+    ! -------------------------------------------------------- !
+    ! initialize local concentrations that could remain undefined if dum_H2Stot or dum_NH4tot are negative
+    loc_HS  = 0.0
+    loc_NH3 = 0.0
+    ! define DIC perturbion
+    loc_dDIC = 1.0E-6;
+    ! initialize carb chem 
+    loc_carb = dum_carb
+    ! set pH tolorence
+    loc_pHtol = par_carbchem_pH_tolerance
+    ! store initial pH
+    loc_H = loc_carb(ic_H)
+    ! -------------------------------------------------------- !
+    ! RE_SOLVE pH
+    ! -------------------------------------------------------- !
+    n = 1
+    ! perturb DIC
+    loc_DIC_RFO = dum_DIC + loc_dDIC
+    ! LOOP
+    block_solvehloop: DO
+       ! make a copy of the [H] value from the previous iteration (or seeded value if first iteration)
+       loc_H_old = loc_H
+       ! local pre-calculated powers
+       loc_H_p2 = loc_H*loc_H
+       loc_H_p3 = loc_H*loc_H_p2
+       ! [H+] on alternative pH scales
+       loc_H_free = loc_H/(1.0 + dum_SO4tot/dum_carbconst(icc_kHSO4) + dum_Ftot/dum_carbconst(icc_kHF))
+       loc_H_total = loc_H_free*(1.0 + dum_SO4tot/dum_carbconst(icc_kHSO4))
+       ! ion product of water; H2O <-kW-> H+ + OH-
+       loc_OH = dum_carbconst(icc_kW)/loc_H
+       ! boric acid; B(OH)3 + H2O <-kB-> B(OH)4- + H+
+       loc_H4BO4 = dum_Btot/(1.0 + loc_H/dum_carbconst(icc_kB))
+       ! SiO2 + 2H2O <-kSi-> H+ + Si(OH)3O-
+       loc_H3SiO4 = dum_SiO2tot/(1.0 + loc_H/dum_carbconst(icc_kSi))
+       ! bisulphate; HSO4- <-kHSO4-> H+ + SO42-
+       loc_HSO4 = dum_SO4tot/(1.0 + dum_carbconst(icc_kHSO4)/loc_H)
+       ! hydrogen floride; HF <-kHF-> H+ + F-
+       loc_HF = dum_Ftot/(1.0 + dum_carbconst(icc_kHF)/loc_H)
+       ! hydrogen sulphide; H2S <-kH2S-> H+ + HS-
+       if (dum_H2Stot > const_real_nullsmall) loc_HS = dum_H2Stot/(1.0 + loc_H/dum_carbconst(icc_kH2S))
+       ! ammonium; NH4+ <-kNH4-> H+ + NH3
+       if (dum_NH4tot > const_real_nullsmall) loc_NH3 = dum_NH4tot/(1.0 + loc_H/dum_carbconst(icc_kNH4))
+       ! phosphoric acid
+       loc_H3PO4 = dum_PO4tot/( &
+            & 1.0 + &
+            & dum_carbconst(icc_kP1)/loc_H + &
+            & (dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2))/loc_H_p2 + &
+            & (dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3))/loc_H_p3 &
+            & )
+       loc_H2PO4 = dum_PO4tot/( &
+            & 1.0 + &
+            & loc_H/dum_carbconst(icc_kP1) + &
+            & dum_carbconst(icc_kP2)/loc_H + &
+            & (dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3))/loc_H_p2 &
+            & )
+       loc_HPO4 = dum_PO4tot/( &
+            & 1.0 + &
+            & loc_H/dum_carbconst(icc_kP2) + &
+            & loc_H_p2/(dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2)) + &
+            & dum_carbconst(icc_kP3)/loc_H &
+            & )
+       loc_PO4 = dum_PO4tot/( &
+            & 1.0 + &
+            & loc_H/dum_carbconst(icc_kP3) + &
+            & loc_H_p2/(dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3)) + &
+            & loc_H_p3/(dum_carbconst(icc_kP1)*dum_carbconst(icc_kP2)*dum_carbconst(icc_kP3)) &
+            & )
+       ! calculate carbonate alkalinity
+       if (ctrl_carbchem_noH3SiO4) then
+          loc_ALK_DIC = dum_ALK &
+               & - loc_H4BO4 - loc_OH - loc_HPO4 - 2.0*loc_PO4 - loc_NH3 - loc_HS &
+               & + loc_H + loc_HSO4 + loc_HF + loc_H3PO4
+       else
+          loc_ALK_DIC = dum_ALK &
+               & - loc_H4BO4 - loc_OH - loc_HPO4 - 2.0*loc_PO4 - loc_H3SiO4 - loc_NH3 - loc_HS &
+               & + loc_H + loc_HSO4 + loc_HF + loc_H3PO4
+       end if
+       ! estimate the partitioning between the aqueous carbonate species, and then make two independent estimates of [H]
+       loc_zed = ( &
+            &   (4.0*loc_ALK_DIC + loc_DIC_RFO*dum_carbconst(icc_k) - loc_ALK_DIC*dum_carbconst(icc_k))**2 + &
+            &   4.0*(dum_carbconst(icc_k) - 4.0)*loc_ALK_DIC**2 &
+            & )**0.5
+       loc_conc_HCO3 = (loc_DIC_RFO*dum_carbconst(icc_k) - loc_zed)/(dum_carbconst(icc_k) - 4.0)
+       loc_conc_CO3 = &
+            & ( &
+            &   loc_ALK_DIC*dum_carbconst(icc_k) - loc_DIC_RFO*dum_carbconst(icc_k) - &
+            &   4.0*loc_ALK_DIC + loc_zed &
+            & ) &
+            & /(2.0*(dum_carbconst(icc_k) - 4.0))
+       loc_conc_CO2 = loc_DIC_RFO - loc_ALK_DIC + &
+            & ( &
+            &   loc_ALK_DIC*dum_carbconst(icc_k) - loc_DIC_RFO*dum_carbconst(icc_k) - &
+            &   4.0*loc_ALK_DIC + loc_zed &
+            & ) &
+            & /(2.0*(dum_carbconst(icc_k) - 4.0))        
+       loc_H1 = dum_carbconst(icc_k1)*loc_conc_CO2/loc_conc_HCO3
+       loc_H2 = dum_carbconst(icc_k2)*loc_conc_HCO3/loc_conc_CO3
+       ! the implicit bit!
+       loc_H = SQRT(loc_H1*loc_H2)
+       ! test for the relative change in [H] falling below some criterion (at which point the solution is assumed stable)
+       loc_dpH = ABS(1.0 - loc_H/loc_H_old)
+       if ( loc_dpH < loc_pHtol ) then
+          EXIT
+       else
+          n = n + 1
+       end if
+       if ((loc_H1 < const_real_nullsmall) .OR. (loc_H2 < const_real_nullsmall) .OR. (n > par_carbchem_pH_iterationmax)) THEN
+          ! incude (null) Revelle factor by making (loc_DIC_RFO/dum_DIC - 1.0) and hence fun_calc_carb_RF0_SF0(1), negative
+          loc_DIC_RFO = 0.0
+          exit
+       end if
+    END DO block_solvehloop
+    ! -------------------------------------------------------- !
+    ! RETURN FUNCTION VALUE
+    ! -------------------------------------------------------- !
+    ! NOTE: == ((loc_conc_CO2-dum_carb(ic_conc_CO2)/dum_carb(ic_conc_CO2)) / ((loc_DIC_RFO-dum_DIC)/dum_DIC)
+    ! NOTE: dum_carb(ic_fug_CO2)   = loc_conc_CO2/dum_carbconst(icc_QCO2) 
+    fun_calc_carb_RF0_SF0_OLD(1) = (loc_conc_CO2/dum_carb(ic_conc_CO2) - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
+    fun_calc_carb_RF0_SF0_OLD(2) = (loc_conc_CO2 - dum_carb(ic_conc_CO2))/dum_carbconst(icc_QCO2)/loc_dDIC
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  END function fun_calc_carb_RF0_SF0_OLD
   ! ****************************************************************************************************************************** !
 
 

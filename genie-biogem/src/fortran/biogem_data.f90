@@ -3575,8 +3575,26 @@ CONTAINS
                 ! estimate Revelle (and 'sensitivity') factor
                 ! NOTE: this is only meaningful for the surface,
                 !       but calculate over full depth when utilizing the OLD pH solving scheme
-                IF ((k == n_k) .OR. ctrl_carbchem_pH_OLD) THEN
+                IF (ctrl_carbchem_pH_OLD) THEN
+                   loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0_OLD( &
+                        & ocn(io_DIC,i,j,k),  &
+                        & ocn(io_ALK,i,j,k),  &
+                        & ocn(io_Ca,i,j,k),   &
+                        & ocn(io_PO4,i,j,k),  &
+                        & ocn(io_SiO2,i,j,k), &
+                        & ocn(io_B,i,j,k),    &
+                        & ocn(io_SO4,i,j,k),  &
+                        & ocn(io_F,i,j,k),    &
+                        & ocn(io_H2S,i,j,k),  &
+                        & ocn(io_NH4,i,j,k),  &
+                        & carbconst(:,i,j,k), &
+                        & carb(:,i,j,k)    &
+                        & )
+                   carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)
+                   carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
+                elseif (k == n_k) then
                    loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
+                        & par_carbchem_pH_tolerance,            &
                         & ocn(io_DIC,i,j,k),  &
                         & ocn(io_ALK,i,j,k),  &
                         & ocn(io_Ca,i,j,k),   &

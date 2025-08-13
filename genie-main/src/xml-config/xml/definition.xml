@@ -1368,8 +1368,8 @@
                         <description>pH solution tolerance</description>
                     </param>
                     <param name="par_carbchem_pH_tolerance_buffering">
-                        <value datatype="real">0.0001</value>
-                        <description>pH solution tolerance for calculating buffering</description>
+                        <value datatype="real">0.001</value>
+                        <description>pH solution tolerance for calculating buffering -- set the same as normal pH solving by default</description>
                     </param>
                     <param name="par_carbchem_dpH_tolerance">
                         <value datatype="real">10.0</value>
