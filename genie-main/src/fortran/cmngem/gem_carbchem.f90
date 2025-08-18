@@ -528,9 +528,6 @@ CONTAINS
     logical::loc_flag_pHtol_updated
     ! initialize loop variables
     n = 1
-    loc_HF = 0.0
-    loc_HS = 0.0
-    loc_NH3 = 0.0
     loc_H     = dum_carb(ic_H) ! seed initial [H]
     loc_pHtol = dum_pHtol      ! set local pH tolerance
     loc_flag_pHtol_updated = .false. ! flag for relaxing pH tolerance
@@ -560,9 +557,17 @@ CONTAINS
        ! hydrogen floride; HF <-kHF-> H+ + F-
        loc_HF = dum_Ftot/(1.0 + dum_carbconst(icc_kHF)/loc_H)
        ! hydrogen sulphide; H2S <-kH2S-> H+ + HS-
-       if (dum_H2Stot > const_real_nullsmall) loc_HS = dum_H2Stot/(1.0 + loc_H/dum_carbconst(icc_kH2S))
+       if (dum_H2Stot > const_real_nullsmall) then
+          loc_HS = dum_H2Stot/(1.0 + loc_H/dum_carbconst(icc_kH2S))
+       else
+          loc_HS = 0.0
+       end if
        ! ammonium; NH4+ <-kNH4-> H+ + NH3
-       if (dum_NH4tot > const_real_nullsmall) loc_NH3 = dum_NH4tot/(1.0 + loc_H/dum_carbconst(icc_kNH4))
+       if (dum_NH4tot > const_real_nullsmall) then
+          loc_NH3 = dum_NH4tot/(1.0 + loc_H/dum_carbconst(icc_kNH4))
+       else
+          loc_NH3 = 0.0
+       end if
        ! phosphoric acid
        loc_H3PO4 = dum_PO4tot/( &
             & 1.0 + &
