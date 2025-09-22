@@ -487,6 +487,7 @@ CONTAINS
        print*,'redox back-compatability                            : ',ctrl_data_save_slice_diag_redox_old
        print*,'Surface fields?                                     : ',ctrl_data_save_slice_sur
        print*,'Integration interval (yr)                           : ',par_data_save_slice_dt
+       print*,'Save interval (yr)                                  : ',par_data_save_slice_lamdat
        print*,'Filename for time-slice definition input            : ',trim(par_infile_slice_name)
        print*,'Number of timesteps in sub-inteval saving           : ',par_data_save_slice_n
        print*,'Auto save at run end?                               : ',ctrl_data_save_slice_autoend
@@ -508,6 +509,7 @@ CONTAINS
        print*,'Biogeochemical diagnostics?                         : ',ctrl_data_save_sig_diag
        print*,'redox back-compatability                            : ',ctrl_data_save_sig_diag_redox_old
        print*,'Integration interval (yr)                           : ',par_data_save_sig_dt
+       print*,'Save interval (yr)                                  : ',par_data_save_sig_lamdat
        print*,'Filename for time-series definition input           : ',trim(par_infile_sig_name)
        print*,'Auto save at run end?                               : ',ctrl_data_save_sig_autoend
        print*,'Save high res 3D data (@ time-series frequency)?    : ',ctrl_data_save_3d_sig
@@ -679,7 +681,7 @@ CONTAINS
     integer::loc_n_l_ocn,loc_n_l_sed                           ! number of selected tracers in the re-start file
     integer,DIMENSION(n_ocn)::loc_conv_iselected_io            ! number of selected ocean tracers in restart
     integer,DIMENSION(n_sed)::loc_conv_iselected_is            !
-    real,dimension(n_i,n_j,n_k)::loc_ocn,loc_part              !
+    real,dimension(n_i,n_j,n_k)::loc_ijk                       !
     integer::loc_ndims,loc_nvars
     integer,ALLOCATABLE,dimension(:)::loc_dimlen
     integer,ALLOCATABLE,dimension(:,:)::loc_varlen
@@ -688,6 +690,9 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! INITIALIZE
     ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! set default [H+]
+    ! seed default initial ocean pH in case the [H+] field does not exist in the restart
+    carb_Hrst(:,:,:) = 10**(-7.8)
     ! -------------------------------------------------------- ! set filename
     IF (ctrl_ncrst) THEN
        loc_filename = TRIM(par_rstdir_name)//par_ncrst_name
@@ -731,9 +736,9 @@ CONTAINS
                 io = conv_iselected_io(l)
                 if ('ocn_'//trim(string_ocn(io)) == trim(loc_varname(iv))) then
                    IF (ctrl_debug_init == 1) print*,'   ',trim(loc_varname(iv))
-                   loc_ocn = 0.0
-                   call sub_getvarijk(loc_ncid,'ocn_'//trim(string_ocn(io)),n_i,n_j,n_k,loc_ocn(:,:,:))
-                   ocn(io,:,:,:) = loc_ocn(:,:,:)
+                   loc_ijk = 0.0
+                   call sub_getvarijk(loc_ncid,'ocn_'//trim(string_ocn(io)),n_i,n_j,n_k,loc_ijk(:,:,:))
+                   ocn(io,:,:,:) = loc_ijk(:,:,:)
                 endif
              end do
           end DO
@@ -743,11 +748,20 @@ CONTAINS
                 is = conv_iselected_is(l)
                 if ('bio_part_'//trim(string_sed(is)) == trim(loc_varname(iv))) then
                    IF (ctrl_debug_init == 1) print*,'   ',trim(loc_varname(iv))
-                   loc_part = 0.0
-                   call sub_getvarijk(loc_ncid,'bio_part_'//trim(string_sed(is)),n_i,n_j,n_k,loc_part(:,:,:))
-                   bio_part(is,:,:,:) = loc_part(:,:,:)
+                   loc_ijk = 0.0
+                   call sub_getvarijk(loc_ncid,'bio_part_'//trim(string_sed(is)),n_i,n_j,n_k,loc_ijk(:,:,:))
+                   bio_part(is,:,:,:) = loc_ijk(:,:,:)
                 endif
              end do
+          end DO
+          IF (ctrl_debug_init == 1) print*,' * Loading ocean restart fields ([H+]): '
+          DO iv=1,loc_nvars
+             if ('carb_'//trim(string_carb(ic_H)) == trim(loc_varname(iv))) then
+                IF (ctrl_debug_init == 1) print*,'   ',trim(loc_varname(iv))
+                loc_ijk = 0.0
+                call sub_getvarijk(loc_ncid,'carb_'//trim(string_carb(ic_H)),n_i,n_j,n_k,loc_ijk(:,:,:))
+                carb_Hrst(:,:,:) = loc_ijk(:,:,:)
+             endif
           end DO
           ! -------------------------------------------------------- ! deallocate arrays
           deALLOCATE(loc_dimlen,STAT=alloc_error)
@@ -2212,8 +2226,6 @@ CONTAINS
           END DO
        END DO
     END DO
-    ! close file pipe
-    CLOSE(unit=in)
   END SUBROUTINE sub_init_tracer_ocn_comp
   ! ****************************************************************************************************************************** !
 
@@ -3533,7 +3545,11 @@ CONTAINS
                 IF (.NOT. ocn_select(io_SO4)) ocn(io_SO4,i,j,k) = fun_calc_SO4tot(ocn(io_S,i,j,k))
                 IF (.NOT. ocn_select(io_F))   ocn(io_F,i,j,k)   = fun_calc_Ftot(ocn(io_S,i,j,k))
                 ! seed default initial ocean pH
-                carb(ic_H,i,j,k) = 10**(-7.8)
+                IF (ctrl_continuing) then
+                   carb(ic_H,i,j,k) = carb_Hrst(i,j,k)
+                else
+                   carb(ic_H,i,j,k) = 10**(-7.8)
+                end if
                 ! calculate carbonate chemistry
                 CALL sub_calc_carb(        &
                      & 'biogem_data.f90/sub_init_carb', &
@@ -3641,91 +3657,123 @@ CONTAINS
   ! ****************************************************************************************************************************** !
   ! INITIALIZE DATA SAVING
   SUBROUTINE sub_init_data_save()
-    ! local variables
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     INTEGER::n
     CHARACTER(len=255)::loc_filename
     INTEGER::loc_n_elements
     integer::loc_i
     real::loc_data_scale
-
-    ! *** set time series data save interval details ***
-    ! initialize time series indices
-    par_data_save_sig_i = n_data_max
+    ! -------------------------------------------------------- !
+    ! INITIALIZE VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! TIME-SERIES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! initialize time-series indices
+    par_data_save_sig_i  = n_data_max
     par_data_save_sig(:) = 0.0
-    ! load data
-    loc_filename = TRIM(par_indir_name)//TRIM(par_infile_sig_name)
     loc_data_scale = 1.0
-    CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_sig,loc_n_elements)
-    ! if no elements, populate array with default time interval steps
-    IF (loc_n_elements == 0) THEN
-       ! limit the time-series integration interval
-       if (par_data_save_sig_dt > const_real_nullsmall) then
-          loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_dt + const_real_nullsmall)
-          do while (loc_n_elements > n_data_max)
-             par_data_save_sig_dt = 10.0*par_data_save_sig_dt
-             loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_dt + const_real_nullsmall)
-             CALL sub_report_error( &
-                  & 'biogem_data','sub_init_data_save','time-series save interval (biogem_config.par) too short - '// &
-                  & 'was [lower value] and is now [upper value] (years)', &
-                  & 'CONTINUING', &
-                  & (/par_data_save_sig_dt,par_data_save_sig_dt/10.0/),.FALSE. &
-                  & )
-          end do
-          DO n=1,loc_n_elements
-             par_data_save_sig(n) = &
-                  & real(n - 0.5)*par_data_save_sig_dt + (par_misc_t_runtime - real(loc_n_elements)*par_data_save_sig_dt)
-          END DO
-       else
+    ! -------------------------------------------------------- ! load data (if a non-zero uniform time interval is not set)
+    !                                                            else populate array with uniform time interval steps
+    ! NOTE: the possibility of populating with the integration interval has been removed
+    if (par_data_save_sig_lamdat < const_rns) then
+       loc_filename = TRIM(par_indir_name)//TRIM(par_infile_sig_name)
+       CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_sig,loc_n_elements)
+    else
+       loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_lamdat + const_real_nullsmall)
+       do while (loc_n_elements > n_data_max)
+          par_data_save_sig_lamdat = 10.0*par_data_save_sig_lamdat
+          loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_lamdat + const_real_nullsmall)
           CALL sub_report_error( &
-               & 'biogem_data','sub_init_data_save','time-series save interval (biogem_config.par) '// &
-               & 'must be non-zero and positive', &
-               & 'STOPPING', &
-               & (/const_real_null/),.TRUE. &
+               & 'biogem_data','sub_init_data_save','time-series save interval: par_data_save_sig_lamdat too short -- '// &
+               & 'was [lower value] and is now [upper value] (years)', &
+               & 'CONTINUING', &
+               & (/par_data_save_sig_dt,par_data_save_sig_lamdat/10.0/),.FALSE. &
                & )
-       endif
+       end do
+       DO n=1,loc_n_elements
+          IF (ctrl_misc_t_BP) then
+!!$             par_data_save_sig(n) = &
+!!$                  & real(n)*par_data_save_sig_lamdat + par_data_save_sig_dt/2.0 - par_misc_t_runtime
+          else
+             par_data_save_sig(n) = &
+                  & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_sig_lamdat + par_data_save_sig_dt/2.0
+          end if
+       END DO
     end IF
-    ! find first save time lying within total model run-time
+    ! -------------------------------------------------------- ! find first save time lying within total model run-time
     ! NOTE: <loc_i> will be zero if no valid time points have been requested in the time series input file,
     !       and the array has not been populated automatically
     ! NOTE: ensure that the first identified time-series time is at least a full integration interval (required value)
     !       from the start time of the model run
     loc_i = loc_n_elements
     DO while (loc_i > 0)
-       IF ( &
-            & par_data_save_sig(loc_i) &
-            & < &
-            & (par_misc_t_runtime - par_data_save_sig_dt/2.0 + par_misc_t_err) &
-            & ) THEN
+       IF ( par_data_save_sig(loc_i) < (par_misc_t_runtime - par_data_save_sig_dt/2.0 + par_misc_t_err) ) THEN
           EXIT
        ELSE
           loc_i = loc_i - 1
        END IF
     END DO
+    if (par_data_save_sig(loc_i) < (par_data_save_sig_dt/2.0 - par_misc_t_err)) loc_i = 0
+    ! -------------------------------------------------------- ! record number of points
     par_data_save_sig_i = loc_i
-    ! automatically populate run end (if requested)
+    ! -------------------------------------------------------- ! automatically populate run end if needed
+    !                                                            check that last save point (i == 1) is the last possible point
     if (ctrl_data_save_sig_autoend) then
-       DO loc_i=par_data_save_sig_i,1,-1
-          if (par_data_save_sig(loc_i) < (1.0 - par_data_save_sig_dt/2.0 + par_misc_t_err)) then
-             IF (par_data_save_sig(loc_i) > (par_data_save_sig_dt/2.0 - par_misc_t_err)) then
-                exit
-             else
-                par_data_save_sig(loc_i) = par_data_save_sig_dt/2.0
-                exit
-             end if
+       if (par_data_save_sig_i == 0) then
+          par_data_save_sig(1) = par_data_save_sig_dt/2.0
+          par_data_save_sig_i  = 1
+          CALL sub_report_error( &
+               & 'biogem_data','sub_init_data_save', &
+               & 'ADDED: single time-series save at end of run', &
+               & 'CONTINUING', &
+               & (/const_real_null/),.false. &
+               & )
+       elseif ( (par_data_save_sig(1) - par_data_save_sig_dt/2.0) > const_rns ) then
+          DO loc_i=par_data_save_sig_i,1,-1
+             par_data_save_sig(loc_i + 1) = par_data_save_sig(loc_i)
+          end do
+          par_data_save_sig(1) = par_data_save_sig_dt/2.0
+          par_data_save_sig_i  = par_data_save_sig_i + 1
+       end if
+    end if
+    ! -------------------------------------------------------- !
+    ! TIME-SLICE
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! initialize time-slice indices
+    par_data_save_timeslice_i = n_data_max
+    par_data_save_timeslice(:) = 0.0
+    loc_data_scale = 1.0
+    ! -------------------------------------------------------- ! load data (if a non-zero uniform time interval is not set)
+    !                                                            else populate array with uniform time interval steps
+    if (par_data_save_slice_lamdat < const_rns) then
+       loc_filename = TRIM(par_indir_name)//TRIM(par_infile_slice_name)
+       CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_timeslice,loc_n_elements)
+    else
+       loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_lamdat + const_real_nullsmall)
+       do while (loc_n_elements > n_data_max)
+          par_data_save_slice_lamdat = 10.0*par_data_save_slice_lamdat
+          loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_lamdat + const_real_nullsmall)
+          CALL sub_report_error( &
+               & 'biogem_data','sub_init_data_save','time-slice save interval: par_data_save_slice_lamdat too short -- '// &
+               & 'was [lower value] and is now [upper value] (years)', &
+               & 'CONTINUING', &
+               & (/par_data_save_slice_dt,par_data_save_slice_lamdat/10.0/),.FALSE. &
+               & )
+       end do
+       DO n=1,loc_n_elements
+          IF (ctrl_misc_t_BP) then
+!!$             par_data_save_sig(n) = &
+!!$                  & real(n)*par_data_save_sig_lamdat + par_data_save_sig_dt/2.0 - par_misc_t_runtime
+          else
+             par_data_save_timeslice(n) = &
+                  & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_slice_lamdat + par_data_save_slice_dt/2.0
           end if
        END DO
     end if
-
-    ! *** set time slice data save details ***
-    ! NOTE: DO NOT populate the time-slice array automatically if the data file is empty
-    ! initialize time slice indices
-    par_data_save_timeslice_i = n_data_max
-    par_data_save_timeslice(:) = 0.0
-    ! load data
-    loc_filename = TRIM(par_indir_name)//TRIM(par_infile_slice_name)
-    loc_data_scale = 1.0
-    CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_timeslice,loc_n_elements)
-    ! find first save time lying within total model run-time
+    ! -------------------------------------------------------- ! find first save time lying within total model run-time
     ! NOTE: <par_data_save_timeslice_i> will be zero if no valid time slices have been requested in the time slice input file
     ! NOTE: ensure that the first identified time-slice time is at least a full integration interval (required value)
     !       from the start time of the model run
@@ -3737,10 +3785,30 @@ CONTAINS
           loc_i = loc_i - 1
        END IF
     END DO
-    if (par_data_save_timeslice(loc_i) < (par_data_save_slice_dt/2.0 - par_misc_t_err)) then
-       loc_i = 0
-    end if
+    if (par_data_save_timeslice(loc_i) < (par_data_save_slice_dt/2.0 - par_misc_t_err)) loc_i = 0
+    ! -------------------------------------------------------- ! record number of points
     par_data_save_timeslice_i = loc_i
+    ! -------------------------------------------------------- ! automatically populate run end if needed
+    !                                                            check that last save point (i == 1) is the last possible point
+    if (ctrl_data_save_slice_autoend) then
+       if (par_data_save_timeslice_i == 0) then
+          par_data_save_timeslice(1) = par_data_save_slice_dt/2.0
+          par_data_save_timeslice_i = 1
+          CALL sub_report_error( &
+               & 'biogem_data','sub_init_data_save', &
+               & 'ADDED: single time-slice save at end of run', &
+               & 'CONTINUING', &
+               & (/const_real_null/),.false. &
+               & )
+       elseif ( (par_data_save_timeslice(1) - par_data_save_slice_dt/2.0) > const_rns ) then
+          DO loc_i=par_data_save_timeslice_i,1,-1
+             par_data_save_timeslice(loc_i + 1) = par_data_save_timeslice(loc_i)
+          end do
+          par_data_save_timeslice(1) = par_data_save_slice_dt/2.0
+          par_data_save_timeslice_i = par_data_save_timeslice_i + 1
+       end if
+    end if
+    ! -------------------------------------------------------- ! final check
     if (par_data_save_timeslice_i == 0) then
        CALL sub_report_error( &
             & 'biogem_data','sub_init_data_save', &
@@ -3749,31 +3817,9 @@ CONTAINS
             & (/const_real_null/),.false. &
             & )
     end if
-    ! automatically populate run end (if requested)
-    if (ctrl_data_save_slice_autoend) then
-       if (par_data_save_timeslice_i == 0) then
-          par_data_save_timeslice(1) = par_data_save_slice_dt/2.0
-          par_data_save_timeslice_i = 1
-          CALL sub_report_error( &
-               & 'biogem_data','sub_init_data_save', &
-               & 'ADDED: single save at end of run', &
-               & 'CONTINUING', &
-               & (/const_real_null/),.false. &
-               & )
-       else
-          DO loc_i=par_data_save_timeslice_i,1,-1
-             if (par_data_save_timeslice(loc_i) < (1.0 - par_data_save_slice_dt/2.0 + par_misc_t_err)) then
-                IF (par_data_save_timeslice(loc_i) > (par_data_save_slice_dt/2.0 - par_misc_t_err)) then
-                   exit
-                else
-                   par_data_save_timeslice(loc_i) = par_data_save_slice_dt/2.0
-                   exit
-                end if
-             end if
-          END DO
-       end if
-    end if
-
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
   END SUBROUTINE sub_init_data_save
   ! ****************************************************************************************************************************** !
 

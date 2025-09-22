@@ -5603,6 +5603,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">1.0</value>
                         <description>Integration interval (yr)</description>
                     </param>
+                    <param name="par_data_save_slice_lamdat">
+			<value datatype="real">0.0</value>
+                        <description>Save interval if not using save point definition file (yr)</description>
+                    </param>
                     <param name="par_infile_slice_name">
 			<value datatype="string">save_timeslice.dat</value>
                         <description></description>
@@ -5674,11 +5678,15 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="ctrl_data_save_sig_diag_redox_old">
 			<value datatype="boolean">.false.</value>
-                        <description>[redox back-compatability ]</description>
+                        <description>[redox back-compatability]</description>
                     </param>
                     <param name="par_data_save_sig_dt">
 			<value datatype="real">1.0</value>
-                        <description>Integration interval (yr</description>
+                        <description>Integration interval (yr)</description>
+                    </param>
+                    <param name="par_data_save_sig_lamdat">
+			<value datatype="real">0.0</value>
+                        <description>Save interval if not using save point definition file (yr)</description>
                     </param>
                     <param name="par_infile_sig_name">
 			<value datatype="string">save_timeseries.dat</value>

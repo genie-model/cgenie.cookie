@@ -98,6 +98,9 @@ CONTAINS
        call sub_defvar('bio_part_'//trim(string_sed(is)),loc_iou,3,loc_it_3,loc_c0,loc_c0,' ','F', &
             & string_longname_sed(is),'Particulate tracer - '//trim(string_sed(is)),' ')
     end do
+    ! -------------------------------------------------------- ! define (3D) tracer variables -- [H+]
+    call sub_defvar('carb_'//trim(string_carb(ic_H)),loc_iou,3,loc_it_3,loc_c0,loc_c0,' ','F', &
+         & string_longname_carb(ic_H),'Carbonate chemsitry - '//trim(string_carb(ic_H)),' ')
     ! -------------------------------------------------------- ! end definitions
     call sub_enddef (loc_iou)
     call sub_sync(loc_iou)
@@ -131,6 +134,11 @@ CONTAINS
        call sub_putvar3d('bio_part_'//trim(string_sed(is)),loc_iou,n_i,n_j,n_k,loc_ntrec, &
             & loc_ijk(:,:,n_k:1:-1),loc_ijk_mask(:,:,n_k:1:-1))
     end do
+    ! -------------------------------------------------------- ! write (3D) tracer variables -- [H+]
+    loc_ijk_mask(:,:,:) = phys_ocn(ipo_mask_ocn,:,:,:)
+    loc_ijk(:,:,:) = carb(ic_H,:,:,:)
+    call sub_putvar3d('carb_'//trim(string_carb(ic_H)),loc_iou,n_i,n_j,n_k,loc_ntrec, &
+         & loc_ijk(:,:,n_k:1:-1),loc_ijk_mask(:,:,n_k:1:-1))    
     ! -------------------------------------------------------- ! close file and return IOU
     call sub_closefile(loc_iou)
     dum_iou = loc_iou
@@ -3550,16 +3558,16 @@ CONTAINS
     If (ctrl_data_save_slice_carb) then
        DO ic=1,n_carb
           loc_ijk(:,:,:) = int_carb_timeslice(ic,:,:,:)/int_t_timeslice
-             SELECT CASE (ic)
-             CASE (ic_pHsws)
-                loc_unitsname = 'pH(sws)'                
-             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
-                loc_unitsname = 'n/a'
-             CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
-                loc_unitsname = 'n/a' 
-             case default
-                loc_unitsname = 'mol kg-1'
-             end SELECT
+          SELECT CASE (ic)
+          CASE (ic_pHsws)
+             loc_unitsname = 'pH(sws)'                
+          CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
+             loc_unitsname = 'n/a'
+          CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+             loc_unitsname = 'n/a' 
+          case default
+             loc_unitsname = 'mol kg-1'
+          end SELECT
           call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
                & 'carbonate chemistry -- '//trim(string_longname_carb(ic)), &
                & trim(loc_unitsname),const_real_zero,const_real_zero)

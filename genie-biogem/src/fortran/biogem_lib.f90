@@ -686,6 +686,8 @@ MODULE biogem_lib
        & ctrl_data_save_slice_sur
   real::par_data_save_slice_dt                                   ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_slice_dt
+  real::par_data_save_slice_lamdat                               ! Save interval if not using save point definition file (yr)
+  NAMELIST /ini_biogem_nml/par_data_save_slice_lamdat 
   CHARACTER(len=127)::par_infile_slice_name                      !
   NAMELIST /ini_biogem_nml/par_infile_slice_name
   integer::par_data_save_slice_n                                 ! number of timesteps in sub-inteval (e.g., monthly) saving
@@ -718,6 +720,8 @@ MODULE biogem_lib
        & ctrl_data_save_sig_diag_redox_old
   real::par_data_save_sig_dt                                     ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_sig_dt
+  real::par_data_save_sig_lamdat                                 ! Save interval if not using save point definition file (yr)
+  NAMELIST /ini_biogem_nml/par_data_save_sig_lamdat
   CHARACTER(len=127)::par_infile_sig_name                        !
   NAMELIST /ini_biogem_nml/par_infile_sig_name
   LOGICAL::ctrl_data_save_sig_autoend                            ! auto save at run end?
@@ -853,7 +857,8 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_diag_bio                           = 23 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
   INTEGER,PARAMETER::n_diag_precip                        = 09 ! 
-  INTEGER,PARAMETER::n_diag_react                         = 11 !! YK modified 12.28.2020 (overwriting _DEV_tracers where n_diag_react = 09; 03.19.2021)
+  INTEGER,PARAMETER::n_diag_react                         = 11 ! YK modified 12.28.2020
+  !                                                              (overwriting _DEV_tracers where n_diag_react = 09; 03.19.2021)
   INTEGER,PARAMETER::n_diag_iron                          = 09 ! As in _DEV_tracers (03.19.2021)
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
@@ -1303,6 +1308,7 @@ MODULE biogem_lib
   REAL,DIMENSION(n_carbalk,n_i,n_j,n_k)::carbalk                 !
   REAL,DIMENSION(n_carbisor,n_i,n_j,n_k)::carbisor               ! carbonate (carbon) isotopic properties array
   REAL,DIMENSION(3,n_i,n_j,n_k)::carb_TSn                        !
+  REAL,DIMENSION(n_i,n_j,n_k)::carb_Hrst                         ! restart [H+]
   ! diagnostics
   REAL,DIMENSION(n_diag_bio,n_i,n_j)::diag_bio                   ! biology diagnostics
   REAL,DIMENSION(n_diag_geochem_old,n_i,n_j,n_k)::diag_geochem_old ! geochemistry diagnostics -- OLD

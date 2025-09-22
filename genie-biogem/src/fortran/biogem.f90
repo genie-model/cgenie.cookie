@@ -2231,8 +2231,8 @@ subroutine biogem_tracercoupling( &
   ! ---------------------------------------------------------- !
   real,intent(inout),dimension(intrac_ocn,n_i,n_j,n_k)::dum_ts  ! NOTE: number of tracers in GOLDSTEIN used in dimension #1
   real,intent(inout),dimension(intrac_ocn,n_i,n_j,n_k)::dum_ts1 ! NOTE: number of tracers in GOLDSTEIN used in dimension #1
-  real,intent(in),   dimension(n_sed,n_i,n_j,n_k)     ::dum_egbg_sfcpart  ! ecology-interface: particulate composition change; ocn grid
-  real,intent(in),   dimension(n_ocn,n_i,n_j,n_k)     ::dum_egbg_sfcremin ! ecology-interface: ocean tracer composition change; ocn grid
+  real,intent(in),   dimension(n_sed,n_i,n_j,n_k)     ::dum_egbg_sfcpart  ! ecology-interface: part. composition change; ocn grid
+  real,intent(in),   dimension(n_ocn,n_i,n_j,n_k)     ::dum_egbg_sfcremin ! ecology-interface: ocean composition change; ocn grid
   real,intent(out),  dimension(n_ocn,n_i,n_j,n_k)     ::dum_egbg_sfcocn   ! ecology-interface: ocean tracer composition; ocn grid
   integer(kind=8),INTENT(IN)::dum_genie_clock                    ! genie clock (ms since start) NOTE: 8-byte integer
   ! ---------------------------------------------------------- !
