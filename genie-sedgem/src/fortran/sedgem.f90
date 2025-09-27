@@ -43,6 +43,7 @@ SUBROUTINE sedgem(          &
   real,DIMENSION(n_sed,n_i,n_j)::loc_sfxsumsed_OLD                      ! sediment rain flux interface array (COPY)
   real,DIMENSION(n_sed,n_i,n_j)::loc_sed_fsed_OLD                      ! 
   real,DIMENSION(n_ocn,n_sed)::loc_conv_sed_ocn                ! local (redox-dependent) sed -> ocn conversion
+  real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo          ! local (redox-dependent) ls -> lo conversion
 
   ! *** STORE PREVIOUS ITERATION DATA ***
   sed_fsed_OLD(:,:,:) = sed_fsed(:,:,:) 
@@ -247,7 +248,6 @@ SUBROUTINE sedgem(          &
                  ! add prescribed (uniform) sed det flux to whatever pelagic source reaches the seafloor
                  dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
                       & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet
-
               endif
            endif
            ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
@@ -376,26 +376,21 @@ SUBROUTINE sedgem(          &
         sed_fsed(:,i,j)         = conv_cm2_m2*dum_sfxsumsed(:,i,j)
         loc_sed_fsed_OLD(:,i,j) = conv_cm2_m2*loc_sfxsumsed_OLD(:,i,j)
         ! set loc_conv_sed_ocn
-        ! NOTE: conv_sed_ocn was the original (fixed) conversion
-        ! NOTE: this is a crude redox switch-over between different electron acceptors based on a simple threshold
-        !       (i.e. unlike the more complex BIOGEM half-sat and inhinitition scheme)
-        if (.NOT. ctrl_sed_conv_sed_ocn_old) then
-           if (ocn_select(io_CH4) .AND. (dum_sfcsumocn(io_SO4,i,j) < par_sed_diagen_SO4thresh)) then
-              loc_conv_sed_ocn = conv_sed_ocn_meth
-           elseif ((ocn_select(io_SO4) .AND. ocn_select(io_NO3)) .AND. (dum_sfcsumocn(io_NO3,i,j) < par_sed_diagen_NO3thresh)) then
-              loc_conv_sed_ocn = conv_sed_ocn_S
-           elseif ((ocn_select(io_SO4) .AND. ocn_select(io_NO3)) .AND. (dum_sfcsumocn(io_O2,i,j) < par_sed_diagen_O2thresh)) then
-              loc_conv_sed_ocn = conv_sed_ocn_N
-           elseif (ocn_select(io_SO4) .AND. (dum_sfcsumocn(io_O2,i,j) < par_sed_diagen_O2thresh)) then
-              loc_conv_sed_ocn = conv_sed_ocn_S
-           elseif (ocn_select(io_NO3) .AND. (dum_sfcsumocn(io_O2,i,j) < par_sed_diagen_O2thresh)) then
-              loc_conv_sed_ocn = conv_sed_ocn_N
-           else
-              loc_conv_sed_ocn = conv_sed_ocn_O
-           end if
-        else
+        ! NOTE: conv_sed_ocn was the original (fixed) conversion -- ctrl_sed_conv_sed_ocn_old=.true. [DEFAULT]
+        !       but it was never used as ctrl_sed_conv_sed_ocn_old=.false., so the alternative ('new') code has been replaced
+        ! NOTE: there is only conversion from ocnsed to lslo and not the reverse
+        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        ! REFRAME ALL REMIN IN TERMS OF ls AND lo ???
+        ! DO THIS FIRST FOR THE CURRENT SCHEME/CODE AND GET IT WORKING ... THEN ADD THE REDOX-DEP STUFF
+        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        if (ctrl_sed_conv_sed_ocn_old) then
            loc_conv_sed_ocn = conv_sed_ocn
+           !!!loc_conv_ls_lo = conv_ls_lo
+        else
+           !!!loc_conv_ls_lo = fun_conv_ls_lo_remin(loc_ocn)
         end if
+        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         IF (sed_mask(i,j)) THEN
            ! call sediment composition update
            ! NOTE: the values in both <sed_fsed> and <ocnsed_fnet> are updated by this routine
@@ -441,7 +436,6 @@ SUBROUTINE sedgem(          &
            end if
            ! force closed w.r.t. CaCO3
            if (ctrl_force_sed_closedsystem_CaCO3) then
-              !
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  if ( &
@@ -462,7 +456,6 @@ SUBROUTINE sedgem(          &
            end if
            ! force closed w.r.t. opal
            if (ctrl_force_sed_closedsystem_opal) then
-              !
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  if ( &

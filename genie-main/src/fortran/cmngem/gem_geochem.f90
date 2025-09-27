@@ -278,5 +278,234 @@ CONTAINS
   !****************************************************************************************************************************** !
 
 
+  ! ****************************************************************************************************************************** !
+  ! NOTE: this is an initial generic version without isotopc corrections
+  ! NOTE: also remove hard threshold and kenetic options
+  ! NOTE: required module or global parameters:
+  !       conv_ls_lo_c0_O2,    conv_ls_lo_ci_O2,    conv_ls_lo_k_O2
+  !       conv_ls_lo_c0_NO3,   conv_ls_lo_ci_NO3,   conv_ls_lo_k_NO3
+  !       conv_ls_lo_c0_FeOOH, conv_ls_lo_ci_FeOOH, conv_ls_lo_k_FeOOH
+  !       conv_ls_lo_c0_SO4,   conv_ls_lo_ci_SO4,   conv_ls_lo_k_SO4
+  !                                                 conv_ls_lo_k_meth
+  function fun_conv_ls_lo_remin(dum_ocn)
+    ! -------------------------------------------------------- !
+    ! RESULT VARIABLE
+    ! -------------------------------------------------------- !
+    real,dimension(1:n_l_ocn,1:n_l_sed)::fun_conv_ls_lo_remin 
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    real,dimension(1:n_l_ocn),INTENT(in)::dum_ocn              !
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    real::loc_k
+    real::loc_O2,loc_NO3,loc_FeOOH,loc_SO4
+    real::loc_kO2,loc_kNO3,loc_kFeOOH,loc_kSO4,loc_kmeth
+    real::loc_kiO2,loc_kiNO3,loc_kiFeOOH,loc_kiSO4
+    real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo 
+    ! ---------------------------------------------------------- ! initialize local variables
+    loc_k = 0.0
+    ! ---------------------------------------------------------- !
+    ! CREATE REMIN ARRAY
+    ! ---------------------------------------------------------- !
+    ! ---------------------------------------------------------- ! set MM-type rate limitations
+    ! NOTE: equation form follows Arndt et al. [2013] (ESR) and Boudreau [1997] (book)
+    ! NOTE: truncate loc concentrations at zero to avoid negative values being propagated ...
+    ! NOTE: catch a local oxidation value of const_real_nullsmall (or less),
+    !       as this means that the oxidant was probably negative in the first place
+    !       => disable that particular redox remin pathway by setting the kinetic parameter to ZERO
+    ! NOTE: to disable inhibition, set the inhibition parameter to a very large number, then
+    !       e.g. conv_ls_lo_ci_O2/(conv_ls_lo_ci_O2 + loc_O2) approaches a value of 1.0
+    if (ocn_select(io_O2)) then
+       loc_O2 = dum_ocn(io2l(io_O2))
+       if (loc_O2 <= const_real_nullsmall) then
+          loc_O2   = 0.0
+          loc_kO2  = 0.0
+          loc_kiO2 = 1.0
+       else
+          loc_kO2 = loc_O2/(loc_O2 + conv_ls_lo_c0_O2)
+          loc_kiO2 = conv_ls_lo_ci_O2/(conv_ls_lo_ci_O2 + loc_O2)
+       end if
+       loc_k    = loc_k + conv_ls_lo_k_O2*loc_kO2
+    else
+       loc_O2   = 0.0
+       loc_kO2  = 0.0
+       loc_kiO2 = 1.0
+    end if
+    if (ocn_select(io_NO3)) then
+       loc_NO3 = dum_ocn(io2l(io_NO3))
+       if (loc_NO3 <= const_real_nullsmall) then
+          loc_NO3   = 0.0
+          loc_kNO3  = 0.0
+          loc_kiNO3 = 1.0
+       else
+          loc_kNO3 = loc_NO3/(loc_NO3 + conv_ls_lo_c0_NO3)
+          loc_kiNO3 = conv_ls_lo_ci_NO3/(conv_ls_lo_ci_NO3 + loc_NO3)
+       end if
+       loc_k     = loc_k + conv_ls_lo_k_NO3*loc_kNO3*loc_kiO2
+    else
+       loc_NO3   = 0.0
+       loc_kNO3  = 0.0
+       loc_kiNO3 = 1.0
+    end if
+    if (ocn_select(io_FeOOH)) then
+       loc_FeOOH = dum_ocn(io2l(io_FeOOH))
+       if (loc_FeOOH <= const_real_nullsmall) then
+          loc_FeOOH   = 0.0
+          loc_kFeOOH  = 0.0
+          loc_kiFeOOH = 1.0
+       else
+          loc_kFeOOH = loc_FeOOH/(loc_FeOOH + conv_ls_lo_c0_FeOOH)
+          loc_kiFeOOH = conv_ls_lo_ci_FeOOH/(conv_ls_lo_ci_FeOOH + loc_FeOOH)
+       end if
+       loc_k     = loc_k + conv_ls_lo_k_FeOOH*loc_kFeOOH*loc_kiNO3*loc_kiO2
+    else
+       loc_FeOOH   = 0.0
+       loc_kFeOOH  = 0.0
+       loc_kiFeOOH = 1.0
+    end if
+    if (ocn_select(io_SO4)) then
+       loc_SO4 = dum_ocn(io2l(io_SO4))
+       if (loc_SO4 <= const_real_nullsmall) then
+          loc_SO4   = 0.0
+          loc_kSO4  = 0.0
+          loc_kiSO4 = 1.0
+       else
+          loc_kSO4  = loc_SO4/(loc_SO4 + conv_ls_lo_c0_SO4)
+          loc_kiSO4 = conv_ls_lo_ci_SO4/(conv_ls_lo_ci_SO4 + loc_SO4)
+       end if
+       loc_k     = loc_k + conv_ls_lo_k_SO4*loc_kSO4*loc_kiFeOOH*loc_kiNO3*loc_kiO2
+    else
+       loc_SO4   = 0.0
+       loc_kSO4  = 0.0
+       loc_kiSO4 = 1.0
+    end if
+    if (ocn_select(io_CH4)) then
+       loc_kmeth = 1.0
+       loc_k     = loc_k + conv_ls_lo_k_meth*loc_kmeth*loc_kiSO4*loc_kiFeOOH*loc_kiNO3*loc_kiO2
+    else
+       loc_kmeth = 0.0
+    end if
+    ! ---------------------------------------------------------- ! check *some* remin occurs
+    ! NOTE: parameters adjusted in factor (conv_ls_lo_k_O2*loc_kO2/loc_k) to make this unity
+    !       no remin would otherwise occur
+    if (loc_k < const_real_nullsmall) then
+       loc_kO2 = 1.0
+       loc_k   = 1.0/conv_ls_lo_k_O2
+    end if
+    ! ---------------------------------------------------------- ! calculate weighted remin array
+    ! NOTE: normalize to 1.0
+    if (ocn_select(io_O2)) then
+       if (ocn_select(io_NO3)) then
+          if (ocn_select(io_FeOOH)) then
+             if (ocn_select(io_SO4)) then
+                if (ocn_select(io_CH4)) then
+                   ! O2 + NO3 + FeOOH + SO4 + CH4
+                   loc_conv_ls_lo(:,:) = &
+                        & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                        & (conv_ls_lo_k_NO3*loc_kNO3*loc_kiO2/loc_k)*conv_ls_lo_N(:,:) + &
+                        & (conv_ls_lo_k_FeOOH*loc_kFeOOH*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_Fe(:,:) + &
+                        & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiFeOOH*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_S(:,:) + &
+                        & (conv_ls_lo_k_meth*loc_kmeth*loc_kiSO4*loc_kiFeOOH*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_meth(:,:)
+                else
+                   ! O2 + NO3 + FeOOH + SO4
+                   loc_conv_ls_lo(:,:) = &
+                        & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                        & (conv_ls_lo_k_NO3*loc_kNO3*loc_kiO2/loc_k)*conv_ls_lo_N(:,:) + &
+                        & (conv_ls_lo_k_FeOOH*loc_kFeOOH*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_Fe(:,:) + &
+                        & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiFeOOH*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_S(:,:)
+                end if
+             else
+                ! O2 + NO3 + FeOOH
+                loc_conv_ls_lo(:,:) = &
+                     & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                     & (conv_ls_lo_k_NO3*loc_kNO3*loc_kiO2/loc_k)*conv_ls_lo_N(:,:) + &
+                     & (conv_ls_lo_k_FeOOH*loc_kFeOOH*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_Fe(:,:)
+             end if
+          else
+             if (ocn_select(io_SO4)) then
+                if (ocn_select(io_CH4)) then
+                   ! O2 + NO3 + SO4 + CH4
+                   loc_conv_ls_lo(:,:) = &
+                        & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                        & (conv_ls_lo_k_NO3*loc_kNO3*loc_kiO2/loc_k)*conv_ls_lo_N(:,:) + &
+                        & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_S(:,:) + &
+                        & (conv_ls_lo_k_meth*loc_kmeth*loc_kiSO4*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_meth(:,:)
+                else
+                   ! O2 + NO3 + SO4
+                   loc_conv_ls_lo(:,:) = &
+                        & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                        & (conv_ls_lo_k_NO3*loc_kNO3*loc_kiO2/loc_k)*conv_ls_lo_N(:,:) + &
+                        & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiNO3*loc_kiO2/loc_k)*conv_ls_lo_S(:,:)
+                end if
+             else
+                ! O2 + NO3
+                loc_conv_ls_lo(:,:) = &
+                     & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                     & (conv_ls_lo_k_NO3*loc_kNO3*loc_kiO2/loc_k)*conv_ls_lo_N(:,:)
+             end if
+          endif
+       elseif (ocn_select(io_FeOOH)) then
+          if (ocn_select(io_SO4)) then
+             if (ocn_select(io_CH4)) then
+                ! O2 + FeOOH + SO4 + CH4
+                loc_conv_ls_lo(:,:) = &
+                     & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                     & (conv_ls_lo_k_FeOOH*loc_kFeOOH*loc_kiO2/loc_k)*conv_ls_lo_Fe(:,:) + &
+                     & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiFeOOH*loc_kiO2/loc_k)*conv_ls_lo_S(:,:) + &
+                     & (conv_ls_lo_k_meth*loc_kmeth*loc_kiSO4*loc_kiFeOOH*loc_kiO2/loc_k)*conv_ls_lo_meth(:,:)
+             else
+                ! O2 + FeOOH + SO4
+                loc_conv_ls_lo(:,:) = &
+                     & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                     & (conv_ls_lo_k_FeOOH*loc_kFeOOH*loc_kiO2/loc_k)*conv_ls_lo_Fe(:,:) + &
+                     & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiFeOOH*loc_kiO2/loc_k)*conv_ls_lo_S(:,:)
+             end if
+          else
+             ! O2 + FeOOH
+             loc_conv_ls_lo(:,:) = &
+                  & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                  & (conv_ls_lo_k_FeOOH*loc_kFeOOH*loc_kiO2/loc_k)*conv_ls_lo_Fe(:,:)
+          end if
+       elseif (ocn_select(io_SO4)) then
+          if (ocn_select(io_CH4)) then
+             ! O2 + SO4 + CH4
+             loc_conv_ls_lo(:,:) = &
+                  & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                  & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiO2/loc_k)*conv_ls_lo_S(:,:) + &
+                  & (conv_ls_lo_k_meth*loc_kmeth*loc_kiSO4*loc_kiO2/loc_k)*conv_ls_lo_meth(:,:)
+          else
+             ! O2 + SO4
+             loc_conv_ls_lo(:,:) = &
+                  & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                  & (conv_ls_lo_k_SO4*loc_kSO4*loc_kiO2/loc_k)*conv_ls_lo_S(:,:)
+          end if
+       else
+          if (ocn_select(io_CH4)) then
+             ! O2 + CH4
+             loc_conv_ls_lo(:,:) = &
+                  & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:) + &
+                  & (conv_ls_lo_k_meth*loc_kmeth*loc_kiO2/loc_k)*conv_ls_lo_meth(:,:)
+          else
+             ! O2
+             loc_conv_ls_lo(:,:) = &
+                  & (conv_ls_lo_k_O2*loc_kO2/loc_k)*conv_ls_lo_O(:,:)
+          end if
+       end if
+    else
+       loc_conv_ls_lo(:,:) = 0.0
+    end if
+    ! -------------------------------------------------------- !
+    ! RETURN RESULT
+    ! -------------------------------------------------------- !
+    fun_conv_ls_lo_remin = loc_conv_ls_lo 
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  end function fun_conv_ls_lo_remin
+  ! ****************************************************************************************************************************** !
+
+
 END MODULE gem_geochem
 
