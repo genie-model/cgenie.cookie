@@ -25,7 +25,7 @@ CONTAINS
     INTEGER::l,io,ia,is,ic,ios,idm2D
     integer::ib,id
     CHARACTER(len=255)::loc_filename
-    CHARACTER(len=255)::loc_string
+    CHARACTER(len=255)::loc_string,loc_string_title
     CHARACTER(len=12)::loc_string_Dmin
     real::loc_t = 0.0
     logical::loc_save
@@ -54,15 +54,15 @@ CONTAINS
                      & 'global total ' //TRIM(string_ocn(io))//' (mol) / ' //&
                      & 'global mean ' //TRIM(string_ocn(io))//' (mol kg-1) / ' //&
                      & 'surface (ice-free) ' //TRIM(string_ocn(io))//' (mol kg-1) / ' //&
-                     & 'benthic'//loc_string_Dmin//TRIM(string_ocn(io))//' (mol kg-1) / ' //&
-                     & 'surface ' //TRIM(string_ocn(io))//' (mol kg-1)'
+                     & 'benthic '//loc_string_Dmin//TRIM(string_ocn(io))//' (mol kg-1) / ' //&
+                     & 'surface (total area) ' //TRIM(string_ocn(io))//' (mol kg-1)'
              CASE (n_itype_min:n_itype_max)
                 loc_string = '% time (yr) / ' //&
                      & 'global total '//TRIM(string_ocn(io))//' (mol) / ' //&
                      & 'global ' // TRIM(string_ocn(io))//' (o/oo) / ' //&
                      & 'surface (ice-free) ' //TRIM(string_ocn(io))//' (o/oo) / ' //&
                      & 'benthic'//loc_string_Dmin//TRIM(string_ocn(io))//' (o/oo) / ' //&
-                     & 'surface ' //TRIM(string_ocn(io))//' (o/oo)'
+                     & 'surface (total area) ' //TRIM(string_ocn(io))//' (o/oo)'
              end SELECT
           else
              SELECT CASE (ocn_type(io))
@@ -323,35 +323,43 @@ CONTAINS
           loc_filename=fun_data_timeseries_filename( &
                & loc_t,par_outdir_name,trim(par_outfile_name)//'_series','carb_sur_'//TRIM(string_carb(ic)),string_results_ext &
                & )
+          loc_string_title = '% surface ocean carbonate chemistry properties (and isotopic composition where relevant) - '// &
+               & string_longname_carb(ic)
           SELECT CASE (ic)
           CASE (ic_ohm_cal,ic_ohm_arg)
-             loc_string = '% time (yr) / mean saturation state'
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (n/a) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (n/a)'
           CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
              if (ocn_select(io_DIC_14C)) then
                 loc_string = '% time (yr) / ' //&
                      & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
                      & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
                      & 'surface '//TRIM(string_carb(ic))//' d14C (o/oo) / ' //&
-                     & 'surface mean '//TRIM(string_carb(ic))//' (mol kg-1)'
+                     & 'surface mean (total area)  '//TRIM(string_carb(ic))//' (mol kg-1)'
              elseif (ocn_select(io_DIC_13C)) then
                 loc_string = '% time (yr) / ' //&
                      & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
                      & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
-                     & 'surface mean '//TRIM(string_carb(ic))//' (mol kg-1)'
+                     & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
              else
-                loc_string = '% time (yr) / surface '//TRIM(string_carb(ic))//' (mol kg-1)'
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
              end if
           CASE (ic_fug_CO2)
              loc_string = '% time (yr) / ' //&
-                  & 'surface (ice-free) '//TRIM(string_carb(ic))//' (atm) / ' //&
-                  & 'surface '//TRIM(string_carb(ic))//' (atm)'
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (atm) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (atm)'
           case default
              loc_string = '% time (yr) / ' //&
-                  & 'surface (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                  & 'surface '//TRIM(string_carb(ic))//' (mol kg-1)'
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
           end SELECT
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+          call check_iostat(ios,__LINE__,__FILE__)
+          write(unit=out,fmt=*,iostat=ios) trim(loc_string_title)
           call check_iostat(ios,__LINE__,__FILE__)
           write(unit=out,fmt=*,iostat=ios) trim(loc_string)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -525,8 +533,8 @@ CONTAINS
        select case (fname_topo)
        case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
           loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(n_k/2)) //'] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(n_k/2)) //'] / '// &
+               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(real(n_k)/2.0)) //'] / '// &
+               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(real(n_k)/2.0)) //'] / '// &
                & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
                & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
        case default
@@ -1121,7 +1129,7 @@ CONTAINS
        ! ocean
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
-          if (force_flux_ocn_select(io)) then
+          if (force_flux_ocn_select(io) .OR. ((par_force_restore_ohmega > const_real_nullsmall) .AND. ocn_select(io))) then
              loc_filename=fun_data_timeseries_filename( &
                   & loc_t,par_outdir_name, &
                   & trim(par_outfile_name)//'_series_diag','fluxforcing_ocn_'//TRIM(string_ocn(io)),string_results_ext &
@@ -1257,7 +1265,7 @@ CONTAINS
                    loc_filename=fun_data_timeseries_filename( &
                         & loc_t,par_outdir_name,trim(par_outfile_name)//'_series_diag','pre_Csoft',string_results_ext &
                         & )
-                   loc_string = '% time (yr) / global total (regenerated, not actually preformed) Csoft (mol) / global mean (mol kg-1)'
+                   loc_string = '% time (yr) / global total (regenerated, not preformed) Csoft (mol) / global mean (mol kg-1)'
                    if (.NOT. ctrl_bio_remin_redox_save) loc_save = .false.
                 end if
              end select
@@ -1621,7 +1629,7 @@ CONTAINS
                 loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
                 call check_unit(out,__LINE__,__FILE__)
                 OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-                WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
+                WRITE(unit=out,fmt='(f12.3,e15.7,f12.3,e15.7)',iostat=ios) &
                      & loc_t, &
                      & loc_sig_opn, &
                      & fun_calc_isotope_delta &
@@ -2767,7 +2775,7 @@ CONTAINS
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
              if (int_diag_weather_sig(io_Os_188Os) > const_real_nullsmall) then
-                loc_sig = int_diag_weather_sig(io_Os_187Os)/loc_tot
+                loc_sig = int_diag_weather_sig(io_Os_187Os)/int_diag_weather_sig(io_Os_188Os)
              else
                 loc_sig = -999.9
              end if
@@ -3113,7 +3121,7 @@ CONTAINS
        ! ocean
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
-          if (force_flux_ocn_select(io)) then
+          if ( force_flux_ocn_select(io) .OR. ((par_force_restore_ohmega > const_real_nullsmall) .AND. ocn_select(io)))  then
              loc_filename=fun_data_timeseries_filename( &
                   & dum_t,par_outdir_name, &
                   & trim(par_outfile_name)//'_series_diag','fluxforcing_ocn_'//TRIM(string_ocn(io)),string_results_ext &
@@ -3131,7 +3139,7 @@ CONTAINS
                 CLOSE(unit=out,iostat=ios)
                 call check_iostat(ios,__LINE__,__FILE__)
              case (n_itype_min:n_itype_max)
-                loc_tot = int_diag_forcing_ocn_sig(atm_dep(io))/int_t_sig
+                loc_tot = int_diag_forcing_ocn_sig(ocn_dep(io))/int_t_sig
                 loc_frac = int_diag_forcing_ocn_sig(io)/int_t_sig
                 loc_standard = const_standards(ocn_type(io))
                 loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
@@ -3625,7 +3633,7 @@ CONTAINS
   END SUBROUTINE sub_data_save_global_snap
   ! ****************************************************************************************************************************** !
 
-
+  
   ! ****************************************************************************************************************************** !
   ! SAVE GLOBAL DATA
   SUBROUTINE sub_data_save_global_av()
@@ -3637,6 +3645,7 @@ CONTAINS
     real::loc_tot,loc_frac,loc_standard
     real::loc_atm_ave,loc_ocn_ave,loc_sed_ave
     real::loc_ocn_tot_M,loc_ocn_tot_A,loc_ocnatm_tot_A
+    real::loc_tot_POM,loc_tot_DOM
     CHARACTER(len=255)::loc_filename
     REAL,DIMENSION(n_phys_ocn,n_i,n_j,n_k)::loc_phys_ocn       !
     REAL,DIMENSION(n_ocn,n_i,n_j,n_k)::loc_ocn                 !
@@ -3698,6 +3707,9 @@ CONTAINS
                    call sub_adj_carbconst(   &
                         & loc_ocn(io_Ca,i,j,k),  &
                         & loc_ocn(io_Mg,i,j,k),  &
+                        & ocn(io_S,i,j,k), &
+                        & ocn(io_T,i,j,k),&
+                        & loc_phys_ocn(ipo_Dmid,i,j,k), &
                         & loc_carbconst(:,i,j,k) &
                         & )
                 end if
@@ -3709,7 +3721,10 @@ CONTAINS
                 ! seed default initial ocean pH
                 loc_carb(ic_H,i,j,k) = 10**(-7.8)
                 ! calculate carbonate chemistry
-                CALL sub_calc_carb(        &
+                CALL sub_calc_carb(            &
+                     & 'biogem_data_ascii.f90/sub_data_save_global_av', &
+                     & .false.,                &
+                     & par_carbchem_pH_tolerance,  &
                      & loc_ocn(io_DIC,i,j,k),  &
                      & loc_ocn(io_ALK,i,j,k),  &
                      & loc_ocn(io_Ca,i,j,k),   &
@@ -3785,10 +3800,10 @@ CONTAINS
          & phys_ocnatm(ipoa_A,:,:)*int_phys_ocn_timeslice(ipo_mask_ocn,:,:,n_k)* &
          & (1.0 - int_phys_ocnatm_timeslice(ipoa_seaice,:,:)) &
          & )
-    Write(unit=out,fmt='(A52,f8.6,A24)',iostat=ios) &
+    Write(unit=out,fmt='(A52,f10.6,A25)',iostat=ios) &
          & ' Global mean air-sea coefficient, K(CO2) ........ : ', &
          & loc_K, &
-         & '     mol m-2 yr-1 uatm-1'
+         & '      mol m-2 yr-1 uatm-1'
     call check_iostat(ios,__LINE__,__FILE__)
 
     ! *** save data - ATMOSPHERIC TRACER PROPERTIES ***
@@ -3894,6 +3909,158 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end SELECT
     END DO
+    
+    ! *** save data - WATER COLUMN REDOX AND REMINERALIZATION ***
+    ! NOTE: indexing of the remin array is: conv_lslo2idP(ls,lo) = n
+    !       time-series saving is: int_diag_redox_sig(id)/int_t_sig / loc_ocn_tot_M*loc_sig
+    ! write ocean data
+    Write(unit=out,fmt=*) ' '
+    Write(unit=out,fmt=*) '--------------------------'
+    Write(unit=out,fmt=*) 'REMINERALIZATION'
+    Write(unit=out,fmt=*) ' '
+    if (ctrl_bio_remin_redox_save) then
+       if (ocn_select(io_O2)) then
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_O2)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_O2)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_O2)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_O2)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global O2 consumtpion rate (POM+DOM) ..... : ',            &
+                  & -loc_tot_POM,-loc_tot_DOM,                                 &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
+                  & '                                            : ',          &
+                  & -sum(int_fsedocn_timeslice(io_O2,:,:)),'               ',  &
+                  & ' mol yr-1',' (sedimentary consumption)                '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            = ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_O2,:,:)) ),  &
+                  & ' Tmol yr-1 O2 TOTAL '
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global O2 consumtpion rate (POM+DOM) ..... : ',          &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            = ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM ),                      &
+                  & ' Tmol yr-1 O2 TOTAL '
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+       if (ocn_select(io_NO3)) then
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_NO3)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_NO3)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_NO3)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_NO3)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global NO3 consumtpion rate (POM, DOM) ... : ',          &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
+                  & '                                            : ',          &
+                  & -sum(int_fsedocn_timeslice(io_NO3,:,:)),'               ', &
+                  & ' mol yr-1',' (sedimentary consumption)                '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            = ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_NO3,:,:)) ),  &
+                  & ' Tmol yr-1 NO3 TOTAL'
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                  & ' Global NO3 consumtpion rate (POM, DOM) ... : ',    &
+                  & -loc_tot_POM,-loc_tot_DOM,                                 &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            : ',          &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
+                  & ' Tmol yr-1 NO3 TOTAL'
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+       if (ocn_select(io_SO4)) then
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_SO4)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_SO4)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_SO4)),:,:,:) + &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_SO4)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global SO4 consumtpion rate (POM, DOM) ... : ',         &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
+                  & '                                            : ',         &
+                  & -sum(int_fsedocn_timeslice(io_SO4,:,:)),'               ',&
+                  & ' mol yr-1',' (sedimentary consumption)                '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_SO4,:,:)) ),  &
+                  & ' Tmol yr-1 SO4 TOTAL'
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global SO4 consumtpion rate (POM, DOM) ... : ',         &
+                  & -loc_tot_POM,-loc_tot_DOM, &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+                  & -1.0E-12*( loc_tot_POM+loc_tot_DOM ),                     &
+                  & ' Tmol yr-1 SO4 TOTl'
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+       if (ocn_select(io_CH4)) then
+          ! NOTE: there is no relationship between CH4 and POP
+          ! NOTE: CH4 production is positive vs. O2 and SO4 which are negative changes (i.e., consumption)
+          loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_CH4)),:,:,:) &
+               & ))/int_t_timeslice
+          loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+               & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_CH4)),:,:,:) &
+               & ))/int_t_timeslice
+          If (flag_sedgem) then
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global CH4 production rate (POM, DOM) .... : ',         &
+                  & loc_tot_POM,loc_tot_DOM, &
+                  & ' mol yr-1',' (water-column only)                      '
+             Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
+                  & '                                                  : ',   &
+                  & sum(int_fsedocn_timeslice(io_CH4,:,:)),'               ', &
+                  & ' mol yr-1',' (sedimentary production)                 '
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+                  & 1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_CH4,:,:)) ),  &
+                  & ' Tmol yr-1'
+          else
+             Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
+                  & ' Global CH4 production rate (POM, DOM) .... : ',         &
+                  & loc_tot_POM,loc_tot_DOM, &
+                  & ' mol yr-1',' (including reflective boundary condition)'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
+                  & '                                            = ',         &
+                  & 1.0E-12*( loc_tot_POM+loc_tot_DOM ),                      &
+                  & ' Tmol yr-1 CH4 TOTAL'
+          end if
+          call check_iostat(ios,__LINE__,__FILE__)
+       end if
+    else
+       Write(unit=out,fmt=*) 'No remineralization summary output saved -- choose a save option that includes redox saving:'
+       Write(unit=out,fmt=*) 'bg_par_data_save_level=[14,15,16,99]'
+       Write(unit=out,fmt=*) 'or set:'
+       Write(unit=out,fmt=*) 'bg_ctrl_bio_remin_redox_save=.true.'
+    end if
 
     ! *** save data - BIOLOGICAL EXPLORT ***
     ! write export data
@@ -3906,7 +4073,7 @@ CONTAINS
        SELECT CASE (sed_type(is))
        CASE (1:7)
           ! NOTE:
-          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+          !      '1' -> assigned to primary biogenic phases; POM (POC), CaCO3, opal (all contributing to bulk composition)
           !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
           !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
           !      '4' -> assigned to elemental components associated with CaCO3; Cd
@@ -3947,7 +4114,7 @@ CONTAINS
        SELECT CASE (sed_type(is))
        CASE (1:7)
           ! NOTE:
-          !      '1' -> assigned to primary biogenic phases; POM (represented by POC), CaCO3, opal (all contributing to bulk composition)
+          !      '1' -> assigned to primary biogenic phases; POM (POC), CaCO3, opal (all contributing to bulk composition)
           !      '2' -> assigned to abiotic material (contributing to bulk composition); det, ash
           !      '3' -> assigned to elemental components associated with POC; P, N, Cd, Fe
           !      '4' -> assigned to elemental components associated with CaCO3; Cd
@@ -3955,8 +4122,8 @@ CONTAINS
           !      '6' -> assigned to elemental components associated with det; Li
           !      '7' -> assigned to particle-reactive scavenged elements; 231Pa, 230Th, Fe
           loc_sed_ave = SUM(int_focnsed_timeslice(is,:,:))/int_t_timeslice/loc_ocn_tot_A
-          write(unit=out,fmt='(A13,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
-               & ' Bottom flux ',string_sed(is),' : ', &
+          write(unit=out,fmt='(A14,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
+               & ' Benthic flux ',string_sed(is),' : ', &
                & conv_mol_umol*loc_sed_ave/conv_m2_cm2, &
                & ' umol cm-2 yr-1', &
                & ' <-> ', &
@@ -4057,8 +4224,8 @@ CONTAINS
             & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
             & ' PgC yr-1'
     end select
-
-    !
+    
+    ! END
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '=========================='
     ! *** save data - CLOSE FILE ***
@@ -4067,8 +4234,210 @@ CONTAINS
 
   END SUBROUTINE sub_data_save_global_av
   ! ****************************************************************************************************************************** !
+  
+
+  ! ****************************************************************************************************************************** !
+  ! RUN-TIME REPORTING
+  SUBROUTINE sub_echo_runtimehead()
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- !
+    ! PRINT HEADER
+    ! -------------------------------------------------------- !
+    ! NOTE: once printed, reset par_misc_t_echo_header to .false. so it is only printed before the first data line
+    !       (unless set elsewhere to repeat the header line)
+    if (par_misc_t_echo_header) then
+       print*,' '
+       IF (.NOT. opt_select(iopt_select_carbchem)) THEN
+          PRINT'(A3,A12,A3,A12,A10,A3,4A10)', &
+               & ' > ',          &
+               & '  model year', &
+               & ' | ',          &
+               & '            ', &
+               & '   SAT(oC)', &
+               & ' | ',          &
+               & '  AMOC(Sv)', &
+               & '    ice(%)', &
+               & '   SST(oC)', &
+               & '  SSS(PSU)'
+          elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14)', &
+               & ' > ',          &
+               & '  model year', &
+               & ' | ',          &
+               & '  pCO2(uatm)', &
+               & '   SAT(oC)', &
+               & ' | ',          &
+               & '  AMOC(Sv)', &
+               & '    ice(%)', &
+               & '   SST(oC)', &
+               & '  SSS(PSU)', &
+               & ' | ',           &
+               & '      pH', &
+               & '  OHMEGA', &
+               & ' | ',           &
+               & '  [O2](uM)', &
+               & '  fPOC(PgC/yr)'
+       else
+          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8)', &
+               & ' > ',          &
+               & '  model year', &
+               & ' | ',          &
+               & '  pCO2(uatm)', &
+               & '   SAT(oC)', &
+               & ' | ',          &
+               & '  AMOC(Sv)', &
+               & '    ice(%)', &
+               & '   SST(oC)', &
+               & '  SSS(PSU)', &
+               & ' | ',           &
+               & '      pH', &
+               & '  OHMEGA'
+       end if
+       print*,' '
+       par_misc_t_echo_header = .FALSE.
+    end if
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+     END SUBROUTINE sub_echo_runtimehead
+  ! ****************************************************************************************************************************** !
 
 
+  ! ****************************************************************************************************************************** !
+  ! RUN-TIME REPORTING
+  SUBROUTINE sub_echo_runtimedata(dum_yr)
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_yr
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    real::loc_opsi_scale
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6 ! local opsi conversion constant
+    ! -------------------------------------------------------- !
+    ! PRINT DATA!
+    ! -------------------------------------------------------- !
+    IF (.NOT. opt_select(iopt_select_carbchem)) THEN
+       PRINT'(A3,F12.1,A3,A12,F10.3,A3,4F10.3)', &
+            & ' > ', &
+            & dum_yr, &
+            & ' | ', &
+            & '            ', &
+            & int_ocnatm_sig(ia_T), &
+            & ' | ', &
+            & loc_opsi_scale*int_misc_opsia_max_sig, &
+            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+            & int_ocn_sur_sig(io_T), &
+            & int_ocn_sur_sig(io_S)
+    elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+       PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3)', &
+            & ' > ', &
+            & dum_yr, &
+            & ' | ', &
+            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+            & int_ocnatm_sig(ia_T), &
+            & ' | ', &
+            & loc_opsi_scale*int_misc_opsia_max_sig, &
+            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+            & int_ocn_sur_sig(io_T) - const_zeroC, &
+            & int_ocn_sur_sig(io_S), &
+            & ' | ', &
+            & int_carb_opn_sig(ic_pHsws), &
+            & int_carb_opn_sig(ic_ohm_cal), &
+            & ' | ', &
+            & 1.0E6*int_ocn_sig(io_O2), &
+            & 12.0E-15*int_fexport_sig(is_POC)
+       else
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3)', &
+            & ' > ', &
+            & dum_yr, &
+            & ' | ', &
+            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+            & int_ocnatm_sig(ia_T), &
+            & ' | ', &
+            & loc_opsi_scale*int_misc_opsia_max_sig, &
+            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+            & int_ocn_sur_sig(io_T) - const_zeroC, &
+            & int_ocn_sur_sig(io_S), &
+            & ' | ', &
+            & int_carb_opn_sig(ic_pHsws), &
+            & int_carb_opn_sig(ic_ohm_cal)
+       end if
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+     END SUBROUTINE sub_echo_runtimedata
+  ! ****************************************************************************************************************************** !
+
+     
+  ! ****************************************************************************************************************************** !
+  ! ERROR REPORTING
+  SUBROUTINE sub_echo_runtimeerrs(dum_yr)
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_yr
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    integer::loc_sum_derr_pH
+    integer::loc_sum_derr_it
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    loc_sum_derr_pH = int(sum(diag_carb_derr_pH(:,:,:)))
+    loc_sum_derr_it = int(sum(diag_carb_derr_it(:,:,:)))
+    ! -------------------------------------------------------- !
+    ! ASSESS ERRORS!
+    ! -------------------------------------------------------- !
+    if (loc_sum_derr_pH > 0) then
+       ! write message
+!!$       PRINT'(A5,F10.1,A100)', &
+!!$            & ' >>> ', &
+!!$            & dum_yr, &
+!!$            & ' WARNING: One or more grid points have failed to solve for pH since the last time-series save point.'
+       PRINT'(A5,A10,I6,A48)', &
+            & ' >>> ', &
+            & ' WARNING: ', &
+            & loc_sum_derr_pH, &
+            & ' failures to solve for pH in this time interval.'
+       ! reset array
+       diag_carb_derr_pH(:,:,:) = 0.0
+    end if
+    if (loc_sum_derr_it > 0) then
+       ! write message
+!!$       PRINT'(A5,F10.1,A136)', &
+!!$            & ' >>> ', &
+!!$            & dum_yr, &
+!!$            & ' WARNING: One or more grid points have required an excessive number of iterations to solve for pH '// &
+!!$            & 'since the last time-series save point.'
+       PRINT'(A5,A10,I6,A98)', &
+            & ' >>> ', &
+            & ' WARNING: ', &
+            & loc_sum_derr_it, &
+            & ' times an excessive number of iterations have been required to solve for pH in this time interval.'
+       ! reset array
+       diag_carb_derr_it(:,:,:) = 0.0
+    end if
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  END SUBROUTINE sub_echo_runtimeerrs
+  ! ****************************************************************************************************************************** !
+
+  
   ! ****************************************************************************************************************************** !
   ! RUN-TIME REPORTING
   SUBROUTINE sub_echo_runtime(dum_yr,dum_opsi_scale,dum_opsia_minmax,dum_sfcatm1,dum_gemlite)
@@ -4102,6 +4471,8 @@ CONTAINS
        select case (fname_topo)
        case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
           ! print header (if necessary)
+          ! NOTE: once printed, reset par_misc_t_echo_header to .false. so it is only printed before the first data line
+          !       (unless set elsewhere to repeat the header line)
           if (par_misc_t_echo_header) then
              print*,' '
              ! ### MAKE MODIFICATIONS TO SCREEN PRINTING INFORMATION HERE ####################################################### !
@@ -4347,9 +4718,12 @@ CONTAINS
     REAL,DIMENSION(n_j,n_k)::loc_ou,loc_zu
     REAL,DIMENSION(0:n_j,0:n_k)::loc_opsi,loc_opsia,loc_opsip,loc_zpsi
     ! initialize arrays
+    loc_ou(:,:)    = 0.0
+    loc_zu(:,:)    = 0.0
     loc_opsi(:,:)  = 0.0
     loc_opsia(:,:) = 0.0
     loc_opsip(:,:) = 0.0
+    loc_zpsi(:,:)  = 0.0
     ! Calculate global meridional overturning streamfunction opsi (on C grid only)
     DO j=1,n_j-1
        DO k=1,n_k-1
@@ -4360,40 +4734,46 @@ CONTAINS
           loc_opsi(j,k) = loc_opsi(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
        END DO
     END DO
-    ! Pacific overturning streamfunction
-    loc_ominp = 0.0
-    loc_omaxp = 0.0
-    DO j=goldstein_jsf+1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=goldstein_ips(j),goldstein_ipf(j)
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+    select case (fname_topo)
+    case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       ! Pacific overturning streamfunction
+       loc_ominp = 0.0
+       loc_omaxp = 0.0
+       DO j=goldstein_jsf+1,n_j-1
+          DO k=1,n_k-1
+             loc_ou(j,k) = 0.0
+             DO i=goldstein_ips(j),goldstein_ipf(j)
+                loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+             ENDDO
+             loc_opsip(j,k) = loc_opsip(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
+             IF(loc_opsip(j,k) < loc_ominp) loc_ominp = loc_opsip(j,k)
+             IF(loc_opsip(j,k) > loc_omaxp) loc_omaxp = loc_opsip(j,k)
           ENDDO
-          loc_opsip(j,k) = loc_opsip(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          IF(loc_opsip(j,k) < loc_ominp) loc_ominp = loc_opsip(j,k)
-          IF(loc_opsip(j,k) > loc_omaxp) loc_omaxp = loc_opsip(j,k)
        ENDDO
-    ENDDO
-    dum_opsip_minmax(1) = loc_ominp
-    dum_opsip_minmax(2) = loc_omaxp
-    ! Atlantic overturning streamfunction
-    ! NOTE: Atlantic calculation hacked so that only the deeper 1/2 of the maximum is calculated
-    loc_omina = 0.0
-    loc_omaxa = 0.0
-    DO j=goldstein_jsf+1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=goldstein_ias(j),goldstein_iaf(j)
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+       dum_opsip_minmax(1) = loc_ominp
+       dum_opsip_minmax(2) = loc_omaxp
+       ! Atlantic overturning streamfunction
+       ! NOTE: Atlantic calculation hacked so that only the deeper 1/2 of the maximum is calculated
+       loc_omina = 0.0
+       loc_omaxa = 0.0
+       DO j=goldstein_jsf+1,n_j-1
+          DO k=1,n_k-1
+             loc_ou(j,k) = 0.0
+             DO i=goldstein_ias(j),goldstein_iaf(j)
+                loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
+             ENDDO
+             loc_opsia(j,k) = loc_opsia(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
+             IF((loc_opsia(j,k) < loc_omina) .AND. (k <= int(real(n_k)/2.0))) loc_omina = loc_opsia(j,k)
+             IF((loc_opsia(j,k) > loc_omaxa) .AND. (k <= int(real(n_k)/2.0))) loc_omaxa = loc_opsia(j,k)
           ENDDO
-          loc_opsia(j,k) = loc_opsia(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          IF((loc_opsia(j,k) < loc_omina) .AND. (k <= n_k/2)) loc_omina = loc_opsia(j,k)
-          IF((loc_opsia(j,k) > loc_omaxa) .AND. (k <= n_k/2)) loc_omaxa = loc_opsia(j,k)
        ENDDO
-    ENDDO
-    dum_opsia_minmax(1) = loc_omina
-    dum_opsia_minmax(2) = loc_omaxa
-    !
+       dum_opsia_minmax(1) = loc_omina
+       dum_opsia_minmax(2) = loc_omaxa
+    case default
+       dum_opsip_minmax(:) = -999
+       dum_opsia_minmax(:) = -999
+    end select
+    ! PSI
     loc_zpsi(:,:) = 0.0
     DO i=1,n_i-1
        DO k=1,n_k-1
@@ -4404,6 +4784,12 @@ CONTAINS
           loc_zpsi(i,k) = loc_zpsi(i,k-1) - goldstein_dz(k)*loc_zu(i,k)
        ENDDO
     ENDDO
+    ! initalize results arrays
+    ! NOTE: otherwise you risk passing a NaN at index 0 ... !!! (it has happened!)
+    dum_opsi(:,:)  = 0.0
+    dum_opsia(:,:) = 0.0
+    dum_opsip(:,:) = 0.0
+    dum_zpsi(:,:)  = 0.0
     ! set results arrays
     dum_opsi(1:n_j,1:n_k)  = loc_opsi(1:n_j,1:n_k)
     dum_opsia(1:n_j,1:n_k) = loc_opsia(1:n_j,1:n_k)

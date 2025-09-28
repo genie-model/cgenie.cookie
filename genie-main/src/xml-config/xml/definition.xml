@@ -1355,37 +1355,49 @@
                         <value datatype="string">Mehrbach</value>
                         <description>carbonate dissociation constants set</description>
                     </param>
+                    <param name="par_adj_carbconst_option">
+                        <value datatype="string">TyrrellZeebe2004</value>
+                        <description>carbonate dissociation constants set</description>
+                    </param>
+                    <param name="ctrl_carbchem_pH_OLD">
+                        <value datatype="boolean">.true.</value>
+                        <description>OLD pH solution scheme?</description>
+                    </param>
                     <param name="par_carbchem_pH_tolerance">
                         <value datatype="real">0.001</value>
                         <description>pH solution tolerance</description>
                     </param>
-                    <param name="par_carbchem_pH_iterationmax">
-                        <value datatype="integer">100</value>
-                        <description>pH solution maximum number of iterations</description>
+                    <param name="par_carbchem_pH_tolerance_buffering">
+                        <value datatype="real">0.001</value>
+                        <description>pH solution tolerance for calculating buffering -- set the same as normal pH solving by default</description>
                     </param>
-                    <param name="ctrl_carbchem_pHseed_retry">
-                        <value datatype="boolean">.false.</value>
-                        <description>Attempt pH re-seed if solution fails (else exit)?</description>
+                    <param name="par_carbchem_dpH_tolerance">
+                        <value datatype="real">10.0</value>
+                        <description>relaxation factor in pH solution tolerance for re-try</description>
+                    </param>
+                    <param name="par_carbchem_pH_iterationmax">
+                        <value datatype="integer">10</value>
+                        <description>pH solution maximum number of iterations</description>
                     </param>
                     <param name="ctrl_carbchem_noH3SiO4">
                         <value datatype="boolean">.false.</value>
                         <description>Ignore H3SiO4 in the calculation of carbonate ALK?</description>
                     </param>
                     <param name="par_geochem_Tmin">
-                        <value datatype="real">0.0</value>
-                        <description>minimum T used in empirical geochem calculations [default: 0 - 30 C for the Schmidt number empirical fit - see: Wanninkhof et al. [1992]]</description>
+                        <value datatype="real">2.0</value>
+                        <description>minimum T used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_geochem_Tmax">
-                        <value datatype="real">30.0</value>
-                        <description>maximum T used in empirical geochem calculations [default: 0 - 30 C for the Schmidt number empirical fit - see: Wanninkhof et al. [1992]]</description>
+                        <value datatype="real">35.0</value>
+                        <description>maximum T used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_geochem_Smin">
                         <value datatype="real">26.0</value>
-                        <description>minimum S used in empirical geochem calculations [not (yet) used -- set as per par_carbchem_Smin]</description>
+                        <description>minimum S used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_geochem_Smax">
                         <value datatype="real">43.0</value>
-                        <description>maximum S used in empirical geochem calculations [not (yet) used -- set as per par_carbchem_Smax]</description>
+                        <description>maximum S used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_carbchem_Tmin">
                         <value datatype="real">2.0</value>
@@ -4587,6 +4599,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <value datatype="real">15.0</value>
                         <description>AOM bio energy quantum (kJ mol-1)</description>
                     </param>
+                    <param name="ctrl_bio_remin_AOM_OLD">
+			<value datatype="boolean">.false.</value>
+                        <description>Use old (muffin) zero [O2] threshold for AOM to proceed?</description>
+                    </param>
                     <param name="par_bio_remin_Rgas">
                         <value datatype="real">8.3144598E-03</value>
                         <description>Gas constant for thermo calculations (kJ K-1 mol-1)</description>
@@ -4796,7 +4812,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Catch mis-behaving rapidly-oxidizing species going less than 0.0?</description>
                     </param>
                     <param name="opt_bio_remin_oxidize_H2StoSO4">
-			<value datatype="string">linear</value>
+			<value datatype="string">2ndorder</value>
                         <description>H2S -> SO4 oxidation option</description>
                     </param>
                     <param name="opt_bio_remin_scavenge_H2StoPOMS">
@@ -4912,6 +4928,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_bio_remin_kH2StoSO4">
                         <value datatype="real">1.0E7</value>
                         <description>Oxidation rate constant for H2S -> SO4 :: -d[H2S]/dt = k1[H2S][O2] [6e8 M-1 yr-1; Jourabchi et al., 2005] [3e8 M-1 yr-1; Boudreau, 1996] [5.4e7 M-1 yr-1; Romaniello and Derry, 2010] [3.65E6 Ozaki and Tajika, 2011] [0.81E6 M-1 yr-1 :: ln k1 = 0.44 @ 212 uM O2 == 1.55 M-1 min-1; Zhang and Millero, 1993]</description>
+                    </param>
+                    <param name="par_bio_remin_kH2StoSO4_perM2perhr">
+                        <value datatype="real">0.625E6 </value>
+                        <description>2nd order oxidation rate constant for H2S as per van de Velde et al. [2021] -- 0.625E6 M-2 hr-1 [Zhang and Millero, 1993]-</description>
                     </param>
                     <param name="par_bio_remin_kH2StoPOMS">
                         <value datatype="real">1.0</value>
@@ -5626,6 +5646,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">1.0</value>
                         <description>Integration interval (yr)</description>
                     </param>
+                    <param name="par_data_save_slice_lamdat">
+			<value datatype="real">0.0</value>
+                        <description>Save interval if not using save point definition file (yr)</description>
+                    </param>
                     <param name="par_infile_slice_name">
 			<value datatype="string">save_timeslice.dat</value>
                         <description></description>
@@ -5697,11 +5721,15 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="ctrl_data_save_sig_diag_redox_old">
 			<value datatype="boolean">.false.</value>
-                        <description>[redox back-compatability ]</description>
+                        <description>[redox back-compatability]</description>
                     </param>
                     <param name="par_data_save_sig_dt">
 			<value datatype="real">1.0</value>
-                        <description>Integration interval (yr</description>
+                        <description>Integration interval (yr)</description>
+                    </param>
+                    <param name="par_data_save_sig_lamdat">
+			<value datatype="real">0.0</value>
+                        <description>Save interval if not using save point definition file (yr)</description>
                     </param>
                     <param name="par_infile_sig_name">
 			<value datatype="string">save_timeseries.dat</value>
@@ -5731,6 +5759,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_bio_remin_redox_save">
 			<value datatype="boolean">.false.</value>
                         <description>Create redox/remin data for saving?</description>
+                    </param>
+                    <param name="ctrl_data_save_buffering">
+			<value datatype="boolean">.false.</value>
+                        <description>Calculate various buffering metrics for saving??</description>
                     </param>
 <!-- DATA SAVING: MISC -->
                     <param name="par_data_save_level">
@@ -5817,6 +5849,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_infile_orb_pts_var_name">
 			<value datatype="string">orb_pts_var.dat</value>
                         <description></description>
+                    </param>                    
+                    <param name="ctrl_data_echo_runtime_NEW">
+			<value datatype="boolean">.true.</value>
+                        <description>NEW format runtime output?</description>
                     </param>
 <!-- TRACER AUDITING AND DEBUGGING OPTIONS -->
                     <param name="ctrl_audit">
@@ -6909,7 +6945,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="par_force_invert_ohmega">
 			<value datatype="real">0.0</value>
-                        <description>Surface ocean saturation state target</description>
+                        <description>Surface ocean saturation state target -- inversions</description>
+                    </param>
+                    <param name="par_force_restore_ohmega">
+			<value datatype="real">0.0</value>
+                        <description>Surface ocean saturation state target -- restoring</description>
                     </param>
                     <param name="par_force_invert_wtpctcaco3">
 			<value datatype="real">-99.9</value>
@@ -6942,6 +6982,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_force_ocn_age1">
 			<value datatype="boolean">.false.</value>
                         <description>Or ... automatic ocean age single-tracer tracer?</description>
+                    </param>
+                    <param name="par_force_FCaCO3">
+			<value datatype="real">1.0E15</value>
+                        <description> CaCO3 flux (for saturaton restoring) (mol yr-1)</description>
                     </param>
 <!-- TRANSPORT MATRIX  -->
 		<param name="ctrl_data_diagnose_TM">
@@ -7525,6 +7569,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="integer">20</value>
                         <description>loop limit in 'o2org' subroutine</description>
                     </param>
+                    <param name="ctrl_sed_diagen_error_Archer_OLD">
+			<value datatype="boolean">.true.</value>
+                        <description>Use old error-catching scheme?</description>
+                    </param>
+                    <param name="ctrl_sed_diagen_error_Archer2lookup">
+			<value datatype="boolean">.false.</value>
+                        <description>Replace Archer model calc with lookup estimate?</description>
+                    </param>
 <!-- DIAGENESIS SCHEME: opal  -->
                     <param name="par_sed_opal_KSi0">
 			<value datatype="real">1.25</value>
@@ -7851,6 +7903,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">-16.0</value>
                         <description>assumed implicit P:ALK (non zero values only really make any sense in ocean-only biogeochemical cycling)</description>
                     </param>
+                    <param name="par_sed_diag_C2O2">
+			<value datatype="real">-1.283018868</value>
+                        <description>assumed implicit C:O2 (POC oxidation O2 demand), e.g., -138/106 (C:O2 from P:O2 and C:P) + 2/106 (less P oxidation) = -136/106</description>
+                    </param>
+                    <param name="ctrl_sed_diag_balanceO2">
+                        <value datatype="boolean">.false.</value>
+                        <description>update kerogen O2 weathering consumption ratio to balance global (Corg) O2 budget?</description>
+                    </param>
 <!-- I/O: DIRECTORY DEFINITIONS  -->
                     <param name="par_pindir_name">
 			<value datatype="string"></value>
@@ -8010,6 +8070,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_ncsedcore_name">
 			<value datatype="string">sedgem_sedcore.nc</value>
                         <description>netCDF sedcore file name</description>
+                    </param>
+                    <param name="par_sed_save_av_dtyr">
+			<value datatype="real">0.0</value>
+                        <description>time interval for averaging final sed data over (yr) [0.0 to disable]</description>
+                    </param>
+                    <param name="ctrl_sed_diagen_error_save">
+			<value datatype="boolean">.false.</value>
+                        <description>Save diagenesis error details?</description>
                     </param>
                 </namelist>
             </file>

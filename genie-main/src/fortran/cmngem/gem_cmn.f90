@@ -40,11 +40,16 @@ MODULE gem_cmn
   ! ------------------- GEOCHEM CONTROLS ----------------------------------------------------------------------------------------- !
   CHARACTER(len=63)::par_carbconstset_name                              ! carbonate dissociation constants set
   NAMELIST /ini_gem_nml/par_carbconstset_name
+  CHARACTER(len=63)::par_adj_carbconst_option                           ! adjustment of carbonate dissociation constants to Mg/Ca
+  NAMELIST /ini_gem_nml/par_adj_carbconst_option
+  logical::ctrl_carbchem_pH_OLD                                         ! OLD pH solution scheme?
+  NAMELIST /ini_gem_nml/ctrl_carbchem_pH_OLD
   real::par_carbchem_pH_tolerance                                       ! pH solution tolerance
+  real::par_carbchem_pH_tolerance_buffering                             ! pH solution tolerance for calculating buffering  
+  real::par_carbchem_dpH_tolerance                                      ! relaxation factor in pH solution tolerance for re-try
+  NAMELIST /ini_gem_nml/par_carbchem_pH_tolerance,par_carbchem_dpH_tolerance,par_carbchem_pH_tolerance_buffering
   integer::par_carbchem_pH_iterationmax                                 ! pH solution maximum number of iterations
-  NAMELIST /ini_gem_nml/par_carbchem_pH_tolerance,par_carbchem_pH_iterationmax
-  logical::ctrl_carbchem_pHseed_retry                                   ! Attempt pH re-seed if solution fails (else exit)?
-  NAMELIST /ini_gem_nml/ctrl_carbchem_pHseed_retry
+  NAMELIST /ini_gem_nml/par_carbchem_pH_iterationmax
   real::par_geochem_Tmin                                                ! minimum T used in empirical geochem calculations
   real::par_geochem_Tmax                                                ! maximum T used in empirical geochem calculations
   NAMELIST /ini_gem_nml/par_geochem_Tmin,par_geochem_Tmax
@@ -80,7 +85,7 @@ MODULE gem_cmn
 
   ! *** array dimensions ***
   ! main biogeochem ocean array dimensions 
-  INTEGER,PARAMETER::n_carb                               = 11          ! number of ocean box chemistry descriptors
+  INTEGER,PARAMETER::n_carb                               = 16          ! number of ocean box chemistry descriptors
   INTEGER,PARAMETER::n_carbconst                          = 17          ! number of ocean box chemistry constants descriptors
   INTEGER,PARAMETER::n_carbalk                            = 13          ! number of alkalinty chemistry descriptors
   INTEGER,PARAMETER::n_carbisor                           = 08          ! number of carbonate isotopic ratio descriptors
@@ -331,6 +336,7 @@ MODULE gem_cmn
   INTEGER,PARAMETER::is_foram_b_18O                       = 42    ! 
   ! (carbonate) chemistry descriptors array indices
   INTEGER,PARAMETER::ic_H                                 = 01    ! H+ concentration
+  INTEGER,PARAMETER::ic_pHsws                             = 11    ! pH(sws)
   INTEGER,PARAMETER::ic_fug_CO2                           = 02    ! CO2 fugacity
   INTEGER,PARAMETER::ic_conc_CO2                          = 03    ! CO2(aq) concentration
   INTEGER,PARAMETER::ic_conc_CO3                          = 04    ! CO32- concentration
@@ -340,7 +346,11 @@ MODULE gem_cmn
   INTEGER,PARAMETER::ic_dCO3_cal                          = 08    ! degree of over-saturation [CO32-] w.r.t. calcite
   INTEGER,PARAMETER::ic_dCO3_arg                          = 09    ! degree of over-saturation [CO32-] w.r.t. aragonite
   INTEGER,PARAMETER::ic_RF0                               = 10    ! Revelle factor
-  INTEGER,PARAMETER::ic_pHsws                             = 11    ! pH(sws)
+  INTEGER,PARAMETER::ic_RdDICdALK                         = 12    ! OAE ALK addition efficiency factor
+  INTEGER,PARAMETER::ic_RdfCO2dDIC                        = 13    ! fCO2 sensitivity factor
+  INTEGER,PARAMETER::ic_RdALKdDIC                         = 14    ! ALK (CaCO3 )buffering factor factor
+  INTEGER,PARAMETER::ic_pH_n                              = 15    ! number of iterations taken to solve for pH
+  INTEGER,PARAMETER::ic_err                               = 16    ! failure to solve for pH
   ! (carbonate) chemistry descriptors array indices
   INTEGER,PARAMETER::icc_k                                = 01    ! 
   INTEGER,PARAMETER::icc_k1                               = 02    ! 
@@ -504,7 +514,12 @@ MODULE gem_cmn
        & 'dCO3_cal        ', &
        & 'dCO3_arg        ', &
        & 'RF0             ', &
-       & 'pHsws           ' /)
+       & 'pHsws           ', &
+       & 'RdDICdALK       ', &
+       & 'RdfCO2dDIC      ', &
+       & 'RdALKdDIC       ', &
+       & 'pH_n            ', &
+       & 'err             ' /)
   ! carbonate chemistry dissociation constants
   CHARACTER(len=16),DIMENSION(n_carbconst),PARAMETER::string_carbconst = (/ &
        & 'k               ', &
@@ -549,6 +564,26 @@ MODULE gem_cmn
        & 'CO2_r14C        ', &
        & 'CO3_r14C        ', &
        & 'HCO3_r14C       ' /)
+  
+  ! *** netCDF longnames ***
+  ! carbonate chemistry
+  CHARACTER(len=63),DIMENSION(n_carb),PARAMETER::string_longname_carb = (/  &
+       & 'Hydrogen ion concentration -- [H+]                             ', &
+       & 'CO2 fugacity -- fCO2                                           ', &
+       & 'CO2 aqueous concentration -- [CO2(aq)]                         ', &
+       & 'Carbonate ion concentration -- [CO32-]                         ', &
+       & 'Bicarbonate ion concentration -- [HCO3-]                       ', &
+       & 'Saturation state for calcite -- OHM(cal)                       ', &
+       & 'Saturation state for aragonite -- OHM(arg)                     ', &
+       & 'CO32- deviation from saturation (calcite)                      ', &
+       & 'CO32- deviation from saturation (aragonite)                    ', &
+       & 'Revelle Factor (RF)                                            ', &
+       & 'pH on the seawater scale -- pH(sws)                            ', &
+       & 'Sensitivity of DIC to an ALK perturbation at fixed pCO2        ', &
+       & 'Sensitivity of fCO2 to a DIC perturbation at fixed ALK         ', &
+       & 'Sensitivity of ALK to a DIC perturbation at fixed OHM          ', &
+       & 'Number of iterations required to converge pH                   ', &
+       & 'Failure to solve for pH                                        '/)
 
   ! *** I/O ***
   ! default I/O parameters
@@ -817,7 +852,29 @@ MODULE gem_cmn
   ! Schmidt Number coefficients
   real,dimension(4,n_atm)::par_Sc_coef                                  ! 
   !  Bunsen Solubility Coefficient coefficients
-  real,dimension(6,n_atm)::par_bunsen_coef                              ! 
+  real,dimension(6,n_atm)::par_bunsen_coef    
+  ! *** look-up table dimenstions for carbonate constants ***
+  INTEGER,PARAMETER::lookup_i_Ca_min      = 1                   ! 1-60 mmol
+  INTEGER,PARAMETER::lookup_i_Ca_max      = 60                  ! 1-60 mmol
+  INTEGER,PARAMETER::lookup_i_Mg_min   = 1                      ! 1-60 mmol
+  INTEGER,PARAMETER::lookup_i_Mg_max   = 60                     ! 1-60 mmol
+  INTEGER,PARAMETER::lookup_i_sal_min   = 30                     ! 30-45 PSU
+  INTEGER,PARAMETER::lookup_i_sal_max   = 45                    ! 30-45 PSU
+  INTEGER,PARAMETER::lookup_i_temp_min  = 271                     ! -2-50degC
+  INTEGER,PARAMETER::lookup_i_temp_max  = 323                    ! -2-50degC
+  REAL,PARAMETER::lookup_Ca_max      = 0.060                    ! 
+  REAL,PARAMETER::lookup_Mg_max   = 0.060                       ! 
+  REAL,PARAMETER::lookup_sal_max   = 45                         ! 
+  REAL,PARAMETER::lookup_temp_max  = 323.15                         ! 
+  ! -------------------- look-up tables ------------------------------------------------------------------------------------------ !
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kcal  ! equilibrium constant kspCal look-up table (Hain et al. 2015)
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_karg  ! equilibrium constant kspArg look-up table (Hain et al. 2015)
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_k1   ! dissociation constant k1 look-up table (Hain et al. 2015)     
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_k2   ! dissociation constant k2 look-up table (Hain et al. 2015)     
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kW   ! dissociation constant kW look-up table (Hain et al. 2015)    
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_k   ! equilibrium constant k look-up table (Hain et al. 2015) 
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kb   ! dissociation constant kb look-up table (Hain et al. 2015)               
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kSO4   ! carbonate constant kb look-up table (Hain et al. 2015)        
 
   ! *** miscellaneous - dummy values ***
   REAL,PARAMETER::const_real_null          = -0.999999E+19                 ! 

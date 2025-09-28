@@ -274,12 +274,6 @@ SUBROUTINE initialise_biogem(                       &
   ! set meta-options and verify self-consistency of chosen parameters
   IF (ctrl_debug_lvl2) print*, 'verify self-consistency of chosen parameters'
   call sub_check_par_biogem()
-  ! initialize carbon cycle sub-systems
-  IF (ctrl_debug_lvl2) print*, 'initialize carbon cycle sub-systems'
-  CALL sub_init_carb()
-  ! initialize gas solubility
-  IF (ctrl_debug_lvl2) print*, 'initialize gas solubility'
-  CALL sub_init_solconst()
   ! initialize geochem lookup tables
   IF (ctrl_debug_lvl2) print*, 'initialize geochem lookup tables'
   SELECT CASE (trim(opt_geochem_Fe))
@@ -321,6 +315,19 @@ SUBROUTINE initialise_biogem(                       &
   IF (ctrl_debug_lvl2) print*, 'initialize orbital data saving'
   CALL sub_init_data_save_orb()
 
+  ! *** load restart information ***
+  IF (ctrl_continuing) then
+     call sub_data_load_rst()
+  end if
+  
+  ! *** finalize ocean carbon cycle setup ***
+  ! initialize carbon cycle sub-systems
+  IF (ctrl_debug_lvl2) print*, 'initialize carbon cycle sub-systems'
+  CALL sub_init_carb()
+  ! initialize gas solubility
+  IF (ctrl_debug_lvl2) print*, 'initialize gas solubility'
+  CALL sub_init_solconst()
+  
   ! *** INITILAIZE NETCDF  ***
   IF (ctrl_debug_lvl2) print*, 'initialize netCDF'
   ! set filenames
@@ -350,11 +357,6 @@ SUBROUTINE initialise_biogem(                       &
      end do
      ! initialise matrix netcdf file
      call sub_init_netcdf_TM(n_wet_grid)
-  end if
-
-  ! *** load restart information ***
-  IF (ctrl_continuing) then
-     call sub_data_load_rst()
   end if
 
   ! *** initialize tracer auditing ***

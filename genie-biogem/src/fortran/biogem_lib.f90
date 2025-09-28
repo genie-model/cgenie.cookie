@@ -328,6 +328,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_bio_remin_AOM_dG0
   real::par_bio_remin_AOM_BEQ                                    ! AOM biological energy quantum (kJ mol-1)
   NAMELIST /ini_biogem_nml/par_bio_remin_AOM_BEQ
+  LOGICAL::ctrl_bio_remin_AOM_OLD                                ! Use old (muffin) zero [O2] threshold for AOM to proceed?
+  NAMELIST /ini_biogem_nml/ctrl_bio_remin_AOM_OLD
   real::par_bio_remin_Rgas                                       ! Gas constant for thermo calculations (kJ K-1 mol-1)
   NAMELIST /ini_biogem_nml/par_bio_remin_Rgas
   real::par_bio_remin_gammaO2                                    ! Activity coefficient for dissolved O2
@@ -379,8 +381,9 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_bio_remin_ci_O2,par_bio_remin_ci_NO3,par_bio_remin_ci_FeOOH,par_bio_remin_ci_SO4
   ! S
   real::par_bio_remin_kH2StoSO4
+  real::par_bio_remin_kH2StoSO4_perM2perhr
   real::par_bio_remin_kH2StoPOMS
-  NAMELIST /ini_biogem_nml/par_bio_remin_kH2StoSO4,par_bio_remin_kH2StoPOMS
+  NAMELIST /ini_biogem_nml/par_bio_remin_kH2StoSO4,par_bio_remin_kH2StoPOMS,par_bio_remin_kH2StoSO4_perM2perhr
   ! N
   CHARACTER(len=63)::opt_bio_remin_oxidize_NH4toNO3              ! NH4 -> NO3 oxidation option
   NAMELIST /ini_biogem_nml/opt_bio_remin_oxidize_NH4toNO3
@@ -686,6 +689,8 @@ MODULE biogem_lib
        & ctrl_data_save_slice_sur
   real::par_data_save_slice_dt                                   ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_slice_dt
+  real::par_data_save_slice_lamdat                               ! Save interval if not using save point definition file (yr)
+  NAMELIST /ini_biogem_nml/par_data_save_slice_lamdat 
   CHARACTER(len=127)::par_infile_slice_name                      !
   NAMELIST /ini_biogem_nml/par_infile_slice_name
   integer::par_data_save_slice_n                                 ! number of timesteps in sub-inteval (e.g., monthly) saving
@@ -718,6 +723,8 @@ MODULE biogem_lib
        & ctrl_data_save_sig_diag_redox_old
   real::par_data_save_sig_dt                                     ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_sig_dt
+  real::par_data_save_sig_lamdat                                 ! Save interval if not using save point definition file (yr)
+  NAMELIST /ini_biogem_nml/par_data_save_sig_lamdat
   CHARACTER(len=127)::par_infile_sig_name                        !
   NAMELIST /ini_biogem_nml/par_infile_sig_name
   LOGICAL::ctrl_data_save_sig_autoend                            ! auto save at run end?
@@ -732,6 +739,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/ctrl_bio_preformed,ctrl_bio_preformed_CsoftPOConly
   LOGICAL::ctrl_bio_remin_redox_save                             ! Create redox/remin data for saving?
   NAMELIST /ini_biogem_nml/ctrl_bio_remin_redox_save
+  LOGICAL::ctrl_data_save_buffering                               ! Calculate various buffering metrics for saving?
+  NAMELIST /ini_biogem_nml/ctrl_data_save_buffering
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !
   integer::par_data_save_level                                   ! Degree of comprehensivity of data saving
   NAMELIST /ini_biogem_nml/par_data_save_level
@@ -765,6 +774,8 @@ MODULE biogem_lib
   CHARACTER(len=127)::par_infile_orb_pts_loc_name                        !
   CHARACTER(len=127)::par_infile_orb_pts_var_name                        !
   NAMELIST /ini_biogem_nml/n_orb_pts_nmax,par_infile_orb_pts_loc_name,par_infile_orb_pts_var_name
+  LOGICAL::ctrl_data_echo_runtime_NEW                             ! NEW format runtime output?
+  NAMELIST /ini_biogem_nml/ctrl_data_echo_runtime_NEW  
   ! ------------------- TRACER AUDITING AND DEBUGGING OPTIONS -------------------------------------------------------------------- !
   LOGICAL::ctrl_audit                                            ! audit tracer inventory?
   LOGICAL::ctrl_audit_fatal                                      ! halt on audit fail?
@@ -786,8 +797,9 @@ MODULE biogem_lib
   integer::par_force_point_j                                     ! 'j' coordinate of point forcing
   integer::par_force_point_k                                     ! 'k' coordinate of point forcing
   NAMELIST /ini_biogem_nml/par_force_point_i,par_force_point_j,par_force_point_k
-  REAL::par_force_invert_ohmega                                  ! surface ocean saturation state target
-  NAMELIST /ini_biogem_nml/par_force_invert_ohmega
+  REAL::par_force_invert_ohmega                                  ! surface ocean saturation target -- inversion
+  REAL::par_force_restore_ohmega                                 ! surface ocean saturation target -- restoring
+  NAMELIST /ini_biogem_nml/par_force_invert_ohmega,par_force_restore_ohmega
   REAL::par_force_invert_wtpctcaco3                              ! Sediment wt% CaCO3 target
   NAMELIST /ini_biogem_nml/par_force_invert_wtpctcaco3
   logical::ctrl_force_invert_noneg                              ! prevent negative inversion fluxes (i.e. no removal)
@@ -803,6 +815,8 @@ MODULE biogem_lib
   logical::ctrl_force_ocn_age                                   ! automatic ocean age tracer
   logical::ctrl_force_ocn_age1                                  ! Or ... automatic ocean age single-tracer tracer?
   NAMELIST /ini_biogem_nml/ctrl_force_ocn_age,ctrl_force_ocn_age1
+  REAL::par_force_FCaCO3                                        ! CaCO3 flux (for saturaton restoring) (mol yr-1)
+  NAMELIST /ini_biogem_nml/par_force_FCaCO3
   ! ---------------- TRANSPORT MATRIX---------------------------!
   LOGICAL::ctrl_data_diagnose_TM !                              ! diagnose matrix in run?
   NAMELIST /ini_biogem_nml/ctrl_data_diagnose_TM
@@ -846,7 +860,8 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_diag_bio                           = 23 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
   INTEGER,PARAMETER::n_diag_precip                        = 09 ! 
-  INTEGER,PARAMETER::n_diag_react                         = 11 !! YK modified 12.28.2020 (overwriting _DEV_tracers where n_diag_react = 09; 03.19.2021)
+  INTEGER,PARAMETER::n_diag_react                         = 11 ! YK modified 12.28.2020
+  !                                                              (overwriting _DEV_tracers where n_diag_react = 09; 03.19.2021)
   INTEGER,PARAMETER::n_diag_iron                          = 09 ! As in _DEV_tracers (03.19.2021)
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
@@ -1296,6 +1311,7 @@ MODULE biogem_lib
   REAL,DIMENSION(n_carbalk,n_i,n_j,n_k)::carbalk                 !
   REAL,DIMENSION(n_carbisor,n_i,n_j,n_k)::carbisor               ! carbonate (carbon) isotopic properties array
   REAL,DIMENSION(3,n_i,n_j,n_k)::carb_TSn                        !
+  REAL,DIMENSION(n_i,n_j,n_k)::carb_Hrst                         ! restart [H+]
   ! diagnostics
   REAL,DIMENSION(n_diag_bio,n_i,n_j)::diag_bio                   ! biology diagnostics
   REAL,DIMENSION(n_diag_geochem_old,n_i,n_j,n_k)::diag_geochem_old ! geochemistry diagnostics -- OLD
@@ -1312,6 +1328,10 @@ MODULE biogem_lib
   real,DIMENSION(:,:,:,:),ALLOCATABLE::diag_redox                ! redox diagnostics
   REAL,DIMENSION(n_sed,n_i,n_j)::diag_ecogem_part                !
   REAL,DIMENSION(n_ocn,n_i,n_j)::diag_ecogem_remin               !
+  ! MISC
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_errsum                  ! total sum of accumulated occurrence of falures to solve pH 
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_pH                 ! change in the sum of occurrences of falure to solve pH 
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_it                 ! change in the sum of occurrences of excessive pH iterations
 
   ! *** integrated (time-averaged) time-series storage scalars and vectors ***
   !

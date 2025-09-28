@@ -82,29 +82,44 @@ CONTAINS
   ! ****************************************************************************************************************************** !
   ! CALCULATE PISTON VELOCITY
   SUBROUTINE sub_calc_pv(dum_i,dum_j)
-    ! dummy arguments
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
     INTEGER::dum_i,dum_j
-    ! local variables
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     integer::l,ia
     REAL::loc_Sc
     REAL::loc_TC,loc_TC2,loc_TC3
     real::loc_u2
-    ! set local variables
-    ! temperature powers
-    ! NOTE: temeprature must be converted to the correct units (degrees C)
+    real::loc_Tmin                                             ! minimum temperature limit
+    real::loc_Tmax                                             ! maximum temperature limit
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! set temperature limits
     ! NOTE: original valid temperature range was 0 - 30 C for the Schmidt number empirical fit - see: Wanninkhof et al. [1992]
-    if (ocn(io_T,dum_i,dum_j,n_k) <  (const_zeroC +  par_geochem_Tmin))  then
-       loc_TC = par_geochem_Tmin
-    elseif (ocn(io_T,dum_i,dum_j,n_k) > (const_zeroC + par_geochem_Tmax)) then
-       loc_TC = par_geochem_Tmax
+    ! NOTE: now in place of par_geochem_Tmin and par_geochem_Tmax
+    loc_Tmin =  0.0
+    loc_Tmax = 30.0
+    ! -------------------------------------------------------- ! limit temperature range
+    ! NOTE: temeprature must be converted to the correct units (degrees C)
+    if (ocn(io_T,dum_i,dum_j,n_k) <  (const_zeroC +  loc_Tmin))  then
+       loc_TC = loc_Tmin
+    elseif (ocn(io_T,dum_i,dum_j,n_k) > (const_zeroC + loc_Tmax)) then
+       loc_TC = loc_Tmax
     else
        loc_TC = ocn(io_T,dum_i,dum_j,n_k) - const_zeroC
     endif
+    ! -------------------------------------------------------- ! temperature powers
     loc_TC2 = loc_TC*loc_TC
     loc_TC3 = loc_TC2*loc_TC
-    ! wind speed^2
+    ! -------------------------------------------------------- ! wind speed^2
     loc_u2 = phys_ocnatm(ipoa_wspeed,dum_i,dum_j)**2
-    !  calculate piston velocity
+    ! -------------------------------------------------------- !
+    ! CALCULATE PISTON VELOCITY
+    ! -------------------------------------------------------- !
     DO l=3,n_l_atm
        ia = conv_iselected_ia(l)
        IF (atm_type(ia) == 1) then
@@ -121,6 +136,9 @@ CONTAINS
           ocnatm_airsea_pv(ia,dum_i,dum_j) = conv_cm_m*conv_yr_hr*par_gastransfer_a*loc_u2*(loc_Sc*1.515E-3)**(-0.5)
        end if
     end do
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
   END SUBROUTINE sub_calc_pv
   ! ****************************************************************************************************************************** !
 
@@ -168,6 +186,8 @@ CONTAINS
     ! area available for air-sea gas transfer
     loc_A = (1.0 - phys_ocnatm(ipoa_seaice,dum_i,dum_j))*phys_ocnatm(ipoa_A,dum_i,dum_j)
     ! maximum fraction consumed in any given geochemical reaction
+    ! NOTE: this is only applied to the implicit H2S transfer to the atmosphere and associated instantanneous and complete oxidation
+    !       i.e., effectively placing a limit on the maximum rate of H2S consumption as per in other true aqueous reactions
     loc_f = dum_dtyr/par_bio_geochem_tau
     ! -------------------------------------------------------- !
     ! calculate air-sea gas exchange fluxes
@@ -211,14 +231,14 @@ CONTAINS
              elseif (io == io_H2S) then
                 ! make special case of H2S if it is being implicitly oxidized in the atmosphere
                 loc_ocn = ocn(io,dum_i,dum_j,n_k)
-                 select case (opt_ocnatmH2S_fix)
-                 case ('KMM','KMM_lowO2') ! default
-                    ! set 'buffer' to maximum fraction allowed in a geochem reaction
-                    ! (becasue we are implicitly allowing an oxidation reaction to occur in the atmosphere)
-                    loc_buff = loc_f                
-                 case default
-                    loc_buff = 1.0
-                 end select
+                select case (opt_ocnatmH2S_fix)
+                case ('KMM','KMM_lowO2') ! default
+                   ! set 'buffer' to maximum fraction allowed in a geochem reaction
+                   ! (becasue we are implicitly allowing an oxidation reaction to occur in the atmosphere)
+                   loc_buff = loc_f                
+                case default
+                   loc_buff = 1.0
+                end select
              else
                 loc_ocn = ocn(io,dum_i,dum_j,n_k)
                 loc_buff = 1.0
@@ -2191,6 +2211,9 @@ CONTAINS
           call sub_adj_carbconst(           &
                & ocn(io_Ca,dum_i,dum_j,k),  &
                & ocn(io_Mg,dum_i,dum_j,k),  &
+               & ocn(io_S,dum_i,dum_j,k), &
+               & ocn(io_T,dum_i,dum_j,k),&
+               & phys_ocn(ipo_Dmid,dum_i,dum_j,k), &
                & carbconst(:,dum_i,dum_j,k) &
                & )
        end if
@@ -2200,7 +2223,10 @@ CONTAINS
        IF (.NOT. ocn_select(io_SO4)) ocn(io_SO4,dum_i,dum_j,k) = fun_calc_SO4tot(ocn(io_S,dum_i,dum_j,k))
        IF (.NOT. ocn_select(io_F))   ocn(io_F,dum_i,dum_j,k)   = fun_calc_Ftot(ocn(io_S,dum_i,dum_j,k))
        ! re-calculate surface ocean carbonate chemistry
-       CALL sub_calc_carb(             &
+       CALL sub_calc_carb(                &
+            & 'biogem_box.f90/sub_calc_precip_CaCO3', &
+            & .true.,                     &
+            & par_carbchem_pH_tolerance,  &
             & ocn(io_DIC,dum_i,dum_j,k),  &
             & ocn(io_ALK,dum_i,dum_j,k),  &
             & ocn(io_Ca,dum_i,dum_j,k),   &

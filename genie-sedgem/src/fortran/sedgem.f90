@@ -38,7 +38,7 @@ SUBROUTINE sedgem(          &
   real::loc_187Os,loc_188Os
   real::loc_alpha,loc_R,loc_delta
   real::loc_depsilon                                           ! 
-  real::loc_fsed                                               !
+  real::loc_fsed,loc_tot_fsed                                  !
   real::loc_tot_Mg,loc_tot_Ca                                  ! mean (simply area-weighted) benthic cation concentrations
   real,DIMENSION(n_sed,n_i,n_j)::loc_sfxsumsed_OLD                      ! sediment rain flux interface array (COPY)
   real,DIMENSION(n_sed,n_i,n_j)::loc_sed_fsed_OLD                      ! 
@@ -59,8 +59,9 @@ SUBROUTINE sedgem(          &
   loc_fhydrothermal(:)           = 0.0
   loc_flowTalteration(:)         = 0.0
   loc_phys_sed_mask_deepsea(:,:) = 0.0
-  loc_tot_Mg = 0.0
-  loc_tot_Ca = 0.0
+  loc_tot_Mg                     = 0.0
+  loc_tot_Ca                     = 0.0
+  loc_tot_fsed                   = 0.0
 
   ! *** CALCULATE SEDGEM TIME STEP ***
   IF (ctrl_misc_debug4) print*,'*** CALCULATE SEDGEM TIME ***'
@@ -148,6 +149,7 @@ SUBROUTINE sedgem(          &
   IF (ctrl_misc_debug4) print*,'*** UPDATE CARBONATE CHEMSITRY ***'
   ! NOTE: do not update carbonate chemsitry if it is not 'needed' -- i.e. mud cells when OMENSED is not used
   !       (should help with carbonate chemsitry stability in some cases)
+  ! NOTE: log carb chem errors (which are reported as part of the SEDGEM netCDF output)
   DO i=1,n_i
      DO j=1,n_j
         IF ( sed_mask(i,j) .AND. ( (.NOT. sed_mask_muds(i,j)) .OR. (par_sed_diagen_Corgopt=='huelse2016') ) ) then
@@ -161,10 +163,16 @@ SUBROUTINE sedgem(          &
               call sub_adj_carbconst(          &
                    & dum_sfcsumocn(io_Ca,i,j), &
                    & dum_sfcsumocn(io_Mg,i,j), &
+                   & dum_sfcsumocn(io_S,i,j), &
+                   & dum_sfcsumocn(io_T,i,j),&
+                   & phys_sed(ips_D,i,j),     &
                    & sed_carbconst(:,i,j)      &
                    & )
            end if
            call sub_calc_carb(                &
+                & 'sedgem.f90/sedgem',        &
+                & .true.,                     &
+                & par_carbchem_pH_tolerance,  &
                 & dum_sfcsumocn(io_DIC,i,j),  &
                 & dum_sfcsumocn(io_ALK,i,j),  &
                 & dum_sfcsumocn(io_Ca,i,j),   &
@@ -205,6 +213,8 @@ SUBROUTINE sedgem(          &
   ! *** EARLY DIAGENESIS PROCESSES ***
   ! NOTE: <dum_sfxsumsed> in units of (mol m-2 per time-step)
   ! NOTE: dum_sfxocn(io,:,:) in units of (mol m-2 s-1)
+  ! NOTE: par_sed_fdet, <sed_fsed_det(:,:)> in units of (mol cm-2)
+  loc_tot_fsed = 0.0
   DO i=1,n_i
      DO j=1,n_j
         IF (sed_mask(i,j)) THEN
@@ -214,9 +224,13 @@ SUBROUTINE sedgem(          &
            ! NOTE: add a switch for excluding pelagic (dust) detrital flux reaching the seafloor
            !       automatically combine prescribed (uniform) sed det flux PLUS a spatial burial flux
            ! NOTE: if an opal flux is provided but opal is not selected as a tracer, add to the detrital field
+           ! NOTE: dum_sfxsumsed(is_det,i,j) == det flux form BIOGEM
+           !       par_sed_fdet              == uniform prescibed additional flux
+           !       sed_Fsed_det              == alternative prescibed detrital flux field
+           !       at sedcore locations, sed_Fsed_det is over-written by ncMAR if defined
            if (sed_select(is_det)) then
               if (ctrl_sed_det_NOdust) then
-                 ! zero det flux, which at this point is assumed to be all pelagic (dust)
+                 ! set zero det flux, which as passed form BIOGEM is assumed to be all pelagic (dust)
                  dum_sfxsumsed(is_det,i,j) = 0.0
               endif
               if (ctrl_sed_Fdet) then
@@ -232,9 +246,17 @@ SUBROUTINE sedgem(          &
               else
                  ! add prescribed (uniform) sed det flux to whatever pelagic source reaches the seafloor
                  dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
-                      & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet              
+                      & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet
+
               endif
            endif
+           ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
+           ! NOTE: in the case of ctrl_sed_Fdet==.true. and a 2D sed_Fsed_det field,
+           !       sedcore ncMAR has already replaced sed_Fsed_det at those locations
+           if (ctrl_sed_Fdet_sedcore .AND. sed_save_mask(i,j)) then
+              dum_sfxsumsed(is_det,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
+           end if
+           ! assign det age
            if (sed_select(is_det_age)) then
               if (ctrl_sed_Fdet) then
                  dum_sfxsumsed(is_det_age,i,j) = sed_age*conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
@@ -291,15 +313,32 @@ SUBROUTINE sedgem(          &
               end if
            end if
         end IF
+        ! make global reefal CaCO3 flux estimate (mol yr-1)
+        ! NOTE: precipitation rate scaling constant units is (mol cm-2 yr-1)
+        if (sed_mask_reef(i,j)) then
+           if (par_sed_reef_calcite) then
+              loc_tot_fsed = loc_tot_fsed + phys_sed(ips_A,i,j) * &
+                   & conv_m2_cm2*par_sed_reef_CaCO3precip_sf*(sed_carb(ic_ohm_cal,i,j) - 1.0)**par_sed_reef_CaCO3precip_exp
+           else
+              loc_tot_fsed = loc_tot_fsed + phys_sed(ips_A,i,j) * &
+                   & conv_m2_cm2*par_sed_reef_CaCO3precip_sf*(sed_carb(ic_ohm_arg,i,j) - 1.0)**par_sed_reef_CaCO3precip_exp
+           end if
+        end IF
      end DO
   end DO
   ! deselect ash fall
   if (sed_select(is_ash)) then
      if (par_sed_ashevent) par_sed_ashevent = .false.
   endif
+  ! adjust reefal precipitation scaling so that global precip == par_sed_CaCO3burialTOT
+  if ( (par_sed_CaCO3burialTOT > const_real_nullsmall) .AND. (par_sed_reef_CaCO3precip_sf > const_real_nullsmall) ) then
+     if (loc_tot_fsed > const_real_nullsmall) then
+        par_sed_reef_CaCO3precip_sf = par_sed_reef_CaCO3precip_sf*(par_sed_CaCO3burialTOT/loc_tot_fsed)
+     end if
+  end if
 
-  ! *** FORAM TRACERS ***
-  ! 
+  ! *** ADD FORAM TRACERS ***
+  IF (ctrl_misc_debug4) print*,'*** ADD FORAM TRACERS ***'
   DO i=1,n_i
      DO j=1,n_j
         IF (sed_mask(i,j)) THEN
@@ -709,6 +748,30 @@ SUBROUTINE sedgem(          &
   ! update sediment interface composition data
   dum_sfcsed(:,:,:) = fun_sed_coretop()
 
+  ! *** CREATE LONG-TERM AVERAGE ***
+  IF (ctrl_misc_debug4) print*,'*** CREATE LONG-TERM AVERAGE ***'
+  if (par_sed_save_av_dtyr > sed_age) then
+     sed_av_fsed(:,:,:)     = sed_av_fsed(:,:,:)     + (loc_dtyr/par_sed_save_av_dtyr)*sed_fsed(:,:,:)
+     sed_av_fdis(:,:,:)     = sed_av_fdis(:,:,:)     + (loc_dtyr/par_sed_save_av_dtyr)*sed_fdis(:,:,:)
+     sed_av_coretop(:,:,:)  = sed_av_coretop(:,:,:)  + (loc_dtyr/par_sed_save_av_dtyr)*dum_sfcsed(:,:,:)
+     sed_av_diag_err(:,:,:) = sed_av_diag_err(:,:,:) + (loc_dtyr/par_sed_save_av_dtyr)*sed_diag_err(:,:,:)
+  end if
+  
+  ! *** UPDATE SEDGEM TIME ***
+  IF (ctrl_misc_debug4) print*,'*** UPDATE SEDGEM TIME ***'
+  ! update sediment age (== current time in years)
+  sed_age = sed_age - loc_dtyr
+  
+  ! *** CHECK FOR EXIT ***
+  ! catch any carbonate chemistry errors arising in sub_update_sed
+  IF (ctrl_misc_debug4) print*,'*** CHECK FOR EXIT ***'
+  if (error_stop) then
+     call end_sedgem(     &
+          & dum_dts,      &
+          & dum_sfcsumocn &
+          & )
+  end if
+  
   ! *** DEBUG ***
   ! print some debugging info if 'ctrl_misc_debug1' option is selected
   IF (ctrl_misc_debug1) THEN
@@ -742,42 +805,6 @@ SUBROUTINE sedgem(          &
      print*,'---'
      print*,''
   end if
-  ! catch any carbonate chemistry errors arising in sub_update_sed
-  if (error_stop) then
-     call end_sedgem(     &
-          & dum_dts,      &
-          & dum_sfcsumocn &
-          & )
-  end if
-
-!!$  ! *** RUN-TIME OUTPUT ***
-!!$  ! GHC 20/05/09 - Save time-series output
-!!$  IF (ctrl_timeseries_output) THEN
-!!$     ! increment timestep counter  
-!!$     tstep_count = tstep_count + 1  
-!!$     ! if output due then change year  
-!!$     CALL sub_output_year()  
-!!$     IF (tstep_count.eq.output_tsteps_0d(output_counter_0d)) THEN
-!!$        call sub_data_save_seddiag_GLOBAL(loc_dtyr,dum_sfcsumocn)  
-!!$     ENDIF
-!!$     IF (tstep_count.eq.output_tsteps_2d(output_counter_2d)) THEN
-!!$        ! save requested sediment cores as ASCII     
-!!$        ! call sub_sedgem_save_sedcore()
-!!$        ! save oecan-sediment interface properties
-!!$        !if (ctrl_data_save_ascii) call sub_data_save_seddiag_2D(loc_dtyr,dum_sfcsumocn)
-!!$        call sub_save_netcdf(year)
-!!$        call sub_save_netcdf_sed2d(loc_dtyr,dum_sfcsumocn)
-!!$        call sub_closefile(ntrec_siou)
-!!$        ntrec_sout = ntrec_sout + 1  
-!!$     ENDIF
-!!$     ! if output then increment output counter  
-!!$     CALL sub_output_counters()
-!!$  ENDIF
-
-  ! *** UPDATE SEDGEM TIME ***
-  IF (ctrl_misc_debug4) print*,'*** UPDATE SEDGEM TIME ***'
-  ! update sediment age (== current time in years)
-  sed_age = sed_age - loc_dtyr
 
 end SUBROUTINE sedgem
 ! ******************************************************************************************************************************** !

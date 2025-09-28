@@ -78,6 +78,7 @@ subroutine biogem(        &
   real::loc_M
   real,dimension(1:n_l_ocn)::loc_vocn                            !
   real,dimension(n_l_ocn,n_l_sed)::loc_conv_ls_lo                !
+  real,dimension(2)::loc_carb_RF0_SF0
 
   loc_debug_ij = .FALSE.
 
@@ -276,7 +277,10 @@ subroutine biogem(        &
                  IF (force_restore_ocn_select(io_colr)) THEN
                     loc_force_actual = loc_force_actual + loc_k_icefree*carb(ic_H,i,j,n_k)/loc_k_tot_icefree
                  end if
-              end IF
+              elseif (par_force_restore_ohmega > const_real_nullsmall) then
+                 ! direct OHM restoring (calcite)
+                 loc_force_actual = loc_force_actual + loc_k_icefree*carb(ic_ohm_cal,i,j,n_k)/loc_k_tot_icefree
+              end if
               ! calc mean DIC (or DOC) d13C
               IF ( &
                    & (force_restore_ocn_select(io_DIC_13C) .OR. force_restore_ocn_select(io_DOM_C_13C)) &
@@ -812,6 +816,7 @@ subroutine biogem(        &
            ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> !
 
            IF (n_k >= loc_k1) THEN
+              
               n = n + 1
 
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
@@ -837,6 +842,9 @@ subroutine biogem(        &
                        call sub_adj_carbconst(   &
                             & ocn(io_Ca,i,j,k),  &
                             & ocn(io_Mg,i,j,k),  &
+                            & ocn(io_S,i,j,k), &
+                            & ocn(io_T,i,j,k),&
+                            & phys_ocn(ipo_Dmid,i,j,k), &
                             & carbconst(:,i,j,k) &
                             & )
                     end if
@@ -847,6 +855,9 @@ subroutine biogem(        &
                     IF (.NOT. ocn_select(io_F))   ocn(io_F,i,j,k)   = fun_calc_Ftot(ocn(io_S,i,j,k))
                     ! re-calculate surface ocean carbonate chemistry
                     CALL sub_calc_carb(        &
+                         & 'biogem.f90/biogem', &
+                         & .true.,             &
+                         & par_carbchem_pH_tolerance, &
                          & ocn(io_DIC,i,j,k),  &
                          & ocn(io_ALK,i,j,k),  &
                          & ocn(io_Ca,i,j,k),   &
@@ -880,12 +891,22 @@ subroutine biogem(        &
                             & carbisor(:,i,j,k)      &
                             & )
                     end IF
+                    ! update accumulated carbchem error occurrence array
+                    diag_carb_errsum(i,j,k) = diag_carb_errsum(i,j,k) + carb(ic_err,i,j,k)
+                    ! update accumulated carbchem errors since last time-series save point
+                    diag_carb_derr_pH(i,j,k) = diag_carb_derr_pH(i,j,k) + carb(ic_err,i,j,k)
+                    if (carb(ic_pH_n,i,j,k) > par_carbchem_pH_iterationmax) then
+                       diag_carb_derr_it(i,j,k) = diag_carb_derr_it(i,j,k) + 1.0
+                    end if
                  end do
-                 ! estimate Revelle factor
-                 ! NOTE: surface only property
-                 CALL sub_calc_carb_RF0(      &
+                 ! surface-only properties only! -- estimate Revelle (and 'sensitivity') factor
+                 ! NOTE: always calculate this -- needed in air-sea gas excahnge (limitation)
+                 ! NOTE: for RF used in air-sea gas exchange limitaiton -- use same pH tolerance as per for pH solving
+                 loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
+                      & par_carbchem_pH_tolerance, &
                       & ocn(io_DIC,i,j,n_k),  &
                       & ocn(io_ALK,i,j,n_k),  &
+                      & ocn(io_Ca,i,j,n_k),   &
                       & ocn(io_PO4,i,j,n_k),  &
                       & ocn(io_SiO2,i,j,n_k), &
                       & ocn(io_B,i,j,n_k),    &
@@ -896,6 +917,46 @@ subroutine biogem(        &
                       & carbconst(:,i,j,n_k), &
                       & carb(:,i,j,n_k)       &
                       & )
+                 carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
+                 carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
+                 ! surface-only properties only! -- estimate ALK addition efficiency factor
+                 ! NOTE: only used in time-series diagnostics ...
+                 if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
+                    carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
+                         & par_carbchem_pH_tolerance,               &
+                         & ocn(io_DIC,i,j,n_k),  &
+                         & ocn(io_ALK,i,j,n_k),  &
+                         & ocn(io_Ca,i,j,n_k),   &
+                         & ocn(io_PO4,i,j,n_k),  &
+                         & ocn(io_SiO2,i,j,n_k), &
+                         & ocn(io_B,i,j,n_k),    &
+                         & ocn(io_SO4,i,j,n_k),  &
+                         & ocn(io_F,i,j,n_k),    &
+                         & ocn(io_H2S,i,j,n_k),  &
+                         & ocn(io_NH4,i,j,n_k),  &
+                         & carbconst(:,i,j,n_k), &
+                         & carb(:,i,j,n_k)       &
+                         & )
+                 end if
+                 ! surface-only properties only! -- estimate DIC addition CaCO3 neutralization factor
+                 ! NOTE: only used in time-series diagnostics ...
+                 if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
+                    carb(ic_RdALKdDIC,i,j,n_k) = fun_calc_carb_NF0( &
+                         & par_carbchem_pH_tolerance,               &
+                         & ocn(io_DIC,i,j,n_k),  &
+                         & ocn(io_ALK,i,j,n_k),  &
+                         & ocn(io_Ca,i,j,n_k),   &
+                         & ocn(io_PO4,i,j,n_k),  &
+                         & ocn(io_SiO2,i,j,n_k), &
+                         & ocn(io_B,i,j,n_k),    &
+                         & ocn(io_SO4,i,j,n_k),  &
+                         & ocn(io_F,i,j,n_k),    &
+                         & ocn(io_H2S,i,j,n_k),  &
+                         & ocn(io_NH4,i,j,n_k),  &
+                         & carbconst(:,i,j,n_k), &
+                         & carb(:,i,j,n_k)       &
+                         & )
+                 end if
               end if
 
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
@@ -1023,7 +1084,44 @@ subroutine biogem(        &
                  !
                  ! ############################################################################################################### !
               end SELECT
-
+              ! OCEAN TRACERS #4 -- SATURATION
+              ! NOTE: we are adding/subtracting CaCO3 (flux == par_force_FCaCO3)
+              ! NOTE: keep adjustment flux isotopically neutral to each box
+              ! NOTE: locijk_focn is in units of mol yr-1
+              if (par_force_restore_ohmega > const_real_nullsmall) then
+                 ! set current and target values for consistency
+                 ! NOTE: loc_force_actual set earlier
+                 loc_force_target = par_force_restore_ohmega
+                 ! calculate the sign of the ALK (and DIC and Ca2+) input
+                 If (loc_force_target > loc_force_actual) then
+                    loc_force_sign = 1.0
+                 else
+                    loc_force_sign = -1.0
+                 end If
+                 ! calculate fluxes
+                 ! NOTE: raw scaling fluxes are in units mol yr-1 and need to be distributed across all (surface) grid points
+                 if (ocn_select(io_DIC)) locijk_focn(io_DIC,i,j,n_k) = loc_force_sign*par_force_FCaCO3/real(loc_n_k_tot)
+                 if (ocn_select(io_ALK)) locijk_focn(io_ALK,i,j,n_k) = 2.0*loc_force_sign*par_force_FCaCO3/real(loc_n_k_tot)
+                 if (ocn_select(io_Ca)) locijk_focn(io_Ca,i,j,n_k)   = loc_force_sign*par_force_FCaCO3/real(loc_n_k_tot)
+                 IF (ocn_select(io_DIC_13C)) then
+                    locijk_focn(io_DIC_13C,i,j,n_k) = locijk_focn(io_DIC,i,j,n_k)*ocn(io_DIC_13C,i,j,n_k)/ocn(io_DIC,i,j,n_k)
+                 end if
+                 IF (ocn_select(io_Ca_44Ca)) then
+                    locijk_focn(io_Ca_44Ca,i,j,n_k) = locijk_focn(io_Ca,i,j,n_k)*ocn(io_Ca_44Ca,i,j,n_k)/ocn(io_Ca,i,j,n_k)
+                 end if
+                 ! record total flux forcing
+                 diag_forcing_ocn(io_ALK)      = diag_forcing_ocn(io_ALK)    + locijk_focn(io_ALK,i,j,n_k)
+                 diag_forcing_ocn(io_DIC)     = diag_forcing_ocn(io_DIC)     + locijk_focn(io_DIC,i,j,n_k)
+                 diag_forcing_ocn(io_Ca)      = diag_forcing_ocn(io_Ca)      + locijk_focn(io_Ca,i,j,n_k)
+                 diag_forcing_ocn(io_DIC_13C) = diag_forcing_ocn(io_DIC_13C) + locijk_focn(io_DIC_13C,i,j,n_k)
+                 diag_forcing_ocn(io_Ca_44Ca) = diag_forcing_ocn(io_Ca_44Ca) + locijk_focn(io_Ca_44Ca,i,j,n_k)
+                 ! record diagnostics
+                 diag_misc_2D(idiag_misc_2D_FALK,i,j)     = locijk_focn(io_ALK,i,j,n_k)
+                 diag_misc_2D(idiag_misc_2D_FDIC,i,j)     = locijk_focn(io_DIC,i,j,n_k)
+                 diag_misc_2D(idiag_misc_2D_FDIC_13C,i,j) = locijk_focn(io_DIC_13C,i,j,n_k)
+                 diag_misc_2D(idiag_misc_2D_FCa,i,j)      = locijk_focn(io_Ca,i,j,n_k)
+              end if
+              
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** EXTERNAL FLUX FORCING ***'
               ! *** EXTERNAL FLUX FORCING ***
@@ -1105,7 +1203,7 @@ subroutine biogem(        &
                  locijk_focn(1,i,j,loc_k1) = locijk_focn(1,i,j,loc_k1) + &
                       & conv_yr_s*par_Fgeothermal*phys_ocn(ipo_A,i,j,loc_k1)/(conv_kg_g*const_Cp)
               end if
-
+              
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** INVERSIONS ***'
               if (force_restore_ocn_select(io_DIC_14C) .AND. force_flux_ocn_select(io_DIC_14C)) THEN
@@ -2133,8 +2231,8 @@ subroutine biogem_tracercoupling( &
   ! ---------------------------------------------------------- !
   real,intent(inout),dimension(intrac_ocn,n_i,n_j,n_k)::dum_ts  ! NOTE: number of tracers in GOLDSTEIN used in dimension #1
   real,intent(inout),dimension(intrac_ocn,n_i,n_j,n_k)::dum_ts1 ! NOTE: number of tracers in GOLDSTEIN used in dimension #1
-  real,intent(in),   dimension(n_sed,n_i,n_j,n_k)     ::dum_egbg_sfcpart  ! ecology-interface: particulate composition change; ocn grid
-  real,intent(in),   dimension(n_ocn,n_i,n_j,n_k)     ::dum_egbg_sfcremin ! ecology-interface: ocean tracer composition change; ocn grid
+  real,intent(in),   dimension(n_sed,n_i,n_j,n_k)     ::dum_egbg_sfcpart  ! ecology-interface: part. composition change; ocn grid
+  real,intent(in),   dimension(n_ocn,n_i,n_j,n_k)     ::dum_egbg_sfcremin ! ecology-interface: ocean composition change; ocn grid
   real,intent(out),  dimension(n_ocn,n_i,n_j,n_k)     ::dum_egbg_sfcocn   ! ecology-interface: ocean tracer composition; ocn grid
   integer(kind=8),INTENT(IN)::dum_genie_clock                    ! genie clock (ms since start) NOTE: 8-byte integer
   ! ---------------------------------------------------------- !
@@ -3150,20 +3248,22 @@ subroutine diag_biogem( &
        & .OR. &
        & (error_stop) &
        & ) then
-     IF (ctrl_debug_lvl1) print*, '*** RUN-TIME REPORTING ***'
-     ! run-time data echo-ing
-     ! ### UN-COMMENT TO PERIODICALLY RE-PRINT HEADER INFORMATION ############################################################### !
-     ! if (mod(par_data_save_sig_i,50) == 0) par_misc_t_echo_header = .TRUE.
-     ! ########################################################################################################################## !
-     if (error_stop) par_misc_t_echo_header = .TRUE.
-     CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax)
-     call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
-     ! carry out tracer audit + echo max,min ocean tracer values (and location)
-     ! NOTE: use audit switch to turn on/off
-     IF (ctrl_audit) THEN
-        CALL sub_echo_maxmin()
-        CALL sub_audit_update()
-     END IF
+     if (.NOT. ctrl_data_echo_runtime_NEW) then
+        IF (ctrl_debug_lvl1) print*, '*** RUN-TIME REPORTING ***'
+        ! run-time data echo-ing
+        if (error_stop) par_misc_t_echo_header = .TRUE.
+        CALL sub_calc_psi(phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax)
+        call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
+        ! carry out tracer audit + echo max,min ocean tracer values (and location)
+        ! NOTE: use audit switch to turn on/off
+        IF (ctrl_audit) THEN
+           CALL sub_echo_maxmin()
+           CALL sub_audit_update()
+        END IF
+     else        
+        ! print runtime header
+        call sub_echo_runtimehead()
+     end if
   end IF if_report
 
 end subroutine diag_biogem
@@ -3235,7 +3335,7 @@ SUBROUTINE diag_biogem_timeslice( &
   logical,intent(in)::dum_gemlite                                ! in GEMlite phase of cycle?
   ! local variables
   INTEGER::i,j,k,l,io,ia,is
-  integer::loc_k1                                                !
+  integer::loc_k1,loc_k                                               !
   real::loc_t,loc_dts,loc_dtyr                                   !
   real::loc_yr_save                                              !
   REAL,DIMENSION(0:n_j,0:n_k)::loc_opsi,loc_zpsi,loc_opsia,loc_opsip !
@@ -3248,7 +3348,13 @@ SUBROUTINE diag_biogem_timeslice( &
   integer::n,nloc,nvar
   CHARACTER(len=255)::loc_filename                           ! filename string
   CHARACTER(len=6)::loc_locstr                               !
-
+  real,dimension(2)::loc_carb_RF0_SF0
+  ! local carbonate chemsitry arrays
+  REAL,DIMENSION(n_carb,n_i,n_j,n_k)::loc_carb               !
+  REAL,DIMENSION(n_carbconst,n_i,n_j,n_k)::loc_carbconst     !
+  REAL,DIMENSION(n_carbalk,n_i,n_j,n_k)::loc_carbalk         !
+  REAL,DIMENSION(n_carbisor,n_i,n_j,n_k)::loc_carbisor       !
+  
   ! *** TIME-SLICE DATA UPDATE ***
   IF (ctrl_debug_lvl1) print*, '*** TIME-SLICE DATA UPDATE ***'
   ! update time slice data
@@ -3280,12 +3386,13 @@ SUBROUTINE diag_biogem_timeslice( &
 
         if_save3: if (dum_save) then
 
-           ! reconstruct local interface fluxes and update whole-ocean carbonate equilibrium
+           ! reconstruct local interface fluxes
            IF (opt_select(iopt_select_carbchem) .AND. ctrl_data_save_slice_carb_update) THEN
               DO i=1,n_i
                  DO j=1,n_j
                     loc_k1 = goldstein_k1(i,j)
                     IF (n_k >= loc_k1) THEN
+                       ! [wet grid points]
                        ! ocn->atm
                        ! NOTE: convert units from (mol m-2 s-1) to (mol yr-1)
                        DO l=3,n_l_atm
@@ -3304,78 +3411,183 @@ SUBROUTINE diag_biogem_timeslice( &
                           io = conv_iselected_io(l)
                           locij_fsedocn(io,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxocn1(io,i,j)
                        end do
-                    end IF
-                    DO k=goldstein_k1(i,j),n_k
-                       ! calculate carbonate dissociation constants
-                       CALL sub_calc_carbconst(           &
-                            & phys_ocn(ipo_Dmid,i,j,k), &
-                            & ocn(io_T,i,j,k),          &
-                            & ocn(io_S,i,j,k),          &
-                            & carbconst(:,i,j,k)        &
-                            & )
-                       ! adjust carbonate constants
-                       if (ocn_select(io_Ca) .AND. ocn_select(io_Mg)) then
-                          call sub_adj_carbconst(   &
-                               & ocn(io_Ca,i,j,k),  &
-                               & ocn(io_Mg,i,j,k),  &
-                               & carbconst(:,i,j,k) &
-                               & )
+                    end if
+                 end do
+              end do
+           end if    
+
+           ! update whole-ocean carbonate equilibrium
+           ! NOTE: update seperate arrays from those used in the time-stepping
+           !       to avoid time-slice saving impacting on evolving ocean pH
+           IF (opt_select(iopt_select_carbchem) .AND. ctrl_data_save_slice_carb_update) THEN
+              DO i=1,n_i
+                 DO j=1,n_j
+                    loc_k1 = goldstein_k1(i,j)
+                    IF (n_k >= loc_k1) THEN
+                       ! NOTE: surface carb chem is updated in the surface layer every time-step
+                       !       => only the remainder of the water column needs solving for IF not already updated
+                       ! copy values from entire water column for all permutations of saving
+                       ! NOTE: when pH is not updated during time-stepping, it has still be solved during initialization,
+                       !       and this needs to be propagated
+                       loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
+                       loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
+                       ! set water column interval for solving pH
+                       if (ctrl_carbchem_pH_OLD) then
+                          ! flag for whole water-column updating
+                          loc_k = n_k
+                       elseif (.NOT. ctrl_carbchemupdate_full) then
+                          ! flag surface not to be repeated and set upper k limit to sub-surface / check for surface == seafloor
+                          loc_k = n_k - 1
+                          if (loc_k == loc_k1) loc_k = 0
+                       else
+                          ! flag for no additional carb chem updating anywhere in the water column
+                          loc_k = 0
                        end if
-                       ! re-estimate Ca and borate concentrations from salinity (if not selected and therefore explicitly treated)
-                       IF (.NOT. ocn_select(io_Ca))  ocn(io_Ca,i,j,k)  = fun_calc_Ca(ocn(io_S,i,j,k))
-                       IF (.NOT. ocn_select(io_B))   ocn(io_B,i,j,k)   = fun_calc_Btot(ocn(io_S,i,j,k))
-                       IF (.NOT. ocn_select(io_SO4)) ocn(io_SO4,i,j,k) = fun_calc_SO4tot(ocn(io_S,i,j,k))
-                       IF (.NOT. ocn_select(io_F))   ocn(io_F,i,j,k)   = fun_calc_Ftot(ocn(io_S,i,j,k))
-                       ! re-calculate surface ocean carbonate chemistry
-                       CALL sub_calc_carb(        &
-                            & ocn(io_DIC,i,j,k),  &
-                            & ocn(io_ALK,i,j,k),  &
-                            & ocn(io_Ca,i,j,k),   &
-                            & ocn(io_PO4,i,j,k),  &
-                            & ocn(io_SiO2,i,j,k), &
-                            & ocn(io_B,i,j,k),    &
-                            & ocn(io_SO4,i,j,k),  &
-                            & ocn(io_F,i,j,k),    &
-                            & ocn(io_H2S,i,j,k),  &
-                            & ocn(io_NH4,i,j,k),  &
-                            & carbconst(:,i,j,k), &
-                            & carb(:,i,j,k),      &
-                            & carbalk(:,i,j,k)    &
-                            & )
-                       ! estimate Revelle factor
-                       CALL sub_calc_carb_RF0(      &
-                            & ocn(io_DIC,i,j,n_k),  &
-                            & ocn(io_ALK,i,j,n_k),  &
-                            & ocn(io_PO4,i,j,n_k),  &
-                            & ocn(io_SiO2,i,j,n_k), &
-                            & ocn(io_B,i,j,n_k),    &
-                            & ocn(io_SO4,i,j,n_k),  &
-                            & ocn(io_F,i,j,n_k),    &
-                            & ocn(io_H2S,i,j,n_k),  &
-                            & ocn(io_NH4,i,j,n_k),  &
-                            & carbconst(:,i,j,n_k), &
-                            & carb(:,i,j,n_k)       &
-                            & )
-                       ! re-calculate carbonate system isotopic properties
-                       if (ocn_select(io_DIC_13C)) then
-                          call sub_calc_carb_r13C(      &
-                               & ocn(io_T,i,j,k),       &
-                               & ocn(io_DIC,i,j,k),     &
-                               & ocn(io_DIC_13C,i,j,k), &
-                               & carb(:,i,j,k),         &
-                               & carbisor(:,i,j,k)      &
+                       ! calculate carb chem across required portion of water column (if any)
+                       ! NOTE: use loc arrays   
+                       DO k=loc_k1,loc_k
+                          ! calculate carbonate dissociation constants
+                          CALL sub_calc_carbconst(         &
+                               & phys_ocn(ipo_Dmid,i,j,k), &
+                               & ocn(io_T,i,j,k),          &
+                               & ocn(io_S,i,j,k),          &
+                               & loc_carbconst(:,i,j,k)        &
                                & )
-                       end IF
-                       if (ocn_select(io_DIC_14C)) then
-                          call sub_calc_carb_r14C(      &
-                               & ocn(io_T,i,j,k),       &
-                               & ocn(io_DIC,i,j,k),     &
-                               & ocn(io_DIC_14C,i,j,k), &
-                               & carb(:,i,j,k),         &
-                               & carbisor(:,i,j,k)      &
+                          ! adjust carbonate constants
+                          if (ocn_select(io_Ca) .AND. ocn_select(io_Mg)) then
+                             call sub_adj_carbconst(   &
+                                  & ocn(io_Ca,i,j,k),  &
+                                  & ocn(io_Mg,i,j,k),  &
+                                  & ocn(io_S,i,j,k), &
+                                  & ocn(io_T,i,j,k),&
+                                  & phys_ocn(ipo_Dmid,i,j,k), &
+                                  & loc_carbconst(:,i,j,k) &
+                                  & )
+                          end if
+                          ! re-estimate Ca and borate concentrations from salinity (if not selected and explicitly treated)
+                          IF (.NOT. ocn_select(io_Ca))  ocn(io_Ca,i,j,k)  = fun_calc_Ca(ocn(io_S,i,j,k))
+                          IF (.NOT. ocn_select(io_B))   ocn(io_B,i,j,k)   = fun_calc_Btot(ocn(io_S,i,j,k))
+                          IF (.NOT. ocn_select(io_SO4)) ocn(io_SO4,i,j,k) = fun_calc_SO4tot(ocn(io_S,i,j,k))
+                          IF (.NOT. ocn_select(io_F))   ocn(io_F,i,j,k)   = fun_calc_Ftot(ocn(io_S,i,j,k))
+                          ! re-calculate ocean carbonate chemistry
+                          CALL sub_calc_carb(        &
+                               & 'biogem.f90/diag_biogem_timeslice', &
+                               & .false.,            &
+                               & par_carbchem_pH_tolerance, &
+                               & ocn(io_DIC,i,j,k),  &
+                               & ocn(io_ALK,i,j,k),  &
+                               & ocn(io_Ca,i,j,k),   &
+                               & ocn(io_PO4,i,j,k),  &
+                               & ocn(io_SiO2,i,j,k), &
+                               & ocn(io_B,i,j,k),    &
+                               & ocn(io_SO4,i,j,k),  &
+                               & ocn(io_F,i,j,k),    &
+                               & ocn(io_H2S,i,j,k),  &
+                               & ocn(io_NH4,i,j,k),  &
+                               & loc_carbconst(:,i,j,k), &
+                               & loc_carb(:,i,j,k),      &
+                               & loc_carbalk(:,i,j,k)    &
                                & )
-                       end IF
-                    end do
+                          ! re-calculate carbonate system isotopic properties
+                          if (ocn_select(io_DIC_13C)) then
+                             call sub_calc_carb_r13C(      &
+                                  & ocn(io_T,i,j,k),       &
+                                  & ocn(io_DIC,i,j,k),     &
+                                  & ocn(io_DIC_13C,i,j,k), &
+                                  & loc_carb(:,i,j,k),         &
+                                  & loc_carbisor(:,i,j,k)      &
+                                  & )
+                          end IF
+                          if (ocn_select(io_DIC_14C)) then
+                             call sub_calc_carb_r14C(      &
+                                  & ocn(io_T,i,j,k),       &
+                                  & ocn(io_DIC,i,j,k),     &
+                                  & ocn(io_DIC_14C,i,j,k), &
+                                  & loc_carb(:,i,j,k),         &
+                                  & loc_carbisor(:,i,j,k)      &
+                                  & )
+                          end IF
+                          if (ctrl_carbchem_pH_OLD) then 
+                             ! enable back-compatability for general pH (and pCO2, climate)
+                             ! NOTE: in the original code, the recalculation of carb chem for netCDF saving,
+                             !       altered the pH used to calculate the carb chem for the net BIOGEM calculation step,
+                             !       affecting pCO2 and hence climate etc.
+                             ! NOTE: also for back-compatability with muffin,
+                             !       the surface value (n_k) is repeatadly re-calculated throughout the water-column loop ...
+                             !       (which results in negative RF0 values calculated in the ocean interior! ...)
+                             loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0_OLD( &
+                                  & ocn(io_DIC,i,j,n_k),                  &
+                                  & ocn(io_ALK,i,j,n_k),                  &
+                                  & ocn(io_Ca,i,j,n_k),                   &
+                                  & ocn(io_PO4,i,j,n_k),                  &
+                                  & ocn(io_SiO2,i,j,n_k),                 &
+                                  & ocn(io_B,i,j,n_k),                    &
+                                  & ocn(io_SO4,i,j,n_k),                  &
+                                  & ocn(io_F,i,j,n_k),                    &
+                                  & ocn(io_H2S,i,j,n_k),                  &
+                                  & ocn(io_NH4,i,j,n_k),                  &
+                                  & loc_carbconst(:,i,j,n_k),             &
+                                  & loc_carb(:,i,j,n_k)                   &
+                                  & )
+                             loc_carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
+                             ! write updated pH to time-stepping array (if OLD pH scheme)
+                             carb(ic_H,i,j,k) = loc_carb(ic_H,i,j,k)
+                          end if
+                       end do
+                       ! re-calculate -- surface-ocean properties only!
+                       IF (ctrl_data_save_buffering .AND. (.NOT. ctrl_carbchem_pH_OLD)) THEN
+                          ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
+                          loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
+                               & par_carbchem_pH_tolerance_buffering,  &
+                               & ocn(io_DIC,i,j,n_k),  &
+                               & ocn(io_ALK,i,j,n_k),  &
+                               & ocn(io_Ca,i,j,n_k),   &
+                               & ocn(io_PO4,i,j,n_k),  &
+                               & ocn(io_SiO2,i,j,n_k), &
+                               & ocn(io_B,i,j,n_k),    &
+                               & ocn(io_SO4,i,j,n_k),  &
+                               & ocn(io_F,i,j,n_k),    &
+                               & ocn(io_H2S,i,j,n_k),  &
+                               & ocn(io_NH4,i,j,n_k),  &
+                               & loc_carbconst(:,i,j,n_k), &
+                               & loc_carb(:,i,j,n_k)       &
+                               & )
+                          loc_carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
+                          loc_carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
+                          ! estimate ALK addition efficiency factor
+                          loc_carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
+                               & par_carbchem_pH_tolerance_buffering,         &
+                               & ocn(io_DIC,i,j,n_k),  &
+                               & ocn(io_ALK,i,j,n_k),  &
+                               & ocn(io_Ca,i,j,n_k),   &
+                               & ocn(io_PO4,i,j,n_k),  &
+                               & ocn(io_SiO2,i,j,n_k), &
+                               & ocn(io_B,i,j,n_k),    &
+                               & ocn(io_SO4,i,j,n_k),  &
+                               & ocn(io_F,i,j,n_k),    &
+                               & ocn(io_H2S,i,j,n_k),  &
+                               & ocn(io_NH4,i,j,n_k),  &
+                               & loc_carbconst(:,i,j,n_k), &
+                               & loc_carb(:,i,j,n_k)       &
+                               & )
+                          ! estimate DIC addition CaCO3 neutralization factor
+                          loc_carb(ic_RdALKdDIC,i,j,n_k) = fun_calc_carb_NF0( &
+                               & par_carbchem_pH_tolerance_buffering,         &
+                               & ocn(io_DIC,i,j,n_k),  &
+                               & ocn(io_ALK,i,j,n_k),  &
+                               & ocn(io_Ca,i,j,n_k),   &
+                               & ocn(io_PO4,i,j,n_k),  &
+                               & ocn(io_SiO2,i,j,n_k), &
+                               & ocn(io_B,i,j,n_k),    &
+                               & ocn(io_SO4,i,j,n_k),  &
+                               & ocn(io_F,i,j,n_k),    &
+                               & ocn(io_H2S,i,j,n_k),  &
+                               & ocn(io_NH4,i,j,n_k),  &
+                               & loc_carbconst(:,i,j,n_k), &
+                               & loc_carb(:,i,j,n_k)       &
+                               & )           
+                       end if
+                    end IF
                  end DO
               end DO
            end IF
@@ -3499,9 +3711,9 @@ SUBROUTINE diag_biogem_timeslice( &
            int_bio_settle_timeslice(:,:,:,:) = int_bio_settle_timeslice(:,:,:,:) + bio_settle(:,:,:,:)
            int_bio_remin_timeslice(:,:,:,:)  = int_bio_remin_timeslice(:,:,:,:)  + bio_remin(:,:,:,:)
            int_phys_ocn_timeslice(:,:,:,:)   = int_phys_ocn_timeslice(:,:,:,:)   + loc_dtyr*phys_ocn(:,:,:,:)
-           int_carb_timeslice(:,:,:,:)       = int_carb_timeslice(:,:,:,:)       + loc_dtyr*carb(:,:,:,:)
-           int_carbconst_timeslice(:,:,:,:)  = int_carbconst_timeslice(:,:,:,:)  + loc_dtyr*carbconst(:,:,:,:)
-           int_carbisor_timeslice(:,:,:,:)   = int_carbisor_timeslice(:,:,:,:)   + loc_dtyr*carbisor(:,:,:,:)
+           int_carb_timeslice(:,:,:,:)       = int_carb_timeslice(:,:,:,:)       + loc_dtyr*loc_carb(:,:,:,:)
+           int_carbconst_timeslice(:,:,:,:)  = int_carbconst_timeslice(:,:,:,:)  + loc_dtyr*loc_carbconst(:,:,:,:)
+           int_carbisor_timeslice(:,:,:,:)   = int_carbisor_timeslice(:,:,:,:)   + loc_dtyr*loc_carbisor(:,:,:,:)
            ! update time slice data - ocean-atmosphere interface
            int_sfcatm1_timeslice(:,:,:)      = int_sfcatm1_timeslice(:,:,:)     + loc_dtyr*dum_sfcatm1(:,:,:)
            int_focnatm_timeslice(:,:,:)      = int_focnatm_timeslice(:,:,:)     + loc_dtyr*locij_focnatm(:,:,:)
@@ -3525,13 +3737,13 @@ SUBROUTINE diag_biogem_timeslice( &
            int_diag_react_timeslice(:,:,:,:)       = int_diag_react_timeslice(:,:,:,:)       + diag_react(:,:,:,:)
            int_diag_redox_timeslice(:,:,:,:)       = int_diag_redox_timeslice(:,:,:,:)       + diag_redox(:,:,:,:)
            int_diag_iron_timeslice(:,:,:,:)        = int_diag_iron_timeslice(:,:,:,:)        + loc_dtyr*diag_iron(:,:,:,:)
+           int_diag_airsea_timeslice(:,:,:)        = int_diag_airsea_timeslice(:,:,:)        + loc_dtyr*diag_airsea(:,:,:)
            ! gemlite
            if (dum_gemlite) then
               int_diag_weather_timeslice(:,:,:)   = int_diag_weather_timeslice(:,:,:) + loc_dtyr*dum_sfxsumrok1(:,:,:)
            else
               int_diag_weather_timeslice(:,:,:)   = int_diag_weather_timeslice(:,:,:) + dum_sfxsumrok1(:,:,:)
            end if
-           int_diag_airsea_timeslice(:,:,:)    = int_diag_airsea_timeslice(:,:,:)     + loc_dtyr*diag_airsea(:,:,:)
            ! eceogem
            if (flag_ecogem) then
               int_diag_ecogem_part(:,:,:)  = int_diag_ecogem_part(:,:,:)  + loc_dtyr*diag_ecogem_part(:,:,:)
@@ -3610,7 +3822,6 @@ SUBROUTINE diag_biogem_timeslice( &
               ! save global diagnostics
               If (ctrl_data_save_GLOBAL) call sub_data_save_global_av()
               If (ctrl_data_save_GLOBAL .AND. ctrl_data_save_derived) call sub_data_save_global_snap(loc_t,dum_sfcatm1(:,:,:))
-
               ! save orbits data
               if ((n_orb_pts_nloc > 0) .and. (n_orb_pts > 0)) then
                  WRITE(unit=6,fmt='(A57,f12.3)') &
@@ -3717,7 +3928,7 @@ SUBROUTINE diag_biogem_timeseries( &
   real::loc_tot_A,loc_tot_EP                                     !
   real::loc_sig                                                  !
   REAL,DIMENSION(2)::loc_opsia_minmax,loc_opsip_minmax           !
-  real::loc_opsi_scale,loc_opsi_D                                !
+  real::loc_opsi_D                                !
 
   ! *** TIME-SERIES DATA UPDATE ***
   IF (ctrl_debug_lvl1) print*, '*** RUN-TIME DATA UPDATE ***'
@@ -3901,14 +4112,14 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_ocnatm) THEN
+           IF (ctrl_data_save_sig_ocnatm .OR. ctrl_data_echo_runtime_NEW) THEN
               DO l=1,n_l_atm
                  ia = conv_iselected_ia(l)
                  int_ocnatm_sig(ia) = int_ocnatm_sig(ia) + &
                       & loc_dtyr*SUM(phys_ocnatm(ipoa_A,:,:)*dum_sfcatm1(ia,:,:))*loc_ocnatm_rtot_A
               END DO
            end if
-           IF (ctrl_data_save_sig_fexport) THEN
+           IF (ctrl_data_save_sig_fexport .OR. ctrl_data_echo_runtime_NEW) THEN
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  int_fexport_sig(is) = int_fexport_sig(is) + &
@@ -3937,7 +4148,7 @@ SUBROUTINE diag_biogem_timeseries( &
                       & SUM(phys_ocn(ipo_A,:,:,n_k)*dum_sfxocn1(io,:,:))
               END DO
            end if
-           IF (ctrl_data_save_sig_ocn_sur) THEN
+           IF (ctrl_data_save_sig_ocn_sur .OR. ctrl_data_echo_runtime_NEW) THEN
               DO l=1,n_l_ocn
                  io = conv_iselected_io(l)
                  int_ocn_sur_sig(io) = int_ocn_sur_sig(io) + loc_dtyr*&
@@ -3969,7 +4180,7 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_carb_sur) THEN
+           IF (ctrl_data_save_sig_carb_sur .OR. ctrl_data_echo_runtime_NEW) THEN
               DO ic=1,n_carb
                  int_carb_sur_sig(ic) = int_carb_sur_sig(ic) + loc_dtyr*&
                       & SUM(phys_ocn(ipo_A,:,:,n_k)*carb(ic,:,:,n_k))*loc_ocn_rtot_A
@@ -4007,7 +4218,7 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_misc) THEN
+           IF (ctrl_data_save_sig_misc .OR. ctrl_data_echo_runtime_NEW) THEN
               ! record GEMlite phase
               if (dum_gemlite) int_misc_gemlite_sig = int_misc_gemlite_sig + loc_dtyr
               ! sea-ice
@@ -4244,48 +4455,28 @@ SUBROUTINE diag_biogem_timeseries( &
         !             (-2147483.648 ended up being reported)
         loc_yr_save = &
              & real(int(loc_yr_save)) + real(int(1000.0*(loc_yr_save - real(int(loc_yr_save)) + 0.0005)))/1000.00
-
         if (dum_save) then
-
-           WRITE(unit=6,fmt='(A57,f12.3)') &
-                & '>>> SAVING BIOGEM TIME-SERIES AVERAGE CENTERED @ year : ', &
-                & loc_yr_save
-           ! check that there is no chance of dividing-by-zero ...
-           IF (int_t_sig > const_real_nullsmall) then
-              IF (ctrl_misc_t_BP) THEN
-                 loc_yr = loc_t + par_misc_t_end
-              ELSE
-                 loc_yr = par_misc_t_end - loc_t
-              END IF
-              ! ### OPTIONAL CODE ################################################################################################ !
-              ! NOTE: netCDF time-series saving is disabled by default, partly because updating has lagged behind the ASCII version
-              !       (and partly because personally, I never used the data files ...)
-              ! ################################################################################################################## !
-              IF (ctrl_data_save_sig_ascii) then
-                 CALL sub_data_save_runtime(loc_yr_save,loc_t)
-              else
-                 CALL sub_save_netcdf_runtime(loc_yr_save)
-              end IF
-              ! re-open netcdf file, update record number, close file -- high resolution 3D
-              if (ctrl_data_save_3d_sig) then
-                 call sub_save_netcdf(loc_yr_save,4)
-                 CALL sub_save_netcdf_3d_sig()
-                 ncout3dsig_ntrec = ncout3dsig_ntrec + 1
-                 call sub_closefile(ncout3dsig_iou)
-              end if
-              if (.NOT. ctrl_debug_lvl0) then
-                 loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6
-                 CALL sub_calc_psi( &
-                      & phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax &
-                      & )
-                 call sub_echo_runtime(loc_yr,loc_opsi_scale,loc_opsia_minmax,dum_sfcatm1(:,:,:),dum_gemlite)
-              endif
-              ! preserve SLT
-              int_SLT = int_misc_SLT_sig/int_t_sig
+           IF (ctrl_misc_t_BP) THEN
+              loc_yr = loc_t + par_misc_t_end
+           ELSE
+              loc_yr = par_misc_t_end - loc_t
+           END IF
+           ! save time-series data (ASCII format)
+           ! NOTE: netCDF time-series saving has been removed in cookie
+           CALL sub_data_save_runtime(loc_yr_save,loc_t)
+           ! if high-resolution netCDF output is reuired -- re-open netcdf file, update record number, close file
+           if (ctrl_data_save_3d_sig) then
+              call sub_save_netcdf(loc_yr_save,4)
+              CALL sub_save_netcdf_3d_sig()
+              ncout3dsig_ntrec = ncout3dsig_ntrec + 1
+              call sub_closefile(ncout3dsig_iou)
            end if
-
-        else
-           IF (ctrl_debug_lvl1) PRINT*,'>>> *SKIPPING* SAVING BIOGEM TIME-SERIES AVERAGE CENTERED @ year : ',loc_yr_save
+           ! test for and report carb chem errors
+           call sub_echo_runtimeerrs(loc_yr_save)
+           ! print runtime data
+           call sub_echo_runtimedata(loc_yr_save)
+           ! preserve SLT
+           int_SLT = int_misc_SLT_sig/int_t_sig
         end if
         ! update save array index if not forced
         if (.NOT.dum_forcesave) par_data_save_sig_i = par_data_save_sig_i - 1

@@ -89,6 +89,7 @@ CONTAINS
     REAL,DIMENSION(n_sed)::loc_exe_sed                         ! top layer material to be exchanged with stack
     REAL,DIMENSION(n_ocn)::loc_exe_ocn                         ! flux of dissolved solutes to be exchanged with ocean
     logical::loc_flag_stackgrow,loc_flag_stackshrink           ! growing or shrinking of stack occurs (by a 1 cm layer)
+    real,DIMENSION(n_diag_sed_err)::loc_err
 
     ! *** (a) initialize variables
     IF (ctrl_misc_debug3) print*,'(a) initialize variables'
@@ -106,9 +107,16 @@ CONTAINS
     ! initialize flags recording growing or shrinking of sediment stack (i.e., new layers being added or removed, respectively)
     loc_flag_stackgrow   = .FALSE.
     loc_flag_stackshrink = .FALSE.
+    !
+    loc_err(:) = 0.0
 
     IF (ctrl_misc_debug3) print*,'(b) calculate Archer et al. [2002] bioturbation intensity profile (if selected)'
     ! *** (b) calculate bioturbation intensity
+    !         NOTE: the vector par_sed_mix_k is not populated if ctrl_sed_bioturb is false
+    !         NOTE: phys_sed(ips_mix_k0,dum_i,dum_j) is only used for passing to the Archer scheme
+    !               => even if ctrl_sed_bioturb is false, a non-zero bioturbation rate needs to be specified in the Archer scheme
+    !                  otherwise CaCO3 dissolution is reduced (Corg cannot be mixed down)
+    !         NOTE: phys_sed(ips_mix_k0,dum_i,dum_j) is not set sub_init_phys_sed (even if it perhaps should be ...)
     IF (ctrl_sed_bioturb) then
        if (ctrl_sed_bioturb_Archer) then
           call sub_calc_sed_mix(               &
@@ -120,7 +128,12 @@ CONTAINS
        end if
        phys_sed(ips_mix_k0,dum_i,dum_j) = par_sed_mix_k(par_n_sed_mix)
     else
-       phys_sed(ips_mix_k0,dum_i,dum_j) = 0.0
+       select case (par_sed_diagen_CaCO3opt)
+       case ('archer1991explicit')
+          phys_sed(ips_mix_k0,dum_i,dum_j) = par_sed_mix_k_sur_max
+       case default
+          phys_sed(ips_mix_k0,dum_i,dum_j) = 0.0
+       end select
     end if
 
     IF (ctrl_misc_debug3) print*,'(c) calculate new sedimenting material to be added to the sediment top layer'
@@ -480,9 +493,10 @@ CONTAINS
             & dum_D,sed_carb(ic_dCO3_cal,dum_i,dum_j),loc_sed_diagen_fCorg,          &
             & dum_sfcsumocn(:),sed_carbconst(:,dum_i,dum_j),sed_carb(:,dum_i,dum_j), &
             & loc_dis_sed(:),loc_new_sed(:),sed_top(:,dum_i,dum_j),                  &
-            & phys_sed(ips_mix_k0,dum_i,dum_j)                                       &
+            & phys_sed(ips_mix_k0,dum_i,dum_j),                                      &
+            & loc_err(:)                                                             &
             & )
-       if (error_Archer .AND. ctrl_misc_report_err) then
+       if ( (sum(loc_err(:)) > const_rns) .AND. ctrl_misc_report_err ) then
           CALL sub_report_error(                                                                                           &
                & 'sedgem_box','sub_update_sed','Failure of Archer [1991] sediment scheme calculation (singular matrix)',   &
                & 'CONTINUING',                                                                                             &
@@ -491,11 +505,10 @@ CONTAINS
                & sed_carb(ic_dCO3_cal,dum_i,dum_j),                                                                        &
                & sed_top(is_CaCO3,dum_i,dum_j),sed_top(is_opal,dum_i,dum_j),sed_top(is_det,dum_i,dum_j),                   &
                & loc_new_sed(is_CaCO3),loc_new_sed(is_POC),loc_new_sed(is_opal),loc_new_sed(is_det),                       &
-               & loc_dis_sed(is_CaCO3)                                                                                     &
+               & loc_dis_sed(is_CaCO3)                                                                                    &
                & /),.false.                                                                                                &
                & )
        end if
-       error_Archer = .FALSE.
     case ('ALL')
        ! 100% preservation (nothing needed doing!)
     case default
@@ -522,25 +535,6 @@ CONTAINS
           end if
        end DO
     end select
-!!$    ! error-catching of negative dissolution: return rain flux back to ocean
-!!$    If (loc_dis_sed(is_CaCO3) < -const_real_nullsmall) then
-!!$       DO l=1,n_l_sed
-!!$          is = conv_iselected_is(l)
-!!$          if ( &
-!!$               & (sed_dep(is) == is_CaCO3) .OR. &
-!!$               & (sed_type(is) == par_sed_type_CaCO3) .OR. &
-!!$               & (sed_type(sed_dep(is)) == par_sed_type_CaCO3) &
-!!$               & ) then
-!!$             loc_dis_sed(is) = loc_new_sed(is)
-!!$          end if
-!!$       end DO
-!!$       CALL sub_report_error( &
-!!$            & 'sedgem_box','sub_update_sed','loc_dis_sed(is_CaCO3) < 0.0 cm3', &
-!!$            & 'CONTINUING', &
-!!$            & (/real(dum_i), real(dum_j), loc_dis_sed(is_CaCO3) &
-!!$            & /),.FALSE. &
-!!$            & )
-!!$    end if
 
     IF (ctrl_misc_debug4) print*,'*** diagenesis - opal dissolution ***'
     ! *** diagenesis - opal dissolution ***
@@ -588,25 +582,6 @@ CONTAINS
           end if
        end DO
     end select
-!!$    ! default and error-catching of negative dissoluiton: return rain flux back to ocean
-!!$    If (loc_dis_sed(is_opal) < -const_real_nullsmall) then
-!!$       DO l=1,n_l_sed
-!!$          is = conv_iselected_is(l)
-!!$          if ( &
-!!$               & (sed_dep(is) == is_opal) .OR. &
-!!$               & (sed_type(is) == par_sed_type_opal) .OR. &
-!!$               & (sed_type(sed_dep(is)) == par_sed_type_opal) &
-!!$               & ) then
-!!$             loc_dis_sed(is) = loc_new_sed(is)
-!!$          end if
-!!$       end DO
-!!$       CALL sub_report_error( &
-!!$            & 'sedgem_box','sub_update_sed','loc_dis_sed(is_opal) < 0.0 cm3', &
-!!$            & 'CONTINUING', &
-!!$            & (/real(dum_i), real(dum_j), loc_dis_sed(is_opal) &
-!!$            & /),.FALSE. &
-!!$            & )
-!!$    end if
 
     IF (ctrl_misc_debug4) print*,'*** diagenesis - calculate total solids dissolved ***'
     ! *** diagenesis - calculate total solids dissolved ***
@@ -832,42 +807,10 @@ CONTAINS
        end do
     end DO
 
-!!$    ! ############################################################################################################################ !
-!!$    ! ### FIX THIS UP!!! ######################################################################################################### !
-!!$    ! ############################################################################################################################ !
-!!$    IF (ctrl_misc_debug3) print*,'(g) deal with low bottom-water [O2]'
-!!$    ! *** (g) deal with low bottom-water [O2]
-!!$    !         NOTE: because SEDGEM knows nothing about the geometry of the overlying ocean,
-!!$    !               the only criterion that can be applied in deciding whether there is sufficient O2 for oxidizing organic matter
-!!$    !               is to test whether [O2] is above zero or not.
-!!$    !               => if [O2] is zero (or rather, very close to it) then do NO3 then SO4 reduction
-!!$    !               => replacement of O2 (oxidation) deficit must be done in its entirety, by either NO3 OR SO4,
-!!$    !                  because there is no way of knowing how much NO3 is available in the ocean befoer SO4 has to be used ...
-!!$    !         NOTE: because consumption of NO3 of SO4 diffusing into the sediments must be complete,
-!!$    !               no fractionation w.r.t. 15N or 34S can occur
-!!$    !         NOTE: all fluxes in units of mol cm-2
-!!$    If (ocn_select(io_O2) .AND. (dum_sfcsumocn(io_O2) < const_real_nullsmall)) then
-!!$       loc_potO2def = -sedocn_fnet(io_O2,dum_i,dum_j)
-!!$       if (ocn_select(io_NO3) .AND. (dum_sfcsumocn(io_NO3) > const_real_nullsmall)) then
-!!$          loc_r15N = dum_sfcsumocn(io_NO3_15N)/dum_sfcsumocn(io_NO3)
-!!$          sedocn_fnet(io_NO3,dum_i,dum_j) = -(2.0/3.0)*loc_potO2def
-!!$          sedocn_fnet(io_N2,dum_i,dum_j)  = 0.5*(2.0/3.0)*loc_potO2def
-!!$          sedocn_fnet(io_O2,dum_i,dum_j)  = 0.0
-!!$          sedocn_fnet(io_NO3_15N,dum_i,dum_j) = -loc_r15N*(2.0/3.0)*loc_potO2def
-!!$          sedocn_fnet(io_N2_15N,dum_i,dum_j)  = loc_r15N*0.5*(2.0/3.0)*loc_potO2def
-!!$       else if (ocn_select(io_SO4) .AND. (dum_sfcsumocn(io_SO4) > const_real_nullsmall)) then
-!!$          loc_r34S = dum_sfcsumocn(io_SO4_34S)/dum_sfcsumocn(io_SO4)
-!!$          sedocn_fnet(io_SO4,dum_i,dum_j) = -0.5*loc_potO2def
-!!$          sedocn_fnet(io_H2S,dum_i,dum_j) = 0.5*loc_potO2def
-!!$          sedocn_fnet(io_O2,dum_i,dum_j)  = 0.0
-!!$          sedocn_fnet(io_SO4_34S,dum_i,dum_j) = -loc_r34S*0.5*loc_potO2def
-!!$          sedocn_fnet(io_H2S_34S,dum_i,dum_j) = loc_r34S*0.5*loc_potO2def
-!!$       end if
-!!$    end If
-!!$    ! ############################################################################################################################ !
-!!$    ! ############################################################################################################################ !
-!!$    ! ############################################################################################################################ !
-
+    IF (ctrl_misc_debug3) print*,'(h) record diagnostics'
+    ! *** (g) record diagnostics
+    sed_diag_err(:,dum_i,dum_j) = loc_err(:)
+    
     ! *** DEBUG ***
     ! finally ... print some dull debugging info if 'iopt_sed_debug2' option is selected
     IF (ctrl_misc_debug2) THEN
@@ -1037,11 +980,17 @@ CONTAINS
     ! calculate CaCO3 production
     ! NOTE: CaCO3 precipitation calculated as mol cm-2 per time-step
     !       (precipitation rate scaling constants are mol cm-2 yr-1)
-    if (par_sed_CaCO3burial > const_real_nullsmall) then
-       ! (1) imposed production
+    if ( (par_sed_CaCO3burialTOT > const_real_nullsmall) .AND. (par_sed_reef_CaCO3precip_sf < const_real_nullsmall) ) then
+       ! (1a) imposed production
        ! NOTE: par_sed_CaCO3burial is over-ridded by the value of parameter par_sed_CaCO3burialTOT if non-zero
        !       (par_sed_CaCO3burial is set from par_sed_CaCO3burialTOT in sedgem)
        sed_fsed(is_CaCO3,dum_i,dum_j) = par_sed_CaCO3burial
+    elseif ( (par_sed_CaCO3burialTOT > const_real_nullsmall) .AND. (par_sed_reef_CaCO3precip_sf > const_real_nullsmall) ) then
+       ! (1b) imposed (reef only) production ... but saturation-dependent
+       ! NOTE: the value of par_sed_reef_CaCO3precip_sf is re-scaled (each year) in the main sedgem subroutine
+       !       to ensure global reefal production == par_sed_CaCO3burialTOT
+       sed_fsed(is_CaCO3,dum_i,dum_j) = &
+	   & dum_dtyr*par_sed_reef_CaCO3precip_sf*(loc_ohm - 1.0)**par_sed_reef_CaCO3precip_exp
     elseif (loc_ohm > par_sed_CaCO3_abioticohm_min) then
        ! (2) abiotic + reef production
        sed_fsed(is_CaCO3,dum_i,dum_j) = &
@@ -2120,7 +2069,8 @@ CONTAINS
        & dum_sed_dis,                &
        & dum_sed_new,                &
        & dum_sed_top,                &
-       & dum_sed_mix_k               &
+       & dum_sed_mix_k,              &
+       & dum_err                     &
        & )
     IMPLICIT NONE
     ! dummy arguments
@@ -2133,28 +2083,35 @@ CONTAINS
     REAL,INTENT(in),DIMENSION(n_sed)::dum_sed_new
     REAL,INTENT(in),DIMENSION(n_sed)::dum_sed_top
     real,intent(in)::dum_sed_mix_k
+    real,INTENT(inout),DIMENSION(n_diag_sed_err)::dum_err
     ! local variables
-    INTEGER::is,l              ! COUNTERS
+    INTEGER::is,l,idiag        ! COUNTERS
     REAL::loc_frac_CaCO3_top   ! dry mass fraction CaCO3 in top sediment layer
     REAL::loc_fPOC             ! POC rain rate driving diagenesis (and CaCO3 dissolution) (mol cm-2 a-1)
     REAL::loc_sed_wt_top       ! sediment mass (in top sediment)
     REAL::loc_sed_dis_new      ! fraction dissolved from new sediment
     REAL::loc_sed_dis_top      ! fraction dissolved from top sediment
-    REAL::loc_dis              ! raw dissolution flux from lookup table
+    REAL::loc_dis              ! raw dissolution flux
     real::loc_O2               ! local bottom-water oxygen concentration
     real::loc_sed_new_frac
     !REAL,DIMENSION(par_nn_input)::loc_nn_inp,loc_nn_inpnorm     ! neural network variables
+    logical,DIMENSION(n_diag_sed_err)::loc_err  
+    real::loc_sed_wt,loc_frac_CaCO3
+    REAL,DIMENSION(n_sed)::loc_sed
 
-    ! *** USER-DEFINABLE OPTIONS ***
-    ! NOTE: settings not included in the run-time configuration files for clarity
-    ! ******************************
-    par_sed_diagen_fPOCmax = 100.0e-6 ! max Corg flux allowed to drive carbonate dissolution (mol cm-2 yr-1) [50.0]
+!!$    ! *** USER-DEFINABLE OPTIONS ***
+!!$    ! NOTE: settings not included in the run-time configuration files for clarity
+!!$    ! ******************************
+!!$    par_sed_diagen_fPOCmax = 100.0e-6 ! max Corg flux allowed to drive carbonate dissolution (mol cm-2 yr-1) [50.0]
     ! ******************************
 
-    !
+    ! initialize function return variables
+    dum_err(:) = 0.0
+    ! initialize variables
     loc_dis = 0.0
     loc_sed_dis_new = 0.0
     loc_sed_dis_top = 0.0
+    loc_err(:) = .false.
 
     ! *** calculate sediment diagenesis defining variables ***
     ! NOTE: the units of the Corg flux must be changed from (cm3 cm-2) to (mol cm-2 yr-1),
@@ -2164,32 +2121,99 @@ CONTAINS
     !       so care must be taken when exceeding this range (hence the purpose of 'par_sed_diagen_fPOCmax')
     !       and enough [O2] may not in actual fact be available to oxidize such a flux in the sediments fully
     ! mass fraction (dry) of calcite in sediments
-    loc_sed_wt_top = fun_calc_sed_mass(dum_sed_top(:))
-    loc_frac_CaCO3_top = conv_cal_cm3_g*dum_sed_top(is_CaCO3)/loc_sed_wt_top
+    loc_sed_wt_top      = fun_calc_sed_mass(dum_sed_top(:))
+    loc_frac_CaCO3_top  = conv_cal_cm3_g*dum_sed_top(is_CaCO3)/loc_sed_wt_top
     ! Corg rain rate
     loc_fPOC = dum_sed_diagen_fCorg*conv_POC_cm3_mol/dum_dtyr
-    IF (loc_fPOC > par_sed_diagen_fPOCmax) loc_fPOC = par_sed_diagen_fPOCmax
+!!$    IF (loc_fPOC > par_sed_diagen_fPOCmax) loc_fPOC = par_sed_diagen_fPOCmax
     ! prevent negative oxygen concentrations being passed
     loc_O2 = dum_ocn(io_O2)
     if (loc_O2 < const_real_nullsmall) loc_O2 = 0.0
+    ! calculate mean CaCO3 fraction across top+new sediment
+    ! NOTE: only take into account CaCO3 and det as bulk components in calculating the CaCO3 mass fraction in 'new' sediment
+    loc_sed(:)        = dum_sed_top(:)
+    loc_sed(is_CaCO3) = loc_sed(is_CaCO3) + dum_sed_new(is_CaCO3)
+    loc_sed(is_det)   = loc_sed(is_det) + dum_sed_new(is_det)
+    loc_sed_wt        = fun_calc_sed_mass(loc_sed(:))
+    loc_frac_CaCO3    = conv_cal_cm3_g*loc_sed(is_CaCO3)/loc_sed_wt
 
     ! *** calculate potential calcite dissolution flux ***
     ! NOTE: the dissolution flux is calculated in units of (mol cm-2 yr-1);
     !       this must be converted to cm3 cm-2 per time step
-    ! NOTE: catch (sigular matrix) stability failures of the Archer scheme
+    ! NOTE: OLD: catch (sigular matrix) stability failures of the Archer scheme
     !       => assume no CaCO3 preservation (100% dissoution of rain flux)
+    !       NEW: catch failure to converge in co3ss
+    !            which includes both sigular matrix) issues and zero wt% CaCO3
+    !       => assume no dissolution (this seems to limit (remove?)) error occurrence) if wt% not zero
+    !       no dissolution also changes wt% and hence diagenesis boundxary conditions, whereas
+    !       assuming no preservation might simply result in similar problem boundary conditions persisting
+    ! NOTE: replace loc_frac_CaCO3_top with loc_frac_CaCO3
+    if (ctrl_sed_diagen_error_Archer_OLD) loc_frac_CaCO3 = loc_frac_CaCO3_top
     select case (trim(par_sed_diagen_CaCO3opt))
     case ('archer1991explicit')
        ! CALCULATE SEDIMENT CACO3 DIAGENESIS EXPLICITLY
        ! NOTE: model of Archer [1991]
        loc_dis = fun_archer1991_sedflx(                                                           &
-            & loc_O2,loc_frac_CaCO3_top,loc_fPOC,                                                 &
+            & loc_O2,loc_frac_CaCO3,loc_fPOC,                                                     &
             & dum_carb(ic_conc_CO2),dum_carb(ic_conc_HCO3),dum_carb(ic_conc_CO3),                 &
             & dum_carbconst(icc_k1),dum_carbconst(icc_k2),dum_carbconst(icc_kcal)/dum_ocn(io_Ca), &
-            & dum_sed_mix_k                                                                       &
+            & dum_sed_mix_k,loc_err                                                               &
             & )
+       ! convert units
        loc_dis = conv_cal_mol_cm3*loc_dis*dum_dtyr
-       if (error_Archer) loc_dis = dum_sed_new(is_CaCO3)
+       ! CATCH ERRORS!
+       if ( loc_err(idiag_err_calc_co3) .OR. loc_err(idiag_err_gaussj) .OR. loc_err(idiag_err_co3ss) ) then
+          loc_err(idiag_err_NULL) = .true.
+          if (ctrl_sed_diagen_error_Archer_OLD) then
+             ! option to maintain original error-catching behaviour
+             if (loc_err(idiag_err_calc_co3) .OR. loc_err(idiag_err_gaussj)) then
+                loc_dis = dum_sed_new(is_CaCO3)
+             end if
+          elseif (ctrl_sed_diagen_error_Archer2lookup) then
+             ! replace with lookup table derived estimate
+             ! CALCULATE SEDIMENT CACO3 DIAGENESIS VIA A LOOK-UP TABLE [Ridgwell, 2001]
+             loc_dis = fun_interp_4D(                                                  &
+                  & lookup_sed_dis_cal,dum_D,dum_dCO3_cal,loc_frac_CaCO3_top,loc_fPOC, &
+                  & lookup_D_max,lookup_dCO3_max,lookup_frac_max,lookup_fCorg_max,     &
+                  & lookup_i_D_min,lookup_i_D_max,                                     &
+                  & lookup_i_dCO3_min,lookup_i_dCO3_max,                               &
+                  & lookup_i_frac_min,lookup_i_frac_max,                               &
+                  & lookup_i_fCorg_min,lookup_i_fCorg_max                              &
+                  & )
+             loc_dis = conv_cal_mol_cm3*loc_dis*dum_dtyr
+             ! mark that a modified daigenesis calculation was used
+             loc_err(idiag_err_MOD)  = .true.
+          else
+             ! simply maintain current wt%
+             ! rain frac = dum_sed_new(is_CaCO3)/(dum_sed_new(is_CaCO3) + dum_sed_new(is_det))
+             ! top frac  = loc_frac_CaCO3_top
+             ! pres frac = FCaCO3/(FCaCO3 + dum_sed_new(is_det))
+             !           = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
+             !           => loc_frac_CaCO3_top = 1 / (1 + dum_sed_new(is_det)/FCaCO3)
+             !           => (1 + dum_sed_new(is_det)/FCaCO3)*loc_frac_CaCO3_top = 1
+             !           => (FCaCO3 + dum_sed_new(is_det))*loc_frac_CaCO3_top = FCaCO3
+             !           => dum_sed_new(is_det)*loc_frac_CaCO3_top = FCaCO3 - FCaCO3*loc_frac_CaCO3_top
+             !           => (dum_sed_new(is_det)*loc_frac_CaCO3_top)/(1 - loc_frac_CaCO3_top) = FCaCO3
+             !           => FCaCO3 = dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1)
+             ! NOTE: strictly: loc_sed_wt_rain-conv_cal_cm3_g*dum_sed_new(is_CaCO3) rather than dum_sed_new(is_det)
+             !       also      conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det) rather than dum_sed_new(is_det)
+             if (loc_frac_CaCO3_top < const_real_nullsmall) then
+                loc_dis = dum_sed_new(is_CaCO3)
+             elseif ((1.0 - loc_frac_CaCO3_top) < const_real_nullsmall) then
+                loc_dis = 0.0
+             else
+                loc_dis = min( dum_sed_new(is_CaCO3), &
+                     & conv_cal_g_cm3*conv_det_cm3_g*dum_sed_new(is_det)/(1/loc_frac_CaCO3_top - 1) )
+             end if
+          end if
+       else
+          ! no  errors occurred! :)
+          ! => DO NOTHING
+       end if
+       ! record errors
+       DO idiag=1,n_diag_sed_err
+          if (loc_err(idiag)) dum_err(idiag) = 1.0
+       end do
     case ('ridgwell2001lookup')
        ! CALCULATE SEDIMENT CACO3 DIAGENESIS VIA A LOOK-UP TABLE [Ridgwell, 2001]
        loc_dis = fun_interp_4D(                                                  &
@@ -2265,7 +2289,6 @@ CONTAINS
        ! loc_sed_dis_top       - is the amount of pre-existing carbonate dissolved from the surface ('top') layer
        ! dum_sed_dis(is_CaCO3) - is the total amount of carbonate that needs to be dissolved
        if (ctrl_sed_interface) then
-          !!!print*,'interface'
           IF (dum_sed_dis(is_CaCO3) > dum_sed_new(is_CaCO3)) THEN
              loc_sed_dis_new = dum_sed_new(is_CaCO3)
              loc_sed_dis_top = dum_sed_dis(is_CaCO3) - dum_sed_new(is_CaCO3)
@@ -2274,7 +2297,6 @@ CONTAINS
              loc_sed_dis_top = 0.0
           end IF
        else
-          !!!print*,'homogenous'
           ! What it is saying is determine proportion of carbonate that has newly arrived at the sediments (dum_sed_new(is_CaCO3))
           ! compared to the total amount of carbonate available for dissolution (dum_sed_new(is_CaCO3) + dum_sed_top(is_CaCO3)).
           ! Dissolve carbonate in this proportion - this should have the same effect as if the 'new' carbonate had been 

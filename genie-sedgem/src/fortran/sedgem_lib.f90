@@ -134,7 +134,9 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_dissc,par_sed_archer1991_disscpct,par_sed_archer1991_dissn,par_sed_archer1991_rc
   integer::par_sed_archer1991_iterationmax                       ! loop limit in 'o2org' subroutine
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
-  NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
+  logical::ctrl_sed_diagen_error_Archer_OLD                      ! Use old error-catching scheme?
+  logical::ctrl_sed_diagen_error_archer2lookup                  ! Replace Archer model calc with lookup estimate?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD,ctrl_sed_diagen_error_archer2lookup
   ! ------------------- DIAGENESIS SCHEME: opal ---------------------------------------------------------------------------------- !
   REAL::par_sed_opal_KSi0                                        ! base opal KSi value (yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_opal_KSi0
@@ -271,7 +273,10 @@ MODULE sedgem_lib
   real::par_sed_diag_volcanicd13C                                ! assumed d13C of volcanic emissions
   NAMELIST /ini_sedgem_nml/par_sed_diag_fracSiweath,par_sed_diag_volcanicd13C
   real::par_sed_diag_P2ALK                                       ! assumed implicit P:ALK (non zero makes no sense for weathering)
-  NAMELIST /ini_sedgem_nml/par_sed_diag_P2ALK
+  real::par_sed_diag_C2O2                                        ! assumed implicit C:O2 of kerogen weathering
+  NAMELIST /ini_sedgem_nml/par_sed_diag_P2ALK,par_sed_diag_C2O2
+  logical::ctrl_sed_diag_balanceO2                               ! Update kerogen O2 weathering consumption ratio?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diag_balanceO2
   ! ------------------- I/O: DIRECTORY DEFINITIONS ------------------------------------------------------------------------------- !
   CHARACTER(len=255)::par_pindir_name                            ! 
   CHARACTER(len=255)::par_indir_name                             ! 
@@ -322,12 +327,16 @@ MODULE sedgem_lib
   LOGICAL::ctrl_debug_lvl1                                       ! report 'level #1' debug?
   NAMELIST /ini_atchem_nml/ctrl_debug_lvl1 
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !
-  LOGICAL::ctrl_ncrst                                          ! restart as netCDF format?
+  LOGICAL::ctrl_ncrst                                            ! restart as netCDF format?
   NAMELIST /ini_sedgem_nml/ctrl_ncrst
-  CHARACTER(len=127)::par_ncrst_name                           ! 
+  CHARACTER(len=127)::par_ncrst_name                             ! 
   NAMELIST /ini_sedgem_nml/par_ncrst_name
   CHARACTER(len=127)::par_ncsedcore_name
   NAMELIST /ini_sedgem_nml/par_ncsedcore_name
+  real::par_sed_save_av_dtyr                                     ! time interval for averaging final sed data over (yr)
+  NAMELIST /ini_sedgem_nml/par_sed_save_av_dtyr
+  logical::ctrl_sed_diagen_error_save                            ! Save diagenesis error details?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_save
   ! ############################################################################################################################## !
 
 
@@ -345,6 +354,7 @@ MODULE sedgem_lib
   INTEGER,PARAMETER::n_opt_sed      = 26                       ! 
   ! 
   integer,parameter::n_diag_sed     = 3
+  integer,parameter::n_diag_sed_err = 5
 
   ! *** array index values ***
   ! sediment grid properties array indices
@@ -372,6 +382,12 @@ MODULE sedgem_lib
   INTEGER,PARAMETER::idiag_OMEN_wtpct_top                 = 01    !
   INTEGER,PARAMETER::idiag_OMEN_wtpct_bot                 = 02    !
   INTEGER,PARAMETER::idiag_OMEN_bur                       = 03    !
+  ! diagnostics - sediements - error codes
+  INTEGER,PARAMETER::idiag_err_calc_co3                   = 01    !
+  INTEGER,PARAMETER::idiag_err_gaussj                     = 02    !
+  INTEGER,PARAMETER::idiag_err_co3ss                      = 03    !
+  INTEGER,PARAMETER::idiag_err_NULL                       = 04    !
+  INTEGER,PARAMETER::idiag_err_MOD                        = 05    !
 
   ! *** look-up table constants ***
   ! CaCO3 (calcite)
@@ -432,12 +448,29 @@ MODULE sedgem_lib
        & 'OMEN_wtpct_top  ', &
        & 'OMEN_wtpct_bot  ', &
        & 'OMEN_bur        ' /)
-
-
+  CHARACTER(len=16),DIMENSION(n_diag_sed_err),PARAMETER::string_diag_sed_err = (/ &
+       & 'err_calc_co3    ', &
+       & 'err_gaussj      ', &
+       & 'err_co3ss       ', &
+       & 'err_NULL        ', &
+       & 'err_MOD         ' /)
+  
+  ! *** netCDF long names ***
+  ! sediment diagnostics
+  CHARACTER(len=63),DIMENSION(n_diag_sed),PARAMETER::string_longname_diag_sed = (/ &
+       & 'OMEN_wtpct_top                                                 ', &
+       & 'OMEN_wtpct_bot                                                 ', &
+       & 'OMEN_bur                                                       ' /)
+  CHARACTER(len=63),DIMENSION(n_diag_sed_err),PARAMETER::string_longname_diag_sed_err = (/  &
+       & 'errors yr-1 occurring in Archer subproc: calc_co3              ', &
+       & 'errors yr-1 occurring in Archer subproc: gaussj                ', &
+       & 'errors yr-1 occurring in Archer subproc: co3ss                 ', &
+       & 'total errors yr-1 occurring in Archer model                    ', &
+       & 'replacements yr-1 of dissolution flux with lookup table value  '/)
+  
   ! ****************************************************************************************************************************** !
   ! GLOBAL VARIABLE AND RUN-TIME SET PARAMETER ARRAYS
   ! ****************************************************************************************************************************** !
-
 
   ! *** GRid parameters ***
   ! I/O - strings
@@ -458,8 +491,6 @@ MODULE sedgem_lib
   ! I/O - netCDF parameters
   integer::ntrec_sout                                          ! count for netcdf datasets
   integer::ntrec_siou                                          ! io for netcdf datasets
-  ! flag for Archer sediment iteration (singular matrix) failure error
-  logical::error_Archer = .FALSE.
 
   ! *** Array definitions ***
   ! bioturbation mixing rate array
@@ -498,6 +529,12 @@ MODULE sedgem_lib
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_porg               ! alt Porg preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_rr                 ! alt preservation (burial) rain ratio (C/P) field
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag                  ! sediment diagnostics
+  real,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag_err              ! sediment diagnostics -- diagenesis errors
+  ! allocatable 2-D sediment arrays -- time-averaging
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_fsed               ! AVERAGED rain flux to sediments (mol cm-2 yr-1)
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_fdis               ! AVERAGED sediment dissolution flux - solids tracers (mol cm-2 yr-1)
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_coretop            ! AVERAGED top sedimentary layer composition
+  real,ALLOCATABLE,DIMENSION(:,:,:)::sed_av_diag_err           ! sediment diagnostics -- diagenesis errors
   ! allocatable sedcoe arrays
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sedcore                   ! sedcore sediment layer stack (num sedcores x layers x variables)
   ! sediments - conversion
