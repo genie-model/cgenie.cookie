@@ -52,6 +52,8 @@ CONTAINS
     par_indir_name = trim(par_indir_name)//'/'
     par_outdir_name = trim(par_outdir_name)//'/'
     par_rstdir_name = trim(par_rstdir_name)//'/'
+    par_inrstdir_name = trim(par_inrstdir_name)//'/'
+    par_outrstdir_name = trim(par_outrstdir_name)//'/'
     if (ctrl_debug_init > 0) then
        print*
        ! --- RUN CONTROL --------------------------------------------------------------------------------------------------------- !
@@ -64,6 +66,8 @@ CONTAINS
        print*,'Input dir. name                                     : ',trim(par_indir_name)
        print*,'Output dir. name                                    : ',trim(par_outdir_name)
        print*,'Restart (input) dir. name                           : ',trim(par_rstdir_name)
+       print*,'Input restart dir. name                             : ',trim(par_inrstdir_name)
+       print*,'Output restart dir. name                            : ',trim(par_outrstdir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
        print*,'Output to screen                                    : ',opt_screen_output
@@ -72,6 +76,7 @@ CONTAINS
        print*,'output 2d fields to .dat files                      : ',opt_2d_ascii_output
        print*,'output 2d fields to netcdf                          : ',opt_2d_netcdf_output
        print*,'append data to output files on restart              : ',opt_append_data
+       print*,'Save ROKGEM data?                                   : ',ctrl_save_data
        ! --- RIVER ROUTING PARAMETERS -------------------------------------------------------------------------------------------- !
        print*,'--- RIVER ROUTING PARAMETERS ---'
        print*,'routing scheme to use: '
@@ -276,7 +281,7 @@ CONTAINS
     integer::ios                                    ! local counting variables
     CHARACTER(len=255)::loc_filename                ! filename string
     ! retrieve restart data
-    loc_filename = TRIM(par_rstdir_name)//trim(par_infile_name)
+    loc_filename = TRIM(par_inrstdir_name)//trim(par_infile_name)
     OPEN(unit=in,status='old',file=loc_filename,form='formatted',action='read',iostat=ios)
     !call check_iostat(ios,__LINE__,__FILE__)
     READ(unit=in,fmt='(i6)') ncout2d_ntrec_rg                             
@@ -322,7 +327,9 @@ CONTAINS
 
     ! Save data to file landmask.dat
     if (ctrl_debug_init > 1) PRINT*,'Saving landmask (1 for land, 0 for ocean)'
-    CALL sub_save_data_ij(TRIM(par_outdir_name)//'landmask.dat',n_i,n_j,REAL(dum_landmask(:,:)))       ! from gem_util
+    IF (ctrl_save_data) then
+    	CALL sub_save_data_ij(TRIM(par_outdir_name)//'landmask.dat',n_i,n_j,REAL(dum_landmask(:,:)))       ! from gem_util
+    end if
 
     ! calculate number of land cells
     nlandcells = SUM(dum_landmask(:,:))

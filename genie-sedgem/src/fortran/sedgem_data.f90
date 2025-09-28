@@ -2409,7 +2409,7 @@ CONTAINS
     Write(unit=out,fmt=*) '% ========================================'
     Write(unit=out,fmt=*) '% Sediment diagnostics data'
     Write(unit=out,fmt=*) '% ========================================'
-             write(unit=out,fmt='(A2,31A12)',iostat=ios)          &
+             write(unit=out,fmt='(A2,32A12)',iostat=ios)          &
                   & ' %',                                          &
                   & '           i',                               &
                   & '           j',                               &
@@ -2430,6 +2430,7 @@ CONTAINS
                   & '  CaCO3 conc',                               &
                   & '   opal conc',                               &
                   & '    det conc',                               &
+                  & '    ash conc',                               &
                   & '    POC rain',                               &
                   & '  CaCO3 rain',                               &
                   & '   opal rain',                               &
@@ -2443,7 +2444,7 @@ CONTAINS
                   & ' opal burial',                               &
                   & '  det burial'
              call check_iostat(ios,__LINE__,__FILE__)
-             write(unit=out,fmt='(A2,31A12)',iostat=ios)          &
+             write(unit=out,fmt='(A2,32A12)',iostat=ios)          &
                   & ' %',                                          &
                   & '           -',                               &
                   & '           -',                               &
@@ -2460,6 +2461,7 @@ CONTAINS
                   & '          uM',                               &
                   & '           -',                               &
                   & '          uM',                               &
+                  & '         wt%',                               &
                   & '         wt%',                               &
                   & '         wt%',                               &
                   & '         wt%',                               &
@@ -2483,7 +2485,7 @@ CONTAINS
     DO i=1,n_i
        DO j=1,n_j
           IF (sed_mask(i,j) .AND. sed_save_mask(i,j)) THEN
-             write(unit=out,fmt='(2X,2I12,2f12.1,3f12.1,6f12.1,2f12.3,4f12.1,12f12.3)',iostat=ios) &
+             write(unit=out,fmt='(2X,2I12,2f12.1,3f12.1,6f12.1,2f12.3,5f12.1,12f12.3)',iostat=ios) &
                   & i, &
                   & j,                                                     &
                   & phys_sed(ips_lon,i,j),                                   &
@@ -2526,7 +2528,7 @@ CONTAINS
     DO i=1,n_i
        DO j=1,n_j
           IF (sed_mask(i,j) .AND. (.NOT. sed_save_mask(i,j))) THEN
-             write(unit=out,fmt='(2X,2I12,2f12.1,3f12.1,6f12.1,2f12.3,4f12.1,12f12.3)',iostat=ios) &
+             write(unit=out,fmt='(2X,2I12,2f12.1,3f12.1,6f12.1,2f12.3,5f12.1,12f12.3)',iostat=ios) &
                   & i, &
                   & j,                                                     &
                   & phys_sed(ips_lon,i,j),                                   &
@@ -2546,6 +2548,7 @@ CONTAINS
                   & loc_sed_coretop(is_CaCO3,i,j),                           &
                   & loc_sed_coretop(is_opal,i,j),                            &
                   & loc_sed_coretop(is_det,i,j),                             &
+                  & loc_sed_coretop(is_ash,i,j),                             &
                   & 1.0E+06*sed_fsed(is_POC,i,j)/dum_dtyr,                   &
                   & 1.0E+06*sed_fsed(is_CaCO3,i,j)/dum_dtyr,                 &
                   & 1.0E+06*sed_fsed(is_opal,i,j)/dum_dtyr,                  &

@@ -73,23 +73,10 @@ subroutine initialise_rokgem( &
   IF (ctrl_continuing.AND.opt_append_data) THEN
      call sub_load_rokgem_restart()
   ELSE   
+  IF (ctrl_save_data) then
      ncout2d_ntrec_rg = 0
      call sub_init_netcdf_rg(trim(string_ncout2d_rg),loc_iou)
-  ENDIF
-  if (debug_init > 1) print*, 'netcdf record number: ',ncout2d_ntrec_rg
-  if (debug_init > 1) print*,'par_outdir_name = par_rstdir_name:',par_outdir_name.eq.par_rstdir_name
-  !ncout2d_iou = loc_iou
-
-  ! *** setup for netcdf output  ***
-  if (debug_init > 1) print*, 'initialize netCDF'
-  string_ncout2d_rg  = TRIM(par_outdir_name)//'fields_rokgem_2d.nc' !note: this needs to be less than 100 characters
-  if (debug_init > 1) print*, 'netcdf ouput file: ',TRIM(string_ncout2d_rg)
-  ! initialise 2d netcdf files
-  IF (ctrl_continuing.AND.opt_append_data) THEN
-     call sub_load_rokgem_restart()
-  ELSE   
-     ncout2d_ntrec_rg = 0
-     call sub_init_netcdf_rg(trim(string_ncout2d_rg),loc_iou)
+     end if
   ENDIF
   if (debug_init > 1) print*, 'netcdf record number: ',ncout2d_ntrec_rg
   if (debug_init > 1) print*,'par_outdir_name = par_rstdir_name:',par_outdir_name.eq.par_rstdir_name
@@ -105,7 +92,9 @@ subroutine initialise_rokgem( &
   ! *** load in years for output generation and initialise output ***
   CALL sub_data_output_years()
   year = min(output_years_0d(output_counter_0d),output_years_2d(output_counter_2d))
-  CALL sub_ini_output()
+  IF (ctrl_save_data) then
+     CALL sub_ini_output()
+  end if
   if (debug_init > 1) print*,'======================================================='
 
   ! -------------------------------------------------------- ! set legacy weathering options
@@ -163,7 +152,6 @@ subroutine initialise_rokgem( &
   ! Note: sub_coastal_output is used to do the actual routing in the main loop
 
   ! ======= Calibration to data ==============================================================!
-
 
   if (debug_init > 1) print*,'--- CALIBRATION TO DATA ---'
 
@@ -238,7 +226,6 @@ subroutine initialise_rokgem( &
         END DO
      END DO
   ENDIF
-
 
   ! ======= 2D WEATHERING =================================================================!
 

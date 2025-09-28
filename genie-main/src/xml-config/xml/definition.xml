@@ -1442,7 +1442,7 @@
                         <description>GEM data input directory</description>
                     </param>
                     <param name="string_results_ext">
-                        <value datatype="string">.res</value>
+                        <value datatype="string">.txt</value>
                         <description>filetype for series output files for GEM modules</description>
                     </param>
                 </namelist>
@@ -8114,6 +8114,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>rokgem</value>
                         <description>ROKGEM results output directory</description>
                     </param>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
+                    </param>
                     <param name="par_rstdir_name">
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>rokgem</value>
                         <description>ROKGEM restart (input) directory</description>
@@ -8150,6 +8158,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>append data to output files on restart
                                      (if the same run - i.e. if rg_par_outdir_name = rg_par_rstdir_name) (.FALSE./.TRUE.)</description>
+                    </param>
+	           <param name="ctrl_save_data">
+			<value datatype="boolean">.FALSE.</value>
+                        <description>Save ROKGEM data?</description>
                     </param>
 	            <!-- *** RIVER ROUTING PARAMETERS ******************************** -->
 	          <param name="routing_scheme">
