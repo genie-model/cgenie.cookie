@@ -486,7 +486,7 @@ CONTAINS
        print*,'redox back-compatability                            : ',ctrl_data_save_slice_diag_redox_old
        print*,'Surface fields?                                     : ',ctrl_data_save_slice_sur
        print*,'Integration interval (yr)                           : ',par_data_save_slice_dt
-       print*,'Save interval (yr)                                  : ',par_data_save_slice_lamdat
+       print*,'Save interval (yr)                                  : ',par_data_save_slice_timeinterval 
        print*,'Filename for time-slice definition input            : ',trim(par_infile_slice_name)
        print*,'Number of timesteps in sub-inteval saving           : ',par_data_save_slice_n
        print*,'Auto save at run end?                               : ',ctrl_data_save_slice_autoend
@@ -508,7 +508,7 @@ CONTAINS
        print*,'Biogeochemical diagnostics?                         : ',ctrl_data_save_sig_diag
        print*,'redox back-compatability                            : ',ctrl_data_save_sig_diag_redox_old
        print*,'Integration interval (yr)                           : ',par_data_save_sig_dt
-       print*,'Save interval (yr)                                  : ',par_data_save_sig_lamdat
+       print*,'Save interval (yr)                                  : ',par_data_save_sig_timeinterval 
        print*,'Filename for time-series definition input           : ',trim(par_infile_sig_name)
        print*,'Auto save at run end?                               : ',ctrl_data_save_sig_autoend
        print*,'Save high res 3D data (@ time-series frequency)?    : ',ctrl_data_save_3d_sig
@@ -3677,28 +3677,28 @@ CONTAINS
     ! -------------------------------------------------------- ! load data (if a non-zero uniform time interval is not set)
     !                                                            else populate array with uniform time interval steps
     ! NOTE: the possibility of populating with the integration interval has been removed
-    if (par_data_save_sig_lamdat < const_rns) then
+    if (par_data_save_sig_timeinterval  < const_rns) then
        loc_filename = TRIM(par_indir_name)//TRIM(par_infile_sig_name)
        CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_sig,loc_n_elements)
     else
-       loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_lamdat + const_real_nullsmall)
+       loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_timeinterval  + const_real_nullsmall)
        do while (loc_n_elements > n_data_max)
-          par_data_save_sig_lamdat = 10.0*par_data_save_sig_lamdat
-          loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_lamdat + const_real_nullsmall)
+          par_data_save_sig_timeinterval  = 10.0*par_data_save_sig_timeinterval 
+          loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_timeinterval  + const_real_nullsmall)
           CALL sub_report_error( &
-               & 'biogem_data','sub_init_data_save','time-series save interval: par_data_save_sig_lamdat too short -- '// &
+               & 'biogem_data','sub_init_data_save','time-series save interval: par_data_save_sig_timeinterval  too short -- '// &
                & 'was [lower value] and is now [upper value] (years)', &
                & 'CONTINUING', &
-               & (/par_data_save_sig_dt,par_data_save_sig_lamdat/10.0/),.FALSE. &
+               & (/par_data_save_sig_dt,par_data_save_sig_timeinterval /10.0/),.FALSE. &
                & )
        end do
        DO n=1,loc_n_elements
           IF (ctrl_misc_t_BP) then
 !!$             par_data_save_sig(n) = &
-!!$                  & real(n)*par_data_save_sig_lamdat + par_data_save_sig_dt/2.0 - par_misc_t_runtime
+!!$                  & real(n)*par_data_save_sig_timeinterval  + par_data_save_sig_dt/2.0 - par_misc_t_runtime
           else
              par_data_save_sig(n) = &
-                  & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_sig_lamdat + par_data_save_sig_dt/2.0
+                  & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_sig_timeinterval  + par_data_save_sig_dt/2.0
           end if
        END DO
     end IF
@@ -3747,28 +3747,28 @@ CONTAINS
     loc_data_scale = 1.0
     ! -------------------------------------------------------- ! load data (if a non-zero uniform time interval is not set)
     !                                                            else populate array with uniform time interval steps
-    if (par_data_save_slice_lamdat < const_rns) then
+    if (par_data_save_slice_timeinterval  < const_rns) then
        loc_filename = TRIM(par_indir_name)//TRIM(par_infile_slice_name)
        CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_timeslice,loc_n_elements)
     else
-       loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_lamdat + const_real_nullsmall)
+       loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_timeinterval  + const_real_nullsmall)
        do while (loc_n_elements > n_data_max)
-          par_data_save_slice_lamdat = 10.0*par_data_save_slice_lamdat
-          loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_lamdat + const_real_nullsmall)
+          par_data_save_slice_timeinterval  = 10.0*par_data_save_slice_timeinterval 
+          loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_timeinterval  + const_real_nullsmall)
           CALL sub_report_error( &
-               & 'biogem_data','sub_init_data_save','time-slice save interval: par_data_save_slice_lamdat too short -- '// &
+               & 'biogem_data','sub_init_data_save','time-slice save interval: par_data_save_slice_timeinterval  too short -- '// &
                & 'was [lower value] and is now [upper value] (years)', &
                & 'CONTINUING', &
-               & (/par_data_save_slice_dt,par_data_save_slice_lamdat/10.0/),.FALSE. &
+               & (/par_data_save_slice_dt,par_data_save_slice_timeinterval /10.0/),.FALSE. &
                & )
        end do
        DO n=1,loc_n_elements
           IF (ctrl_misc_t_BP) then
 !!$             par_data_save_sig(n) = &
-!!$                  & real(n)*par_data_save_sig_lamdat + par_data_save_sig_dt/2.0 - par_misc_t_runtime
+!!$                  & real(n)*par_data_save_sig_timeinterval  + par_data_save_sig_dt/2.0 - par_misc_t_runtime
           else
              par_data_save_timeslice(n) = &
-                  & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_slice_lamdat + par_data_save_slice_dt/2.0
+                  & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_slice_timeinterval  + par_data_save_slice_dt/2.0
           end if
        END DO
     end if
