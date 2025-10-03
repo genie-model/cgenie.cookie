@@ -5646,7 +5646,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">1.0</value>
                         <description>Integration interval (yr)</description>
                     </param>
-                    <param name="par_data_save_slice_lamdat">
+                    <param name="par_data_save_slice_timeinterval">
 			<value datatype="real">0.0</value>
                         <description>Save interval if not using save point definition file (yr)</description>
                     </param>
@@ -5727,7 +5727,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">1.0</value>
                         <description>Integration interval (yr)</description>
                     </param>
-                    <param name="par_data_save_sig_lamdat">
+                    <param name="par_data_save_sig_timeinterval">
 			<value datatype="real">0.0</value>
                         <description>Save interval if not using save point definition file (yr)</description>
                     </param>
