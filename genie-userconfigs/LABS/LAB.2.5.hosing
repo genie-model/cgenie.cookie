@@ -1,0 +1,48 @@
+# **********************************************************************
+# adapted from: muffin.C.p_worjh2.r.SPIN
+# base-config: 	cookie.C.p_worjh2.r
+# **********************************************************************
+#
+# *** CLIMATE **********************************************************
+#
+# set NO CO2 climate feedback (climate not responding to changing pCO2)
+ea_36=n
+# scaling for atmospheric CO2 radiative forcing, relative to 278 ppm
+ea_radfor_scl_co2=1.0
+#
+# *** BIOLOGICAL NEW PRODUCTION ****************************************
+#
+# No biology
+bg_par_bio_prodopt='NONE'
+#
+# *** DATA SAVING ******************************************************
+#
+# basic model output
+bg_par_data_save_level=2
+# save time-series data every 1.0 years
+bg_par_data_save_sig_timeinterval=1.0
+# save time-slice data every 10.0 years
+bg_par_data_save_slice_timeinterval=10.0
+# Include experiment name in BIOGEM netCDF filenames?
+# (set to .true. if you want unique filenames to be generated)
+bg_ctrl_ncout_expid_name=.false.
+#
+# *** FORCINGS *********************************************************
+#
+# apply salinity anomoly to the North Atlantic surface ocean
+bg_par_forcing_name="p_worxx2.Fsal_SUR_NAtl"
+# scale the salinity forcing 
+# NOTE: make the value NEGATIVE to represent freshwater (rather than salinity) addition
+# NOTE: setting the scaling parameter bg_par_ocn_force_scale_val_2=1.1E18 is equivalent to 1Sv of SALT flux (a very large flux large!)
+#       (bg_par_ocn_force_scale_val_2=-1.1E18 would be 1 Sv of freshwater)
+bg_par_ocn_force_scale_val_2=0.0
+#
+# *** MISC *************************************************************
+#
+# activate single-tracer based ventillation age tracer (using the 'red' numerical tracer)
+bg_ctrl_force_ocn_age1=.true.
+#
+# **********************************************************************
+# *** END **************************************************************
+# **********************************************************************
+
