@@ -1,5 +1,5 @@
 # **********************************************************************
-# adapted from:	cookie.C.p_worjh2.r.SPIN
+# adapted from: muffin.C.p_worjh2.r.SPIN
 # base-config: 	cookie.C.p_worjh2.r
 # **********************************************************************
 #
@@ -15,17 +15,23 @@ ea_radfor_scl_co2=1.0
 # No biology
 bg_par_bio_prodopt='NONE'
 #
-# *** DATA SAVING ***************************************************
+# *** DATA SAVING ******************************************************
 #
-# basic model output
+# Preformed diagnostics option == BASIC
 bg_par_data_save_level=2
-# save time-series data every 1.0 years
-bg_par_data_save_sig_timeinterval=1.0
-# save time-slice data every 10.0 years
-bg_par_data_save_slice_timeinterval=10.0
-# Include experiment name in BIOGEM netCDF filenames?
-# (set to .true. if you want unique filenames to be generated)
+# force time-slice save at run end only
+bg_par_infile_slice_name='save_timeslice_NONE.dat'
+# Include experiment name in BIOGEM netCDF filenames? 
 bg_ctrl_ncout_expid_name=.false.
+#
+# *** FORCINGS *********************************************************
+#
+# apply salinity anomoly to the Eastern Mediterranean surface
+bg_par_forcing_name="p_worxx2.Fsal_SUR_EMed"
+# scale the salinity forcing 
+# NOTE: make the value NEGATIVE to represent freshwater (rather than salinity) addition
+# NOTE: setting the scaling parameter bg_par_ocn_force_scale_val_2=1.1E18 is equivalent to 1Sv of SALT flux (a very large flux large!)
+bg_par_ocn_force_scale_val_2=0.0
 #
 # *** MISC *************************************************************
 #
