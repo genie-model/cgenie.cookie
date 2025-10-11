@@ -68,7 +68,7 @@ bg_par_data_save_sig_timeinterval=10.0
 # NOTE: set bg_par_data_save_slice_timeinterval=0.0 
 #       in order to employ a file of save years to determine when time-slice data is saved
 # NOTE: additionally set bg_par_infile_slice_name='save_timeslice_NONE.dat'
-#       fin order to force time-slice save at run end only
+#       in order to force time-slice save at run end only
 bg_par_data_save_slice_timeinterval=0.0
 bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
