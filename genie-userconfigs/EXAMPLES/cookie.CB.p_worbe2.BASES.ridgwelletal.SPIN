@@ -50,9 +50,12 @@ bg_par_bio_remin_CaCO3_eL2=1000000.0
 #
 # Preformed diagnostics option == BASIC + biology + tracer + proxy
 bg_par_data_save_level=7
+# save time-series data every 10 years
+bg_par_data_save_sig_timeinterval=10.0
 # force time-slice save at run end only
 bg_par_infile_slice_name='save_timeslice_NONE.dat'
-# Include experiment name in BIOGEM netCDF filenames? 
+# Include experiment name in BIOGEM netCDF filenames?
+# (set to .true. if you want unique filenames to be generated)
 bg_ctrl_ncout_expid_name=.false.
 #
 # *** FORCINGS *********************************************************

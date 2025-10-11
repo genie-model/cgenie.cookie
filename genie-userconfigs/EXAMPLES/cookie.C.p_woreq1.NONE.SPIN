@@ -5,31 +5,54 @@
 #
 # *** CLIMATE **********************************************************
 #
-# solar constant reduced by 5.6% for late Neoproterozoic: 1285.92 W m-2
+# SPECIFY SOLAR CONSTANT (Wm-2)
+# NOTE: default value is 1368.0
+# e.g., ma_genie_solar_constant=1285.92 -> solar constant reduced by 5.6% for late Neoproterozoic
 ma_genie_solar_constant=1285.92
-# set NO CO2 climate feedback (climate not responding to changing pCO2)
+# SPECIFY WHETHER RADIATIVE FORCING IS DERIVED FROM ATMOSPHERIC CO2	
+# NOTE: 'y' requires that CO2 is being calculated in the first place ...
+#       'n' can be used for a configuration either with or without explicitly calculated atmopsheric CO2
+# e.g., ea_36=n -> raditive forcing is set by the value of ea_radfor_scl_co2
 ea_36=n
-# scaling for atmospheric CO2 radiative forcing, relative to 278 ppm
+# SPECIFY RADIATIVE FORCING TO BE APPLIED
+# NOTE: the value of ea_radfor_scl_co2 represents a multiplier of CO2 relative to 278 ppm 
+#       and radiative forcing is derived from this
+# e.g., ea_radfor_scl_co2=20.0 -> radiative forcing equivalent to changing from x1 to x20 CO2
 ea_radfor_scl_co2=20.0
 #
 # *** BIOLOGICAL NEW PRODUCTION ****************************************
 #
-# No biology
+# SPECIFY THE BIOLOGICAL EXPORT SCHEME
+# e.g., bg_par_bio_prodopt='NONE' -> no biologial export scheme (or ECOGEM will be used)
 bg_par_bio_prodopt='NONE'
 #
 # *** DATA SAVING ******************************************************
 #
-# Preformed diagnostics option == BASIC
+# (refer to Chapter: 'cookie model output')
+# SPECIFY THE SCOPE OF DATA SAVING
+# e.g., bg_par_data_save_level=2 -> selects basic model output
 bg_par_data_save_level=2
-# force time-slice save at run end only
+# SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
+# e.g., bg_par_data_save_sig_timeinterval=10.0 -> save time-series data every 10.0 years
+# NOTE: set bg_par_data_save_sig_timeinterval=0.0 
+#       in order to employ a file of save years to determine when time-series data is saved
+bg_par_data_save_sig_timeinterval=10.0
+# SPECIFY THE INTERVAL AT WHICH TIME-SLICE (SPATIAL) DATA IS SAVED
+# e.g., bg_par_data_save_slice_timeinterval=1000.0 -> save time-slice data every 1000.0 years
+# NOTE: set bg_par_data_save_slice_timeinterval=0.0 
+#       in order to employ a file of save years to determine when time-slice data is saved
+# NOTE: additionally set bg_par_infile_slice_name='save_timeslice_NONE.dat'
+#       fin order to force time-slice save at run end only
+bg_par_data_save_slice_timeinterval=0.0
 bg_par_infile_slice_name='save_timeslice_NONE.dat'
-# Include experiment name in BIOGEM netCDF filenames? 
+# SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
+# e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
 bg_ctrl_ncout_expid_name=.false.
 #
 # *** FORCINGS *********************************************************
 #
-# add a geothermal heat flux (W m-2)
-bg_ctrl_force_GOLDSTEInTS=.TRUE.
+# SPECIFY A UNIFORM GEOTHERMAL HEAT FLUX (W m-2) AT THE SEA-FLOOR
+# NOTE: default value is zero
 bg_par_Fgeothermal=100.0E-3
 #
 # *** MISC *************************************************************
