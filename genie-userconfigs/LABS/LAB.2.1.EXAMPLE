@@ -5,31 +5,49 @@
 #
 # *** CLIMATE **********************************************************
 #
-# set NO CO2 climate feedback (climate not responding to changing pCO2)
+# SPECIFY WHETHER RADIATIVE FORCING IS DERIVED FROM ATMOSPHERIC CO2	
+# NOTE: 'y' requires that CO2 is being calculated in the first place ...
+#       'n' can be used for a configuration either with or without explicitly calculated atmopsheric CO2
+# e.g., ea_36=n -> raditive forcing is set by the value of ea_radfor_scl_co2
 ea_36=n
-# scaling for atmospheric CO2 radiative forcing, relative to 278 ppm
+# SPECIFY RADIATIVE FORCING TO BE APPLIED
+# NOTE: the value of ea_radfor_scl_co2 represents a multiplier of CO2 relative to 278 ppm 
+#       and radiative forcing is derived from this
+# e.g., ea_radfor_scl_co2=1.0 -> radiative forcing equivalent to changing from x1 to x1 preindustrial CO2 (no change!)
 ea_radfor_scl_co2=1.0
 #
 # *** BIOLOGICAL NEW PRODUCTION ****************************************
 #
-# No biology
+# SPECIFY THE BIOLOGICAL EXPORT SCHEME
+# e.g., bg_par_bio_prodopt='NONE' -> no biologial export scheme (or ECOGEM will be used)
 bg_par_bio_prodopt='NONE'
 #
 # *** DATA SAVING ***************************************************
 #
-# basic model output
+# (refer to Chapter: 'cookie model output')
+# SPECIFY THE SCOPE OF DATA SAVING
+# e.g., bg_par_data_save_level=2 -> selects basic model output
 bg_par_data_save_level=2
-# save time-series data every 1.0 years
+# SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
+# e.g., bg_par_data_save_sig_timeinterval=1.0 -> save time-series data every 1.0 year
+# NOTE: set bg_par_data_save_sig_timeinterval=0.0 
+#       in order to employ a file of save years to determine when time-series data is saved
 bg_par_data_save_sig_timeinterval=1.0
-# save time-slice data every 10.0 years
+# SPECIFY THE INTERVAL AT WHICH TIME-SLICE (SPATIAL) DATA IS SAVED
+# e.g., bg_par_data_save_slice_timeinterval=10.0 -> save time-slice data every 10.0 years
+# NOTE: set bg_par_data_save_slice_timeinterval=0.0 
+#       in order to employ a file of save years to determine when time-slice data is saved
+# NOTE: additionally set bg_par_infile_slice_name='save_timeslice_NONE.dat'
+#       fin order to force time-slice save at run end only
 bg_par_data_save_slice_timeinterval=10.0
-# Include experiment name in BIOGEM netCDF filenames?
-# (set to .true. if you want unique filenames to be generated)
+# SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
+# e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
 bg_ctrl_ncout_expid_name=.false.
 #
 # *** MISC *************************************************************
 #
-# activate single-tracer based ventillation age tracer (using the 'red' numerical tracer)
+# SPECIFY THAT THE 'RED' NUMERICAL TRACER IS USED TO CALCULATE OCEAN VENTILLATION AGE
+# NOTE: the 'red' numerical tracer must be selected in the base-config
 bg_ctrl_force_ocn_age1=.true.
 #
 # **********************************************************************
