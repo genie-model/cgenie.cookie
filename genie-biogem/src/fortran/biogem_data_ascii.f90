@@ -4267,6 +4267,26 @@ CONTAINS
                & '    ice(%)', &
                & '   SST(oC)', &
                & '  SSS(PSU)'
+       elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
+          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14,A3,A12)', &
+               & ' > ',          &
+               & '  model year', &
+               & ' | ',          &
+               & '  pCO2(uatm)', &
+               & '   SAT(oC)', &
+               & ' | ',          &
+               & '  AMOC(Sv)', &
+               & '    ice(%)', &
+               & '   SST(oC)', &
+               & '  SSS(PSU)', &
+               & ' | ',           &
+               & '      pH', &
+               & '  OHMEGA', &
+               & ' | ',           &
+               & '  [O2](uM)', &
+               & '  fPOC(PgC/yr)', &
+               & ' | ',           &
+               & '  CaCO3(wt%)'
           elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
           PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14)', &
                & ' > ',          &
@@ -4339,8 +4359,28 @@ CONTAINS
             & ' | ', &
             & loc_opsi_scale*int_misc_opsia_max_sig, &
             & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
-            & int_ocn_sur_sig(io_T), &
+            & int_ocn_sur_sig(io_T) - const_zeroC, &
             & int_ocn_sur_sig(io_S)
+    elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
+       PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3,A3,F12.3)', &
+            & ' > ', &
+            & dum_yr, &
+            & ' | ', &
+            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+            & int_ocnatm_sig(ia_T), &
+            & ' | ', &
+            & loc_opsi_scale*int_misc_opsia_max_sig, &
+            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+            & int_ocn_sur_sig(io_T) - const_zeroC, &
+            & int_ocn_sur_sig(io_S), &
+            & ' | ', &
+            & int_carb_opn_sig(ic_pHsws), &
+            & int_carb_opn_sig(ic_ohm_cal), &
+            & ' | ', &
+            & 1.0E6*int_ocn_sig(io_O2), &
+            & 12.0E-15*int_fexport_sig(is_POC), &
+            & ' | ', &
+            & int_ocnsed_sig(is_CaCO3)
     elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
        PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3)', &
             & ' > ', &
