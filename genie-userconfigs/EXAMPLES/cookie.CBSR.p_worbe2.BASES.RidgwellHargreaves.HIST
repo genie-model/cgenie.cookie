@@ -124,7 +124,7 @@ sg_par_sed_fdet=0.0
 #
 # (refer to Chapter: 'cookie model output')
 # SPECIFY THE SCOPE OF DATA SAVING
-# e.g., bg_par_data_save_level=11 -> includes full carbonate chemsitry output
+# e.g., bg_par_data_save_level=11 -> includes full carbonate chemistry output
 bg_par_data_save_level=11
 # SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
 # e.g., bg_par_data_save_sig_timeinterval=10.0 -> save time-series data every 10.0 years
@@ -144,14 +144,13 @@ bg_par_infile_slice_name='save_timeslice_historicalfuture.dat'
 # e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
 bg_ctrl_ncout_expid_name=.false.
 # SPECIFY START YEAR
-# specify a start year different froim year zero (the default)
+# specify a start year different from year zero (the default)
 bg_par_misc_t_start=1765.0
 #
 # *** FORCINGS *********************************************************
 #
 # SPEFICY ANY FORCINGS OF OCEAN/ATMOSPHERE/SEDIMENTS
-# specify forcings -- ONLY apply a non-carbonate (detrital) flux (to the sediments)
-# NOTE: now allow pCO2 to freely evolve -- its final value should be similar to its initial value if the CaCO3 cycle has been balanaced correctly
+# specify forcings -- apply a non-carbonate (detrital) flux (to the sediments) + impose observed pCO2 (and 13C)
 bg_par_forcing_name="worbe2.detplusopalSED.historical2010"
 #
 # *** MISC *************************************************************
