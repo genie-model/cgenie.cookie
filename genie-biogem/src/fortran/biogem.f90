@@ -1353,7 +1353,7 @@ subroutine biogem(        &
                        locijk_focn(io_Ca,i,j,n_k) = loc_force_sign*force_flux_locn(io2l(io_Ca),i,j,n_k)
                     end if
                  else
-                    ! (1c) ocean ALK [GEOENGINEEGING of SURFACE OCEAN CHEMISTRY]
+                    ! (1b,c) ocean ALK [GEOENGINEEGING of SURFACE OCEAN CHEMISTRY]
                     ! NOTE: the 'red' tracer is used to set a time history of ocean surface pH
                     !       the 'blue' tracer is used to set a time history of saturation state
                     !       otherwise employ fixed target
