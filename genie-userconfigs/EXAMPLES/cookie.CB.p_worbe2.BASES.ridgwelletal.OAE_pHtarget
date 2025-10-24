@@ -83,16 +83,16 @@ bg_par_misc_t_start=2010.0
 #
 # SPEFICY ANY FORCINGS OF OCEAN/ATMOSPHERE/SEDIMENTS
 # NOTE: ~4000 PgC emission scenario fro  Ridgwell and Hargreaves [2007]
-bg_par_forcing_name="pyyyyz.FRpCO2_Fp13CO2_FRALK_FDIC_F13DIC_FCa.4000PgC"
+bg_par_forcing_name="pyyyyz.FpCO2_Fp13CO2_Rcolr_FRALK_FDIC_F13DIC_FCa.4000PgC"
 # scale ocean limning flux input (mol yr-1)
-# NOTE: the target pCO2 value set in biogem_force_flux_atm_pCO2_13C_sig.dat is 278 ppm by default
+# NOTE: the target global mean surface pH value set in biogem_force_restore_ocn_colr_sig.dat is 8.150520 by default
 # NOTE: here -- no DIC component associated with the OAE application is defined here (bg_par_ocn_force_scale_val_3)
 #       (but could be)
 # NOTE: maximum Ca and ALK fluxes per year are set here to: 2000 Tmol yr-1 Ca, 4000 Tmol yr-1 ALK and sufficient to overcome the emissions sceanrio
 #       i.e., 2000 Tmol CaCO3 yr-1 compared to total global natural weathering flux of ca. 10 Tmol CaCO3 yr-1
 #       (but could be different, depending on how aggressively the pCO2 target is to be approached)
-# NOTE: none of: pCO2 (and 13C of pCO2) and CO2 emisisons (and 13C) are 'scaled' as both restoring and flux forcings are simultaneously requested
-#       (bg_par_atm_force_scale_val_3 and bg_par_atm_force_scale_val_4 need to remain at their default values of 1.0 and are deliberately not listed here)
+# NOTE: emissions of CO2 (and 13C) can be scale in the usual way if needed
+#       (bg_par_atm_force_scale_val_3 and bg_par_atm_force_scale_val_4 are not listed here and retain their default values of 1.0)
 bg_par_ocn_force_scale_val_3=0.0
 bg_par_ocn_force_scale_val_4=0.0
 bg_par_ocn_force_scale_val_12=4000.0E12
