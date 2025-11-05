@@ -87,7 +87,7 @@ bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # *** FORCINGS ******************************************************
 #
 # specify forcings -- generic forcing of atmopsheric pCO2 and d13C PLUS a non-carbonate (detrital) flux (to the sediments)
-bg_par_forcing_name="worbe2.RpCO2_Rp13CO2_detplusopalSED"
+bg_par_forcing_name="worbe2.RpCO2_Rp13CO2.detplusopalSED"
 bg_par_atm_force_scale_val_3=278.0E-06
 bg_par_atm_force_scale_val_4=-6.5
 #
