@@ -1716,30 +1716,36 @@ CONTAINS
           DO i=1,n_i
              DO j=1,n_j
                 IF (n_k >= goldstein_k1(i,j)) THEN
-                   if (int_bio_settle_timeslice(is_POP,i,j,n_k) > const_real_nullsmall) then
+                   if ((int_bio_settle_timeslice(is_POP,i,j,n_k) > const_rns) .AND. &
+                        & (int_bio_settle_timeslice(is_POC,i,j,n_k) > const_rns)) then
                       loc_ij(i,j) = int_bio_settle_timeslice(is_POC,i,j,n_k)/int_bio_settle_timeslice(is_POP,i,j,n_k)
+                   else
+                      loc_ij(i,j) = 0.0
                    end if
                 end IF
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOCtoPOP','average POM export C/P cellular ratio', &
+          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOC2POP','average POM export C/P cellular ratio', &
                & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d('misc_sur_rPOCtoPOP',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          call sub_putvar2d('misc_sur_rPOC2POP',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
           ! C/P
           loc_unitsname = 'o/oo'
           loc_ij(:,:) = const_real_null
           DO i=1,n_i
              DO j=1,n_j
                 IF (n_k >= goldstein_k1(i,j)) THEN
-                   if (int_bio_settle_timeslice(is_POC,i,j,n_k) > const_real_nullsmall) then
+                   if ((int_bio_settle_timeslice(is_POP,i,j,n_k) > const_rns) .AND. &
+                        & (int_bio_settle_timeslice(is_POC,i,j,n_k) > const_rns)) then
                       loc_ij(i,j) = 1.0E3*int_bio_settle_timeslice(is_POP,i,j,n_k)/int_bio_settle_timeslice(is_POC,i,j,n_k)
+                   else
+                      loc_ij(i,j) = const_real_null
                    end if
                 end IF
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOPtoPOC','average POM export P/C cellular ratio', &
+          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOP2POC','average POM export P/C cellular ratio (in units of per mil)', &
                & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d('misc_sur_rPOPtoPOC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          call sub_putvar2d('misc_sur_rPOP2POC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        end IF
     end if
     !-----------------------------------------------------------------------
@@ -2509,7 +2515,7 @@ CONTAINS
     !----------------------------------------------------------------
     !       WATER-COLUMN INTEGRATED TRACER INVENTORIES
     !----------------------------------------------------------------
-    If (ctrl_data_save_slice_diag_geochem .OR. (par_data_save_level == 10)) then
+    If (ctrl_data_save_slice_diag_geochem .OR. ctrl_data_save_slice_diag_tracer .OR. (par_data_save_level == 10)) then
        loc_unitsname = 'mol m-2'
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)

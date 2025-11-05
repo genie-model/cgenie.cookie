@@ -54,8 +54,8 @@ MODULE biogem_lib
   CHARACTER(len=127)::par_misc_2D_file                                  ! filename of generic 2D field
   REAL::par_misc_2D_scale                                               ! scalar of generic 2D field
   NAMELIST /ini_biogem_nml/par_misc_2D_file,par_misc_2D_scale
-  integer::par_misc_kmin_pipe                                           ! Min k for geoengineering ocean pipes!
-  NAMELIST /ini_biogem_nml/par_misc_kmin_pipe
+  integer::par_misc_kmin_geoeng                                         ! Min k for geoengineering!
+  NAMELIST /ini_biogem_nml/par_misc_kmin_geoeng
   logical::ctrl_misc_geoeng_noDIC                                       ! exclude DIC
   NAMELIST /ini_biogem_nml/ctrl_misc_geoeng_noDIC
   logical::ctrl_ocn_rst_reset_T                                         ! Overwrite restart temperatures?

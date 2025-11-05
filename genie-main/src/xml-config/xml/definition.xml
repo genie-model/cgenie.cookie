@@ -4114,9 +4114,9 @@
 			<value datatype="real">1.0</value>
                         <description>Scalar or unassigned 2D field</description>
                     </param>
-                    <param name="par_misc_kmin_pipe">
+                    <param name="par_misc_kmin_geoeng">
 			<value datatype="integer">1</value>
-                        <description>Min k for geoengineering ocean pipes!</description>
+                        <description>Min k for geoengineering!</description>
                     </param>
                     <param name="ctrl_misc_geoeng_noDIC">
 			<value datatype="boolean">.false.</value>

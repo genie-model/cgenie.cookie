@@ -90,7 +90,7 @@ CONTAINS
        print*,'Geoengineering scheme ID string                     : ',trim(opt_misc_geoeng)
        print*,'Filename for generic 2D field                       : ',trim(par_misc_2D_file)
        print*,'scalar for generic misc 2D field                    : ',par_misc_2D_scale
-       print*,'Min k for geoengineering ocean pipes!               : ',par_misc_kmin_pipe
+       print*,'Min k for geoengineering!                           : ',par_misc_kmin_geoeng
        print*,'Exclude DIC from geoenginering?                     : ',ctrl_misc_geoeng_noDIC
        print*,'Overwrite restart temperatures?                     : ',ctrl_ocn_rst_reset_T
        print*,'Full (entire grid) carbonate chem update?           : ',ctrl_carbchemupdate_full
