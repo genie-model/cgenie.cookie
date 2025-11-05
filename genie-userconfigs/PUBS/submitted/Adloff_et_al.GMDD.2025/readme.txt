@@ -76,19 +76,19 @@ YY 	== 	NO, TZ, MY
 
 (1)	For all the 'ocean-only' marine carbon cycle experiments -- to run a 10,000 year spin-up:
 
-./runcookie.sh cookie.CB.p_worbe2.BASES PUBS/submitted/Adloff_etal.GMDD.2025 cookie.CB.p_worbe2.BASES.x_YY_ocean.SPIN 10000
+./runcookie.sh cookie.CB.p_worbe2.BASES PUBS/submitted/Adloff_et_al.GMDD.2025 cookie.CB.p_worbe2.BASES.x_YY_ocean.SPIN 10000
 
 (2)	For the 'closed system' ocean+sediment carbon cycle configuration -- to run a 20,000 year spin-up:
 
-./runcookie.sh cookie.CBSR.p_worbe2.BASES PUBS/submitted/Adloff_etal.GMDD.2025 cookie.CBSR.p_worbe2.BASES.x_YY_closed.SPIN 20000
+./runcookie.sh cookie.CBSR.p_worbe2.BASES PUBS/submitted/Adloff_et_al.GMDD.2025 cookie.CBSR.p_worbe2.BASES.x_YY_closed.SPIN 20000
 
 (2)	For the 'open system' ocean+sediment carbon cycle configuration -- to run a 100,000 year spin-up:
 
-./runcookie.sh cookie.CBSR.p_worbe2.BASES PUBS/submitted/Adloff_etal.GMDD.2025 cookie.CBSR.p_worbe2.BASES.x_YY_open.SPIN 100000
+./runcookie.sh cookie.CBSR.p_worbe2.BASES PUBS/submitted/Adloff_et_al.GMDD.2025 cookie.CBSR.p_worbe2.BASES.x_YY_open.SPIN 100000
 
 (4)	Finally, for the MyAmi Mg/Ca correction (ocean-only configuration) but with default T and S limits imposed:
 
-./runcookie.sh cookie.CB.p_worbe2.BASES PUBS/submitted/Adloff_etal.GMDD.2025 cookie.CB.p_worbe2.BASES.x_MY_TS_ocean.SPIN 10000
+./runcookie.sh cookie.CB.p_worbe2.BASES PUBS/submitted/Adloff_et_al.GMDD.2025 cookie.CB.p_worbe2.BASES.x_MY_TS_ocean.SPIN 10000
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
