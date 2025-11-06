@@ -90,7 +90,7 @@ CONTAINS
        print*,'Geoengineering scheme ID string                     : ',trim(opt_misc_geoeng)
        print*,'Filename for generic 2D field                       : ',trim(par_misc_2D_file)
        print*,'scalar for generic misc 2D field                    : ',par_misc_2D_scale
-       print*,'Min k for geoengineering ocean pipes!               : ',par_misc_kmin_pipe
+       print*,'Min k for geoengineering!                           : ',par_misc_kmin_geoeng
        print*,'Exclude DIC from geoenginering?                     : ',ctrl_misc_geoeng_noDIC
        print*,'Overwrite restart temperatures?                     : ',ctrl_ocn_rst_reset_T
        print*,'Full (entire grid) carbonate chem update?           : ',ctrl_carbchemupdate_full
@@ -486,7 +486,8 @@ CONTAINS
        print*,'redox back-compatability                            : ',ctrl_data_save_slice_diag_redox_old
        print*,'Surface fields?                                     : ',ctrl_data_save_slice_sur
        print*,'Integration interval (yr)                           : ',par_data_save_slice_dt
-       print*,'Save interval (yr)                                  : ',par_data_save_slice_timeinterval 
+       print*,'Save interval (yr)                                  : ',par_data_save_slice_timeinterval
+       print*,'Maximum allowed number of time-slice save points    : ',par_data_save_slice_nmax
        print*,'Filename for time-slice definition input            : ',trim(par_infile_slice_name)
        print*,'Number of timesteps in sub-inteval saving           : ',par_data_save_slice_n
        print*,'Auto save at run end?                               : ',ctrl_data_save_slice_autoend
@@ -508,6 +509,7 @@ CONTAINS
        print*,'Biogeochemical diagnostics?                         : ',ctrl_data_save_sig_diag
        print*,'redox back-compatability                            : ',ctrl_data_save_sig_diag_redox_old
        print*,'Integration interval (yr)                           : ',par_data_save_sig_dt
+       print*,'Maximum allowed number of time-series save points   : ',par_data_save_sig_nmax
        print*,'Save interval (yr)                                  : ',par_data_save_sig_timeinterval 
        print*,'Filename for time-series definition input           : ',trim(par_infile_sig_name)
        print*,'Auto save at run end?                               : ',ctrl_data_save_sig_autoend
@@ -3677,25 +3679,39 @@ CONTAINS
     ! -------------------------------------------------------- ! load data (if a non-zero uniform time interval is not set)
     !                                                            else populate array with uniform time interval steps
     ! NOTE: the possibility of populating with the integration interval has been removed
-    if (par_data_save_sig_timeinterval  < const_rns) then
+    if (par_data_save_sig_timeinterval < const_rns) then
        loc_filename = TRIM(par_indir_name)//TRIM(par_infile_sig_name)
        CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_sig,loc_n_elements)
+       if (loc_n_elements > par_data_save_sig_nmax) then
+          par_data_save_sig(:) = 0.0          
+          loc_n_elements = 0
+          CALL sub_report_error( &
+               & 'biogem_data','sub_init_data_save', &
+               & 'too many time-series save intervals in the file (> bg_par_data_save_sig_nmax -- '// &
+               & 'saving only at experiment end (or increase value of bg_par_data_save_sig_nmax)', &
+               & 'CONTINUING', &
+               & (/const_real_null/),.FALSE. &
+               & )
+       end if
     else
        loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_timeinterval  + const_real_nullsmall)
-       do while (loc_n_elements > n_data_max)
+       do while (loc_n_elements > par_data_save_sig_nmax)
+          CALL sub_report_error( &
+               & 'biogem_data','sub_init_data_save', &
+               & 'time-series save interval: bg_par_data_save_sig_timeinterval is too short and '// &
+               & 'the number of requested save intervals > bg_par_data_save_sig_nmax'// &
+               & ' -- this was [DATA1] and is now [DATA2] (or increase value of bg_par_data_save_sig_nmax [DATA3])', &
+               & 'CONTINUING', &
+               & (/par_data_save_sig_timeinterval,10.0*par_data_save_sig_timeinterval, &
+               & real(par_data_save_sig_nmax)/),.FALSE. &
+               & )
           par_data_save_sig_timeinterval  = 10.0*par_data_save_sig_timeinterval 
           loc_n_elements = INT(par_misc_t_runtime/par_data_save_sig_timeinterval  + const_real_nullsmall)
-          CALL sub_report_error( &
-               & 'biogem_data','sub_init_data_save','time-series save interval: par_data_save_sig_timeinterval  too short -- '// &
-               & 'was [lower value] and is now [upper value] (years)', &
-               & 'CONTINUING', &
-               & (/par_data_save_sig_dt,par_data_save_sig_timeinterval /10.0/),.FALSE. &
-               & )
        end do
        DO n=1,loc_n_elements
           IF (ctrl_misc_t_BP) then
-!!$             par_data_save_sig(n) = &
-!!$                  & real(n)*par_data_save_sig_timeinterval  + par_data_save_sig_dt/2.0 - par_misc_t_runtime
+             par_data_save_sig(n) = &
+                  & real(n)*par_data_save_sig_timeinterval  + par_data_save_sig_dt/2.0 - par_misc_t_runtime
           else
              par_data_save_sig(n) = &
                   & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_sig_timeinterval  + par_data_save_sig_dt/2.0
@@ -3750,22 +3766,36 @@ CONTAINS
     if (par_data_save_slice_timeinterval  < const_rns) then
        loc_filename = TRIM(par_indir_name)//TRIM(par_infile_slice_name)
        CALL sub_load_data_t1(loc_filename,loc_data_scale,par_data_save_timeslice,loc_n_elements)
+       if (loc_n_elements > par_data_save_slice_nmax) then
+          par_data_save_timeslice(:) = 0.0          
+          loc_n_elements = 0
+          CALL sub_report_error( &
+               & 'biogem_data','sub_init_data_save', &
+               & 'too many time-slice save intervals in the file (> bg_par_data_save_slice_nmax -- '// &
+               & 'saving only at experiment end (or increase value of bg_par_data_save_slice_nmax)', &
+               & 'CONTINUING', &
+               & (/const_real_null/),.FALSE. &
+               & )
+       end if
     else
        loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_timeinterval  + const_real_nullsmall)
-       do while (loc_n_elements > n_data_max)
+       do while (loc_n_elements > par_data_save_slice_nmax)
+          CALL sub_report_error( &
+               & 'biogem_data','sub_init_data_save', &
+               & 'time-slice save interval: bg_par_data_save_slice_timeinterval is too short and '// &
+               & 'the number of requested save intervals > bg_par_data_save_slice_nmax'// &
+               & ' -- this was [DATA1] and is now [DATA2] (or increase value of bg_par_data_save_slice_nmax [DATA3])', &
+               & 'CONTINUING', &
+               & (/par_data_save_slice_timeinterval,10.0*par_data_save_slice_timeinterval, &
+               & real(par_data_save_slice_nmax)/),.FALSE. &
+               & )
           par_data_save_slice_timeinterval  = 10.0*par_data_save_slice_timeinterval 
           loc_n_elements = INT(par_misc_t_runtime/par_data_save_slice_timeinterval  + const_real_nullsmall)
-          CALL sub_report_error( &
-               & 'biogem_data','sub_init_data_save','time-slice save interval: par_data_save_slice_timeinterval  too short -- '// &
-               & 'was [lower value] and is now [upper value] (years)', &
-               & 'CONTINUING', &
-               & (/par_data_save_slice_dt,par_data_save_slice_timeinterval /10.0/),.FALSE. &
-               & )
        end do
        DO n=1,loc_n_elements
           IF (ctrl_misc_t_BP) then
-!!$             par_data_save_sig(n) = &
-!!$                  & real(n)*par_data_save_sig_timeinterval  + par_data_save_sig_dt/2.0 - par_misc_t_runtime
+             par_data_save_timeslice(n) = &
+                  & real(n)*par_data_save_slice_timeinterval  + par_data_save_slice_dt/2.0 - par_misc_t_runtime
           else
              par_data_save_timeslice(n) = &
                   & par_misc_t_runtime - real(loc_n_elements - n + 1)*par_data_save_slice_timeinterval  + par_data_save_slice_dt/2.0

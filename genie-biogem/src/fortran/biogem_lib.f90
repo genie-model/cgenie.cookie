@@ -54,8 +54,8 @@ MODULE biogem_lib
   CHARACTER(len=127)::par_misc_2D_file                                  ! filename of generic 2D field
   REAL::par_misc_2D_scale                                               ! scalar of generic 2D field
   NAMELIST /ini_biogem_nml/par_misc_2D_file,par_misc_2D_scale
-  integer::par_misc_kmin_pipe                                           ! Min k for geoengineering ocean pipes!
-  NAMELIST /ini_biogem_nml/par_misc_kmin_pipe
+  integer::par_misc_kmin_geoeng                                         ! Min k for geoengineering!
+  NAMELIST /ini_biogem_nml/par_misc_kmin_geoeng
   logical::ctrl_misc_geoeng_noDIC                                       ! exclude DIC
   NAMELIST /ini_biogem_nml/ctrl_misc_geoeng_noDIC
   logical::ctrl_ocn_rst_reset_T                                         ! Overwrite restart temperatures?
@@ -690,7 +690,9 @@ MODULE biogem_lib
   real::par_data_save_slice_dt                                   ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_slice_dt
   real::par_data_save_slice_timeinterval                         ! Save interval if not using save point definition file (yr)
-  NAMELIST /ini_biogem_nml/par_data_save_slice_timeinterval 
+  NAMELIST /ini_biogem_nml/par_data_save_slice_timeinterval
+  integer::par_data_save_slice_nmax                              ! 'Maximum allowed number of time-slice save points
+  NAMELIST /ini_biogem_nml/par_data_save_slice_nmax
   CHARACTER(len=127)::par_infile_slice_name                      !
   NAMELIST /ini_biogem_nml/par_infile_slice_name
   integer::par_data_save_slice_n                                 ! number of timesteps in sub-inteval (e.g., monthly) saving
@@ -725,6 +727,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_data_save_sig_dt
   real::par_data_save_sig_timeinterval                           ! Save interval if not using save point definition file (yr)
   NAMELIST /ini_biogem_nml/par_data_save_sig_timeinterval 
+  integer::par_data_save_sig_nmax                                ! 'Maximum allowed number of time-series save points
+  NAMELIST /ini_biogem_nml/par_data_save_sig_nmax
   CHARACTER(len=127)::par_infile_sig_name                        !
   NAMELIST /ini_biogem_nml/par_infile_sig_name
   LOGICAL::ctrl_data_save_sig_autoend                            ! auto save at run end?

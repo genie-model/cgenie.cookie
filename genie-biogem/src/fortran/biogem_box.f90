@@ -466,7 +466,8 @@ CONTAINS
     real::loc_d13C_DIC_Corg_ef
     real::loc_bio_NP,loc_red
     real::loc_dN2,loc_dNH4,loc_dNO3
-    integer::loc_k_mld
+    real::loc_DOM_scale
+    integer::loc_k_mld,loc_k
     real,dimension(n_ocn)::loc_ocn                             !
 
     ! *** INITIALIZE VARIABLES ***
@@ -502,6 +503,7 @@ CONTAINS
     loc_bio_red_RDOMfrac = 0.0
     loc_d13C_DIC_Corg_ef = 0.0
     loc_bio_red_DOMtotal = 0.0
+    loc_DOM_scale = 1.0
     !
     loc_ocn = 0.0
 
@@ -636,8 +638,6 @@ CONTAINS
     select case (opt_bio_red_PC_flex)
     case (-1)
        bio_part_red(is_POP,is_POC,dum_i,dum_j) = par_bio_red_PC_flex_min
-    case (0)
-       bio_part_red(is_POP,is_POC,dum_i,dum_j) = par_bio_red_POP_POC
     case (1,2)
        ! default par_bio_red_PC_alpha1 = 1.0
        ! default par_bio_red_PC_alpha2 = 1.0
@@ -662,12 +662,20 @@ CONTAINS
           bio_part_red(is_POP,is_POC,dum_i,dum_j) = par_bio_red_PC_flex_min
        end if
     case default
+       ! set default C:P
        bio_part_red(is_POP,is_POC,dum_i,dum_j) = par_bio_red_POP_POC
+    end select
+    ! test for a geoengineering modification of C:P
+    select case (opt_misc_geoeng)
+    case('seaweed')
+       if (par_misc_2D(dum_i,dum_j) > const_rns) then
+          bio_part_red(is_POP,is_POC,dum_i,dum_j) = par_misc_2D_scale*bio_part_red(is_POP,is_POC,dum_i,dum_j)
+       end if
     end select
     ! re-calculate P/C for completeness
     bio_part_red(is_POC,is_POP,dum_i,dum_j) = 1.0/bio_part_red(is_POP,is_POC,dum_i,dum_j)
     ! set local N:P
-    loc_bio_NP = bio_part_red(is_POC,is_PON,dum_i,dum_j)*bio_part_red(is_POP,is_POC,dum_i,dum_j)
+    loc_bio_NP = bio_part_red(is_POC,is_PON,dum_i,dum_j)*bio_part_red(is_POP,is_POC,dum_i,dum_j)    
     
     ! *** CALCULATE PRODUCTIVITY MODIFIERS ***
     ! fractional ice-free coverage
@@ -1860,8 +1868,19 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! RE-SCALE FOR DISSOLVED ORGANIC MATTER PRODUCTION
     ! -------------------------------------------------------- !
+    ! NOTE: re-scale DOM frac for fish geoengineereing here,
+    !       rather than at the start of the subroutine, so as to preserve the total biomineral flux
+    !       => use the existing loc_r_POM_DOM modifier but apply to all organic matter components
     ! calculate DOM components and adjust POM accordingly
     int_fracdom(:) = 0.0
+    ! create scaling for fish genengineering!
+    ! NOTE: loc_DOM_scale is initialized to 1.0
+    ! NOTE: do not adjust RDOM
+    select case (opt_misc_geoeng)
+    case('fish')
+       if (par_misc_2D(dum_i,dum_j) > const_rns) loc_DOM_scale = par_misc_2D_scale
+    end select
+    ! loop through all particulate tracers ... find ones with a corresponding DOM dissolved tracer (loc_tot_i > 0)
     DO l=1,n_l_sed
        loc_r_POM_DOM  = 0.0
        loc_r_POM_RDOM = 0.0
@@ -1873,17 +1892,36 @@ CONTAINS
           ! set POM->DOM conversion modifier
           select case (ocn_dep(io))
           case (io_DOM_P)
-             loc_r_POM_DOM = par_bio_red_rP_POM_DOM
+             loc_r_POM_DOM = loc_DOM_scale*par_bio_red_rP_POM_DOM
           case (io_DOM_N)
-             loc_r_POM_DOM = par_bio_red_rN_POM_DOM
+             loc_r_POM_DOM = loc_DOM_scale*par_bio_red_rN_POM_DOM
           case default
-             loc_r_POM_DOM = 1.0
+             loc_r_POM_DOM = loc_DOM_scale*1.0
           end select
           ! calculate decrease in particulate fraction
           loc_bio_part_DOM(is,n_k) = loc_r_POM_DOM*loc_bio_red_DOMfrac*bio_part(is,dum_i,dum_j,n_k)
           ! create (and add) dissolved tracers
           bio_remin(io,dum_i,dum_j,n_k) = bio_remin(io,dum_i,dum_j,n_k) + loc_bio_part_DOM(is,n_k)
        end do
+       ! decrease particulate fraction
+       bio_part(is,dum_i,dum_j,n_k) = bio_part(is,dum_i,dum_j,n_k) - loc_bio_part_DOM(is,n_k)
+       ! for fish geoengineereing -- re-partition the excess DOM to deeper layer; correct surface DOM
+       ! NOTE: dz = goldstein_dsc*goldstein_dz(:)
+       select case (opt_misc_geoeng)
+       case('fish')
+       loc_k = par_misc_kmin_geoeng
+          if ( (par_misc_2D(dum_i,dum_j) > const_rns) .AND. (loc_k < n_k) ) then
+             loc_k = max(loc_k,dum_k1)
+             loc_tot_i = conv_POM_DOM_i(0,is)
+             do loc_i=1,loc_tot_i
+                io = conv_POM_DOM_i(loc_i,is)
+                bio_remin(io,dum_i,dum_j,n_k)   = bio_remin(io,dum_i,dum_j,n_k) - &
+                     & (loc_DOM_scale - 1.0)*loc_bio_part_DOM(is,n_k)
+                bio_remin(io,dum_i,dum_j,loc_k) = bio_remin(io,dum_i,dum_j,loc_k) + &
+                     & (loc_DOM_scale - 1.0)*goldstein_dz(n_k)/goldstein_dz(loc_k)*loc_bio_part_DOM(is,n_k)
+             end do
+          end if
+       end select
        ! create RDOM fraction
        loc_tot_i = conv_POM_RDOM_i(0,is)
        do loc_i=1,loc_tot_i
@@ -1902,6 +1940,8 @@ CONTAINS
           ! create (and add) dissolved tracers
           bio_remin(io,dum_i,dum_j,n_k) = bio_remin(io,dum_i,dum_j,n_k) + loc_bio_part_RDOM(is,n_k)
        end do
+       ! decrease particulate fraction
+       bio_part(is,dum_i,dum_j,n_k) = bio_part(is,dum_i,dum_j,n_k) - loc_bio_part_RDOM(is,n_k)
        ! save total DOM fraction [NOTE: not a global mean ... just this (i,j) location ...]
        if ((loc_r_POM_DOM + loc_r_POM_RDOM) > const_real_nullsmall) then
           int_fracdom(is) = loc_r_POM_DOM*loc_bio_red_DOMfrac + loc_r_POM_RDOM*loc_bio_red_RDOMfrac
@@ -1909,10 +1949,7 @@ CONTAINS
           int_fracdom(is) = 0.0
        end if
     end do
-    ! decrease particulate fraction
-    bio_part(:,dum_i,dum_j,n_k) = bio_part(:,dum_i,dum_j,n_k) - &
-         (loc_bio_part_DOM(:,n_k) + loc_bio_part_RDOM(:,n_k))
-
+    
     ! *** INITIAL PARTICULATE FRACTION PARTITIONING ***
     ! set partitioning between differently remineralized particulate fluxes
     ! NOTE: this code should ideally be replaced by a generic algorithm
@@ -2114,6 +2151,17 @@ CONTAINS
     !       D14C = fun_convert_delta14CtoD14C(loc_d13C,loc_d14C)
     ! NOTE: io_col9 is Csoft
     ! NOTE: if radiocarbon is not selected, then io_col8 is used as 13C of Csoft
+    ! REMINDER:
+    ! io_col0 = pre_DIC
+    ! io_col1 = pre_ALK
+    ! io_col2 = pre_O2
+    ! io_col3 = pre_PO4
+    ! io_col4 = pre_NO3
+    ! io_col5 = pre_Fe
+    ! io_col6 = pre_SiO2
+    ! io_col7 = pre_d13C
+    ! io_col8 = pre_d14C OR pre_Csoft_d13C
+    ! io_col9 = pre_Csoft! 
     if (ctrl_bio_preformed) then
        do io=io_col0,io_col9
           if (ocn_select(io)) then
@@ -3002,7 +3050,7 @@ CONTAINS
     integer::lo,ls                                                      !
     integer::id
     INTEGER::k,kk,loc_bio_remin_min_k,loc_klim
-    integer::loc_k1
+    integer::loc_k1,loc_k
     integer::loc_m,loc_tot_m
     real,dimension(1:n_l_ocn)::loc_vocn                                 !
     real,dimension(1:3)::loc_FeFELL
@@ -3114,6 +3162,7 @@ CONTAINS
     ! -------------------------------------------------------- ! test for possibilty of precip in water column
     ! if so: assume particules could be present at any/every depth in the local water column
     ! if not: assume particulates present only in surface layer
+    ! NOTE: loc_klim has already been set ... all these are cases in which it is modified
     ! NOTE: check for a benthic (or sub-benthic) part6icle flux forcing (i.e. other than surface)
     !       and be sure to also then search the full water column for particles
     ! NOTE: used maxval with FINDLOC becasue the returned variable is a vector
@@ -3131,10 +3180,41 @@ CONTAINS
        loc_klim = loc_k1
 !!$    elseif (maxval(FINDLOC(force_sed_uniform(:),-5)) > 0) then
     elseif (fun_find_int_i(-5,force_sed_uniform(:)) > 0) then
-       loc_klim = loc_k1       
+       loc_klim = loc_k1
     end if
+    ! -------------------------------------------------------- ! test for geoeng modifications
+    ! if so: POM may be deep in the water column in the case of seaweed geoenginering or zooplankton/fish migration
+    ! and the search can end there
+    !
     ! -------------------------------------------------------- !
-    ! local remin transformation arrays
+    select case (opt_misc_geoeng)
+    case('seaweed')
+       loc_k = par_misc_kmin_geoeng
+       if ( (par_misc_2D(dum_i,dum_j) > const_rns) .AND. (loc_k < n_k) ) then
+          ! check whether export needs to be moved vertically (par_misc_kmin_geoeng is not the surface layer)
+          ! (and scaled in concentration)
+          loc_k = max(loc_k,loc_k1)
+          ! set level to end the search at
+          loc_klim = loc_k
+          ! calculate layer ratio and then move and dilute particulaet tracers
+          loc_bio_remin_layerratio = dum_vphys_ocn%mk(ipo_dD,n_k)/dum_vphys_ocn%mk(ipo_dD,loc_k)
+          DO l=1,n_l_sed
+             is = conv_iselected_is(l)
+             ! -------------------------------------- ! particulate organic matter
+             ! (plus elemental components, particle-reactive scavenged elements)
+             if ( &
+                  & (sed_dep(is) == is_POC) .OR. &
+                  & (sed_type(is) == par_sed_type_POM) .OR. &
+                  & (sed_type(sed_dep(is)) == par_sed_type_POM) .OR. &
+                  & (sed_type(sed_dep(is)) == par_sed_type_scavenged) &
+                  & ) then
+                loc_bio_part_OLD(l,loc_k) = loc_bio_remin_layerratio*loc_bio_part_OLD(l,n_k)
+                loc_bio_part_OLD(l,n_k) = 0.0
+             end if
+          end do
+       end if
+    end select
+    ! -------------------------------------------------------- ! local remin transformation arrays
     loc_conv_ls_lo(:,:)   = 0.0
     !
     if (ctrl_bio_remin_redox_save) then
@@ -4168,6 +4248,10 @@ CONTAINS
     ! NOTE: because sub_calc_bio_remin is the first call in the sequence of events (in biogem_main),
     !       data arrays are over-written rather than incremented
     ! remin diagnostics
+    ! NOTE: only record Csoft and 13C-Csoft at the genengineered locations if genengineering is selected
+    ! REMINDER:
+    ! io_col8 = pre_d14C OR pre_Csoft_d13C
+    ! io_col9 = pre_Csoft! 
     if (ctrl_bio_remin_redox_save) then
        diag_redox(:,dum_i,dum_j,:)  = diag_redox(:,dum_i,dum_j,:)  + loc_diag_redox(:,:)
        diag_precip(:,dum_i,dum_j,:) = diag_precip(:,dum_i,dum_j,:) + loc_diag_precip(:,:)
@@ -4175,13 +4259,27 @@ CONTAINS
 !!$          loc_string = 'reminP_'//trim(string_sed(is_POC))//'_d'//trim(string_ocn(io_DIC))
 !!$          id = fun_find_str_i(trim(loc_string),string_diag_redox)
           id = conv_lslo2idP(is2l(is_POC),io2l(io_DIC))
-          loc_bio_remin(io2l(io_col9),:) = loc_bio_remin(io2l(io_col9),:) + loc_diag_redox(id,:)
+          select case (opt_misc_geoeng)
+          case('seaweed')
+             if (par_misc_2D(dum_i,dum_j) > const_rns) then
+                loc_bio_remin(io2l(io_col9),:) = loc_bio_remin(io2l(io_col9),:) + loc_diag_redox(id,:)
+             end if
+          case default
+             loc_bio_remin(io2l(io_col9),:) = loc_bio_remin(io2l(io_col9),:) + loc_diag_redox(id,:)
+          end select
        end if
        if (ocn_select(io_col8) .AND. (.NOT. ocn_select(io_DIC_14C)))then
 !!$          loc_string = 'reminP_'//trim(string_sed(is_POC_13C))//'_d'//trim(string_ocn(io_DIC_13C))
 !!$          id = fun_find_str_i(trim(loc_string),string_diag_redox)
           id = conv_lslo2idP(is2l(is_POC_13C),io2l(io_DIC_13C))
-          loc_bio_remin(io2l(io_col8),:) = loc_bio_remin(io2l(io_col8),:) + loc_diag_redox(id,:)
+          select case (opt_misc_geoeng)
+          case('seaweed')
+             if (par_misc_2D(dum_i,dum_j) > const_rns) then
+                loc_bio_remin(io2l(io_col8),:) = loc_bio_remin(io2l(io_col8),:) + loc_diag_redox(id,:)
+             end if
+          case default
+             loc_bio_remin(io2l(io_col8),:) = loc_bio_remin(io2l(io_col8),:) + loc_diag_redox(id,:)
+          end select
        end if
     end if
     ! record settling fluxes
@@ -4196,7 +4294,7 @@ CONTAINS
     dum_vbio_remin%mk(:,:) = dum_vbio_remin%mk(:,:) + loc_bio_remin(:,:)
 !!$    ! deallocate local arrays
 !!$    DEALLOCATE(loc_diag_redox,STAT=alloc_error)
-
+    
   END SUBROUTINE sub_box_remin_part
   ! ****************************************************************************************************************************** !
 
@@ -5020,7 +5118,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! GEOENGINEERING
     ! -------------------------------------------------------- !
-    IF ((trim(opt_misc_geoeng) /= 'NONE') .AND. (par_misc_kmin_pipe < n_k)) THEN
+    IF ((trim(opt_misc_geoeng) /= 'NONE') .AND. (par_misc_kmin_geoeng < n_k)) THEN
        select case (opt_misc_geoeng)
        case('pipes')
           ! -------------------------------------------------- ! initialize
@@ -5028,7 +5126,7 @@ CONTAINS
           loc_flux = dum_dtyr*par_misc_2D_scale*par_misc_2D(dum_i,dum_j)
           ! set source k level
           ! NOTE: cap at deepest ocean level
-          loc_k = par_misc_kmin_pipe
+          loc_k = par_misc_kmin_geoeng
           if (loc_k < dum_k1) loc_k = dum_k1
           DO l=loc_l_min,loc_l_max
              io = conv_iselected_io(l)

@@ -4114,9 +4114,9 @@
 			<value datatype="real">1.0</value>
                         <description>Scalar or unassigned 2D field</description>
                     </param>
-                    <param name="par_misc_kmin_pipe">
+                    <param name="par_misc_kmin_geoeng">
 			<value datatype="integer">1</value>
-                        <description>Min k for geoengineering ocean pipes!</description>
+                        <description>Min k for geoengineering!</description>
                     </param>
                     <param name="ctrl_misc_geoeng_noDIC">
 			<value datatype="boolean">.false.</value>
@@ -5650,6 +5650,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">0.0</value>
                         <description>Save interval if not using save point definition file (yr)</description>
                     </param>
+                    <param name="par_data_save_slice_nmax">
+			<value datatype="real">100</value>
+                        <description>Maximum allowed number of time-slice save points</description>
+                    </param>
                     <param name="par_infile_slice_name">
 			<value datatype="string">save_timeslice.dat</value>
                         <description></description>
@@ -5730,6 +5734,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_data_save_sig_timeinterval">
 			<value datatype="real">0.0</value>
                         <description>Save interval if not using save point definition file (yr)</description>
+                    </param>
+                    <param name="par_data_save_sig_nmax">
+			<value datatype="real">10000</value>
+                        <description>Maximum allowed number of time-series save points</description>
                     </param>
                     <param name="par_infile_sig_name">
 			<value datatype="string">save_timeseries.dat</value>

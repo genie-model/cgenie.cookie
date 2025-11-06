@@ -6,8 +6,8 @@ Provided are as part of the code release the configuration files necessary to ru
 The intention is to provide an oppertunity to question the paper assumptions and interpretation through re-analysis,
 as well as the creation of new and different experiments. (Plus, to provide a means to replicate published results.)
 This readme file details how the experiments can be run.
-Refer to the muffin manual:
-https://github.com/derpycode/muffindoc
+Refer to the cookie manual:
+https://github.com/genie-model/cookiedoc
 for details on model code installation and configuration, locating and visualizing model results, etc.
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -38,7 +38,7 @@ RUNNING THE EXPERIMENTS [command lines, broken down in sub-sections for spinups,
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Note that all experiments are run from:
-$HOME/cgenie.muffin/genie-main
+$HOME/cgenie.cookie/genie-main
 (unless a different installation directory has been used)
 
 ================================================================

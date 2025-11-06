@@ -3198,6 +3198,17 @@ CONTAINS
        end IF
     end if
     ! preformed tracers
+    ! REMINDER:
+    ! io_col0 = pre_DIC
+    ! io_col1 = pre_ALK
+    ! io_col2 = pre_O2
+    ! io_col3 = pre_PO4
+    ! io_col4 = pre_NO3
+    ! io_col5 = pre_Fe
+    ! io_col6 = pre_SiO2
+    ! io_col7 = pre_d13C
+    ! io_col8 = pre_d14C OR pre_Csoft_d13C
+    ! io_col9 = pre_Csoft! 
     IF (ctrl_data_save_sig_diag .AND. ctrl_bio_preformed) THEN
        do io=io_col0,io_col9
           if (ocn_select(io)) then
