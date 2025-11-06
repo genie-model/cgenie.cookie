@@ -690,7 +690,9 @@ MODULE biogem_lib
   real::par_data_save_slice_dt                                   ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_slice_dt
   real::par_data_save_slice_timeinterval                         ! Save interval if not using save point definition file (yr)
-  NAMELIST /ini_biogem_nml/par_data_save_slice_timeinterval 
+  NAMELIST /ini_biogem_nml/par_data_save_slice_timeinterval
+  integer::par_data_save_slice_nmax                              ! 'Maximum allowed number of time-slice save points
+  NAMELIST /ini_biogem_nml/par_data_save_slice_nmax
   CHARACTER(len=127)::par_infile_slice_name                      !
   NAMELIST /ini_biogem_nml/par_infile_slice_name
   integer::par_data_save_slice_n                                 ! number of timesteps in sub-inteval (e.g., monthly) saving
@@ -725,6 +727,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_data_save_sig_dt
   real::par_data_save_sig_timeinterval                           ! Save interval if not using save point definition file (yr)
   NAMELIST /ini_biogem_nml/par_data_save_sig_timeinterval 
+  integer::par_data_save_sig_nmax                                ! 'Maximum allowed number of time-series save points
+  NAMELIST /ini_biogem_nml/par_data_save_sig_nmax
   CHARACTER(len=127)::par_infile_sig_name                        !
   NAMELIST /ini_biogem_nml/par_infile_sig_name
   LOGICAL::ctrl_data_save_sig_autoend                            ! auto save at run end?
