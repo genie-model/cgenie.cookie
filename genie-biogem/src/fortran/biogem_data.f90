@@ -3505,7 +3505,6 @@ CONTAINS
   SUBROUTINE sub_init_carb()
     ! local variables
     INTEGER::i,j,k
-    real,dimension(2)::loc_carb_RF0_SF0
     ! zero arrays
     ! NOTE: leave carb_TSn array at its initialized state
     !       so that a full update of carb constants etc is ALWAYS performed upon the first call to tstep_biogem
@@ -3589,11 +3588,11 @@ CONTAINS
                         & carbisor(:,i,j,k)      &
                         & )
                 end IF
-                ! estimate Revelle (and 'sensitivity') factor
+                ! estimate Revelle factor
                 ! NOTE: this is only meaningful for the surface,
                 !       but calculate over full depth when utilizing the OLD pH solving scheme
                 IF (ctrl_carbchem_pH_OLD) THEN
-                   loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0_OLD( &
+                   carb(ic_RF0,i,j,k) = fun_calc_carb_RF0_OLD( &
                         & ocn(io_DIC,i,j,k),  &
                         & ocn(io_ALK,i,j,k),  &
                         & ocn(io_Ca,i,j,k),   &
@@ -3607,11 +3606,9 @@ CONTAINS
                         & carbconst(:,i,j,k), &
                         & carb(:,i,j,k)    &
                         & )
-                   carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)
-                   carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
                 elseif (k == n_k) then
-                   loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
-                        & par_carbchem_pH_tolerance,            &
+                   carb(ic_RF0,i,j,k)  = fun_calc_carb_RF0( &
+                        & par_carbchem_pH_tolerance,        &
                         & ocn(io_DIC,i,j,k),  &
                         & ocn(io_ALK,i,j,k),  &
                         & ocn(io_Ca,i,j,k),   &
@@ -3625,8 +3622,6 @@ CONTAINS
                         & carbconst(:,i,j,k), &
                         & carb(:,i,j,k)    &
                         & )
-                   carb(ic_RF0,i,j,k)        = loc_carb_RF0_SF0(1)
-                   carb(ic_RdfCO2dDIC,i,j,k) = loc_carb_RF0_SF0(2)
                 end if
              end if
           END DO
