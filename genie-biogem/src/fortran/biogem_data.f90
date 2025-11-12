@@ -655,6 +655,22 @@ CONTAINS
     if (sed_select(is_Fe3Si2O4)) ctrl_carbchemupdate_full = .true.
     if (ocn_select(io_CH4))      ctrl_carbchemupdate_full = .true.
     ! -------------------------------------------------------- !
+    ! CREATE SHARED COPIES OF KEY REDOX PARAMETERS
+    ! -------------------------------------------------------- !
+    conv_ls_lo_c0_O2    = par_bio_remin_c0_O2
+    conv_ls_lo_ci_O2    = par_bio_remin_ci_O2
+    conv_ls_lo_k_O2     = par_bio_remin_k_O2
+    conv_ls_lo_c0_NO3   = par_bio_remin_c0_NO3
+    conv_ls_lo_ci_NO3   = par_bio_remin_ci_NO3
+    conv_ls_lo_k_NO3    = par_bio_remin_k_NO3
+    conv_ls_lo_c0_FeOOH = par_bio_remin_c0_FeOOH
+    conv_ls_lo_ci_FeOOH = par_bio_remin_ci_FeOOH
+    conv_ls_lo_k_FeOOH  = par_bio_remin_k_FeOOH
+    conv_ls_lo_c0_SO4   = par_bio_remin_c0_SO4
+    conv_ls_lo_ci_SO4   = par_bio_remin_ci_SO4
+    conv_ls_lo_k_SO4    = par_bio_remin_k_SO4
+    conv_ls_lo_k_meth   = par_bio_remin_k_meth
+    ! -------------------------------------------------------- !
     ! MISC
     ! -------------------------------------------------------- !
     ! -------------------------------------------------------- ! complete path
@@ -1752,6 +1768,7 @@ CONTAINS
     if (ocn_select(io_SO4))   conv_ls_lo_S(:,:)    =  fun_conv_sedocn2lslo(conv_sed_ocn_S(:,:))
     if (ocn_select(io_CH4))   conv_ls_lo_meth(:,:) =  fun_conv_sedocn2lslo(conv_sed_ocn_meth(:,:))
     ! -------------------------------------------------------- ! indexing array (all possible)
+    ! NOTE: fun_recalc_tracerrelationships_i works on the full (ocn,sed) tracer matrix (and hence loc_conv_sed_ocn)
     conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:)))
     ! -------------------------------------------------------- ! POM -> DOM
     conv_lP_lD(:,:)   =  fun_conv_sedocn2lslo(conv_POM_DOM(:,:))
