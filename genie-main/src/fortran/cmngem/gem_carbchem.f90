@@ -1284,12 +1284,12 @@ CONTAINS
   
   ! ****************************************************************************************************************************** !
   ! CALCULATE REVELLE FACTOR
-  ! NOTE: as per sub_calc_carb
+  ! NOTE: as per sub_calc_carb (and fun_calc_carb_RF0_SF0)
   ! NOTE: carb chem is re-solved at the outset to the same accuracy as needed for the perturbation
   ! NOTE: this is a simplified version of the origianl fun_calc_carb_RF0_SF0 scheme
   !       in which the pH solution criteria differed from in sub_calc_carb ... so make testbiogem will fail:
   !       **ERROR: Differing values in variable carb_RF0
-  function fun_calc_carb_RF0_SF0( &
+  function fun_calc_carb_RF0( &
        & dum_pHtol, &
        & dum_DIC,dum_ALK,dum_Ca, &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
@@ -1297,7 +1297,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! RESULT VARIABLE
     ! -------------------------------------------------------- !
-    REAL,DIMENSION(2)::fun_calc_carb_RF0_SF0
+    REAL::fun_calc_carb_RF0
     ! -------------------------------------------------------- !
     ! DUMMY ARGUMENTS
     ! -------------------------------------------------------- !
@@ -1346,19 +1346,89 @@ CONTAINS
     ! RETURN FUNCTION VALUE
     ! -------------------------------------------------------- !
     ! NOTE: == ((loc_conc_CO2-dum_carb(ic_conc_CO2)/dum_carb(ic_conc_CO2)) / ((loc_DIC_RFO-dum_DIC)/dum_DIC)
-    ! NOTE: dum_carb(ic_fug_CO2)   = loc_conc_CO2/dum_carbconst(icc_QCO2) 
-    ! test for issues ... do not update RF0 if there is an issue (and set SF0 to null)
+    ! test for issues ... set RF0 to zero (which will result in no air-sea gas exchange) if there is an issue
     if (loc_carb(ic_err) > const_real_nullsmall) then
-       fun_calc_carb_RF0_SF0(1) = loc_carb(ic_RF0)
-       fun_calc_carb_RF0_SF0(2) = const_real_null
+       fun_calc_carb_RF0 = 0.0
     else
-       fun_calc_carb_RF0_SF0(1) = (loc_carb(ic_conc_CO2)/loc_conc_CO2 - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
-       fun_calc_carb_RF0_SF0(2) = (loc_carb(ic_conc_CO2) - loc_conc_CO2)/dum_carbconst(icc_QCO2)/loc_dDIC
+       fun_calc_carb_RF0 = (loc_carb(ic_conc_CO2)/loc_conc_CO2 - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
     end if
     ! -------------------------------------------------------- !
     ! END
     ! -------------------------------------------------------- !
-  END function fun_calc_carb_RF0_SF0
+  END function fun_calc_carb_RF0
+  ! ****************************************************************************************************************************** !
+
+  
+  ! ****************************************************************************************************************************** !
+  ! CALCULATE pCO2 SENSITIVITY FACOR
+  ! NOTE: as per the previous fun_calc_carb_RF0_SF0
+  ! NOTE: carb chem is re-solved at the outset to the same accuracy as needed for the perturbation
+  function fun_calc_carb_SF0( &
+       & dum_pHtol, &
+       & dum_DIC,dum_ALK,dum_Ca, &
+       & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+       & dum_carbconst,dum_carb)
+    ! -------------------------------------------------------- !
+    ! RESULT VARIABLE
+    ! -------------------------------------------------------- !
+    REAL::fun_calc_carb_SF0
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_pHtol
+    REAL,INTENT(in)::dum_DIC,dum_ALK,dum_Ca
+    REAL,INTENT(in)::dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot
+    REAL,DIMENSION(n_carbconst),intent(in)::dum_carbconst
+    REAL,DIMENSION(n_carb),INTENT(in)::dum_carb
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    real::loc_DIC_RFO,loc_dDIC,loc_conc_CO2
+    REAL,DIMENSION(n_carb)::loc_carb
+    REAL,DIMENSION(n_carbalk)::loc_carbalk
+    ! -------------------------------------------------------- !
+    ! INITIALIZE VARIABLES
+    ! -------------------------------------------------------- !
+    ! define DIC perturbion
+    loc_dDIC = 10.0E-6;
+    ! initialize carb chem 
+    loc_carb = dum_carb
+    ! -------------------------------------------------------- !
+    ! INITIAL CARB CHEM SOLUTION
+    ! -------------------------------------------------------- !
+    ! solve for initial [H] at higher accuracy
+    ! NOTE: do not flag carb chem errors associated with diagnostics calculations
+    call sub_calc_carb(                                                               &
+         & 'gem_carbchem.f90/fun_calc_carb_RF0_SF0',.false.,dum_pHtol,                &
+         & dum_DIC,dum_ALK,dum_Ca,                                                    &
+         & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+         & dum_carbconst,loc_carb,loc_carbalk)
+    ! store initial (pre DIC perturbation) [CO2] value
+    loc_conc_CO2 = loc_carb(ic_conc_CO2)
+    ! -------------------------------------------------------- !
+    ! RE_SOLVE pH
+    ! -------------------------------------------------------- !
+    ! perturb DIC
+    ! NOTE: flag carb chem errors so that problems calculating a valid RF0 value can be caught
+    loc_DIC_RFO = dum_DIC + loc_dDIC
+    call sub_calc_carb(                                                               &
+         & 'gem_carbchem.f90/fun_calc_carb_RF0_SF0',.true.,dum_pHtol,                 &
+         & loc_DIC_RFO,dum_ALK,dum_Ca,                                                &
+         & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
+         & dum_carbconst,loc_carb,loc_carbalk)
+    ! -------------------------------------------------------- !
+    ! RETURN FUNCTION VALUE
+    ! -------------------------------------------------------- !
+    ! NOTE: dum_carb(ic_fug_CO2)   = loc_conc_CO2/dum_carbconst(icc_QCO2) 
+    if (loc_carb(ic_err) > const_real_nullsmall) then
+       fun_calc_carb_SF0 = 0.0
+    else
+       fun_calc_carb_SF0 = (loc_carb(ic_conc_CO2) - loc_conc_CO2)/dum_carbconst(icc_QCO2)/loc_dDIC
+    end if
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  END function fun_calc_carb_SF0
   ! ****************************************************************************************************************************** !
 
 
@@ -1856,14 +1926,14 @@ CONTAINS
   ! CALCULATE REVELLE FACTOR
   ! NOTE: as per sub_calc_carb
   ! NOTE: carb chem is re-solved at the outset to the same accuracy as needed for the perturbation
-  function fun_calc_carb_RF0_SF0_OLD( &
+  function fun_calc_carb_RF0_OLD( &
        & dum_DIC,dum_ALK,dum_Ca, &
        & dum_PO4tot,dum_SiO2tot,dum_Btot,dum_SO4tot,dum_Ftot,dum_H2Stot,dum_NH4tot, &
        & dum_carbconst,dum_carb)
     ! -------------------------------------------------------- !
     ! RESULT VARIABLE
     ! -------------------------------------------------------- !
-    REAL,DIMENSION(2)::fun_calc_carb_RF0_SF0_OLD
+    REAL::fun_calc_carb_RF0_OLD
     ! -------------------------------------------------------- !
     ! DUMMY ARGUMENTS
     ! -------------------------------------------------------- !
@@ -2001,13 +2071,11 @@ CONTAINS
     ! RETURN FUNCTION VALUE
     ! -------------------------------------------------------- !
     ! NOTE: == ((loc_conc_CO2-dum_carb(ic_conc_CO2)/dum_carb(ic_conc_CO2)) / ((loc_DIC_RFO-dum_DIC)/dum_DIC)
-    ! NOTE: dum_carb(ic_fug_CO2)   = loc_conc_CO2/dum_carbconst(icc_QCO2) 
-    fun_calc_carb_RF0_SF0_OLD(1) = (loc_conc_CO2/dum_carb(ic_conc_CO2) - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
-    fun_calc_carb_RF0_SF0_OLD(2) = (loc_conc_CO2 - dum_carb(ic_conc_CO2))/dum_carbconst(icc_QCO2)/loc_dDIC
+    fun_calc_carb_RF0_OLD = (loc_conc_CO2/dum_carb(ic_conc_CO2) - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
     ! -------------------------------------------------------- !
     ! END
     ! -------------------------------------------------------- !
-  END function fun_calc_carb_RF0_SF0_OLD
+  END function fun_calc_carb_RF0_OLD
   ! ****************************************************************************************************************************** !
 
 

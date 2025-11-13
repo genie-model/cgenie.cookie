@@ -2135,6 +2135,7 @@ CONTAINS
     real,dimension(n_ocn)::loc_ocn
     real::loc_tot,loc_frac,loc_standard
     real::loc_d14Catm,loc_d14Cocn
+    real::loc_SF0,loc_EF0,loc_NF0
     ! -------------------------------------------------------- !
     ! INITIALIZE VARIABLES
     ! -------------------------------------------------------- !
@@ -2142,6 +2143,12 @@ CONTAINS
     loc_ocn(:) = 0.0
     ! set array equal to ocean surface tracer concentrations
     loc_ocn(:) = ocn(:,dum_i,dum_j,n_k)
+    ! set buffering tracers if selected
+    if (ctrl_data_save_buffering) then
+       loc_SF0 = carb(ic_RdfCO2dDIC,dum_i,dum_j,n_k) 
+       loc_EF0 = carb(ic_RdDICdALK,dum_i,dum_j,n_k) 
+       loc_NF0 = carb(ic_RdALKdDIC,dum_i,dum_j,n_k) 
+    end if    
     ! -------------------------------------------------------- !
     ! SET PRE-FORMED TRACERS
     ! -------------------------------------------------------- !
@@ -2152,14 +2159,14 @@ CONTAINS
     ! NOTE: io_col9 is Csoft
     ! NOTE: if radiocarbon is not selected, then io_col8 is used as 13C of Csoft
     ! REMINDER:
-    ! io_col0 = pre_DIC
-    ! io_col1 = pre_ALK
+    ! io_col0 = pre_DIC OR pCO2 'sensitivity' factor -- SF0
+    ! io_col1 = pre_ALK OR ALK addition efficiency factor -- EF0
     ! io_col2 = pre_O2
     ! io_col3 = pre_PO4
     ! io_col4 = pre_NO3
     ! io_col5 = pre_Fe
     ! io_col6 = pre_SiO2
-    ! io_col7 = pre_d13C
+    ! io_col7 = pre_d13C OR DIC addition CaCO3 neutralization factor -- NF0
     ! io_col8 = pre_d14C OR pre_Csoft_d13C
     ! io_col9 = pre_Csoft! 
     if (ctrl_bio_preformed) then
@@ -2167,9 +2174,17 @@ CONTAINS
           if (ocn_select(io)) then
              select case (io)
              CASE (io_col0)
-                if (ocn_select(io_DIC)) bio_remin(io,dum_i,dum_j,n_k)     = loc_ocn(io_DIC)     - loc_ocn(io)
+                if (.NOT. ctrl_data_save_buffering) then
+                   if (ocn_select(io_DIC)) bio_remin(io,dum_i,dum_j,n_k)     = loc_ocn(io_DIC)     - loc_ocn(io)
+                else
+                   bio_remin(io,dum_i,dum_j,n_k) = loc_SF0 - loc_ocn(io)                   
+                end if
              CASE (io_col1)
-                if (ocn_select(io_ALK)) bio_remin(io,dum_i,dum_j,n_k)     = loc_ocn(io_ALK)     - loc_ocn(io)
+                if (.NOT. ctrl_data_save_buffering) then
+                   if (ocn_select(io_ALK)) bio_remin(io,dum_i,dum_j,n_k)     = loc_ocn(io_ALK)     - loc_ocn(io)
+                else
+                   bio_remin(io,dum_i,dum_j,n_k) = loc_EF0 - loc_ocn(io)
+                end if
              CASE (io_col2)
                 if (ocn_select(io_O2)) bio_remin(io,dum_i,dum_j,n_k)      = loc_ocn(io_O2)      - loc_ocn(io)
              CASE (io_col3)
@@ -2182,7 +2197,11 @@ CONTAINS
              CASE (io_col6)
                 if (ocn_select(io_SiO2)) bio_remin(io,dum_i,dum_j,n_k)    = loc_ocn(io_SiO2)    - loc_ocn(io)
              CASE (io_col7)
-                if (ocn_select(io_DIC_13C)) bio_remin(io,dum_i,dum_j,n_k) = loc_ocn(io_DIC_13C) - loc_ocn(io)
+                if (.NOT. ctrl_data_save_buffering) then
+                   if (ocn_select(io_DIC_13C)) bio_remin(io,dum_i,dum_j,n_k) = loc_ocn(io_DIC_13C) - loc_ocn(io)
+                else
+                   bio_remin(io,dum_i,dum_j,n_k) = loc_NF0 - loc_ocn(io)
+                end if
              CASE (io_col8)
                 if (ocn_select(io_DIC_14C)) then
                    loc_standard = const_standards(ocn_type(io_DIC_14C))

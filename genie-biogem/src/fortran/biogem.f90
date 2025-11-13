@@ -78,7 +78,6 @@ subroutine biogem(        &
   real::loc_M
   real,dimension(1:n_l_ocn)::loc_vocn                            !
   real,dimension(n_l_ocn,n_l_sed)::loc_conv_ls_lo                !
-  real,dimension(2)::loc_carb_RF0_SF0
 
   loc_debug_ij = .FALSE.
 
@@ -899,10 +898,10 @@ subroutine biogem(        &
                        diag_carb_derr_it(i,j,k) = diag_carb_derr_it(i,j,k) + 1.0
                     end if
                  end do
-                 ! surface-only properties only! -- estimate Revelle (and 'sensitivity') factor
+                 ! surface-only properties only! -- estimate Revelle factor
                  ! NOTE: always calculate this -- needed in air-sea gas excahnge (limitation)
                  ! NOTE: for RF used in air-sea gas exchange limitaiton -- use same pH tolerance as per for pH solving
-                 loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
+                 carb(ic_RF0,i,j,n_k) = fun_calc_carb_RF0( &
                       & par_carbchem_pH_tolerance, &
                       & ocn(io_DIC,i,j,n_k),  &
                       & ocn(io_ALK,i,j,n_k),  &
@@ -917,11 +916,27 @@ subroutine biogem(        &
                       & carbconst(:,i,j,n_k), &
                       & carb(:,i,j,n_k)       &
                       & )
-                 carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
-                 carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
-                 ! surface-only properties only! -- estimate ALK addition efficiency factor
-                 ! NOTE: only used in time-series diagnostics ...
-                 if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
+                 ! surface-only properties only! -- estimate:
+                 ! (1) pCO2 'sensitivity' factor
+                 ! (2) ALK addition efficiency factor
+                 ! (3) DIC addition CaCO3 neutralization factor
+                 ! NOTE: used in time-series diagnostics AND for certain 'preformed' tracers if selected
+                 if (ctrl_data_save_buffering) then
+                    carb(ic_RdfCO2dDIC,i,j,n_k)  = fun_calc_carb_SF0( &
+                         & par_carbchem_pH_tolerance, &
+                         & ocn(io_DIC,i,j,n_k),  &
+                         & ocn(io_ALK,i,j,n_k),  &
+                         & ocn(io_Ca,i,j,n_k),   &
+                         & ocn(io_PO4,i,j,n_k),  &
+                         & ocn(io_SiO2,i,j,n_k), &
+                         & ocn(io_B,i,j,n_k),    &
+                         & ocn(io_SO4,i,j,n_k),  &
+                         & ocn(io_F,i,j,n_k),    &
+                         & ocn(io_H2S,i,j,n_k),  &
+                         & ocn(io_NH4,i,j,n_k),  &
+                         & carbconst(:,i,j,n_k), &
+                         & carb(:,i,j,n_k)       &
+                         & )
                     carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
                          & par_carbchem_pH_tolerance,               &
                          & ocn(io_DIC,i,j,n_k),  &
@@ -937,10 +952,6 @@ subroutine biogem(        &
                          & carbconst(:,i,j,n_k), &
                          & carb(:,i,j,n_k)       &
                          & )
-                 end if
-                 ! surface-only properties only! -- estimate DIC addition CaCO3 neutralization factor
-                 ! NOTE: only used in time-series diagnostics ...
-                 if (ctrl_data_save_sig_carb_sur .AND. ctrl_data_save_buffering) then
                     carb(ic_RdALKdDIC,i,j,n_k) = fun_calc_carb_NF0( &
                          & par_carbchem_pH_tolerance,               &
                          & ocn(io_DIC,i,j,n_k),  &
@@ -3348,7 +3359,6 @@ SUBROUTINE diag_biogem_timeslice( &
   integer::n,nloc,nvar
   CHARACTER(len=255)::loc_filename                           ! filename string
   CHARACTER(len=6)::loc_locstr                               !
-  real,dimension(2)::loc_carb_RF0_SF0
   ! local carbonate chemsitry arrays
   REAL,DIMENSION(n_carb,n_i,n_j,n_k)::loc_carb               !
   REAL,DIMENSION(n_carbconst,n_i,n_j,n_k)::loc_carbconst     !
@@ -3515,7 +3525,7 @@ SUBROUTINE diag_biogem_timeslice( &
                              ! NOTE: also for back-compatability with muffin,
                              !       the surface value (n_k) is repeatadly re-calculated throughout the water-column loop ...
                              !       (which results in negative RF0 values calculated in the ocean interior! ...)
-                             loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0_OLD( &
+                             loc_carb(ic_RF0,i,j,n_k) = fun_calc_carb_RF0_OLD( &
                                   & ocn(io_DIC,i,j,n_k),                  &
                                   & ocn(io_ALK,i,j,n_k),                  &
                                   & ocn(io_Ca,i,j,n_k),                   &
@@ -3529,7 +3539,6 @@ SUBROUTINE diag_biogem_timeslice( &
                                   & loc_carbconst(:,i,j,n_k),             &
                                   & loc_carb(:,i,j,n_k)                   &
                                   & )
-                             loc_carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
                              ! write updated pH to time-stepping array (if OLD pH scheme)
                              carb(ic_H,i,j,k) = loc_carb(ic_H,i,j,k)
                           end if
@@ -3537,7 +3546,7 @@ SUBROUTINE diag_biogem_timeslice( &
                        ! re-calculate -- surface-ocean properties only!
                        IF (ctrl_data_save_buffering .AND. (.NOT. ctrl_carbchem_pH_OLD)) THEN
                           ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
-                          loc_carb_RF0_SF0(:) = fun_calc_carb_RF0_SF0( &
+                          loc_carb(ic_RF0,i,j,n_k)  = fun_calc_carb_RF0( &
                                & par_carbchem_pH_tolerance_buffering,  &
                                & ocn(io_DIC,i,j,n_k),  &
                                & ocn(io_ALK,i,j,n_k),  &
@@ -3552,8 +3561,22 @@ SUBROUTINE diag_biogem_timeslice( &
                                & loc_carbconst(:,i,j,n_k), &
                                & loc_carb(:,i,j,n_k)       &
                                & )
-                          loc_carb(ic_RF0,i,j,n_k)        = loc_carb_RF0_SF0(1)
-                          loc_carb(ic_RdfCO2dDIC,i,j,n_k) = loc_carb_RF0_SF0(2)
+                          ! estimate pCO2 'sensitivity' factor
+                          loc_carb(ic_RdfCO2dDIC,i,j,n_k)  = fun_calc_carb_SF0( &
+                               & par_carbchem_pH_tolerance_buffering,  &
+                               & ocn(io_DIC,i,j,n_k),  &
+                               & ocn(io_ALK,i,j,n_k),  &
+                               & ocn(io_Ca,i,j,n_k),   &
+                               & ocn(io_PO4,i,j,n_k),  &
+                               & ocn(io_SiO2,i,j,n_k), &
+                               & ocn(io_B,i,j,n_k),    &
+                               & ocn(io_SO4,i,j,n_k),  &
+                               & ocn(io_F,i,j,n_k),    &
+                               & ocn(io_H2S,i,j,n_k),  &
+                               & ocn(io_NH4,i,j,n_k),  &
+                               & loc_carbconst(:,i,j,n_k), &
+                               & loc_carb(:,i,j,n_k)       &
+                               & )                          
                           ! estimate ALK addition efficiency factor
                           loc_carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
                                & par_carbchem_pH_tolerance_buffering,         &
