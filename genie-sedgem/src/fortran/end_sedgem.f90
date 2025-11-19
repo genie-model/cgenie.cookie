@@ -55,8 +55,8 @@ SUBROUTINE end_sedgem( &
   ! SAVE DATA: SEDCORES
   ! ------------------------------------------------------- !
   if (nv_sedcore > 0) then
-     string_ncsedcorein = TRIM(par_rstdir_name)//trim(par_ncsedcore_name)
-     string_ncsedcoreout = TRIM(par_outdir_name)//trim(par_ncsedcore_name)
+     string_ncsedcorein  = TRIM(par_inrstdir_name)//trim(par_ncsedcore_name)
+     string_ncsedcoreout = TRIM(par_outrstdir_name)//trim(par_ncsedcore_name)
      ncsedcore_ntrec = 0
      call sub_data_netCDF_sedcoresave(trim(string_ncsedcorein),trim(string_ncsedcoreout),loc_yr,loc_iou)
   end if

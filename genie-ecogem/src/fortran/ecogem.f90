@@ -995,7 +995,7 @@ SUBROUTINE ecogem_save_rst(dum_genie_clock)
      ! ------------------------------------------------------- !
      ! SAVE RESTART DATA: NETCDF FORMAT
      ! ------------------------------------------------------- !
-     string_ncrst = TRIM(par_outdir_name)//trim(par_ncrst_name)
+     string_ncrst = TRIM(par_outrstdir_name)//trim(par_ncrst_name)
      ncrst_ntrec = 0
      call sub_data_netCDF_ncrstsave(trim(string_ncrst),loc_yr,loc_iou)
   else
