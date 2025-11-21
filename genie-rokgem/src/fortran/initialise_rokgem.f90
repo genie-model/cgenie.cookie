@@ -79,7 +79,6 @@ subroutine initialise_rokgem( &
      end if
   ENDIF
   if (debug_init > 1) print*, 'netcdf record number: ',ncout2d_ntrec_rg
-  if (debug_init > 1) print*,'par_outdir_name = par_rstdir_name:',par_outdir_name.eq.par_rstdir_name
 
   ! *** initialize external interface arrays ***
   dum_sfxsumrok1(:,:,:) = 0.0

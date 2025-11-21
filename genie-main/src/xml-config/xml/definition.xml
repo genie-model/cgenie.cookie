@@ -5557,10 +5557,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
                         <description>Restart (output) directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-biogem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
-                    </param>
                     <param name="par_fordir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-forcings</value>
                         <description>forcings (input) directory</description>
@@ -5795,8 +5791,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="opt_append_data">
 			<value datatype="boolean">.false.</value>
-                        <description>append data to output files on restart
-                                     (if the same run - i.e. if par_outdir_name = par_rstdir_name) (.FALSE./.TRUE.)</description>
+                        <description>append data to output files on restart (.FALSE./.TRUE.)</description>
                     </param>
                     <param name="par_data_save_ben_Dmin">
 			<value datatype="real">2000.0</value>
@@ -7268,10 +7263,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>ATCHEM results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-atchem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
-                    </param>
                     <param name="par_inrstdir_name">
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
                         <description>Restart (input) directory</description>
@@ -7940,10 +7931,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
                         <description>Restart (output) directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref>/genie-sedgem/data/input</value>
-                        <description>restart (input) directory</description>
-                    </param>
                     <param name="par_infile_name">
 			<value datatype="string">sedgem</value>
                         <description>input restart filename</description>
@@ -8019,8 +8006,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="ctrl_append_data">
 			<value datatype="boolean">.false.</value>
-                        <description>append data to output files on restart
-                                     (if the same run - i.e. if sg_par_outdir_name = sg_par_rstdir_name) (.FALSE./.TRUE.)</description>
+                        <description>append data to output files on restart (.FALSE./.TRUE.)</description>
                     </param>
                     <param name="ctrl_data_save_ascii">
 			<value datatype="boolean">.false.</value>
@@ -8130,9 +8116,13 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
                         <description>Restart (output) directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>rokgem</value>
-                        <description>ROKGEM restart (input) directory</description>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_infile_name">
 			<value datatype="string">rokgem</value>
@@ -8141,6 +8131,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_outfile_name">
 			<value datatype="string">rokgem</value>
                         <description>output restart filename</description>
+                    </param>
+                    <param name="par_ncrst_name">
+			<value datatype="string">restart.rg.nc</value>
+                        <description>netCDF restart file name</description>
                     </param>
                     <param name="opt_screen_output">
 			<value datatype="boolean">.FALSE.</value>
@@ -8164,8 +8158,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="opt_append_data">
 			<value datatype="boolean">.false.</value>
-                        <description>append data to output files on restart
-                                     (if the same run - i.e. if rg_par_outdir_name = rg_par_rstdir_name) (.FALSE./.TRUE.)</description>
+                        <description>append data to output files on restart (.FALSE./.TRUE.)</description>
                     </param>
 	           <param name="ctrl_save_data">
 			<value datatype="boolean">.FALSE.</value>
@@ -9403,12 +9396,16 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>ECOGEM data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>ecogem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>ECOGEM results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-ecogem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_infile_name">
 			<value datatype="string">ecogem</value>
@@ -9423,7 +9420,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.eg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
                     <param name="par_ecogem_force_T_file">

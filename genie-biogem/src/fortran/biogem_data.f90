@@ -59,7 +59,6 @@ CONTAINS
     par_outdir_name = trim(par_outdir_name)//'/'
     par_inrstdir_name = trim(par_inrstdir_name)//'/'
     par_outrstdir_name = trim(par_outrstdir_name)//'/'
-    par_rstdir_name = trim(par_rstdir_name)//'/'
     par_fordir_name = trim(par_fordir_name)//'/'
     if (ctrl_debug_init > 0) then
        ! --- TRACER INITIALIZATION  ---------------------------------------------------------------------------------------------- !
@@ -463,10 +462,10 @@ CONTAINS
        print*,'Output dir. name                                    : ',trim(par_outdir_name)
        print*,'Input restart dir. name                             : ',trim(par_inrstdir_name)
        print*,'Output restart dir. name                            : ',trim(par_outrstdir_name)
-       print*,'Restart (input) dir. name                           : ',trim(par_rstdir_name)
        print*,'Forcings (input) dir. name                          : ',trim(par_fordir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
+       print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
        ! --- DATA SAVING: TIME-SLICES -------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: TIME-SLICES ----------------'
        print*,'Atmospheric (interface) composition (2D)?           : ',ctrl_data_save_slice_ocnatm
@@ -536,7 +535,6 @@ CONTAINS
        print*,'Generic N j value (for time-series data saving)     : ',par_sig_j_N
        print*,'Generic S j value (for time-series data saving)     : ',par_sig_j_S
        print*,'Restart in netCDF format?                           : ',ctrl_ncrst
-       print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
        print*,'Save 2D netCDF data?                                : ',ctrl_data_save_2d
        print*,'Save 3D netCDF data?                                : ',ctrl_data_save_3d
        print*,'i coordinate for saving water column results        : ',par_misc_save_i

@@ -51,7 +51,6 @@ CONTAINS
     ! set and report namelist data
     par_indir_name = trim(par_indir_name)//'/'
     par_outdir_name = trim(par_outdir_name)//'/'
-    par_rstdir_name = trim(par_rstdir_name)//'/'
     par_inrstdir_name = trim(par_inrstdir_name)//'/'
     par_outrstdir_name = trim(par_outrstdir_name)//'/'
     if (ctrl_debug_init > 0) then
@@ -229,7 +228,6 @@ CONTAINS
        print*,'(Paleo config) input dir. name                      : ',trim(par_pindir_name)
        print*,'Input dir. name                                     : ',trim(par_indir_name)
        print*,'Output dir. name                                    : ',trim(par_outdir_name)
-       print*,'Restart (input) dir. name                           : ',trim(par_rstdir_name)
        print*,'Input restart dir. name                             : ',trim(par_inrstdir_name)
        print*,'Output restart dir. name                            : ',trim(par_outrstdir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
