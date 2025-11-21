@@ -20,7 +20,7 @@ bg_par_bio_prodopt="NONE"
 # SPECIFY THE FILE DEFINING THE ECOSYSTEM STRUCTURE 
 # e.g., the full complexity [Ward et al. 2017] ecosystem: eg_par_ecogem_plankton_file='8P8Z.eco'
 #       a single (small) phytoplankton: eg_par_ecogem_plankton_file ='NPD.eco'
-eg_par_ecogem_plankton_file='NPD.eco'
+eg_par_ecogem_plankton_file='8P8Z.eco'
 #
 # *** EXPORT RATIOS ****************************************************
 #
