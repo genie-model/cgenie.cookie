@@ -1352,6 +1352,11 @@ CONTAINS
     else
        fun_calc_carb_RF0 = (loc_carb(ic_conc_CO2)/loc_conc_CO2 - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
     end if
+    ! a last filter ... RF0 should never be less than 1.0!
+    ! (a unit change in CO2 cannot result in a larger change in total dissolved carbon!)
+    ! however ... set problem or failed values to zero, becasue
+    ! RF0 < const_real_nullsmall is detected in fun_calc_ocnatm_flux results in no air-sea gas exchange
+    if (fun_calc_carb_RF0 < 1.0) fun_calc_carb_RF0 = 0.0
     ! -------------------------------------------------------- !
     ! END
     ! -------------------------------------------------------- !
