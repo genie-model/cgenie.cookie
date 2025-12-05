@@ -900,7 +900,9 @@ subroutine biogem(        &
                  end do
                  ! surface-only properties only! -- estimate Revelle factor
                  ! NOTE: always calculate this -- needed in air-sea gas excahnge (limitation)
+                 !       unless ... there was a failure to calculate carbonate chemsitry (carb(ic_err,i,j,n_k) == 1.0)
                  ! NOTE: for RF used in air-sea gas exchange limitaiton -- use same pH tolerance as per for pH solving
+                 if (carb(ic_err,i,j,n_k) < const_real_nullsmall) then
                  carb(ic_RF0,i,j,n_k) = fun_calc_carb_RF0( &
                       & par_carbchem_pH_tolerance, &
                       & ocn(io_DIC,i,j,n_k),  &
@@ -916,13 +918,19 @@ subroutine biogem(        &
                       & carbconst(:,i,j,n_k), &
                       & carb(:,i,j,n_k)       &
                       & )
+                 else
+                 carb(ic_RF0,i,j,n_k) = 0.0
+                 end if
                  ! surface-only properties only! -- estimate:
                  ! (1) pCO2 'sensitivity' factor
                  ! (2) ALK addition efficiency factor
                  ! (3) DIC addition CaCO3 neutralization factor
                  ! NOTE: used in time-series diagnostics AND for certain 'preformed' tracers if selected
+                 ! NOTE: do not calculate if there was a failure to calculate carbonate chemsitry (carb(ic_err,i,j,n_k) == 1.0)
+                 !       => assign a value of zero
                  if (ctrl_data_save_buffering) then
-                    carb(ic_RdfCO2dDIC,i,j,n_k)  = fun_calc_carb_SF0( &
+                 if (carb(ic_err,i,j,n_k) < const_real_nullsmall) then
+                    carb(ic_RdfCO2dDIC,i,j,n_k) = fun_calc_carb_SF0( &
                          & par_carbchem_pH_tolerance, &
                          & ocn(io_DIC,i,j,n_k),  &
                          & ocn(io_ALK,i,j,n_k),  &
@@ -967,6 +975,11 @@ subroutine biogem(        &
                          & carbconst(:,i,j,n_k), &
                          & carb(:,i,j,n_k)       &
                          & )
+                 end if
+                 else
+                 carb(ic_RdfCO2dDIC,i,j,n_k) = 0.0
+                 carb(ic_RdDICdALK,i,j,n_k)  = 0.0
+                 carb(ic_RdALKdDIC,i,j,n_k)  = 0.0
                  end if
               end if
 
