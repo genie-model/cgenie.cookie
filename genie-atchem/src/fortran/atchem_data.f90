@@ -147,7 +147,7 @@ CONTAINS
        IF (ctrl_ncrst) THEN
           call sub_openfile(loc_filename,loc_ncid)
           ! -------------------------------------------------------- ! determine number of variables
-          call sub_inqdims (loc_filename,loc_ncid,loc_ndims,loc_nvars)
+          call sub_inqdims(loc_filename,loc_ncid,loc_ndims,loc_nvars)
           ! -------------------------------------------------------- ! allocate arrays
           ALLOCATE(loc_dimlen(loc_ndims),STAT=alloc_error)
           call check_iostat(alloc_error,__LINE__,__FILE__)
