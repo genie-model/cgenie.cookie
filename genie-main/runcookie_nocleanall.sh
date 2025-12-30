@@ -76,7 +76,7 @@ OMP_NUM_THREADS=2
 export OMP_NUM_THREADS
 #
 OUTPUTPATH=$OUTPUTDIR/$RUNID
-CONFIGPATH=$HOMEDIR/cgenie.cookie/genie-main/configs
+CONFIGPATH=$HOMEDIR/cgenie.cookie/genie-baseconfigs
 CONFIGNAME=$RUNID".config"
 BINARYPATH=$HOMEDIR/cgenie.cookie/genie-main
 RESTARTNAME="rst.1"
