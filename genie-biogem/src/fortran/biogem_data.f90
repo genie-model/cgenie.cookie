@@ -59,7 +59,6 @@ CONTAINS
     par_outdir_name = trim(par_outdir_name)//'/'
     par_inrstdir_name = trim(par_inrstdir_name)//'/'
     par_outrstdir_name = trim(par_outrstdir_name)//'/'
-    par_rstdir_name = trim(par_rstdir_name)//'/'
     par_fordir_name = trim(par_fordir_name)//'/'
     if (ctrl_debug_init > 0) then
        ! --- TRACER INITIALIZATION  ---------------------------------------------------------------------------------------------- !
@@ -463,7 +462,6 @@ CONTAINS
        print*,'Output dir. name                                    : ',trim(par_outdir_name)
        print*,'Input restart dir. name                             : ',trim(par_inrstdir_name)
        print*,'Output restart dir. name                            : ',trim(par_outrstdir_name)
-       print*,'Restart (input) dir. name                           : ',trim(par_rstdir_name)
        print*,'Forcings (input) dir. name                          : ',trim(par_fordir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
@@ -539,6 +537,8 @@ CONTAINS
        print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
        print*,'Save 2D netCDF data?                                : ',ctrl_data_save_2d
        print*,'Save 3D netCDF data?                                : ',ctrl_data_save_3d
+       print*,'2D netCDF ocean output file name                    : ',trim(par_ncout2d_name)
+       print*,'3D netCDF ocean output file name                    : ',trim(par_ncout3d_name)
        print*,'i coordinate for saving water column results        : ',par_misc_save_i
        print*,'j coordinate for saving water column results        : ',par_misc_save_j
        print*,'                                                    : ',n_orb_pts_nmax

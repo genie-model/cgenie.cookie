@@ -5557,10 +5557,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
                         <description>Restart (output) directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-biogem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
-                    </param>
                     <param name="par_fordir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-forcings</value>
                         <description>forcings (input) directory</description>
@@ -5837,6 +5833,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_data_save_3d">
 			<value datatype="boolean">.true.</value>
                         <description>Save 3D netCDF data?</description>
+                    </param>
+                    <param name="par_ncout2d_name">
+			<value datatype="string">fields_ocean_2d.nc</value>
+                        <description>2D netCDF output file name</description>
+                    </param>
+                    <param name="par_ncout3d_name">
+			<value datatype="string">fields_ocean_3d.nc</value>
+                        <description>3D netCDF output file name</description>
                     </param>
                     <param name="par_misc_save_i">
                         <value datatype="integer">1</value>
@@ -7268,10 +7272,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>ATCHEM results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-atchem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
-                    </param>
                     <param name="par_inrstdir_name">
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
                         <description>Restart (input) directory</description>
@@ -7880,10 +7880,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
                         <description>Restart (output) directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref>/genie-sedgem/data/input</value>
-                        <description>restart (input) directory</description>
-                    </param>
                     <param name="par_infile_name">
 			<value datatype="string">sedgem</value>
                         <description>input restart filename</description>
@@ -7912,6 +7908,9 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_sed_mix_k.dat</value>
                         <description>Biodiffusion profile name</description>
                     </param>
+                    
+                    
+                    
                     <param name="par_output_years_file_0d">
 			<value datatype="string">sedgem_output_years_0d.dat</value>
                         <description>file containing years for 0D output to be generated (to summary file)</description>
@@ -7920,6 +7919,9 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_output_years_2d.dat</value>
                         <description>file containing years for 2D output to be generated (to netcdf/ascii)</description>
                     </param>
+                    
+                    
+                    
                     <param name="par_sed_Fdet_name">
                         <value datatype="string">hello_world</value>
                         <description>Alt detrital burial flux field file name</description>
@@ -8015,8 +8017,12 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">restart.sg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
+                    <param name="par_ncout2d_name">
+			<value datatype="string">fields_sediments_2d.nc</value>
+                        <description>2D netCDF output file name</description>
+                    </param>
                     <param name="par_ncsedcore_name">
-			<value datatype="string">fields_sedgem_3d.nc</value>
+			<value datatype="string">fields_sedcores_1d.nc</value>
                         <description>netCDF sedcore file name</description>
                     </param>
                     <param name="par_sed_save_av_dtyr">

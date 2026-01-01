@@ -656,8 +656,7 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_indir_name,par_outdir_name,par_fordir_name,par_pindir_name
   CHARACTER(len=255)::par_inrstdir_name                          !
   CHARACTER(len=255)::par_outrstdir_name                         !
-  CHARACTER(len=255)::par_rstdir_name                            !
-  NAMELIST /ini_biogem_nml/par_inrstdir_name,par_outrstdir_name,par_rstdir_name
+  NAMELIST /ini_biogem_nml/par_inrstdir_name,par_outrstdir_name
   CHARACTER(len=127)::par_infile_name,par_outfile_name           !
   NAMELIST /ini_biogem_nml/par_infile_name,par_outfile_name
   LOGICAL::ctrl_ncout_expid_name                                 ! align netCDF filenames with experiment name?
@@ -771,6 +770,9 @@ MODULE biogem_lib
   LOGICAL::ctrl_data_save_2d                                     ! save 2D netCDF data?
   LOGICAL::ctrl_data_save_3d                                     ! save 3D netCDF data?
   NAMELIST /ini_biogem_nml/ctrl_data_save_2d,ctrl_data_save_3d
+  CHARACTER(len=127)::par_ncout2d_name                           ! 2D netCDF ocean output file name 
+  CHARACTER(len=127)::par_ncout3d_name                           ! 3D netCDF ocean output file name 
+  NAMELIST /ini_biogem_nml/par_ncout2d_name,par_ncout3d_name
   integer::par_misc_save_i
   integer::par_misc_save_j
   NAMELIST /ini_biogem_nml/par_misc_save_i,par_misc_save_j

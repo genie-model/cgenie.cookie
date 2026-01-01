@@ -312,6 +312,7 @@ if [ -n "$5" ]; then
       echo "   Restart directory $RESTARTPATH cannot be found"
     exit 1
   fi
+  # add restart parameter values
   echo ea_7=c >> $CONFIGPATH/$CONFIGNAME
   echo go_7=c >> $CONFIGPATH/$CONFIGNAME
   echo gs_7=c >> $CONFIGPATH/$CONFIGNAME
@@ -339,6 +340,16 @@ if [ -n "$5" ]; then
   echo sg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
   echo rg_par_rstdir_name=$RESTARTPATH"/rokgem" >> $CONFIGPATH/$CONFIGNAME
   echo eg_par_rstdir_name=$RESTARTPATH"/ecogem" >> $CONFIGPATH/$CONFIGNAME
+  # look for sedcore restart and copy to restart folder if exist
+  SEDCORERESTART=$RESTARTPATH"/results/fields_sedcores_1d.nc"
+  echo ">> Checking whether sedcore restart $SEDCORERESTART exists and can be copied ..."
+  if test -s $SEDCORERESTART
+  then
+    cp $SEDCORERESTART $RESTARTPATH"/restarts/fields_sedcores_1d.nc"
+    echo "   OK :)"
+  else
+    echo "   sedcore restart $SEDCORERESTART does not exist"
+  fi
 else
   echo ea_7=n >> $CONFIGPATH/$CONFIGNAME
   echo go_7=n >> $CONFIGPATH/$CONFIGNAME

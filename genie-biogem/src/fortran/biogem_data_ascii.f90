@@ -3675,7 +3675,7 @@ CONTAINS
     loc_dt = int_t_timeslice
     loc_filename= &
          & fun_data_timeslice_filename( &
-         & par_outdir_name,'GLOBAL_SUMMARY_ocean','yrs',string_results_ext)
+         & par_outdir_name,'INFO_ocean_summary_AT','yrs',string_results_ext)
     IF (ctrl_misc_t_BP) THEN
        loc_t = par_data_save_timeslice(par_data_save_timeslice_i) + par_misc_t_end
     ELSE

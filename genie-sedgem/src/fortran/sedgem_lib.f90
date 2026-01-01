@@ -268,8 +268,7 @@ MODULE sedgem_lib
   CHARACTER(len=255)::par_pindir_name                            ! 
   CHARACTER(len=255)::par_indir_name                             ! 
   CHARACTER(len=255)::par_outdir_name                            ! 
-  CHARACTER(len=255)::par_rstdir_name                            ! 
-  NAMELIST /ini_sedgem_nml/par_indir_name,par_outdir_name,par_rstdir_name,par_pindir_name
+  NAMELIST /ini_sedgem_nml/par_pindir_name,par_indir_name,par_outdir_name
   CHARACTER(len=255)::par_inrstdir_name                          !
   CHARACTER(len=255)::par_outrstdir_name                         !
   NAMELIST /ini_sedgem_nml/par_inrstdir_name,par_outrstdir_name
@@ -318,6 +317,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/ctrl_ncrst
   CHARACTER(len=127)::par_ncrst_name                             ! 
   NAMELIST /ini_sedgem_nml/par_ncrst_name
+  CHARACTER(len=127)::par_ncout2d_name                           ! 
+  NAMELIST /ini_sedgem_nml/par_ncout2d_name
   CHARACTER(len=127)::par_ncsedcore_name
   NAMELIST /ini_sedgem_nml/par_ncsedcore_name
   real::par_sed_save_av_dtyr                                     ! time interval for averaging final sed data over (yr)
@@ -569,19 +570,6 @@ MODULE sedgem_lib
   ! ash tracing
   logical::par_sed_ashevent              ! ash event?
   real::par_sed_ashevent_fash            ! ash flux (g cm-2 kyr-1)
-  !GHC 20/05/09 time-series saving parameters
-  INTEGER                                        :: tstep_count
-  REAL                                           :: tsteps_per_year
-  INTEGER,PARAMETER                              :: n_output_years_max = 10000
-  REAL, DIMENSION(:), ALLOCATABLE                :: output_years_0d
-  REAL, DIMENSION(:), ALLOCATABLE                :: output_years_2d
-  INTEGER , DIMENSION(:), ALLOCATABLE            :: output_tsteps_0d
-  INTEGER , DIMENSION(:), ALLOCATABLE            :: output_tsteps_2d
-  INTEGER                                        :: output_counter_0d
-  INTEGER                                        :: output_counter_2d
-  REAL                                           :: year
-  INTEGER                                        :: year_int, year_remainder
-  CHARACTER(LEN=11)                              :: year_text
   real::sed_age                                           ! sediment age (years)
   real::sed_time                                          ! sediment time counter (years)
   real::sed_time_save                                     ! sediment time save counter (years)
