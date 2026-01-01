@@ -400,19 +400,19 @@ fi
 rm -f $CONFIGPATH/$CONFIGNAME
 # change to output dir
 cd $OUTPUTDIR
-# remove empty results directories
-if [ -z "$( ls -A $RUNID'/atchem' )" ]; then rm -d $RUNID'/atchem'; fi
-if [ -z "$( ls -A $RUNID'/biogem' )" ]; then rm -d $RUNID'/biogem'; fi
-if [ -z "$( ls -A $RUNID'/ecogem' )" ]; then rm -d $RUNID'/ecogem'; fi
-if [ -z "$( ls -A $RUNID'/embm' )" ]; then rm -d $RUNID'/embm'; fi
-if [ -z "$( ls -A $RUNID'/ents' )" ]; then rm -d $RUNID'/ents'; fi
-if [ -z "$( ls -A $RUNID'/gemlite' )" ]; then rm -d $RUNID'/gemlite'; fi
-if [ -z "$( ls -A $RUNID'/goldstein' )" ]; then rm -d $RUNID'/goldstein'; fi
-if [ -z "$( ls -A $RUNID'/goldsteinseaice' )" ]; then rm -d $RUNID'/goldsteinseaice'; fi
-if [ -z "$( ls -A $RUNID'/main' )" ]; then rm -d $RUNID'/main'; fi
-if [ -z "$( ls -A $RUNID'/plasim' )" ]; then rm -d $RUNID'/plasim'; fi
-if [ -z "$( ls -A $RUNID'/rokgem' )" ]; then rm -d $RUNID'/rokgem'; fi
-if [ -z "$( ls -A $RUNID'/sedgem' )" ]; then rm -d $RUNID'/sedgem'; fi
+## remove empty results directories
+#if [ -z "$( ls -A $RUNID'/atchem' )" ]; then rm -d $RUNID'/atchem'; fi
+#if [ -z "$( ls -A $RUNID'/biogem' )" ]; then rm -d $RUNID'/biogem'; fi
+#if [ -z "$( ls -A $RUNID'/ecogem' )" ]; then rm -d $RUNID'/ecogem'; fi
+#if [ -z "$( ls -A $RUNID'/embm' )" ]; then rm -d $RUNID'/embm'; fi
+#if [ -z "$( ls -A $RUNID'/ents' )" ]; then rm -d $RUNID'/ents'; fi
+#if [ -z "$( ls -A $RUNID'/gemlite' )" ]; then rm -d $RUNID'/gemlite'; fi
+#if [ -z "$( ls -A $RUNID'/goldstein' )" ]; then rm -d $RUNID'/goldstein'; fi
+#if [ -z "$( ls -A $RUNID'/goldsteinseaice' )" ]; then rm -d $RUNID'/goldsteinseaice'; fi
+#if [ -z "$( ls -A $RUNID'/main' )" ]; then rm -d $RUNID'/main'; fi
+#if [ -z "$( ls -A $RUNID'/plasim' )" ]; then rm -d $RUNID'/plasim'; fi
+#if [ -z "$( ls -A $RUNID'/rokgem' )" ]; then rm -d $RUNID'/rokgem'; fi
+#if [ -z "$( ls -A $RUNID'/sedgem' )" ]; then rm -d $RUNID'/sedgem'; fi
 # Archive
 echo ""
 echo ">> Archiving ..."

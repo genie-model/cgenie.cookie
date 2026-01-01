@@ -97,12 +97,6 @@ CONTAINS
        ! --- DIAGENESIS SCHEME: ORGANIC MATTER ----------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: ORGANIC MATTER --------------'
        print*,'Prevent frac2 from being remineralzied?             : ',ctrl_sed_diagen_preserve_frac2
-       print*,'Fractional POC burial -- oxic conditions            : ',par_sed_diagen_fracCpres_ox
-       print*,'Fractional POC burial -- anoxic conditions          : ',par_sed_diagen_fracCpres_anox
-       print*,'Fractional POC burial -- euxinic conditions         : ',par_sed_diagen_fracCpres_eux
-       print*,'Fraction of P relative to C buried -- oxic          : ',par_sed_diagen_fracC2Ppres_ox
-       print*,'Fraction of P relative to C buried -- anoxic        : ',par_sed_diagen_fracC2Ppres_anox
-       print*,'Fraction of P relative to C buried -- euxinic       : ',par_sed_diagen_fracC2Ppres_eux
        print*,'Fractional POC burial scaling (Dunne scheme)        : ',par_sed_diagen_fracCpres_scale
        print*,'Apply Wallmann [2010] C:P remin parameterization?   : ',ctrl_sed_diagen_fracC2Ppres_wallmann2010
        print*,'C:P remin C/P offset                                : ',par_sed_diagen_fracC2Ppres_off
@@ -110,9 +104,6 @@ CONTAINS
        print*,'Return of PO4 to ocean in Dunne 2007 scheme?        : ',ctrl_sed_dunne2007_remin_POP
        print*,'Cap Fe2+ dissolution at POM_FeOOH rain flux?        : ',ctrl_sed_diagen_POM_FeOOH_cap
        print*,'Retain original (Redfield) remin transformation?    : ',ctrl_sed_conv_sed_ocn_old
-       print*,'[O2] thresh for switching redox arrays (mol kg-1)   : ',par_sed_diagen_O2thresh
-       print*,'[NO3] thresh for switching redox arrays (mol kg-1)  : ',par_sed_diagen_NO3thresh
-       print*,'[SO4] thresh for switching redox arrays (mol kg-1)  : ',par_sed_diagen_SO4thresh
        ! --- DIAGENESIS SCHEME: HUELSE 2017 -------------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: HUELSE 2017 -----------------'
        print*,'Corg rate constant parameterization scheme          : ',par_sed_huelse2017_kscheme
@@ -153,11 +144,6 @@ CONTAINS
        print*,'prescribed global SrCO3 recryst rate (mol yr-1)     : ',par_sed_SrCO3recrystTOT
        print*,'carbonate recrystalization r87Sr                    : ',par_r87Sr_SrCO3recryst
        print*,'carbonate recrystalization d88Sr                    : ',par_d88Sr_SrCO3recryst
-       ! --- Corg PRODUCTION ----------------------------------------------------------------------------------------------------- !
-       print*,'--- Coeg PRODUCTION --------------------------------'
-       print*,'prescribed Corg production rate (mol cm-2 yr-1)     : ',par_sed_Corgburial
-       print*,'prescribed global Corg production rate (mol yr-1)   : ',par_sed_CorgburialTOT
-       print*,'POC d13C offset compared to the d13C of CaCO3       : ',par_sed_Corgburial_Dd13C
        ! --- TRACE METALS -------------------------------------------------------------------------------------------------------- !
        print*,'--- TRACE METALS -----------------------------------'
        print*,'Default CaCO3 Ca:Li ratio                           : ',par_bio_red_CaCO3_LiCO3
@@ -207,9 +193,6 @@ CONTAINS
        print*,'Mean ocean floor reference temeprature (C)          : ',par_sed_T0C
        ! --- MISC CONTROLS ------------------------------------------------------------------------------------------------------- !
        print*,'--- MISC CONTROLS ----------------------------------'
-       print*,'Ca-only adjustment for forced ocean saturation?     : ',ctrl_sed_forcedohmega_ca
-       print*,'Forced minimum saturation (calcite ohmega) anywhere : ',par_sed_ohmegamin
-       print*,'Imposed sed->ocn flux (mol Ca cm-2 (time-step)-1)   : ',par_sed_ohmegamin_flux
        print*,'Impose alt detrital burial flux forcing?            : ',ctrl_sed_Fdet
        print*,'Impose alt CaCO3 burial flux forcing?               : ',ctrl_sed_Fcaco3
        print*,'Impose alt opal burial flux forcing?                : ',ctrl_sed_Fopal
@@ -1614,9 +1597,9 @@ CONTAINS
     
     ! set filename
     IF (ctrl_timeseries_output) THEN
-       loc_filename = TRIM(par_outdir_name)//'seddiag_misc_DATA_GLOBAL_'//year_text//string_results_ext
+       loc_filename = TRIM(par_outdir_name)//'GLOBAL_SUMMARY_sediments_'//year_text//string_results_ext
     ELSE
-       loc_filename = TRIM(par_outdir_name)//'seddiag_misc_DATA_GLOBAL'//string_results_ext
+       loc_filename = TRIM(par_outdir_name)//'GLOBAL_SUMMARY_sediments'//string_results_ext
     ENDIF
     ! open file
     call check_unit(out,__LINE__,__FILE__)
@@ -1889,37 +1872,6 @@ CONTAINS
             & ' Li detrital source        :',loc_tot2_sedgrid,' mol yr-1'
        call check_iostat(ios,__LINE__,__FILE__)
        Write(unit=out,fmt=*) '---------------------------------'
-    end if
-    ! Corg
-    if (par_sed_Corgburial > const_real_nullsmall) then
-       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:))
-       if (loc_tot_mask_area > const_real_nullsmall) then 
-          loc_mean_sedgrid = sum(loc_mask_reef(:,:)*loc_sed_coretop(is_POC,:,:)*loc_area(:,:))/loc_tot_mask_area
-       else
-          loc_mean_sedgrid = 0.0
-       end if
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' POC production            :',loc_tot1_sedgrid,' mol yr-1 = ',1.0E-12*conv_C_mol_kg*loc_tot1_sedgrid,' GtC yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       write(unit=out,fmt='(A28,f6.2,A2)',iostat=ios) &
-            & ' Mean wt% POC              :',loc_mean_sedgrid,' %'
-       call check_iostat(ios,__LINE__,__FILE__)
-       Write(unit=out,fmt=*) '---------------------------------'
-       ! SAVE !
-       loc_reef_FPOC = loc_tot1_sedgrid
-       ! d13C (weighted by area and POC sedimentation rate)
-       if (sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:)) > const_real_nullsmall) then
-          loc_sed_d13C_mean = &
-               & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:)*loc_POC_d13C(:,:))/ &
-               & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:))
-       else
-          loc_sed_d13C_mean = 0.0
-       end if
-       write(unit=out,fmt='(A28,f6.2,A5)',iostat=ios) &
-            & ' Mean weighted d13C CaCO3  :',loc_sed_d13C_mean,'o/oo'
-       Write(unit=out,fmt=*) '---------------------------------'
-       ! SAVE !
-       loc_reef_FPOC_d13C = loc_sed_d13C_mean
     end if
     ! Sr
     IF (sed_select(is_SrCO3_87Sr) .AND. sed_select(is_SrCO3_88Sr)) THEN
@@ -2315,7 +2267,7 @@ CONTAINS
     ! *** SAVE WEATHERING PARAMETERS ***
     
     ! set filename
-    loc_filename = TRIM(par_outdir_name)//'seddiag_misc_ROKGEM_parameters'//string_results_ext
+    loc_filename = TRIM(par_outdir_name)//'GLOBAL_SUMMARY_weathering_parameters'//string_results_ext
     
     ! open file
     call check_unit(out,__LINE__,__FILE__)
@@ -2398,7 +2350,7 @@ CONTAINS
     ! *** SAVE FULL CORE-TOP DATA IN TEXT FILE FORMAT ***
     
     ! set filename
-    loc_filename = TRIM(par_outdir_name)//'seddiag_misc_DATA_FULL'//string_results_ext
+    loc_filename = TRIM(par_outdir_name)//'timeseries_allsediments'//string_results_ext
     
     ! open file
     call check_unit(out,__LINE__,__FILE__)

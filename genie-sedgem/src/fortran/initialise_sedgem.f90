@@ -148,20 +148,7 @@ SUBROUTINE initialise_sedgem( &
   if (par_sed_save_av_dtyr > par_misc_t_runtime) par_sed_save_av_dtyr = par_misc_t_runtime
   ! ---------------------------------------------------------- ! INITIALIZE netCDF OUTPUT
   IF (ctrl_misc_debug2) print*, 'INITIALIZE netCDF OUTPUT'
-  string_ncout2d   = TRIM(par_outdir_name)//'sedgem_fields_2d.nc'
-  IF (ctrl_timeseries_output) THEN
-     IF (ctrl_continuing.AND.ctrl_append_data) THEN
-        OPEN(unit=in,status='old',file=TRIM(par_rstdir_name)//'netcdf_record_numbers',form='formatted',action='read')
-        READ(unit=in,fmt='(i6)') ntrec_sout
-        close(unit=in)
-     ELSE
-        ntrec_sout = 0
-     ENDIF
-     print*, 'netcdf record number: ',ntrec_sout
-     print*,'par_outdir_name = par_rstdir_name:',par_outdir_name.eq.par_rstdir_name
-  ELSE
-     ntrec_sout = 0
-  ENDIF
+  string_ncout2d   = TRIM(par_outdir_name)//'fields_sedgem_2d.nc'
   ! ---------------------------------------------------------- ! INITIALIZE DATA SAVING
   IF (ctrl_misc_debug2) print*, 'INITIALIZE DATA SAVING'
   IF (ctrl_timeseries_output) THEN

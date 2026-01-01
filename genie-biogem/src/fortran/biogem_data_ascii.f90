@@ -1159,9 +1159,9 @@ CONTAINS
     ! age tracers
     IF (ctrl_force_ocn_age .OR. ctrl_force_ocn_age1) THEN
        loc_filename=fun_data_timeseries_filename(loc_t, &
-            & par_outdir_name,'timeseries','misc_col_age',string_results_ext)
+            & par_outdir_name,'timeseries','misc_vent_age',string_results_ext)
        IF (ctrl_data_save_sig_ocn_sur) THEN
-          loc_string = '% time (yr) / mean global ventilation age (yr) / '// &
+          loc_string = '% time (yr) / mean global idealized ventilation age (yr) / '// &
                & 'surface ventilation age (yr) / benthic'//loc_string_Dmin//'ventilation age (yr) '
        else
           loc_string = '% time (yr) / mean global ventilation age (yr)'
@@ -3160,7 +3160,7 @@ CONTAINS
     ! age tracers
     IF (ctrl_force_ocn_age .OR. ctrl_force_ocn_age1) THEN
        loc_filename=fun_data_timeseries_filename( &
-            & dum_t,par_outdir_name,'timeseries','misc_col_age',string_results_ext)
+            & dum_t,par_outdir_name,'timeseries','misc_vent_age',string_results_ext)
        if (ctrl_force_ocn_age) then
           loc_sig = int_misc_age_sig - dum_t
        elseif (ctrl_force_ocn_age1) then
@@ -3675,7 +3675,7 @@ CONTAINS
     loc_dt = int_t_timeslice
     loc_filename= &
          & fun_data_timeslice_filename( &
-         & par_outdir_name,'SUMMARY_AT_year','diag_GLOBAL_AVERAGE',string_results_ext)
+         & par_outdir_name,'GLOBAL_SUMMARY_ocean','yrs',string_results_ext)
     IF (ctrl_misc_t_BP) THEN
        loc_t = par_data_save_timeslice(par_data_save_timeslice_i) + par_misc_t_end
     ELSE

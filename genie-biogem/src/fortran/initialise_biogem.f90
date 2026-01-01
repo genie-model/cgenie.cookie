@@ -335,8 +335,8 @@ SUBROUTINE initialise_biogem(                       &
      string_ncout2d    = TRIM(par_outdir_name)//trim(expid_name)//'.2d.nc'
      string_ncout3d    = TRIM(par_outdir_name)//trim(expid_name)//'.3d.nc'
   else
-     string_ncout2d    = TRIM(par_outdir_name)//'biogem_fields_2d.nc'
-     string_ncout3d    = TRIM(par_outdir_name)//'biogem_fields_3d.nc'
+     string_ncout2d    = TRIM(par_outdir_name)//'fields_biogem_2d.nc'
+     string_ncout3d    = TRIM(par_outdir_name)//'fields_biogem_3d.nc'
   end if
   ! initialise 2d and 3d netcdf files
      call sub_init_netcdf(trim(string_ncout2d),loc_iou,2)

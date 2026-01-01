@@ -43,24 +43,31 @@ CONTAINS
   ! (h) sort out consumption of O2/NO3/SO4 resulting from organic matter remineralization
   ! NOTE: the surface ('top') sediment layer has a thickness of par_sed_top_th (cm) and
   !       has porosity of par_sed_poros_top (cm3 cm-3) (i.e., the solids actually occupy 1.0 - par_sed_poros_top cm3 cm-3)
-  SUBROUTINE sub_update_sed( &
+  function fun_update_sed_dsea( &
        & dum_dtyr,           &
        & dum_i,dum_j,        &
        & dum_D,              &
        & dum_sfcsumocn,      &
-       & dum_conv_sed_ocn    &
+       & dum_conv_ls_lo      &
        & )
-    IMPLICIT NONE
-    ! dummy arguments
+    ! -------------------------------------------------------- !
+    ! RESULT VARIABLE
+    ! -------------------------------------------------------- !
+    real,dimension(1:n_l_ocn)::fun_update_sed_dsea
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
     REAL,INTENT(in)::dum_dtyr                                  ! time-step
     integer,INTENT(in)::dum_i,dum_j                            ! grid point (i,j)
     REAL,INTENT(in)::dum_D                                     ! depth
     real,DIMENSION(n_ocn),intent(in)::dum_sfcsumocn            ! ocean composition interface array
-    real,DIMENSION(n_ocn,n_sed),intent(in)::dum_conv_sed_ocn   ! (redox-dependent) sed -> ocn conversion
-    ! local variables
-    INTEGER::l,is,io                                           ! tracer index counters
+    real,dimension(1:n_l_ocn,1:n_l_sed),INTENT(in)::dum_conv_ls_lo ! (redox-dependent) sed -> ocn conversion
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    INTEGER::lo,ls,is                                          ! tracer index counters
     INTEGER::n                                                 ! 
-    integer::loc_i,loc_tot_i                                   ! array index conversion variables
+    integer::loc_m,loc_tot_m                                   ! array index conversion variables
     INTEGER::loc_n_sed_stack_top                               ! sediment stack top (incomplete) layer number
     INTEGER::loc_n_sedcore_stack_top                           ! sediment core stack top (complete layers only)
     REAL::loc_new_sed_vol                                      ! new sediment volume (as SOLID material)
@@ -71,7 +78,6 @@ CONTAINS
     real::loc_sed_dis_frac                                     ! (organic matter) fraction remineralized (<-> dissolution)
     real::loc_sed_dis_frac_P                                   ! (organic matter P) fraction remineralized (<-> dissolution)
     real::loc_sed_diagen_fCorg                                 ! flux fraction of organic matter available for (CaCO3) diagenesis
-    real::loc_sed_poros                                        ! 
     real::loc_sed_poros_top                                    ! 
     real::loc_r_sed_por                                        ! thickness ratio due to porosity differences (stack / surface layer)
     real::loc_frac_CaCO3                                       ! 
@@ -90,8 +96,11 @@ CONTAINS
     REAL,DIMENSION(n_ocn)::loc_exe_ocn                         ! flux of dissolved solutes to be exchanged with ocean
     logical::loc_flag_stackgrow,loc_flag_stackshrink           ! growing or shrinking of stack occurs (by a 1 cm layer)
     real,DIMENSION(n_diag_sed_err)::loc_err
-
-    ! *** (a) initialize variables
+    ! -------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
+    real,dimension(1:n_l_ocn)::loc_lslo_fnet
+    ! -------------------------------------------------------- !
+    ! (A) INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(a) initialize variables'
     ! zero local sediment arrays
     loc_new_sed(:) = 0.0
@@ -104,12 +113,16 @@ CONTAINS
     loc_sed_mean_OM_bot = 0.0
     ! initialize relevant location in global sediment dissolution results array
     sed_fdis(:,dum_i,dum_j) = 0.0
+    ! initialize local sed-ocn interface dissolved tracer exchange arrray
+    loc_lslo_fnet(:) = 0.0
     ! initialize flags recording growing or shrinking of sediment stack (i.e., new layers being added or removed, respectively)
     loc_flag_stackgrow   = .FALSE.
     loc_flag_stackshrink = .FALSE.
-    !
+    ! initialize errors
     loc_err(:) = 0.0
-
+    ! -------------------------------------------------------- !
+    ! (B) SET BIOTURBATION INTENSITY AND PROFILE
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(b) calculate Archer et al. [2002] bioturbation intensity profile (if selected)'
     ! *** (b) calculate bioturbation intensity
     !         NOTE: the vector par_sed_mix_k is not populated if ctrl_sed_bioturb is false
@@ -142,8 +155,8 @@ CONTAINS
     !         NOTE: convert unts if new particulate matter added to sediments; from (mol cm-2) to (cm3 cm-2)
     !         NOTE: for particulate fractions, undo units conversion (cm2 -> m2) carried out in sedgem
     ! calculate rain input of new solid material
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
+    DO ls=1,n_l_sed
+       is = conv_iselected_is(ls)
        SELECT CASE (sed_type(is))
        CASE (9)
           loc_new_sed(is) = sed_fsed(is,dum_i,dum_j)/conv_cm2_m2
@@ -183,39 +196,17 @@ CONTAINS
        ! 
        ! ######################################################################################################################### !
     case ('simple')
-       ! a VERY crude way of estimating preservation of organic matter depending on the occurrence of anoxic/euxinic conditions
-       ! first determine whether all POM frac2 should be preserved (and if so -- just adjust preservation of remaining fraction)
+       ! a VERY crude way of preserving organic matter
        if (ctrl_sed_diagen_preserve_frac2) then
           loc_sed_dis_frac_max = 1.0 - loc_new_sed(is_POC_frac2)
        else
           loc_sed_dis_frac_max = 1.0 
        end if
-       ! test for oxic vs. euxinic conditions
-       If (ocn_select(io_O2) .AND. ocn_select(io_H2S)) then
-          If (dum_sfcsumocn(io_H2S) > dum_sfcsumocn(io_O2)) then
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_eux)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_eux*par_sed_diagen_fracCpres_eux)
-          else
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_ox)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_ox*par_sed_diagen_fracCpres_ox)
-          end If
-       elseif (ocn_select(io_O2)) then
-          If (dum_sfcsumocn(io_O2) < const_real_nullsmall) then
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_anox)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_anox*par_sed_diagen_fracCpres_anox)
-          else
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_ox)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_ox*par_sed_diagen_fracCpres_ox)
-          end If
-       else
-          loc_sed_dis_frac     = 1.0
-          loc_sed_dis_frac_P   = 1.0
-       end if
        ! calculate the return rain flux back to ocean
        ! NOTE: apply estimated fractional preservation
        ! NOTE: particle-reactive elements (e.g., 231Pa) remain in the sediments
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -224,12 +215,7 @@ CONTAINS
              if (sed_type(is) == par_sed_type_scavenged) then
                 loc_dis_sed(is) = 0.0
              else
-                select case (is)
-                case (is_POP)
-                   loc_dis_sed(is) = loc_sed_dis_frac_P*loc_new_sed(is)
-                case default
-                   loc_dis_sed(is) = loc_sed_dis_frac*loc_new_sed(is)
-                end select
+                loc_dis_sed(is) = loc_sed_dis_frac*loc_new_sed(is)
              end if
           end if
        end DO
@@ -272,8 +258,8 @@ CONTAINS
        ! NOTE: particle-reactive elements (e.g., 231Pa) remain in the sediments
        ! NOTE: apply the Wallmann [2010] C:P partitioning to the remineralized flux
        !       cap the P remin flux at the total rain flux
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -309,8 +295,8 @@ CONTAINS
        ! calculate the return rain flux back to ocean
        ! NOTE: diagenetic function calculates all (dissolved) exchange fluxes
        !       => 'sed' dissolution is effectively zero
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -343,14 +329,17 @@ CONTAINS
              end if
           end if
        end DO
-       ! correct dissovled flux units (mol cm-2 per year -> mol cm-2 per time-step) and set output array
-       sedocn_fnet(:,dum_i,dum_j) = sedocn_fnet(:,dum_i,dum_j) + dum_dtyr*loc_exe_ocn(:)
+       ! add in any solute flux from OMENSED
+       ! NOTE: correct dissovled flux units (mol cm-2 per year -> mol cm-2 per time-step) and set output array
+       DO lo=3,n_l_ocn
+          loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_dtyr*loc_exe_ocn(l2io(lo))
+       end do
        ! set OMEN output data array values
        sed_diag(idiag_OMEN_wtpct_top,dum_i,dum_j) = loc_sed_mean_OM_top
        sed_diag(idiag_OMEN_wtpct_bot,dum_i,dum_j) = loc_sed_mean_OM_bot
     case default
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -368,7 +357,7 @@ CONTAINS
           end if
        end DO
        ! set fractional flux of POC available for CaCO3 diagenesis
-       loc_sed_diagen_fCorg = (1.0 - par_sed_diagen_fracCpres_ox)*loc_new_sed(is_POC)
+       loc_sed_diagen_fCorg = loc_new_sed(is_POC)
     end select
     
     ! enable replacement of Corg preservation (burial) fields
@@ -512,8 +501,8 @@ CONTAINS
     case ('ALL')
        ! 100% preservation (nothing needed doing!)
     case default
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_CaCO3) .OR. &
                & (sed_type(is) == par_sed_type_CaCO3) .OR. &
@@ -555,8 +544,8 @@ CONTAINS
     case ('ALL')
        ! 100% preservation (nothing needed doing!)
     case default
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_opal) .OR. &
                & (sed_type(is) == par_sed_type_opal) .OR. &
@@ -759,18 +748,18 @@ CONTAINS
           DO n=1,nv_sedcore
              if ((vsedcore_store(n)%i == dum_i) .AND. (vsedcore_store(n)%j == dum_j)) then
                 loc_n_sedcore_stack_top = INT(vsedcore_store(n)%ht + const_real_nullsmall) + 1
-                DO l=1,n_l_sed
-                   is = conv_iselected_is(l)
-                   vsedcore_store(n)%lay(l,loc_n_sedcore_stack_top:(loc_n_sedcore_stack_top + n_sed_tot_drop - 1)) = &
+                DO ls=1,n_l_sed
+                   is = conv_iselected_is(ls)
+                   vsedcore_store(n)%lay(ls,loc_n_sedcore_stack_top:(loc_n_sedcore_stack_top + n_sed_tot_drop - 1)) = &
                         &  sed(is,dum_i,dum_j,1:n_sed_tot_drop)
                 end DO
                 vsedcore_store(n)%ht = vsedcore_store(n)%ht + REAL(n_sed_tot_drop)
                 if ((int(vsedcore_store(n)%ht + const_real_nullsmall) + n_sed_tot_drop) >= n_sedcore_tot) then
                    ! shift sediment down the sedcore store
-                   DO l=1,n_l_sed
-                      vsedcore_store(n)%lay(l,1:(n_sedcore_tot - n_sed_tot_drop)) = &
-                           &  vsedcore_store(n)%lay(l,(n_sed_tot_drop + 1):n_sedcore_tot)
-                      vsedcore_store(n)%lay(l,(n_sedcore_tot - n_sed_tot_drop + 1):n_sedcore_tot) = 0.0
+                   DO ls=1,n_l_sed
+                      vsedcore_store(n)%lay(ls,1:(n_sedcore_tot - n_sed_tot_drop)) = &
+                           &  vsedcore_store(n)%lay(ls,(n_sed_tot_drop + 1):n_sedcore_tot)
+                      vsedcore_store(n)%lay(ls,(n_sedcore_tot - n_sed_tot_drop + 1):n_sedcore_tot) = 0.0
                    end DO
                    ! update sediment height and top sub-layer number
                    vsedcore_store(n)%ht = vsedcore_store(n)%ht - REAL(n_sed_tot_drop)
@@ -794,128 +783,70 @@ CONTAINS
        loc_n_sed_stack_top = INT(sed_top_h(dum_i,dum_j)) + 1
     ENDIF
 
+    ! -------------------------------------------------------- !
+    ! (G) calculate sediment dissolution flux to ocean
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(g) calculate sediment dissolution flux to ocean'
     ! *** (g) calculate sediment dissolution flux to ocean
     !         NOTE: first, convert flux units from cm3 cm-2 to mol cm-2
+    !         NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
     sed_fdis(:,dum_i,dum_j) = conv_sed_cm3_mol(:)*loc_dis_sed(:)
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       loc_tot_i = conv_sed_ocn_i(0,is)
-       do loc_i=1,loc_tot_i
-          io = conv_sed_ocn_i(loc_i,is)
-          sedocn_fnet(io,dum_i,dum_j) = sedocn_fnet(io,dum_i,dum_j) + dum_conv_sed_ocn(io,is)*sed_fdis(is,dum_i,dum_j)
+    ! convert dissolved solids to solutes
+    DO ls=1,n_l_sed
+       loc_tot_m = conv_ls_lo_i(0,ls)
+       do loc_m=1,loc_tot_m
+          lo = conv_ls_lo_i(loc_m,ls)
+          if (lo > 0) then
+             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),dum_i,dum_j)
+          end if
        end do
     end DO
-
+    ! -------------------------------------------------------- !
+    ! (H) record diagnostics
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(h) record diagnostics'
-    ! *** (g) record diagnostics
+    ! *** (h) record diagnostics
     sed_diag_err(:,dum_i,dum_j) = loc_err(:)
-    
-    ! *** DEBUG ***
-    ! finally ... print some dull debugging info if 'iopt_sed_debug2' option is selected
-    IF (ctrl_misc_debug2) THEN
-       if ((dum_i == par_misc_debug_i) .AND. (dum_j == par_misc_debug_j)) then
-          PRINT*,'---'
-          PRINT*,'dum_i,dum_j'
-          PRINT*,dum_i,dum_j
-          print*,'D,T,S,DIC,PO4,SiO2,ALK,B,Ca,SO4,F'
-          print*,dum_D,dum_sfcsumocn(io_T),dum_sfcsumocn(io_S), &
-               & dum_sfcsumocn(io_DIC),dum_sfcsumocn(io_PO4),dum_sfcsumocn(io_SiO2),dum_sfcsumocn(io_ALK), &
-               & dum_sfcsumocn(io_B),dum_sfcsumocn(io_Ca),dum_sfcsumocn(io_SO4),dum_sfcsumocn(io_F)
-          print*,'sed_carb(:)'
-          print*,sed_carb(:,dum_i,dum_j)
-          PRINT*,'new_sed(:)'
-          do is=1,n_sed
-             if (sed_select(is)) print*,is,string_sed(is),loc_new_sed(is)
-          end do
-          PRINT*,'dis_sed(:)'
-          do is=1,n_sed
-             if (sed_select(is)) print*,is,string_sed(is),loc_dis_sed(is)
-          end do
-          PRINT*,'sed_top(:)'
-          do is=1,n_sed
-             if (sed_select(is)) print*,is,string_sed(is),sed_top(is,par_misc_debug_i,par_misc_debug_j)
-          end do
-          PRINT*,'new sed age = ',loc_new_sed(is_CaCO3_age) / (loc_new_sed(is_CaCO3) + 1.0E-14)
-          PRINT*,'new sed thickness = ',loc_new_sed_vol / (1.0 - loc_sed_poros_top)
-          PRINT*,'actual sedtop thickness = ',                           &
-               & (                                                       &
-               &   sed_top(is_CaCO3,par_misc_debug_i,par_misc_debug_j) + &
-               &   sed_top(is_opal,par_misc_debug_i,par_misc_debug_j)  + &
-               &   sed_top(is_det,par_misc_debug_i,par_misc_debug_j)   + &
-               &   sed_top(is_POC,par_misc_debug_i,par_misc_debug_j)     &
-               & ) / (1.0 - loc_sed_poros_top)
-          PRINT*,'n_sed_stack_top  = ',INT(sed_top_h(par_misc_debug_i,par_misc_debug_j)) + 1
-          PRINT*,'sed_stack_top_th = ',sed_top_h(par_misc_debug_i,par_misc_debug_j) - &
-               & REAL(((INT(sed_top_h(par_misc_debug_i,par_misc_debug_j)) + 1) - 1))
-          PRINT*,'---'
-       end if
-       IF ((MINVAL(loc_new_sed(:)) < 0.0) .OR. (MINVAL(loc_dis_sed(:)) < 0.0)) then
-          PRINT*,dum_i,dum_j
-          print*,'MINVAL(loc_new_sed(:)) < 0.0 or MINVAL(loc_dis_sed(:)) < 0.0'
-          print*,'loc_new_sed(:); ',loc_new_sed(:)
-          print*,'loc_dis_sed(:); ',loc_dis_sed(:)
-          PRINT*,'======='
-          STOP
-       ENDIF
-    endif
-    ! Ooo - alright then, more debug it is ...
-    IF (ctrl_misc_debug1) then
-       IF (loc_sed_top_dth > 1.0) THEN
-          loc_frac_CaCO3 = (loc_new_sed(is_CaCO3) - loc_dis_sed(is_CaCO3))/fun_calc_sed_vol(loc_new_sed(:) - loc_dis_sed(:))
-          loc_sed_poros = fun_calc_sed_poros_nsur(loc_frac_CaCO3,par_sed_top_th)
-          CALL sub_report_error(                                                                 &
-               & 'sedgem_box','sub_update_sed','magnitude of net sediment vol change > 1.0 cm3', &
-               & 'CONTINUING',                                                                   &
-               & (/real(dum_i),real(dum_j),loc_sed_top_dth,                                      &
-               & (loc_new_sed(is_POC)-loc_dis_sed(is_POC))     / (1.0 - loc_sed_poros),          &
-               & (loc_new_sed(is_CaCO3)-loc_dis_sed(is_CaCO3)) / (1.0 - loc_sed_poros),          &
-               & (loc_new_sed(is_opal)-loc_dis_sed(is_opal))   / (1.0 - loc_sed_poros),          &
-               & (loc_new_sed(is_det)-loc_dis_sed(is_det))     / (1.0 - loc_sed_poros)           &
-               & /),.false.                                                                      &
-               & )
-       END IF
-       IF (loc_sed_top_dth < -1.0) THEN
-          loc_sed_poros = 1.0
-          CALL sub_report_error(                                                                  &
-               & 'sedgem_box','sub_update_sed','magnitude of net sediment vol change < -1.0 cm3', &
-               & 'CONTINUING',                                                                    &
-               & (/real(dum_i),real(dum_j),loc_sed_top_dth,                                       &
-               & (loc_new_sed(is_POC)-loc_dis_sed(is_POC))     / (1.0 - loc_sed_poros),           &
-               & (loc_new_sed(is_CaCO3)-loc_dis_sed(is_CaCO3)) / (1.0 - loc_sed_poros),           &
-               & (loc_new_sed(is_opal)-loc_dis_sed(is_opal))   / (1.0 - loc_sed_poros),           &
-               & (loc_new_sed(is_det)-loc_dis_sed(is_det))     / (1.0 - loc_sed_poros)            &
-               & /),.false.                                                                       &
-               & )
-       end IF
-    end IF
-
-  END SUBROUTINE sub_update_sed
+    ! -------------------------------------------------------- !
+    ! RETURN RESULT
+    ! -------------------------------------------------------- !
+    fun_update_sed_dsea(:) = loc_lslo_fnet(:)
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  END function fun_update_sed_dsea
   ! ****************************************************************************************************************************** !
 
 
   ! ****************************************************************************************************************************** !
   ! UPDATE SEDIMENT COMPOSITION - SHALLOW WATER CARBONATES (REEFS)
-  ! [scheme modelled vaguely on sub_update_sed (above)]
+  ! [scheme modelled vaguely on fun_update_sed_dsea (above)]
   ! ****************************************************************************************************************************** !
-  SUBROUTINE sub_update_sed_reef( &
-       & dum_dtyr,                &
-       & dum_i,dum_j,             &
-       & dum_D,                   &
-       & dum_sfcsumocn,           &
-       & dum_conv_sed_ocn         &
+  function fun_update_sed_reef( &
+       & dum_dtyr,           &
+       & dum_i,dum_j,        &
+       & dum_D,              &
+       & dum_sfcsumocn,      &
+       & dum_conv_ls_lo      &
        & )
-    IMPLICIT NONE
-    ! dummy arguments
-    REAL,INTENT(in)::dum_dtyr                                    ! time-step
-    integer,INTENT(in)::dum_i,dum_j                              ! grid point (i,j)
-    REAL,INTENT(in)::dum_D                                       ! depth
-    real,DIMENSION(n_ocn),intent(in)::dum_sfcsumocn              ! ocean composition interface array
-    real,DIMENSION(n_ocn,n_sed),intent(in)::dum_conv_sed_ocn   ! (redox-dependent) sed -> ocn conversion
-    ! local variables
-    INTEGER::l,is,io                                         ! tracer index counters
-    INTEGER::n                                               ! 
-    integer::loc_i,loc_tot_i                                 ! array index conversion variables
+    ! -------------------------------------------------------- !
+    ! RESULT VARIABLE
+    ! -------------------------------------------------------- !
+    real,dimension(1:n_l_ocn)::fun_update_sed_reef
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_dtyr                                  ! time-step
+    integer,INTENT(in)::dum_i,dum_j                            ! grid point (i,j)
+    REAL,INTENT(in)::dum_D                                     ! depth
+    real,DIMENSION(n_ocn),intent(in)::dum_sfcsumocn            ! ocean composition interface array
+    real,dimension(1:n_l_ocn,1:n_l_sed),INTENT(in)::dum_conv_ls_lo ! (redox-dependent) sed -> ocn conversion
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    INTEGER::lo,ls,is                                          ! tracer index counters
+    INTEGER::n                                                 ! 
+    integer::loc_m,loc_tot_m                                   ! array index conversion variables
     INTEGER::loc_n_sed_stack_top                             ! sediment stack top (incomplete) layer number
     INTEGER::loc_n_sedcore_stack_top                         ! sediment core stack top (complete layers only)
     REAL::loc_new_sed_vol                                    ! new sediment volume (as SOLID material)
@@ -935,33 +866,42 @@ CONTAINS
     real::loc_R,loc_r7Li,loc_r44Ca                           ! local isotope R, local (isotope specific) r's
     real::loc_86Sr,loc_87Sr,loc_88Sr
     real::loc_ohm,loc_TC                                     ! 
-
-    ! *** INITIALIZE VARIABLES ****************************************************************************************************
+    ! -------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
+    real,dimension(1:n_l_ocn)::loc_lslo_fnet
+    ! -------------------------------------------------------- !
+    ! (A) INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     ! zero local sediment arrays
     loc_new_sed(:) = 0.0
     loc_dis_sed(:) = 0.0
     loc_exe_sed(:) = 0.0
     ! initialize relevant location in global sediment dissolution results array
     sed_fdis(:,dum_i,dum_j) = 0.0
+    ! initialize local sed-ocn interface dissolved tracer exchange arrray
+    loc_lslo_fnet(:) = 0.0
     ! temperature (C)
     loc_TC = dum_sfcsumocn(io_T) - const_zeroC
-
-    ! *** CALCULATE SEDIMENT RAIN FLUX ********************************************************************************************
-    !     dissolve all particulate rain
-    !     NOTE: units of mol cm-2
-    !     NOTE: do not set the <loc_dis_sed> array for returning all particulate rain -- set <sedocn_fnet> directly ???
+    ! -------------------------------------------------------- !
+    ! (B) DISSOLVED ALL BIOGENIC RAIN
+    ! -------------------------------------------------------- !
+    !     NOTE: units already in mol cm-2
     !     NOTE: make exception for detrital (and ash)
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
+    !     NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
+    ! convert dissolved solids to solutes
+    DO ls=1,n_l_sed
+       is = l2is(ls)
        if ((is /= is_det) .AND. (is /= is_ash)) then
-          loc_tot_i = conv_sed_ocn_i(0,is)
-          do loc_i=1,loc_tot_i
-             io = conv_sed_ocn_i(loc_i,is)
-             sedocn_fnet(io,dum_i,dum_j) = sedocn_fnet(io,dum_i,dum_j) + dum_conv_sed_ocn(io,is)*sed_fsed(is,dum_i,dum_j)
+          loc_tot_m = conv_ls_lo_i(0,ls)
+          do loc_m=1,loc_tot_m
+             lo = conv_ls_lo_i(loc_m,ls)
+             if (lo > 0) then
+                loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_conv_ls_lo(lo,ls)*sed_fsed(l2is(ls),dum_i,dum_j)
+             end if
           end do
+          ! set solid rain flux to zero
           sed_fsed(is,dum_i,dum_j) = 0.0
        end if
-    end DO
+    end DO    
 
     ! *** CALCULATE DISSOLUTION FLUX **********************************************************************************************
     !     NOTE: assume zero for now ...
@@ -1091,29 +1031,10 @@ CONTAINS
     end IF
     ! add age tracer
     sed_fsed(is_CaCO3_age,dum_i,dum_j) = sed_age*sed_fsed(is_CaCO3,dum_i,dum_j)
-    ! create Corg component
-    ! NOTE: no account is taken of associated nutrient nor oxygen changes
-    ! NOTE: treat POC d13C as a fixed offset compared to the d13C of CaCO3
-    if (par_sed_Corgburial > const_real_nullsmall) then
-       sed_fsed(is_POC,dum_i,dum_j) = par_sed_Corgburial
-       if (ctrl_sed_Corgburial_fixedD13C) then
-          loc_delta_Corg = par_sed_Corgburial_Dd13C + 15.10 - 4232.0/dum_sfcsumocn(io_T)
-          loc_alpha = 1.0 + loc_delta_Corg/1000.0
-          loc_R = sed_carbisor(ici_HCO3_r13C,dum_i,dum_j)/(1.0 - sed_carbisor(ici_HCO3_r13C,dum_i,dum_j))
-          sed_fsed(is_POC_13C,dum_i,dum_j) = sed_fsed(is_POC,dum_i,dum_j)*(loc_alpha*loc_R/(1.0 + loc_alpha*loc_R))
-       else
-          loc_R = fun_Corg_Rfrac( &
-               & dum_sfcsumocn(io_T),sed_carb(ic_conc_CO2,dum_i,dum_j), &
-               & sed_carbisor(ici_CO2_r13C,dum_i,dum_j),par_d13C_DIC_Corg_ef,.false. &
-               & )
-          sed_fsed(is_POC_13C,dum_i,dum_j) = loc_R*sed_fsed(is_POC,dum_i,dum_j)
-       end if     
-    end if
 
     ! *** DIAGENESIS **************************************************************************************************************
     ! 
     ! Sr
-    ! NOTE: assume that this is the first (non zero) incidence of sedocn_fnet Sr fluxes
     IF (sed_select(is_SrCO3_87Sr) .AND. sed_select(is_SrCO3_88Sr)) THEN
        if (par_sed_SrCO3recryst > const_real_nullsmall) then
           ! initialization
@@ -1136,44 +1057,30 @@ CONTAINS
     ! *** CALCULATE OCEAN-SEDIMENT EXCHANGE ***************************************************************************************
     ! 
     ! calculate volume of produced material
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
+    DO ls=1,n_l_sed
+       is = conv_iselected_is(ls)
        loc_new_sed(is) = conv_sed_mol_cm3(is)*sed_fsed(is,dum_i,dum_j)
     end do
     ! calculate volume of added material (as SOILD matter. i.e., assuming zero porosity), in units of cm3 (cm-2)
     loc_new_sed_vol = fun_calc_sed_vol(loc_new_sed(:))
-    ! set exchange with ocean to account for removed of solutes via production
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       loc_tot_i = conv_sed_ocn_i(0,is)
-       do loc_i=1,loc_tot_i
-          io = conv_sed_ocn_i(loc_i,is)
-          sedocn_fnet(io,dum_i,dum_j) = sedocn_fnet(io,dum_i,dum_j) + &
-               & dum_conv_sed_ocn(io,is)*(sed_fdis(is,dum_i,dum_j)-sed_fsed(is,dum_i,dum_j))
+
+    ! -------------------------------------------------------- !
+    ! (?) update sediment dissolution flux to ocean
+    ! -------------------------------------------------------- !
+    !     NOTE: units already in mol cm-2
+    IF (ctrl_misc_debug3) print*,'(?) calculate sediment dissolution flux to ocean'
+    ! *** (?) set exchange with ocean to account for removed of solutes via production
+    ! convert dissolved solids to solutes
+    DO ls=1,n_l_sed
+       loc_tot_m = conv_ls_lo_i(0,ls)
+       do loc_m=1,loc_tot_m
+          lo = conv_ls_lo_i(loc_m,ls)
+          if (lo > 0) then
+             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + &
+                  & dum_conv_ls_lo(lo,ls)*(sed_fdis(l2is(ls),dum_i,dum_j) - sed_fsed(l2is(ls),dum_i,dum_j))
+          end if
        end do
     end DO
-
-    ! *** FORCING OF 'RAPID' OCEAN EQUAILIBRIUM WITH CaCO3 ************************************************************************
-    ! NOTE: RETIRE THIS AT SOME POINT (SUPERSEEDED BY SATURATION STATE INVERSION CODE
-    ! NOTE: a flux to the ocean of 0.01 mol (CaCO3 or Ca2+) cm-2 per time step is approximately equal to:
-    !       1 g = 0.37 cm3 solid CaCO3 or ~ 1.5 cm equivalent of erosion (of porous 100 wt% CaCO3 sedimentary material)
-    if (par_sed_ohmegamin > const_real_nullsmall) then
-       if (sed_carb(ic_ohm_cal,dum_i,dum_j) < par_sed_ohmegamin) then
-          sedocn_fnet(io_Ca,dum_i,dum_j)  = sedocn_fnet(io_Ca,dum_i,dum_j) + par_sed_ohmegamin_flux
-          if (sed_select(is_CaCO3_44Ca)) then
-             sedocn_fnet(io_Ca_44Ca,dum_i,dum_j)  = sedocn_fnet(io_Ca_44Ca,dum_i,dum_j) + loc_r44Ca*par_sed_ohmegamin_flux
-          end if
-          sedocn_fnet(io_ALK,dum_i,dum_j) = sedocn_fnet(io_ALK,dum_i,dum_j) + 2.0*sedocn_fnet(io_Ca,dum_i,dum_j)
-          IF (.NOT. ctrl_sed_forcedohmega_ca) then
-             ! adjust chemistry by carbonate-only rather than silicate-only weathering
-             sedocn_fnet(io_DIC,dum_i,dum_j) = sedocn_fnet(io_DIC,dum_i,dum_j) + sedocn_fnet(io_Ca,dum_i,dum_j)
-             if (sed_select(is_CaCO3_13C)) then
-                sedocn_fnet(io_DIC_13C,dum_i,dum_j) = sedocn_fnet(io_DIC_13C,dum_i,dum_j) + &
-                     & fun_calc_isotope_fraction(0.0,const_standards(sed_type(is_CaCO3_13C)))*sedocn_fnet(io_DIC,dum_i,dum_j)
-             end if
-          end IF
-       end if
-    end if
 
     ! *** UPDATE REEF SEDIMENT STACK **********************************************************************************************
     !         add the new sediment to the top sediment layer, and deduct the calculated dissolved material
@@ -1303,18 +1210,18 @@ CONTAINS
           DO n=1,nv_sedcore
              if ((vsedcore_store(n)%i == dum_i) .AND. (vsedcore_store(n)%j == dum_j)) then
                 loc_n_sedcore_stack_top = INT(vsedcore_store(n)%ht + const_real_nullsmall) + 1
-                DO l=1,n_l_sed
-                   is = conv_iselected_is(l)
-                   vsedcore_store(n)%lay(l,loc_n_sedcore_stack_top:(loc_n_sedcore_stack_top + n_sed_tot_drop - 1)) = &
+                DO ls=1,n_l_sed
+                   is = conv_iselected_is(ls)
+                   vsedcore_store(n)%lay(ls,loc_n_sedcore_stack_top:(loc_n_sedcore_stack_top + n_sed_tot_drop - 1)) = &
                         &  sed(is,dum_i,dum_j,1:n_sed_tot_drop)
                 end DO
                 vsedcore_store(n)%ht = vsedcore_store(n)%ht + REAL(n_sed_tot_drop)
                 if ((int(vsedcore_store(n)%ht + const_real_nullsmall) + n_sed_tot_drop) >= n_sedcore_tot) then
                    ! shift sediment down the sedcore store
-                   DO l=1,n_l_sed
-                      vsedcore_store(n)%lay(l,1:(n_sedcore_tot - n_sed_tot_drop)) = &
-                           &  vsedcore_store(n)%lay(l,(n_sed_tot_drop + 1):n_sedcore_tot)
-                      vsedcore_store(n)%lay(l,(n_sedcore_tot - n_sed_tot_drop + 1):n_sedcore_tot) = 0.0
+                   DO ls=1,n_l_sed
+                      vsedcore_store(n)%lay(ls,1:(n_sedcore_tot - n_sed_tot_drop)) = &
+                           &  vsedcore_store(n)%lay(ls,(n_sed_tot_drop + 1):n_sedcore_tot)
+                      vsedcore_store(n)%lay(ls,(n_sedcore_tot - n_sed_tot_drop + 1):n_sedcore_tot) = 0.0
                    end DO
                    ! update sediment height and top sub-layer number
                    vsedcore_store(n)%ht = vsedcore_store(n)%ht - REAL(n_sed_tot_drop)
@@ -1338,72 +1245,63 @@ CONTAINS
        loc_n_sed_stack_top = INT(sed_top_h(dum_i,dum_j)) + 1
     ENDIF
 
-    ! *** DEBUG *******************************************************************************************************************
-    !     finally ... print some dull debugging info if 'iopt_sed_debug2' option is selected
-    IF (ctrl_misc_debug2) THEN
-       if ((dum_i == par_misc_debug_i) .AND. (dum_j == par_misc_debug_j)) then
-          PRINT*,'---'
-          PRINT*,'dum_i,dum_j'
-          PRINT*,dum_i,dum_j
-          print*,'D,T,S,DIC,PO4,SiO2,ALK,B,Ca,SO4,F'
-          print*,dum_D,dum_sfcsumocn(io_T),dum_sfcsumocn(io_S), &
-               & dum_sfcsumocn(io_DIC),dum_sfcsumocn(io_PO4),dum_sfcsumocn(io_SiO2),dum_sfcsumocn(io_ALK), &
-               & dum_sfcsumocn(io_B),dum_sfcsumocn(io_Ca),dum_sfcsumocn(io_SO4),dum_sfcsumocn(io_F)
-          print*,'sed_carb(:)'
-          print*,sed_carb(:,dum_i,dum_j)
-          PRINT*,'new_sed(:)'
-          do is=1,n_sed
-             if (sed_select(is)) print*,is,string_sed(is),loc_new_sed(is)
-          end do
-          PRINT*,'dis_sed(:)'
-          do is=1,n_sed
-             if (sed_select(is)) print*,is,string_sed(is),loc_dis_sed(is)
-          end do
-          PRINT*,'sed_top(:)'
-          do is=1,n_sed
-             if (sed_select(is)) print*,is,string_sed(is),sed_top(is,par_misc_debug_i,par_misc_debug_j)
-          end do
-          PRINT*,'new sed age = ',loc_new_sed(is_CaCO3_age) / (loc_new_sed(is_CaCO3) + 1.0E-14)
-          PRINT*,'new sed thickness = ',loc_new_sed_vol / (1.0 - loc_sed_poros_top)
-          PRINT*,'actual sedtop thickness = ',                           &
-               & (                                                       &
-               &   sed_top(is_CaCO3,par_misc_debug_i,par_misc_debug_j) + &
-               &   sed_top(is_opal,par_misc_debug_i,par_misc_debug_j)  + &
-               &   sed_top(is_det,par_misc_debug_i,par_misc_debug_j)   + &
-               &   sed_top(is_POC,par_misc_debug_i,par_misc_debug_j)     &
-               & ) / (1.0 - loc_sed_poros_top)
-          PRINT*,'n_sed_stack_top  = ',INT(sed_top_h(par_misc_debug_i,par_misc_debug_j)) + 1
-          PRINT*,'sed_stack_top_th = ',sed_top_h(par_misc_debug_i,par_misc_debug_j) - &
-               & REAL(((INT(sed_top_h(par_misc_debug_i,par_misc_debug_j)) + 1) - 1))
-          PRINT*,'---'
-       end if
-    endif
-
-  END SUBROUTINE sub_update_sed_reef
+    ! -------------------------------------------------------- !
+    ! (?) update sediment dissolution flux to ocean
+    ! -------------------------------------------------------- !
+    IF (ctrl_misc_debug3) print*,'(?) calculate sediment dissolution flux to ocean'
+    ! *** (?) calculate sediment dissolution flux to ocean
+    !         NOTE: first, convert flux units from cm3 cm-2 to mol cm-2
+    !         NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
+    sed_fdis(:,dum_i,dum_j) = conv_sed_cm3_mol(:)*loc_dis_sed(:)
+    ! convert dissolved solids to solutes
+    DO ls=1,n_l_sed
+       loc_tot_m = conv_ls_lo_i(0,ls)
+       do loc_m=1,loc_tot_m
+          lo = conv_ls_lo_i(loc_m,ls)
+          if (lo > 0) then
+             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),dum_i,dum_j)
+          end if
+       end do
+    end DO
+    ! -------------------------------------------------------- !
+    ! RETURN RESULT
+    ! -------------------------------------------------------- !
+    fun_update_sed_reef(:) = loc_lslo_fnet(:)
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  END function fun_update_sed_reef
   ! ****************************************************************************************************************************** !
 
   
   ! ****************************************************************************************************************************** !
   ! UPDATE SEDIMENT COMPOSITION - MUD!!!
   ! ****************************************************************************************************************************** !
-  SUBROUTINE sub_update_sed_mud( &
-       & dum_dtyr,               &
-       & dum_i,dum_j,            &
-       & dum_D,                  &
-       & dum_sfcsumocn,          &
-       & dum_conv_sed_ocn        &
+  function fun_update_sed_muds( &
+       & dum_dtyr,           &
+       & dum_i,dum_j,        &
+       & dum_D,              &
+       & dum_sfcsumocn,      &
+       & dum_conv_ls_lo      &
        & )
-    IMPLICIT NONE
-    ! dummy arguments
-    REAL,INTENT(in)::dum_dtyr                                    ! time-step
-    integer,INTENT(in)::dum_i,dum_j                              ! grid point (i,j)
-    REAL,INTENT(in)::dum_D                                       ! depth
-    real,DIMENSION(n_ocn),intent(in)::dum_sfcsumocn              ! ocean composition interface array
-    real,DIMENSION(n_ocn,n_sed),intent(in)::dum_conv_sed_ocn   ! (redox-dependent) sed -> ocn conversion
-    ! local variables
-    INTEGER::l,is,io                                             ! tracer index counters
+    ! -------------------------------------------------------- !
+    ! RESULT VARIABLE
+    ! -------------------------------------------------------- !
+    real,dimension(1:n_l_ocn)::fun_update_sed_muds
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
+    REAL,INTENT(in)::dum_dtyr                                  ! time-step
+    integer,INTENT(in)::dum_i,dum_j                            ! grid point (i,j)
+    REAL,INTENT(in)::dum_D                                     ! depth
+    real,DIMENSION(n_ocn),intent(in)::dum_sfcsumocn            ! ocean composition interface array
+    real,dimension(1:n_l_ocn,1:n_l_sed),INTENT(in)::dum_conv_ls_lo ! (redox-dependent) sed -> ocn conversion
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    INTEGER::lo,ls,is                                          ! tracer index counters
     INTEGER::n                                                 ! 
-    integer::loc_i,loc_tot_i                                     ! array index conversion variables
+    integer::loc_m,loc_tot_m                                   ! array index conversion variables
     INTEGER::loc_n_sed_stack_top                                 ! sediment stack top (incomplete) layer number
     INTEGER::loc_n_sedcore_stack_top                             ! sediment core stack top (complete layers only)
     REAL::loc_new_sed_vol                                        ! new sediment volume (as SOLID material)
@@ -1431,12 +1329,11 @@ CONTAINS
     REAL,DIMENSION(n_sed)::loc_dis_sed                         ! remineralized top layer material
     REAL,DIMENSION(n_sed)::loc_exe_sed                         ! top layer material to be exchanged with stack
     REAL,DIMENSION(n_ocn)::loc_exe_ocn                         ! flux of dissolved solutes to be exchanged with ocean
-    real::loc_delta_Corg
-    real::loc_alpha                                            ! 
-    real::loc_R                                                ! local isotope R, local (isotope specific) r's
-    REAL,DIMENSION(n_sed)::loc_fsed                            ! 
-
-    ! *** INITIALIZE VARIABLES ****************************************************************************************************
+    ! -------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
+    real,dimension(1:n_l_ocn)::loc_lslo_fnet
+    ! -------------------------------------------------------- !
+    ! (A) INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     ! zero local sediment arrays
     loc_new_sed(:) = 0.0
     loc_dis_sed(:) = 0.0
@@ -1448,11 +1345,13 @@ CONTAINS
     loc_sed_mean_OM_bot = 0.0
     ! initialize relevant location in global sediment dissolution results array
     sed_fdis(:,dum_i,dum_j) = 0.0
+    ! initialize local sed-ocn interface dissolved tracer exchange arrray
+    loc_lslo_fnet(:) = 0.0
 
     ! *** CALCULATE SEDIMENT RAIN FLUX ********************************************************************************************
     !     calculate new sedimenting material to be added to the sediment top layer
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
+    DO ls=1,n_l_sed
+       is = conv_iselected_is(ls)
        SELECT CASE (sed_type(is))
        CASE (9)
           loc_new_sed(is) = sed_fsed(is,dum_i,dum_j)/conv_cm2_m2
@@ -1488,39 +1387,17 @@ CONTAINS
        ! 
        ! ######################################################################################################################### !
     case ('simple')
-       ! a VERY crude way of estimating preservation of organic matter depending on the occurrence of anoxic/euxinic conditions
-       ! first determine whether all POM frac2 should be preserved (and if so -- just adjust preservation of remaining fraction)
+       ! a VERY crude way of preserving organic matter
        if (ctrl_sed_diagen_preserve_frac2) then
           loc_sed_dis_frac_max = 1.0 - loc_new_sed(is_POC_frac2)
        else
           loc_sed_dis_frac_max = 1.0 
        end if
-       ! test for oxic vs. euxinic conditions
-       If (ocn_select(io_O2) .AND. ocn_select(io_H2S)) then
-          If (dum_sfcsumocn(io_H2S) > dum_sfcsumocn(io_O2)) then
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_eux)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_eux*par_sed_diagen_fracCpres_eux)
-          else
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_ox)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_ox*par_sed_diagen_fracCpres_ox)
-          end If
-       elseif (ocn_select(io_O2)) then
-          If (dum_sfcsumocn(io_O2) < const_real_nullsmall) then
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_anox)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_anox*par_sed_diagen_fracCpres_anox)
-          else
-             loc_sed_dis_frac     = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracCpres_ox)
-             loc_sed_dis_frac_P   = loc_sed_dis_frac_max*(1.0 - par_sed_diagen_fracC2Ppres_ox*par_sed_diagen_fracCpres_ox)
-          end If
-       else
-          loc_sed_dis_frac     = 1.0
-          loc_sed_dis_frac_P   = 1.0
-       end if
        ! calculate the return rain flux back to ocean
        ! NOTE: apply estimated fractional preservation
        ! NOTE: particle-reactive elements (e.g., 231Pa) remain in the sediments
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -1529,12 +1406,7 @@ CONTAINS
              if (sed_type(is) == par_sed_type_scavenged) then
                 loc_dis_sed(is) = 0.0
              else
-                select case (is)
-                case (is_POP)
-                   loc_dis_sed(is) = loc_sed_dis_frac_P*loc_new_sed(is)
-                case default
-                   loc_dis_sed(is) = loc_sed_dis_frac*loc_new_sed(is)
-                end select
+                loc_dis_sed(is) = loc_sed_dis_frac*loc_new_sed(is)
              end if
           end if
        end DO
@@ -1575,8 +1447,8 @@ CONTAINS
        ! NOTE: particle-reactive elements (e.g., 231Pa) remain in the sediments
        ! NOTE: apply par_sed_diagen_fracC2Ppres_ox to determine whether P is preferentially remineralized or not
        !       (a value of zero will ensure that 100% of P is returned)
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -1608,8 +1480,8 @@ CONTAINS
        ! calculate the return rain flux back to ocean
        ! NOTE: diagenetic function calculates all (dissolved) exchange fluxes
        !       => 'sed' dissolution is effectively zero
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -1642,14 +1514,17 @@ CONTAINS
              end if
           end if
        end DO
-       ! correct dissovled flux units (mol cm-2 per year -> mol cm-2 per time-step) and set output array
-       sedocn_fnet(:,dum_i,dum_j) = sedocn_fnet(:,dum_i,dum_j) + dum_dtyr*loc_exe_ocn(:)
+       ! add in any solute flux from OMENSED
+       ! NOTE: correct dissovled flux units (mol cm-2 per year -> mol cm-2 per time-step) and set output array
+       DO lo=3,n_l_ocn
+          loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_dtyr*loc_exe_ocn(l2io(lo))
+       end do
        ! set OMEN output data array values
        sed_diag(idiag_OMEN_wtpct_top,dum_i,dum_j) = loc_sed_mean_OM_top
        sed_diag(idiag_OMEN_wtpct_bot,dum_i,dum_j) = loc_sed_mean_OM_bot
     case default
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
+       DO ls=1,n_l_sed
+          is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_POC) .OR. &
                & (sed_type(is) == par_sed_type_POM) .OR. &
@@ -1778,8 +1653,8 @@ CONTAINS
     case ('ALL')
        ! 100% preservation (nothing needed doing!)
     case default
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
+    DO ls=1,n_l_sed
+       is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_CaCO3) .OR. &
                & (sed_type(is) == par_sed_type_CaCO3) .OR. &
@@ -1802,8 +1677,8 @@ CONTAINS
     case ('ALL')
        ! 100% preservation (nothing needed doing!)
     case default
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
+    DO ls=1,n_l_sed
+       is = conv_iselected_is(ls)
           if ( &
                & (sed_dep(is) == is_opal) .OR. &
                & (sed_type(is) == par_sed_type_opal) .OR. &
@@ -1841,42 +1716,6 @@ CONTAINS
     END IF
     ! set OMEN output data array values
     sed_diag(idiag_OMEN_bur,dum_i,dum_j) = (loc_new_sed_vol - loc_dis_sed_vol)
-    
-    ! *** ADD PRESCRIBED CORG BURIAL **********************************************************************************************
-    ! 
-    if (par_sed_Corgburial > const_real_nullsmall) then
-       !
-       ! create Corg component
-       ! NOTE: no account is taken of associated nutrient nor oxygen changes
-       ! NOTE: treat POC d13C as a fixed offset compared to the d13C of CaCO3
-       loc_fsed(:)= 0.0
-       if (par_sed_Corgburial > const_real_nullsmall) then
-          loc_fsed(is_POC) = par_sed_Corgburial
-          loc_delta_Corg = par_sed_Corgburial_Dd13C + 15.10 - 4232.0/dum_sfcsumocn(io_T)
-          loc_alpha = 1.0 + loc_delta_Corg/1000.0
-          loc_R = sed_carbisor(ici_HCO3_r13C,dum_i,dum_j)/(1.0 - sed_carbisor(ici_HCO3_r13C,dum_i,dum_j))
-          loc_fsed(is_POC_13C) = loc_fsed(is_POC)*(loc_alpha*loc_R/(1.0 + loc_alpha*loc_R))
-       end if
-       ! 
-       ! updated volume of new material
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
-          loc_new_sed(is) = loc_new_sed(is) + conv_sed_mol_cm3(is)*loc_fsed(is)
-       end do
-       ! update volume of added material (as SOILD matter. i.e., assuming zero porosity), in units of cm3 (cm-2)
-       loc_new_sed_vol = fun_calc_sed_vol(loc_new_sed(:))
-       ! set exchange with ocean to account for removed of solutes via production
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
-          loc_tot_i = conv_sed_ocn_i(0,is)
-          do loc_i=1,loc_tot_i
-             io = conv_sed_ocn_i(loc_i,is)
-             sedocn_fnet(io,dum_i,dum_j) = sedocn_fnet(io,dum_i,dum_j) - dum_conv_sed_ocn(io,is)*loc_fsed(is)
-          end do
-       end DO
-       !
-       sed_fsed(:,dum_i,dum_j) = sed_fsed(:,dum_i,dum_j) + loc_fsed(:)
-    end if
 
     ! *** UPDATE SEDIMENT STACK ***************************************************************************************************
     !         add the new sediment to the top sediment layer, and deduct the calculated dissolved material
@@ -2005,18 +1844,18 @@ CONTAINS
           DO n=1,nv_sedcore
              if ((vsedcore_store(n)%i == dum_i) .AND. (vsedcore_store(n)%j == dum_j)) then
                 loc_n_sedcore_stack_top = INT(vsedcore_store(n)%ht + const_real_nullsmall) + 1
-                DO l=1,n_l_sed
-                   is = conv_iselected_is(l)
-                   vsedcore_store(n)%lay(l,loc_n_sedcore_stack_top:(loc_n_sedcore_stack_top + n_sed_tot_drop - 1)) = &
+                DO ls=1,n_l_sed
+                   is = conv_iselected_is(ls)
+                   vsedcore_store(n)%lay(ls,loc_n_sedcore_stack_top:(loc_n_sedcore_stack_top + n_sed_tot_drop - 1)) = &
                         &  sed(is,dum_i,dum_j,1:n_sed_tot_drop)
                 end DO
                 vsedcore_store(n)%ht = vsedcore_store(n)%ht + REAL(n_sed_tot_drop)
                 if ((int(vsedcore_store(n)%ht + const_real_nullsmall) + n_sed_tot_drop) >= n_sedcore_tot) then
                    ! shift sediment down the sedcore store
-                   DO l=1,n_l_sed
-                      vsedcore_store(n)%lay(l,1:(n_sedcore_tot - n_sed_tot_drop)) = &
-                           &  vsedcore_store(n)%lay(l,(n_sed_tot_drop + 1):n_sedcore_tot)
-                      vsedcore_store(n)%lay(l,(n_sedcore_tot - n_sed_tot_drop + 1):n_sedcore_tot) = 0.0
+                   DO ls=1,n_l_sed
+                      vsedcore_store(n)%lay(ls,1:(n_sedcore_tot - n_sed_tot_drop)) = &
+                           &  vsedcore_store(n)%lay(ls,(n_sed_tot_drop + 1):n_sedcore_tot)
+                      vsedcore_store(n)%lay(ls,(n_sedcore_tot - n_sed_tot_drop + 1):n_sedcore_tot) = 0.0
                    end DO
                    ! update sediment height and top sub-layer number
                    vsedcore_store(n)%ht = vsedcore_store(n)%ht - REAL(n_sed_tot_drop)
@@ -2040,19 +1879,32 @@ CONTAINS
        loc_n_sed_stack_top = INT(sed_top_h(dum_i,dum_j)) + 1
     ENDIF
 
-    ! *** CALCULATE SEDIMENT DISSOLUTION FLUX TO THE OCEAN ************************************************************************
-    !     NOTE: convert <sed_fdis> flux units from cm3 cm-2 to mol cm-2
+    ! -------------------------------------------------------- !
+    ! (?) calculate sediment dissolution flux to ocean
+    ! -------------------------------------------------------- !
+    IF (ctrl_misc_debug3) print*,'(?) calculate sediment dissolution flux to ocean'
+    ! *** (?) calculate sediment dissolution flux to ocean
+    !         NOTE: first, convert flux units from cm3 cm-2 to mol cm-2
+    !         NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
     sed_fdis(:,dum_i,dum_j) = conv_sed_cm3_mol(:)*loc_dis_sed(:)
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       loc_tot_i = conv_sed_ocn_i(0,is)
-       do loc_i=1,loc_tot_i
-          io = conv_sed_ocn_i(loc_i,is)
-          sedocn_fnet(io,dum_i,dum_j) = sedocn_fnet(io,dum_i,dum_j) + dum_conv_sed_ocn(io,is)*sed_fdis(is,dum_i,dum_j)
+    ! convert dissolved solids to solutes
+    DO ls=1,n_l_sed
+       loc_tot_m = conv_ls_lo_i(0,ls)
+       do loc_m=1,loc_tot_m
+          lo = conv_ls_lo_i(loc_m,ls)
+          if (lo > 0) then
+             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),dum_i,dum_j)
+          end if
        end do
     end DO
-
-  END SUBROUTINE sub_update_sed_mud
+    ! -------------------------------------------------------- !
+    ! RETURN RESULT
+    ! -------------------------------------------------------- !
+    fun_update_sed_muds(:) = loc_lslo_fnet(:)
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
+  END function fun_update_sed_muds
   ! ****************************************************************************************************************************** !
 
 

@@ -9,6 +9,7 @@ SUBROUTINE sedgem(          &
      & dum_sfxocn,          &
      & dum_reinit_sfxsumsed &
      & )
+  USE gem_geochem
   USE sedgem_lib
   USE sedgem_box
   USE sedgem_data
@@ -21,8 +22,9 @@ SUBROUTINE sedgem(          &
   real,DIMENSION(n_ocn,n_i,n_j),intent(out)::dum_sfxocn                 ! sediment dissolution flux interface array
   logical::dum_reinit_sfxsumsed                                         ! reinitialize sedimentation array?
   ! local variables
-  integer::i,j,l,io,is                                         ! COUNTING AND ARRAY INDEX VARIABLES
+  integer::i,j,io,is,lo,ls                                     ! COUNTING AND ARRAY INDEX VARIABLES
   integer::loc_i,loc_tot_i                                     ! array index conversion variables
+  integer::loc_m,loc_tot_m                                     !
   real::loc_dtyr                                               ! local time step (in years)
   real::loc_dts                                                ! local time step (in seconds)
   real::loc_tot_A,loc_tot_A_reef,loc_tot_A_muds                ! local total area
@@ -42,8 +44,10 @@ SUBROUTINE sedgem(          &
   real::loc_tot_Mg,loc_tot_Ca                                  ! mean (simply area-weighted) benthic cation concentrations
   real,DIMENSION(n_sed,n_i,n_j)::loc_sfxsumsed_OLD                      ! sediment rain flux interface array (COPY)
   real,DIMENSION(n_sed,n_i,n_j)::loc_sed_fsed_OLD                      ! 
-  real,DIMENSION(n_ocn,n_sed)::loc_conv_sed_ocn                ! local (redox-dependent) sed -> ocn conversion
+  real,dimension(1:n_l_ocn)::loc_vocn                          ! local benthic tracers
   real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo          ! local (redox-dependent) ls -> lo conversion
+  ! ---------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
+  real,dimension(1:n_l_ocn)::loc_lslo_fnet
 
   ! *** STORE PREVIOUS ITERATION DATA ***
   sed_fsed_OLD(:,:,:) = sed_fsed(:,:,:) 
@@ -75,8 +79,8 @@ SUBROUTINE sedgem(          &
   ! calculate fractional reduction factors for decaying isotopes
   loc_fracdecay_sed(:) = EXP(-loc_dtyr*const_lambda_sed(:))
   ! decay radioactive tracers
-  DO l=1,n_l_sed
-     is = conv_iselected_is(l)
+  DO ls=1,n_l_sed
+     is = conv_iselected_is(ls)
      IF (abs(const_lambda_sed(is)).gt.const_real_nullsmall) THEN
         sed_top(is,:,:) = loc_fracdecay_sed(is)*sed_top(is,:,:)
         sed(is,:,:,:)   = loc_fracdecay_sed(is)*sed(is,:,:,:)
@@ -127,9 +131,6 @@ SUBROUTINE sedgem(          &
 
   ! *** CONVERT UNITS ***
   ! convert from global (mol yr-1) units of par_sed_CaCO3burialTOT to (mol cm-2 yr-1) of par_sed_CaCO3burial
-  if ((par_sed_CorgburialTOT*(loc_tot_A_muds+loc_tot_A_reef)) > const_real_nullsmall) then
-     par_sed_Corgburial   = conv_cm2_m2*par_sed_CorgburialTOT/(loc_tot_A_muds+loc_tot_A_reef)
-  end if
   if ((par_sed_CaCO3burialTOT*loc_tot_A_reef) > const_real_nullsmall) then
      par_sed_CaCO3burial  = conv_cm2_m2*par_sed_CaCO3burialTOT/loc_tot_A_reef
   end if
@@ -362,7 +363,9 @@ SUBROUTINE sedgem(          &
      end DO
   end DO
 
-  ! *** UPDATE SEDIMENTS ***
+  ! ---------------------------------------------------------- !
+  ! UPDATE SEDIMENTS
+  ! ---------------------------------------------------------- !
   IF (ctrl_misc_debug4) print*,'*** UPDATE SEDIMENTS ***'
   DO i=1,n_i
      DO j=1,n_j
@@ -375,53 +378,56 @@ SUBROUTINE sedgem(          &
         ! NOTE: <dum_sfxsumsed> in units of (mol m-2)
         sed_fsed(:,i,j)         = conv_cm2_m2*dum_sfxsumsed(:,i,j)
         loc_sed_fsed_OLD(:,i,j) = conv_cm2_m2*loc_sfxsumsed_OLD(:,i,j)
-        ! set loc_conv_sed_ocn
-        ! NOTE: conv_sed_ocn was the original (fixed) conversion -- ctrl_sed_conv_sed_ocn_old=.true. [DEFAULT]
-        !       but it was never used as ctrl_sed_conv_sed_ocn_old=.false., so the alternative ('new') code has been replaced
-        ! NOTE: there is only conversion from ocnsed to lslo and not the reverse
-        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        ! REFRAME ALL REMIN IN TERMS OF ls AND lo ???
-        ! DO THIS FIRST FOR THE CURRENT SCHEME/CODE AND GET IT WORKING ... THEN ADD THE REDOX-DEP STUFF
-        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        if (ctrl_sed_conv_sed_ocn_old) then
-           loc_conv_sed_ocn = conv_sed_ocn
-           !!!loc_conv_ls_lo = conv_ls_lo
-        else
-           !!!loc_conv_ls_lo = fun_conv_ls_lo_remin(loc_ocn)
-        end if
-        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        ! test for valid sediment grid point
         IF (sed_mask(i,j)) THEN
-           ! call sediment composition update
+           ! ---------------------------------------------------------- ! (1) create local tracer vector
+           DO lo=1,n_l_ocn
+              loc_vocn(lo) = dum_sfcsumocn(l2io(lo),i,j)
+           end DO           
+           ! ---------------------------------------------------------- ! (1) set loc_conv_sed_ocn
+           ! NOTE: conv_sed_ocn was the original (fixed) conversion -- ctrl_sed_conv_sed_ocn_old=.true. [DEFAULT]
+           !       but it was never used as ctrl_sed_conv_sed_ocn_old=.false., so the alternative ('new') code has been replaced
+           ! NOTE: there are only functions for the conversion from ocnsed to lslo and not the reverse
+           !       => frame everything in ls,lo space
+           ! if old (non-redox) scheme -- set [O2] very high (1.E19 mol kg-1) to simulate oxic-only remin
+           ! (which hence creates a very strong inhibition of NO3 and SO4 reduction)
+           if (ctrl_sed_conv_sed_ocn_old) loc_vocn(io2l(io_O2)) = 1.0E19
+           loc_conv_ls_lo = fun_conv_ls_lo_remin(loc_vocn)
+           ! ---------------------------------------------------------- ! (2) sediment composition update
            ! NOTE: the values in both <sed_fsed> and <ocnsed_fnet> are updated by this routine
            if (sed_mask_reef(i,j)) then
               IF (ctrl_misc_debug3) print*,'> UPDATE SED: reef'
-              call sub_update_sed_reef(      &
+              loc_lslo_fnet = fun_update_sed_reef(      &
                    & loc_dtyr,               &
                    & i,j,                    &
                    & phys_sed(ips_D,i,j),    &
                    & dum_sfcsumocn(:,i,j),   &
-                   & loc_conv_sed_ocn(:,:)   &
+                   & loc_conv_ls_lo(:,:)     &
                    & )
            elseif (sed_mask_muds(i,j)) then
-              IF (ctrl_misc_debug3) print*,'> UPDATE SED: mud'
-              call sub_update_sed_mud(       &
+              IF (ctrl_misc_debug3) print*,'> UPDATE SED: muds'
+              loc_lslo_fnet = fun_update_sed_muds(       &
                    & loc_dtyr,               &
                    & i,j,                    &
                    & phys_sed(ips_D,i,j),    &
                    & dum_sfcsumocn(:,i,j),   &
-                   & loc_conv_sed_ocn(:,:)   &
+                   & loc_conv_ls_lo(:,:)     &
                    & )
            else
-              IF (ctrl_misc_debug3) print*,'> UPDATE SED: (normal)'
-              call sub_update_sed(           &
+              IF (ctrl_misc_debug3) print*,'> UPDATE SED: dsea (deep-sea)'
+              loc_lslo_fnet = fun_update_sed_dsea( &
                    & loc_dtyr,               &
                    & i,j,                    &
                    & phys_sed(ips_D,i,j),    &
                    & dum_sfcsumocn(:,i,j),   &
-                   & loc_conv_sed_ocn(:,:)   &
+                   & loc_conv_ls_lo(:,:)     &
                    & )
            end if
+           ! convert lo notation back to io and update sed -> ocn flux
+           DO lo=3,n_l_ocn
+              io = conv_iselected_io(lo)
+              sedocn_fnet(io,i,j) = sedocn_fnet(io,i,j) + loc_lslo_fnet(lo)
+           end DO
            ! save sedcore environmental conditions
            if (sed_save_mask(i,j) .AND. loc_flag_save .AND. ctrl_data_save_sedcorenv) then
               call sub_sedgem_save_sedcoreenv( &
@@ -436,8 +442,8 @@ SUBROUTINE sedgem(          &
            end if
            ! force closed w.r.t. CaCO3
            if (ctrl_force_sed_closedsystem_CaCO3) then
-              DO l=1,n_l_sed
-                 is = conv_iselected_is(l)
+              DO ls=1,n_l_sed
+                 is = conv_iselected_is(ls)
                  if ( &
                       & (sed_dep(is) == is_CaCO3) .OR. &
                       & (sed_type(is) == par_sed_type_CaCO3) .OR. &
@@ -446,18 +452,20 @@ SUBROUTINE sedgem(          &
                     ! set dissolution flux (as sediment solids)
                     sed_fdis(is,i,j) = loc_sed_fsed_OLD(is,i,j)
                     ! calculate equivalent ocean tracer flux
-                    loc_tot_i = conv_sed_ocn_i(0,is)
-                    do loc_i=1,loc_tot_i
-                       io = conv_sed_ocn_i(loc_i,is)
-                       sedocn_fnet(io,i,j) = sedocn_fnet(io,i,j) + loc_conv_sed_ocn(io,is)*sed_fdis(is,i,j)
+                    loc_tot_m = conv_ls_lo_i(0,ls)
+                    do loc_m=1,loc_tot_m
+                       lo = conv_ls_lo_i(loc_m,ls)
+                       if (lo > 0) then
+                          sedocn_fnet(l2io(lo),i,j) = sedocn_fnet(l2io(lo),i,j) + loc_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),i,j)
+                       end if
                     end do
                  end if
               end DO
            end if
            ! force closed w.r.t. opal
            if (ctrl_force_sed_closedsystem_opal) then
-              DO l=1,n_l_sed
-                 is = conv_iselected_is(l)
+              DO ls=1,n_l_sed
+                 is = conv_iselected_is(ls)
                  if ( &
                       & (sed_dep(is) == is_opal) .OR. &
                       & (sed_type(is) == par_sed_type_opal) .OR. &
@@ -466,10 +474,12 @@ SUBROUTINE sedgem(          &
                     ! set dissolution flux (as sediment solids)
                     sed_fdis(is,i,j) = loc_sed_fsed_OLD(is,i,j)
                     ! calculate equivalent ocean tracer flux
-                    loc_tot_i = conv_sed_ocn_i(0,is)
-                    do loc_i=1,loc_tot_i
-                       io = conv_sed_ocn_i(loc_i,is)
-                       sedocn_fnet(io,i,j) = sedocn_fnet(io,i,j) + loc_conv_sed_ocn(io,is)*sed_fdis(is,i,j)
+                    loc_tot_m = conv_ls_lo_i(0,ls)
+                    do loc_m=1,loc_tot_m
+                       lo = conv_ls_lo_i(loc_m,ls)
+                       if (lo > 0) then
+                          sedocn_fnet(l2io(lo),i,j) = sedocn_fnet(l2io(lo),i,j) + loc_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),i,j)
+                       end if
                     end do
                  end if
               end DO
@@ -480,16 +490,17 @@ SUBROUTINE sedgem(          &
            ! NOTE: use <sed_fsed> copy in case of burial flux replacement
            sed_fdis(:,i,j) = loc_sed_fsed_OLD(:,i,j)
            ! calculate equivalent ocean tracer flux
-           DO l=1,n_l_sed
-              is = conv_iselected_is(l)
+           ! NOTE: as a non sediment grid point,
+           !       loc_conv_ls_lo has not yet been set => use original Redfield conversion here (conv_sed_ocn)
+           DO ls=1,n_l_sed
+              is = conv_iselected_is(ls)
               loc_tot_i = conv_sed_ocn_i(0,is)
               do loc_i=1,loc_tot_i
                  io = conv_sed_ocn_i(loc_i,is)
-                 sedocn_fnet(io,i,j) = sedocn_fnet(io,i,j) + loc_conv_sed_ocn(io,is)*sed_fdis(is,i,j)
+                 sedocn_fnet(io,i,j) = sedocn_fnet(io,i,j) + conv_sed_ocn(io,is)*sed_fdis(is,i,j)
               end do
            end DO
         end if
-
      end do
   end do
 
@@ -597,15 +608,15 @@ SUBROUTINE sedgem(          &
            if (ctrl_sed_Fhydr2D) then
               ! distribute total hydrothermal flux weighted by a mask
               ! NOTE: normalize to sum of mask elements
-              DO l=1,n_l_ocn
-                 io = conv_iselected_io(l)
+              DO lo=1,n_l_ocn
+                 io = conv_iselected_io(lo)
                  dum_sfxocn(io,i,j) = dum_sfxocn(io,i,j) + &
                       & (sed_mask_hydr(i,j)/sum(sed_mask_hydr(:,:)))*loc_fhydrothermal(io)/loc_tot_A_hydr/conv_yr_s
               end DO
            else
               ! distribute hydrotherma flux evenly over all sediment grid points
-              DO l=1,n_l_ocn
-                 io = conv_iselected_io(l)
+              DO lo=1,n_l_ocn
+                 io = conv_iselected_io(lo)
                  dum_sfxocn(io,i,j) = dum_sfxocn(io,i,j) + loc_fhydrothermal(io)/loc_tot_A/conv_yr_s
               end DO
            endif
@@ -712,8 +723,8 @@ SUBROUTINE sedgem(          &
               loc_flowTalteration(io_DIC_14C) = loc_flowTalteration(io_DIC)*dum_sfcsumocn(io_DIC_14C,i,j)/dum_sfcsumocn(io_DIC,i,j)
            endif
            ! update flux array
-           DO l=1,n_l_ocn
-              io = conv_iselected_io(l)
+           DO lo=1,n_l_ocn
+              io = conv_iselected_io(lo)
               dum_sfxocn(io,i,j) = dum_sfxocn(io,i,j) - loc_flowTalteration(io)
            end DO
         end if
@@ -725,8 +736,8 @@ SUBROUTINE sedgem(          &
   ! update update sed->ocn interface
   ! NOTE: <sedocn_fnet> in units of (mol cm-2)
   ! NOTE: <dum_sfxocn> in units of (mol m-2 s-1)
-  DO l=1,n_l_ocn
-     io = conv_iselected_io(l)
+  DO lo=1,n_l_ocn
+     io = conv_iselected_io(lo)
      dum_sfxocn(io,:,:) = dum_sfxocn(io,:,:) + conv_m2_cm2*sedocn_fnet(io,:,:)/loc_dts
   end DO
   ! re-initialize the interfacing integrated sediment rain flux array
@@ -763,40 +774,6 @@ SUBROUTINE sedgem(          &
           & dum_dts,      &
           & dum_sfcsumocn &
           & )
-  end if
-  
-  ! *** DEBUG ***
-  ! print some debugging info if 'ctrl_misc_debug1' option is selected
-  IF (ctrl_misc_debug1) THEN
-     i = par_misc_debug_i
-     j = par_misc_debug_j
-     print*,''
-     print*,'--- DEBUG ---'
-     print*,'> SEDGEM LOCATION (i,j): ',i,j
-     print*,'> TIME, TIME-STEP: ',loc_dts,loc_dtyr
-     print*, &
-          & phys_sed(ips_D,i,j),               &
-          & dum_sfcsumocn(io_T,i,j),           &
-          & dum_sfcsumocn(io_S,i,j)
-     print*, &
-          & dum_sfcsumocn(io_DIC,i,j),         &
-          & dum_sfcsumocn(io_ALK,i,j),         &
-          & 1.0E+06*sed_carb(ic_dCO3_cal,i,j)
-     print*, &
-          & 100.0*sed_top(is_CaCO3,i,j),       &
-          & 100.0*sed_top(is_opal,i,j)
-     print*, &
-          & 1.0E+06*sed_fsed(is_CaCO3,i,j)/loc_dtyr, &
-          & 1.0E+06*sed_fsed(is_POC,i,j)/loc_dtyr,   &
-          & 1.0E+06*sed_fdis(is_CaCO3,i,j)/loc_dtyr, &
-          & 1.0E+06*sed_fdis(is_POC,i,j)/loc_dtyr
-     print*, &
-          & sum(sed_fsed(is_CaCO3,:,:)*conv_m2_cm2*phys_sed(ips_A,:,:))/loc_dtyr, &
-          & sum(sed_fsed(is_POC,:,:)*conv_m2_cm2*phys_sed(ips_A,:,:))/loc_dtyr,   &
-          & sum(sed_fdis(is_CaCO3,:,:)*conv_m2_cm2*phys_sed(ips_A,:,:))/loc_dtyr, &
-          & sum(sed_fdis(is_POC,:,:)*conv_m2_cm2*phys_sed(ips_A,:,:))/loc_dtyr
-     print*,'---'
-     print*,''
   end if
 
 end SUBROUTINE sedgem

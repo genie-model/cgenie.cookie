@@ -82,14 +82,6 @@ MODULE sedgem_lib
   ! ------------------- DIAGENESIS SCHEME: ORGANIC MATTER ------------------------------------------------------------------------ !
   LOGICAL::ctrl_sed_diagen_preserve_frac2                        ! Prevent frac2 from being remineralzied?
   NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_preserve_frac2
-  REAL::par_sed_diagen_fracCpres_ox                              ! Fractional POC burial -- oxic conditions 
-  REAL::par_sed_diagen_fracCpres_anox                            ! Fractional POC burial -- anoxic conditions
-  REAL::par_sed_diagen_fracCpres_eux                             ! Fractional POC burial -- euxinic conditions
-  NAMELIST /ini_sedgem_nml/par_sed_diagen_fracCpres_ox,par_sed_diagen_fracCpres_anox,par_sed_diagen_fracCpres_eux
-  REAL::par_sed_diagen_fracC2Ppres_ox                            ! Fraction of P relative to C buried -- oxic
-  REAL::par_sed_diagen_fracC2Ppres_anox                          ! Fraction of P relative to C buried -- anoxic
-  REAL::par_sed_diagen_fracC2Ppres_eux                           ! Fraction of P relative to C buried -- euxinic
-  NAMELIST /ini_sedgem_nml/par_sed_diagen_fracC2Ppres_ox,par_sed_diagen_fracC2Ppres_anox,par_sed_diagen_fracC2Ppres_eux
   REAL::par_sed_diagen_fracCpres_scale                           ! Fractional POC burial scaling (Dunne scheme)
   NAMELIST /ini_sedgem_nml/par_sed_diagen_fracCpres_scale
   LOGICAL::ctrl_sed_diagen_fracC2Ppres_wallmann2010              ! Apply Wallmann [2010] C:P remin parameterization?
@@ -162,11 +154,6 @@ MODULE sedgem_lib
   REAL::par_r87Sr_SrCO3recryst                                   ! 
   REAL::par_d88Sr_SrCO3recryst                                   ! 
   NAMELIST /ini_sedgem_nml/par_r87Sr_SrCO3recryst,par_d88Sr_SrCO3recryst
-  ! ------------------- Corg PRODUCTION ------------------------------------------------------------------------------------------ !
-  REAL::par_sed_Corgburial                                       ! prescribed Corg production rate (mol cm-2 yr-1)
-  REAL::par_sed_CorgburialTOT                                    ! prescribed global Corg production rate (mol yr-1)
-  REAL::par_sed_Corgburial_Dd13C                                 ! POC d13C offset compared to the d13C of CaCO3
-  NAMELIST /ini_sedgem_nml/par_sed_Corgburial,par_sed_CorgburialTOT,par_sed_Corgburial_Dd13C
   ! ------------------- TRACE METALS --------------------------------------------------------------------------------------------- !
   real::par_bio_red_CaCO3_LiCO3                                  ! Default CaCO3 Ca:Li ratio
   real::par_bio_red_CaCO3_LiCO3_alpha                            ! Partition coefficient (alpha)

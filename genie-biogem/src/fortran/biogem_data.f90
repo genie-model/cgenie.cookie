@@ -655,7 +655,7 @@ CONTAINS
     if (sed_select(is_Fe3Si2O4)) ctrl_carbchemupdate_full = .true.
     if (ocn_select(io_CH4))      ctrl_carbchemupdate_full = .true.
     ! -------------------------------------------------------- !
-    ! CREATE SHARED COPIES OF KEY REDOX PARAMETERS
+    ! CREATE GLOBALLY-SHARED COPIES OF KEY REDOX PARAMETERS
     ! -------------------------------------------------------- !
     conv_ls_lo_c0_O2    = par_bio_remin_c0_O2
     conv_ls_lo_ci_O2    = par_bio_remin_ci_O2
@@ -3341,6 +3341,7 @@ CONTAINS
        ctrl_data_save_slice_diag_bio = .true.
        ctrl_data_save_slice_diag_proxy = .true.
        ctrl_data_save_slice_diag_tracer = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_carb_sur = .true.
@@ -3356,6 +3357,7 @@ CONTAINS
        ctrl_data_save_slice_diag_proxy = .true.
        ctrl_data_save_slice_diag_tracer = .true.
        ctrl_data_save_slice_focnsed = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_fairsea = .true.
@@ -3378,6 +3380,7 @@ CONTAINS
        ctrl_data_save_slice_carbconst = .true.
 !!$       ctrl_data_save_slice_diag_geochem = .true.
        ctrl_data_save_sig_carb_sur = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_fairsea = .true.
@@ -3391,6 +3394,7 @@ CONTAINS
        ctrl_data_save_slice_diag_bio = .true.
        ctrl_data_save_slice_diag_proxy = .true.
        ctrl_data_save_slice_diag_tracer = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_carb_sur = .true.
