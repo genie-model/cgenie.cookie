@@ -97,6 +97,8 @@ MODULE sedgem_lib
   REAL::par_sed_diagen_NO3thresh                                 ! [NO3] threshold for switching redox transformtion arrays
   REAL::par_sed_diagen_SO4thresh                                 ! [SO4] threshold for switching redox transformtion arrays
   NAMELIST /ini_sedgem_nml/par_sed_diagen_O2thresh,par_sed_diagen_NO3thresh,par_sed_diagen_SO4thresh
+  LOGICAL::ctrl_sed_conv_sed_ocn_redox                           ! Use BIOGEM redox-dependent remin transformation?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_conv_sed_ocn_redox
   ! ------------------- DIAGENESIS SCHEME: ORGANIC MATTER HUELSE 2017 ------------------------------------------------------------ !
   character(len=63)::par_sed_huelse2017_kscheme                  ! Corg k parametrisation scheme ID string
   NAMELIST /ini_sedgem_nml/par_sed_huelse2017_kscheme

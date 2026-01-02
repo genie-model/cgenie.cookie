@@ -380,19 +380,35 @@ SUBROUTINE sedgem(          &
         loc_sed_fsed_OLD(:,i,j) = conv_cm2_m2*loc_sfxsumsed_OLD(:,i,j)
         ! test for valid sediment grid point
         IF (sed_mask(i,j)) THEN
-           ! ---------------------------------------------------------- ! (1) create local tracer vector
-           DO lo=1,n_l_ocn
-              loc_vocn(lo) = dum_sfcsumocn(l2io(lo),i,j)
-           end DO           
-           ! ---------------------------------------------------------- ! (1) set loc_conv_sed_ocn
+           ! ---------------------------------------------------------- ! (1) set tracer transformation
            ! NOTE: conv_sed_ocn was the original (fixed) conversion -- ctrl_sed_conv_sed_ocn_old=.true. [DEFAULT]
-           !       but it was never used as ctrl_sed_conv_sed_ocn_old=.false., so the alternative ('new') code has been replaced
+           !       it was used as ctrl_sed_conv_sed_ocn_old=.false. in the Science Corg feedback paper
            ! NOTE: there are only functions for the conversion from ocnsed to lslo and not the reverse
            !       => frame everything in ls,lo space
-           ! if old (non-redox) scheme -- set [O2] very high (1.E19 mol kg-1) to simulate oxic-only remin
-           ! (which hence creates a very strong inhibition of NO3 and SO4 reduction)
-           if (ctrl_sed_conv_sed_ocn_old) loc_vocn(io2l(io_O2)) = 1.0E19
-           loc_conv_ls_lo = fun_conv_ls_lo_remin(loc_vocn)
+           if (ctrl_sed_conv_sed_ocn_redox) then
+              ! COOKIE SCHEME
+              ! create local vector of ocn tracers
+              DO lo=1,n_l_ocn
+                 loc_vocn(lo) = dum_sfcsumocn(l2io(lo),i,j)
+              end DO
+              ! calculate sed-->ocn transformation
+              loc_conv_ls_lo = fun_conv_ls_lo_remin(loc_vocn)
+           else
+              ! MUFFIN SCHEMES
+              ! NOTE: the old code has been reframed in the compact tracer notation
+              ! NOTE: the NO3 cases have been removed as this code was never used in any publication
+              if (.NOT. ctrl_sed_conv_sed_ocn_old) then
+                 if (ocn_select(io_CH4) .AND. (dum_sfcsumocn(io_SO4,i,j) < par_sed_diagen_SO4thresh)) then
+                    loc_conv_ls_lo = conv_ls_lo_meth
+                 elseif (ocn_select(io_SO4) .AND. (dum_sfcsumocn(io_O2,i,j) < par_sed_diagen_O2thresh)) then
+                    loc_conv_ls_lo = conv_ls_lo_S
+                 else
+                    loc_conv_ls_lo = conv_ls_lo_O
+                 end if
+              else
+                 loc_conv_ls_lo = conv_ls_lo_O
+              end if
+           end if
            ! ---------------------------------------------------------- ! (2) sediment composition update
            ! NOTE: the values in both <sed_fsed> and <ocnsed_fnet> are updated by this routine
            if (sed_mask_reef(i,j)) then

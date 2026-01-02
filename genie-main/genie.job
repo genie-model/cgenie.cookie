@@ -299,18 +299,6 @@ fi
 
 # Make some output directories
 [ ! -d $OUTDIR ]             &&   mkdir -p $OUTDIR
-#[ ! -d $OUTDIR/main ]        &&   mkdir -p $OUTDIR/main
-#[ ! -d $OUTDIR/goldstein ]   &&   mkdir -p $OUTDIR/goldstein
-#[ ! -d $OUTDIR/embm ]        &&   mkdir -p $OUTDIR/embm
-#[ ! -d $OUTDIR/plasim ]        &&   mkdir -p $OUTDIR/plasim
-#[ ! -d $OUTDIR/goldsteinseaice ]      &&   mkdir -p $OUTDIR/goldsteinseaice
-#[ ! -d $OUTDIR/biogem ]    &&   mkdir -p $OUTDIR/biogem
-#[ ! -d $OUTDIR/atchem ]    &&   mkdir -p $OUTDIR/atchem
-#[ ! -d $OUTDIR/sedgem ]    &&   mkdir -p $OUTDIR/sedgem
-#[ ! -d $OUTDIR/rokgem ]    &&   mkdir -p $OUTDIR/rokgem
-#[ ! -d $OUTDIR/ecogem ]    &&   mkdir -p $OUTDIR/ecogem
-#[ ! -d $OUTDIR/gemlite ]    &&   mkdir -p $OUTDIR/gemlite
-#[ ! -d $OUTDIR/ents ]      &&   mkdir -p $OUTDIR/ents
 [ ! -d $OUTDIR/archive ]      &&   mkdir -p $OUTDIR/archive
 [ ! -d $OUTDIR/restarts ]      &&   mkdir -p $OUTDIR/restarts
 [ ! -d $OUTDIR/results ]      &&   mkdir -p $OUTDIR/results
