@@ -1610,7 +1610,83 @@ CONTAINS
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
        call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
     end if
-    ! diagnostics
+    ! -------------------------------------------------------- ! diagnostics -- P-cycle
+    ! [add diagnostics of P cycling]
+    ! -------------------------------------------------------- ! diagnostics -- N-cycle
+    IF (sed_select(is_PON)) THEN
+       ! POC rain ... for completeness ... in variety of units
+       loc_unitsname = 'mol C cm-2 yr-1'
+       loc_shortname = 'diag_frain_POC_molm2yr1'
+       loc_longname  = 'ocn -> sed flux of POC in units of mol cm-2 yr-1'
+       loc_ij(:,:) = sed_fsed(is_POC,:,:)/dum_dtyr
+       call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       loc_unitsname = 'mmol C m-2 d-1'
+       loc_shortname = 'diag_fain_POC_mmolm2d1'
+       loc_longname  = 'ocn -> sed flux of POC in units of mmol m-2 d-1'
+       loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sed_fsed(is_POC,:,:)/dum_dtyr
+       call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)          
+       ! PON rain in variety of units
+       loc_unitsname = 'mol N cm-2 yr-1'
+       loc_shortname = 'diag_frain_PON_molm2yr1'
+       loc_longname  = 'ocn -> sed flux of PON in units of mol cm-2 yr-1'
+       loc_ij(:,:) = sed_fsed(is_PON,:,:)/dum_dtyr
+       call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       loc_unitsname = 'mmol N m-2 d-1'
+       loc_shortname = 'diag_fain_PON_mmolm2d1'
+       loc_longname  = 'ocn -> sed flux of PON in units of mmol m-2 d-1'
+       loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sed_fsed(is_PON,:,:)/dum_dtyr
+       call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)          
+       ! NO3 efflux in variety of units
+       IF (ocn_select(io_NO3)) THEN
+          loc_unitsname = 'mol N cm-2 yr-1'
+          loc_shortname = 'diag_focnsed_NO3_molm2yr1'
+          loc_longname  = 'sed -> ocn flux of NO3 in units of mol cm-2 yr-1'
+          loc_ij(:,:) = sedocn_fnet(io_NO3,:,:)/dum_dtyr
+          call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          loc_unitsname = 'mmol N m-2 d-1'
+          loc_shortname = 'diag_focnsed_NO3_mmolm2d1'
+          loc_longname  = 'sed -> ocn flux of NO3 in units of mmol m-2 d-1'
+          loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sedocn_fnet(io_NO3,:,:)/dum_dtyr
+          call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       end if
+       ! N2 efflux in variety of units
+       IF (ocn_select(io_N2)) THEN
+          loc_unitsname = 'mol N cm-2 yr-1'
+          loc_shortname = 'diag_focnsed_N2_molm2yr1'
+          loc_longname  = 'sed -> ocn flux of N2 in units of mol cm-2 yr-1'
+          loc_ij(:,:) = sedocn_fnet(io_N2,:,:)/dum_dtyr
+          call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          loc_unitsname = 'mmol N m-2 d-1'
+          loc_shortname = 'diag_focnsed_N2_mmolm2d1'
+          loc_longname  = 'sed -> ocn flux of N2 in units of mmol m-2 d-1'
+          loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sedocn_fnet(io_N2,:,:)/dum_dtyr
+          call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       end if
+       ! NH4 efflux in variety of units
+       IF (ocn_select(io_N2)) THEN
+          loc_unitsname = 'mol N cm-2 yr-1'
+          loc_shortname = 'diag_focnsed_NH4_molm2yr1'
+          loc_longname  = 'sed -> ocn flux of NH4 in units of mol cm-2 yr-1'
+          loc_ij(:,:) = sedocn_fnet(io_NH4,:,:)/dum_dtyr
+          call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          loc_unitsname = 'mmol N m-2 d-1'
+          loc_shortname = 'diag_focnsed_NH4_mmolm2d1'
+          loc_longname  = 'sed -> ocn flux of NH4 in units of mmol m-2 d-1'
+          loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sedocn_fnet(io_NH4,:,:)/dum_dtyr
+          call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       end if
+    end if
+    ! -------------------------------------------------------- ! diagnostics -- OMENSED
     IF (sed_select(is_POC) .AND. par_sed_diagen_Corgopt == 'huelse2016') THEN
        DO idiag=1,n_diag_sed
           loc_unitsname = 'n/a'
@@ -1622,7 +1698,7 @@ CONTAINS
           call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
        end do
     end if
-    ! diagnostics -- diagenesis errors
+    ! -------------------------------------------------------- ! diagnostics -- diagenesis errors
     select case (trim(par_sed_diagen_CaCO3opt))
     case ('archer1991explicit')
        if (ctrl_sed_diagen_error_save) then
@@ -1661,9 +1737,12 @@ CONTAINS
             & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
        call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
     end select
+    ! -------------------------------------------------------- !
 
+    ! -------------------------------------------------------- !
     ! SAVE DEEP-SEA SEDIMENT DATA
-    ! core-top data
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! core-top data
     DO is=1,n_sed
        IF (sed_select(is)) THEN
           SELECT CASE (sed_type(is))
@@ -1698,8 +1777,10 @@ CONTAINS
        END IF
     END DO
     
+    ! -------------------------------------------------------- !
     ! TIME-AVERAGED DATA
-    ! tedious copy of above code for average sediment properties ...
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! tedious copy of above code for average sediment properties ...
     if (par_sed_save_av_dtyr > const_real_nullsmall) then
        loc_str_dtyr = fun_conv_num_char_n(6,int(par_sed_save_av_dtyr))//'yrs'
        ! interface flux data -- rain flux

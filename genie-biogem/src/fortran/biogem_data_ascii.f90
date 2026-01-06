@@ -3650,14 +3650,15 @@ CONTAINS
   SUBROUTINE sub_data_save_global_av()
     USE genie_util, ONLY:check_unit,check_iostat
     ! local variables
-    INTEGER::i,j,k,l,ia,io,is,ios,ic
+    INTEGER::i,j,k,l,ia,io,is,ios,ic,id
     integer::loc_k1
     real::loc_t,loc_dt,loc_K
     real::loc_tot,loc_frac,loc_standard
     real::loc_atm_ave,loc_ocn_ave,loc_sed_ave
-    real::loc_ocn_tot_M,loc_ocn_tot_A,loc_ocnatm_tot_A
+    real::loc_ocn_tot_M,loc_ocnatm_tot_M,loc_ocn_tot_A,loc_ocnatm_tot_A
     real::loc_tot_POM,loc_tot_DOM
     CHARACTER(len=255)::loc_filename
+    CHARACTER(len=31)::loc_string     !
     REAL,DIMENSION(n_phys_ocn,n_i,n_j,n_k)::loc_phys_ocn       !
     REAL,DIMENSION(n_ocn,n_i,n_j,n_k)::loc_ocn                 !
     REAL,DIMENSION(n_carbconst,n_i,n_j,n_k)::loc_carbconst     !
@@ -3695,6 +3696,8 @@ CONTAINS
     end if
     ! total ocean mass
     loc_ocn_tot_M = sum(phys_ocn(ipo_M,:,:,:))
+    ! total ocean surface mass
+    loc_ocnatm_tot_M = sum(phys_ocn(ipo_M,:,:,n_k))
     ! ocean surface area
     loc_ocn_tot_A = sum(phys_ocn(ipo_A,:,:,n_k))
     ! ocean surface area
@@ -3920,16 +3923,21 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end SELECT
     END DO
+    ! -------------------------------------------------------- !
     
-    ! *** save data - WATER COLUMN REDOX AND REMINERALIZATION ***
+    ! -------------------------------------------------------- !
+    ! *** save data - OCEAN AND SEDIMENTARY REMINERALIZATION ***
+    ! -------------------------------------------------------- !
     ! NOTE: indexing of the remin array is: conv_lslo2idP(ls,lo) = n
     !       time-series saving is: int_diag_redox_sig(id)/int_t_sig / loc_ocn_tot_M*loc_sig
-    ! write ocean data
+    ! NOTE: sediment fluxes are NET and there could be both consumption and production within the sediments of e.g., NO3
+    ! write ocean and sediment data
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--------------------------'
-    Write(unit=out,fmt=*) 'REMINERALIZATION'
+    Write(unit=out,fmt=*) 'OCEAN AND SEDIMENTARY REMINERALIZATION'
     Write(unit=out,fmt=*) ' '
     if (ctrl_bio_remin_redox_save) then
+       ! -------------------------------------------------------- ! O2 consumption
        if (ocn_select(io_O2)) then
           loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
                & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_O2)),:,:,:) + &
@@ -3941,13 +3949,13 @@ CONTAINS
                & ))/int_t_timeslice
           If (flag_sedgem) then
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
-                  & ' Global O2 consumtpion rate (POM+DOM) ..... : ',            &
+                  & ' Global O2 consumtpion rate (POM, DOM) .... : ',            &
                   & -loc_tot_POM,-loc_tot_DOM,                                 &
                   & ' mol yr-1',' (water-column only)                      '
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
                   & '                                            : ',          &
                   & -sum(int_fsedocn_timeslice(io_O2,:,:)),'               ',  &
-                  & ' mol yr-1',' (sedimentary consumption)                '
+                  & ' mol yr-1',' (net sedimentary consumption)                '
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                   & '                                            = ',          &
                   & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_O2,:,:)) ),  &
@@ -3964,6 +3972,7 @@ CONTAINS
           end if
           call check_iostat(ios,__LINE__,__FILE__)
        end if
+       ! -------------------------------------------------------- ! NO3 consumption
        if (ocn_select(io_NO3)) then
           loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
                & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_NO3)),:,:,:) + &
@@ -3981,7 +3990,7 @@ CONTAINS
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
                   & '                                            : ',          &
                   & -sum(int_fsedocn_timeslice(io_NO3,:,:)),'               ', &
-                  & ' mol yr-1',' (sedimentary consumption)                '
+                  & ' mol yr-1',' (net sedimentary consumption)                '
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                   & '                                            = ',          &
                   & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_NO3,:,:)) ),  &
@@ -3998,6 +4007,7 @@ CONTAINS
           end if
           call check_iostat(ios,__LINE__,__FILE__)
        end if
+       ! -------------------------------------------------------- ! SO4 consumption
        if (ocn_select(io_SO4)) then
           loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
                & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_SO4)),:,:,:) + &
@@ -4015,7 +4025,7 @@ CONTAINS
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
                   & '                                            : ',         &
                   & -sum(int_fsedocn_timeslice(io_SO4,:,:)),'               ',&
-                  & ' mol yr-1',' (sedimentary consumption)                '
+                  & ' mol yr-1',' (net sedimentary consumption)                '
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
                   & '                                            = ',         &
                   & -1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_SO4,:,:)) ),  &
@@ -4032,6 +4042,7 @@ CONTAINS
           end if
           call check_iostat(ios,__LINE__,__FILE__)
        end if
+       ! -------------------------------------------------------- ! CH4 production
        if (ocn_select(io_CH4)) then
           ! NOTE: there is no relationship between CH4 and POP
           ! NOTE: CH4 production is positive vs. O2 and SO4 which are negative changes (i.e., consumption)
@@ -4072,12 +4083,231 @@ CONTAINS
        Write(unit=out,fmt=*) 'or set:'
        Write(unit=out,fmt=*) 'bg_ctrl_bio_remin_redox_save=.true.'
     end if
+    ! -------------------------------------------------------- !
 
+    ! -------------------------------------------------------- !
+    ! *** save data - N-CYCLE ***
+    ! -------------------------------------------------------- !
+    ! write ocean and sediment data
+    Write(unit=out,fmt=*) ' '
+    Write(unit=out,fmt=*) '--------------------------'
+    Write(unit=out,fmt=*) 'N-CYCLE'
+    Write(unit=out,fmt=*) ' '
+    if (sed_select(is_PON)) then
+       ! -------------------------------------------------------- ! MISC TRANSFORMATIONS
+       if (atm_select(ia_pN2)) then
+          ! NOTE: int_diag_airsea_timeslice in units of mol yr-1
+          loc_tot = sum( int_diag_airsea_timeslice(ia_pN2,:,:) )/int_t_timeslice
+          Write(unit=out,fmt='(A46,E15.7,A10)',iostat=ios)             &
+               & ' Global net ocn -> atm N2 flux ............ : ',    &
+               & loc_tot,                                 &
+               & ' mol yr-1'
+          Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+               & '                                            : ',          &
+               & 16.0*2.0*1.0E-12*loc_tot,  &
+               & ' Tg N yr-1 N2        '
+       end if
+       ! -------------------------------------------------------- ! PLANKTON TRANSFORMATIONS
+       if (ocn_select(io_NO3)) then
+          ! -------------------------------------------------------- ! NO3 uptake
+          ! NOTE: int_diag_bio_timeslice in units of mol kg-1 yr-1
+          loc_tot = SUM( phys_ocn(ipo_M,:,:,n_k) * int_diag_bio_timeslice(idiag_bio_dNO3,:,:) )/int_t_timeslice
+          Write(unit=out,fmt='(A46,E15.7,A10)',iostat=ios)             &
+               & ' Global biological NO3 uptake rate ........ : ',    &
+               & loc_tot,                                 &
+               & ' mol yr-1'
+          Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+               & '                                            : ',          &
+               & 16.0*2.0*1.0E-12*loc_tot,  &
+               & ' Tg N yr-1 NO3       '
+       end if
+       if (ocn_select(io_NH4)) then
+          ! -------------------------------------------------------- ! NH4 assimilationn
+          ! NOTE: int_diag_bio_timeslice in units of mol kg-1 yr-1
+          loc_tot = SUM( phys_ocn(ipo_M,:,:,n_k) * int_diag_bio_timeslice(idiag_bio_NH4assim,:,:) )/int_t_timeslice
+          Write(unit=out,fmt='(A46,E15.7,A10)',iostat=ios)             &
+               & ' Global biological NH4 assimilation rate .. : ',    &
+               & loc_tot,                                 &
+               & ' mol yr-1'
+          Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+               & '                                            : ',          &
+               & 16.0*1.0E-12*loc_tot,  &
+               & ' Tg N yr-1 NH4       '
+       end if
+       if (ocn_select(io_N2)) then
+          ! -------------------------------------------------------- ! N2 fixation
+          ! NOTE: int_diag_bio_timeslice in units of mol kg-1 yr-1
+          loc_tot = SUM( phys_ocn(ipo_M,:,:,n_k) * int_diag_bio_timeslice(idiag_bio_N2fixation,:,:) )/int_t_timeslice
+          Write(unit=out,fmt='(A46,E15.7,A10)',iostat=ios)             &
+               & ' Global biological N2 fixation rate ....... : ',    &
+               & loc_tot,                                 &
+               & ' mol yr-1'
+          Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+               & '                                            : ',          &
+               & 16.0*2.0*1.0E-12*loc_tot,  &
+               & ' Tg N yr-1 N2        '
+       end if
+       ! -------------------------------------------------------- ! WATER COLUMN AND SEDIMENTARY REDOX TRANSFORMATIONS
+       if (ctrl_bio_remin_redox_save) then
+          ! -------------------------------------------------------- ! NH4 oxidation
+          if (ocn_select(io_NH4) .AND. ocn_select(io_NO3)) then
+             ! NOTE: int_diag_redox_timeslice in units of mol kg-1 yr-1
+             ! NOTE: first find the index of NH4 -> NO3 -- see sub_init_redox / biogem_data.f90
+             loc_string = 'redox_NH4toNO3_dNO3'
+             id = fun_find_str_i(trim(loc_string),string_diag_redox)
+             loc_tot = sum ( loc_phys_ocn(ipo_M,:,:,:)*int_diag_redox_timeslice(id,:,:,:) )/int_t_timeslice
+             Write(unit=out,fmt='(A46,E15.7,A10)',iostat=ios)             &
+                  & ' Global NH4 oxidation rate ................ : ',    &
+                  & loc_tot,                                 &
+                  & ' mol yr-1'
+             Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                  & '                                            : ',          &
+                  & 16.0*1.0E-12*loc_tot,  &
+                  & ' Tg N yr-1 N2        '
+          end if
+          ! -------------------------------------------------------- ! PON flux to the sediments
+          loc_tot = SUM(int_focnsed_timeslice(is_PON,:,:))/int_t_timeslice
+          Write(unit=out,fmt='(A46,E15.7,A10)',iostat=ios)             &
+               & ' Global PON flux to the sediments ......... : ',    &
+               & loc_tot,                                 &
+               & ' mol yr-1'
+          Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+               & '                                            : ',          &
+               & 16.0*1.0E-12*loc_tot,  &
+               & ' Tg N yr-1 PON       '
+          ! -------------------------------------------------------- ! NO3 redox consumption
+          if (ocn_select(io_NO3)) then
+             loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+                  & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_NO3)),:,:,:) + &
+                  & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_NO3)),:,:,:) &
+                  & ))/int_t_timeslice
+             loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+                  & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_NO3)),:,:,:) + &
+                  & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_NO3)),:,:,:) &
+                  & ))/int_t_timeslice
+             If (flag_sedgem) then
+                Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                     & ' Global NO3 consumtpion rate (POM, DOM) ... : ',          &
+                     & -loc_tot_POM,-loc_tot_DOM, &
+                     & ' mol yr-1',' (water-column only)                      '
+                Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
+                     & '                                            : ',          &
+                     & -sum(int_fsedocn_timeslice(io_NO3,:,:)),'               ', &
+                     & ' mol yr-1',' (net sedimentary consumption)                '
+                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                     & '                                            = ',          &
+                     & -14.0*1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_NO3,:,:))/int_t_timeslice ),  &
+                     & ' Tg N yr-1 NO3 TOTAL '
+                Write(unit=out,fmt='(A46,F9.3,A46)',iostat=ios)                   &
+                     & '                                              ',          &
+                     & -14.0*1.0E-12*( sum(int_fsedocn_timeslice(io_NO3,:,:))/int_t_timeslice ),  &
+                     & ' Tg N yr-1 net sedimentary consumption only   '
+             else
+                Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                     & ' Global NO3 consumtpion rate (POM, DOM) ... : ',    &
+                     & -loc_tot_POM,-loc_tot_DOM,                                 &
+                     & ' mol yr-1',' (including reflective boundary condition)'
+                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                     & '                                            : ',          &
+                     & -16.0*1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
+                     & ' Tg N yr-1 NO3 TOTAL '
+             end if
+             call check_iostat(ios,__LINE__,__FILE__)
+          end if
+          ! -------------------------------------------------------- ! NH4 production / ammonification
+          if (ocn_select(io_NH4)) then
+             loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+                  & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_PON),io2l(io_NH4)),:,:,:) &
+                  & ))/int_t_timeslice
+             loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+                  & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_PON),io2l(io_NH4)),:,:,:) &
+                  & ))/int_t_timeslice             
+             If (flag_sedgem) then
+                Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                     & ' Global NH4 production rate (POM, DOM) .... : ',          &
+                     & loc_tot_POM,loc_tot_DOM, &
+                     & ' mol yr-1',' (water-column only)                      '
+                Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
+                     & '                                            : ',          &
+                     & sum(int_fsedocn_timeslice(io_NH4,:,:)),'               ', &
+                     & ' mol yr-1',' (sedimentary production)                 '
+                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                     & '                                            = ',          &
+                     & 14.0*1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_NH4,:,:))/int_t_timeslice ),  &
+                     & ' Tg N yr-1 NH4 TOTAL'
+                Write(unit=out,fmt='(A46,F9.3,A46)',iostat=ios)                   &
+                     & '                                              ',          &
+                     & 14.0*1.0E-12*( sum(int_fsedocn_timeslice(io_NH4,:,:))/int_t_timeslice ),  &
+                     & ' Tg N yr-1 sedimentary production only        '
+             else
+                Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                     & ' Global NH4 production rate (POM, DOM) .... : ',    &
+                     & loc_tot_POM,loc_tot_DOM,                                 &
+                     & ' mol yr-1',' (including reflective boundary condition)'
+                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                     & '                                            : ',          &
+                     & 14.0*1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
+                     & ' Tg N yr-1 NH4 TOTAL'
+             end if
+             call check_iostat(ios,__LINE__,__FILE__)
+          end if
+          ! -------------------------------------------------------- ! N2 / denitrification
+          if (ocn_select(io_N2)) then
+             loc_tot_POM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+                  & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POC),io2l(io_N2)),:,:,:) + &
+                  & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_POP),io2l(io_N2)),:,:,:) + &
+                  & int_diag_redox_timeslice(conv_lslo2idP(is2l(is_PON),io2l(io_N2)),:,:,:) &
+                  & ))/int_t_timeslice
+             loc_tot_DOM = sum ( loc_phys_ocn(ipo_M,:,:,:)* ( &
+                  & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POC),io2l(io_N2)),:,:,:) + &
+                  & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_POP),io2l(io_N2)),:,:,:) + &
+                  & int_diag_redox_timeslice(conv_lslo2idD(is2l(is_PON),io2l(io_N2)),:,:,:) &
+                  & ))/int_t_timeslice             
+             If (flag_sedgem) then
+                Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                     & ' Global N2 production rate (POM, DOM) ..... : ',          &
+                     & loc_tot_POM,loc_tot_DOM, &
+                     & ' mol yr-1',' (water-column only)                      '
+                Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
+                     & '                                            : ',          &
+                     & sum(int_fsedocn_timeslice(io_N2,:,:)),'               ', &
+                     & ' mol yr-1',' (sedimentary production)                 '
+                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                     & '                                            = ',          &
+                     & 14.0*2.0*1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_N2,:,:))/int_t_timeslice ),  &
+                     & ' Tg N yr-1 N2 TOTAL '
+                Write(unit=out,fmt='(A46,F9.3,A46)',iostat=ios)                   &
+                     & '                                              ',          &
+                     & 14.0*2.0*1.0E-12*( sum(int_fsedocn_timeslice(io_N2,:,:))/int_t_timeslice ),  &
+                     & ' Tg N yr-1 sedimentary production only        '
+             else
+                Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
+                     & ' Global N2 production rate (POM, DOM) ..... : ',    &
+                     & loc_tot_POM,loc_tot_DOM,                                 &
+                     & ' mol yr-1',' (including reflective boundary condition)'
+                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+                     & '                                            : ',          &
+                     & 14.0*2.0*1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
+                     & ' Tg N yr-1 N2 TOTAL '
+             end if
+             call check_iostat(ios,__LINE__,__FILE__)
+          end if
+       else
+          Write(unit=out,fmt=*) 'No remineralization summary output saved -- choose a save option that includes redox saving:'
+          Write(unit=out,fmt=*) 'bg_par_data_save_level=[14,15,16,99]'
+          Write(unit=out,fmt=*) 'or set:'
+          Write(unit=out,fmt=*) 'bg_ctrl_bio_remin_redox_save=.true.'
+       end if
+    end if
+    ! -------------------------------------------------------- !
+    
+    ! -------------------------------------------------------- !
     ! *** save data - BIOLOGICAL EXPLORT ***
+    ! -------------------------------------------------------- !
     ! write export data
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '------------------------------'
-    Write(unit=out,fmt=*) 'SURFACE EXPORT PRODUCTION'
+    Write(unit=out,fmt=*) 'EXPORT FLUX FROM THE OCEAN SURFACE'
     Write(unit=out,fmt=*) ' '
     DO l=1,n_l_sed
        is = conv_iselected_is(l)
@@ -4118,7 +4348,7 @@ CONTAINS
     ! write sedimentation flux
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '------------------------------'
-    Write(unit=out,fmt=*) 'SEDIMENTATION'
+    Write(unit=out,fmt=*) 'RAIN FLUX AT THE SEDIMENT SURFACE'
     Write(unit=out,fmt=*) ' '
     DO l=1,n_l_sed
        is = conv_iselected_is(l)
@@ -4133,8 +4363,8 @@ CONTAINS
           !      '6' -> assigned to elemental components associated with det; Li
           !      '7' -> assigned to particle-reactive scavenged elements; 231Pa, 230Th, Fe
           loc_sed_ave = SUM(int_focnsed_timeslice(is,:,:))/int_t_timeslice/loc_ocn_tot_A
-          write(unit=out,fmt='(A14,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
-               & ' Benthic flux ',string_sed(is),' : ', &
+          write(unit=out,fmt='(A13,A16,A3,f10.3,A15,A5,E15.7,A9)',iostat=ios) &
+               & ' Bottom flux ',string_sed(is),' : ', &
                & conv_mol_umol*loc_sed_ave/conv_m2_cm2, &
                & ' umol cm-2 yr-1', &
                & ' <-> ', &

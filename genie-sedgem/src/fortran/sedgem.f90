@@ -397,7 +397,10 @@ SUBROUTINE sedgem(          &
               ! MUFFIN SCHEMES
               ! NOTE: the old code has been reframed in the compact tracer notation
               ! NOTE: the NO3 cases have been removed as this code was never used in any publication
-              if (.NOT. ctrl_sed_conv_sed_ocn_old) then
+              ! NOTE: conv_ls_lo is the Redfield (uptake) conversion array rather than conv_ls_lo_O which is oxic-only remin
+              if (ctrl_sed_conv_sed_ocn_old) then
+                 loc_conv_ls_lo = conv_ls_lo
+              else
                  if (ocn_select(io_CH4) .AND. (dum_sfcsumocn(io_SO4,i,j) < par_sed_diagen_SO4thresh)) then
                     loc_conv_ls_lo = conv_ls_lo_meth
                  elseif (ocn_select(io_SO4) .AND. (dum_sfcsumocn(io_O2,i,j) < par_sed_diagen_O2thresh)) then
@@ -405,8 +408,6 @@ SUBROUTINE sedgem(          &
                  else
                     loc_conv_ls_lo = conv_ls_lo_O
                  end if
-              else
-                 loc_conv_ls_lo = conv_ls_lo_O
               end if
            end if
            ! ---------------------------------------------------------- ! (2) sediment composition update

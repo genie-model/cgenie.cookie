@@ -107,6 +107,7 @@ CONTAINS
        print*,'[NO3] thresh for switching redox arrays (mol kg-1)  : ',par_sed_diagen_NO3thresh
        print*,'[SO4] thresh for switching redox arrays (mol kg-1)  : ',par_sed_diagen_SO4thresh
        print*,'Use BIOGEM redox-dependent remin transformation     : ',ctrl_sed_conv_sed_ocn_redox
+       print*,'Use Bohlen 2012 denitrification remin?              : ',ctrl_sed_conv_sedocn_bohlen2012
        ! --- DIAGENESIS SCHEME: HUELSE 2017 -------------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: HUELSE 2017 -----------------'
        print*,'Corg rate constant parameterization scheme          : ',par_sed_huelse2017_kscheme

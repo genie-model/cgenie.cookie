@@ -82,13 +82,14 @@ CONTAINS
     real::loc_r_sed_por                                        ! thickness ratio due to porosity differences (stack / surface layer)
     real::loc_frac_CaCO3                                       ! 
     real::loc_frac_CaCO3_top                                   ! 
-    real::loc_fPOC,loc_fFe
+    real::loc_fPOC,loc_fFe,loc_fNO3,loc_RRPOC,loc_LNO3
     real::loc_new_sed_Fe,loc_dis_sed_Fe                        ! 
     real::loc_sed_pres_fracC,loc_sed_pres_fracP  
     real::loc_O2                                               ! 
     real::loc_sed_mean_OM_top                                  ! mean OM wt% in upper mixed layer (5cm at the moment)
     real::loc_sed_mean_OM_bot                                  ! 
     real::loc_sed_dis_frac_max                                 ! maximum fraction that can be remineralized
+    real::loc_sed_remin_fracC,loc_sed_remin_fracN                                   ! 
     real::loc_C2P_rain,loc_C2P_remin
     REAL,DIMENSION(n_sed)::loc_new_sed                         ! new (sedimenting) top layer material
     REAL,DIMENSION(n_sed)::loc_dis_sed                         ! remineralized top layer material
@@ -96,6 +97,8 @@ CONTAINS
     REAL,DIMENSION(n_ocn)::loc_exe_ocn                         ! flux of dissolved solutes to be exchanged with ocean
     logical::loc_flag_stackgrow,loc_flag_stackshrink           ! growing or shrinking of stack occurs (by a 1 cm layer)
     real,DIMENSION(n_diag_sed_err)::loc_err
+    ! -------------------------------------------------------- ! local (redox-dependent) sed -> ocn conversion array
+    real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo
     ! -------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
     real,dimension(1:n_l_ocn)::loc_lslo_fnet
     ! -------------------------------------------------------- !
@@ -113,6 +116,8 @@ CONTAINS
     loc_sed_mean_OM_bot = 0.0
     ! initialize relevant location in global sediment dissolution results array
     sed_fdis(:,dum_i,dum_j) = 0.0
+    ! initialize local (redox-dependent) sed -> ocn conversion array
+    loc_conv_ls_lo(:,:) = 0.0
     ! initialize local sed-ocn interface dissolved tracer exchange arrray
     loc_lslo_fnet(:) = 0.0
     ! initialize flags recording growing or shrinking of sediment stack (i.e., new layers being added or removed, respectively)
@@ -786,18 +791,92 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! (G) calculate sediment dissolution flux to ocean
     ! -------------------------------------------------------- !
-    IF (ctrl_misc_debug3) print*,'(g) calculate sediment dissolution flux to ocean'
-    ! *** (g) calculate sediment dissolution flux to ocean
-    !         NOTE: first, convert flux units from cm3 cm-2 to mol cm-2
+    IF (ctrl_misc_debug3) print*,'(?) calculate sediment dissolution flux to ocean'
+    ! *** (?) calculate sediment dissolution flux to ocean
     !         NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
+    ! -------------------------------------------------------- ! first, convert flux units from cm3 cm-2 to mol cm-2
     sed_fdis(:,dum_i,dum_j) = conv_sed_cm3_mol(:)*loc_dis_sed(:)
-    ! convert dissolved solids to solutes
+    ! -------------------------------------------------------- ! Bohlen 2012 sed denitrification scheme
+    !         >>> This scheme is based on master parameters:
+    !         (1) bottom water [O2] and [NO3-] (units of uM)
+    !         (2) RRPOC, which is the POC rain rate in units of mmol C m-2 d-1
+    !             RRPOC is estimated from Cox (total benthic carbon oxidation rates) and APOC
+    !             (the accumulation rate of POC below the bioturbated zone) (which in turn is estimated with Flögel et al., 2011)
+    !             RRPOC = Cox + APOC
+    !             here, we already know RRPOC (sed_fsed) and just need to convert units
+    !             NOTE: APOC estimated from Flögel et al., 2011 will differ from POC burial estimated using the Dunne scheme
+    !                   creating a slight internal inconsistency ...
+    !                   and when assuming no POC burial at all, there will be a slight under-estimation of denitrification
+    !                   when using the Bohlen 2012 scheme becuase it implicitly assumes some fracion of POC is preseved
+    !                   and is not availability to drive denitrification
+    !                   (given the uncertainties in the empirical fit, this should not be a significant concern)
+    !         >>> The resulting empirical equation for the rate of denitrification and net NO3 consumption in the sediments is:
+    !             LNO3/RRPOC = a + b x c^(O2-NO3)bw
+    !             RRPOC == carbon rain flux -- mmol C m-2 d-1
+    !             LNO3  == NO3 consumption flux (depth-integrated NO3 loss) -- mmol N m-2 d-1
+    !             and where: a = 0.083 / b = 0.21 / c = 0.98
+    !             LNO3 is assumed to include the contribution from the deitrification chain: PON -> NH4 -> NO3 -> 0.5N2
+    !             and is derived from observations of the NO3 efflux from the sediments (-ve == consumption), JNO3:
+    !             LNO3 = RPON - JNO3
+    !             where RPON is the degradation of particulate organic nitrogen
+    !         >>> IN GENIE, the total loss of NO3 associated with sedimentary remin is equal to:
+    !             2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_PON)) + 2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_POC))
+    !             (as per Bohlen 2012 -- including PON -> NH4 -> NO3 -> 0.5N2 in denitrification)
+    !         NOTE: Applying the conv_ls_lo_N_N2 and conv_ls_lo_N_NH4 transformations could result in a greater NO3 consumption
+    !         than allowed for empirically
+    !         => cap at the empirical LNO3 value and carry out the excess remin via oxic-only remin
+    !           (to avoid additional (in excess of empirical) NO3 consumption occurring)
+    !         => for oxic-only remin of excess POC in dum_conv_ls_lo, use: sg_ctrl_sed_conv_sed_ocn_old=.true.
+    !         NOTE: there is no explicit 15N fractionation (other than pre-defined in conv_ls_lo_N_N2 and conv_ls_lo_N_NH4)
+    !         NOTE: *** when NO3 becomes depleted, there is no sulphate-reduction, and NO3 will continue to be removed ***
+    ! test for empirical sed denitrification (Bohlen 2012) request
+    if (ctrl_sed_conv_sedocn_bohlen2012 .AND. ocn_select(io_NO3) .AND. ocn_select(io_NH4)) then
+       ! convert POC flux units (1000.0*10000.0 == convert mol cm-2 -> mmol m-2)
+       ! NOTE: sed_fdis has already been converted from cm3 cm-2 to mol cm-2
+       loc_RRPOC = (1000.0*10000.0/conv_yr_d)*sed_fdis(is_POC,dum_i,dum_j)
+       ! calculate empirical NO3 consumption (mmol N m-2 d-1)
+       loc_LNO3  = loc_RRPOC * ( 0.083 + 0.21 * 0.98**( conv_mol_umol*(dum_sfcsumocn(io_O2) - dum_sfcsumocn(io_NO3)) ) )
+       ! calculate maximum potential GENIE NO3 consumption (mmol N m-2 d-1)
+       loc_fNO3 = &
+            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_PON))*sed_fdis(is_PON,dum_i,dum_j) + &
+            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_POC))*sed_fdis(is_POC,dum_i,dum_j)
+       ! test for whether the empirical NO3 consumption flux exceeds what is possible
+       if (loc_LNO3 >= loc_fNO3) then
+          ! situation #1
+          ! the empirical NO3 flux is greater than the possible NO3 consumption flux in the model
+          ! => create a transformation array where denitrification is applied to the entire POC remin ('dissolution') flux
+          !   and hence cap NO3 consumption cap
+          ! modify according to seafloor depth
+          if (dum_D <= 1000.0) then
+             loc_conv_ls_lo(:,:) = 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:)
+          else
+             loc_conv_ls_lo(:,:) = conv_ls_lo_N_N2(:,:)
+          end if
+       else
+          ! situation #2
+          ! the POC flux will create too-large an NO3 flux compared to the empirical equation
+          ! => apply oxic-only transformation to the excess POC
+          ! calculate proportion of denitrification vs. redox remin (loc_sed_remin_fracC) and create blended array
+          loc_sed_remin_fracN = (loc_fNO3 - loc_LNO3)/loc_fNO3
+          ! modify according to seafloor depth
+          if (dum_D <= 1000.0) then
+             loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
+                  & (1.0 - loc_sed_remin_fracN)*( 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:) )
+          else
+             loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
+                  & (1.0 - loc_sed_remin_fracN)*conv_ls_lo_N_N2(:,:)
+          end if
+       end if
+    else
+       loc_conv_ls_lo(:,:) = dum_conv_ls_lo(:,:)
+    end if
+    ! -------------------------------------------------------- ! convert dissolved solids to solutes
     DO ls=1,n_l_sed
        loc_tot_m = conv_ls_lo_i(0,ls)
        do loc_m=1,loc_tot_m
           lo = conv_ls_lo_i(loc_m,ls)
           if (lo > 0) then
-             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),dum_i,dum_j)
+             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + loc_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),dum_i,dum_j)
           end if
        end do
     end DO
@@ -1250,10 +1329,10 @@ CONTAINS
     ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(?) calculate sediment dissolution flux to ocean'
     ! *** (?) calculate sediment dissolution flux to ocean
-    !         NOTE: first, convert flux units from cm3 cm-2 to mol cm-2
     !         NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
+    ! -------------------------------------------------------- ! first, convert flux units from cm3 cm-2 to mol cm-2
     sed_fdis(:,dum_i,dum_j) = conv_sed_cm3_mol(:)*loc_dis_sed(:)
-    ! convert dissolved solids to solutes
+    ! -------------------------------------------------------- ! convert dissolved solids to solutes
     DO ls=1,n_l_sed
        loc_tot_m = conv_ls_lo_i(0,ls)
        do loc_m=1,loc_tot_m
@@ -1317,18 +1396,21 @@ CONTAINS
     ! (sediment stack / surface layer)
     real::loc_frac_CaCO3                                       ! 
     real::loc_frac_CaCO3_top                                   ! 
-    real::loc_fPOC,loc_fFe
+    real::loc_fPOC,loc_fFe,loc_fNO3,loc_RRPOC,loc_LNO3
     real::loc_dis_sed_Fe,loc_new_sed_Fe
     real::loc_sed_pres_fracC,loc_sed_pres_fracP                ! 
     real::loc_O2                                               ! 
     real::loc_sed_mean_OM_top                                  ! mean OM wt% in upper mixed layer (5cm at the moment)
     real::loc_sed_mean_OM_bot                                  ! 
     real::loc_sed_dis_frac_max                                 ! maximum fraction that can be remineralized
+    real::loc_sed_remin_fracC,loc_sed_remin_fracN                               ! 
     real::loc_C2P_rain,loc_C2P_remin
     REAL,DIMENSION(n_sed)::loc_new_sed                         ! new (sedimenting) top layer material
     REAL,DIMENSION(n_sed)::loc_dis_sed                         ! remineralized top layer material
     REAL,DIMENSION(n_sed)::loc_exe_sed                         ! top layer material to be exchanged with stack
     REAL,DIMENSION(n_ocn)::loc_exe_ocn                         ! flux of dissolved solutes to be exchanged with ocean
+    ! -------------------------------------------------------- ! local (redox-dependent) sed -> ocn conversion array
+    real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo
     ! -------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
     real,dimension(1:n_l_ocn)::loc_lslo_fnet
     ! -------------------------------------------------------- !
@@ -1345,6 +1427,8 @@ CONTAINS
     loc_sed_mean_OM_bot = 0.0
     ! initialize relevant location in global sediment dissolution results array
     sed_fdis(:,dum_i,dum_j) = 0.0
+    ! initialize local (redox-dependent) sed -> ocn conversion array
+    loc_conv_ls_lo(:,:) = 0.0
     ! initialize local sed-ocn interface dissolved tracer exchange arrray
     loc_lslo_fnet(:) = 0.0
 
@@ -1884,16 +1968,58 @@ CONTAINS
     ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(?) calculate sediment dissolution flux to ocean'
     ! *** (?) calculate sediment dissolution flux to ocean
-    !         NOTE: first, convert flux units from cm3 cm-2 to mol cm-2
     !         NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
+    ! -------------------------------------------------------- ! first, convert flux units from cm3 cm-2 to mol cm-2
     sed_fdis(:,dum_i,dum_j) = conv_sed_cm3_mol(:)*loc_dis_sed(:)
-    ! convert dissolved solids to solutes
+    ! -------------------------------------------------------- ! Bohlen 2012 sed denitrification scheme
+    ! test for empirical sed denitrification (Bohlen 2012) request
+    if (ctrl_sed_conv_sedocn_bohlen2012 .AND. ocn_select(io_NO3) .AND. ocn_select(io_NH4)) then
+       ! convert POC flux units (1000.0*10000.0 == convert mol cm-2 -> mmol m-2)
+       ! NOTE: sed_fdis has already been converted from cm3 cm-2 to mol cm-2
+       loc_RRPOC = (1000.0*10000.0/conv_yr_d)*sed_fdis(is_POC,dum_i,dum_j)
+       ! calculate empirical NO3 consumption (mmol N m-2 d-1)
+       loc_LNO3  = loc_RRPOC * ( 0.083 + 0.21 * 0.98**( conv_mol_umol*(dum_sfcsumocn(io_O2) - dum_sfcsumocn(io_NO3)) ) )
+       ! calculate maximum potential GENIE NO3 consumption (mmol N m-2 d-1)
+       loc_fNO3 = &
+            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_PON))*sed_fdis(is_PON,dum_i,dum_j) + &
+            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_POC))*sed_fdis(is_POC,dum_i,dum_j)
+       ! test for whether the empirical NO3 consumption flux exceeds what is possible
+       if (loc_LNO3 >= loc_fNO3) then
+          ! situation #1
+          ! the empirical NO3 flux is greater than the possible NO3 consumption flux in the model
+          ! => create a transformation array where denitrification is applied to the entire POC remin ('dissolution') flux
+          !   and hence cap NO3 consumption cap
+          ! modify according to seafloor depth
+          if (dum_D <= 1000.0) then
+             loc_conv_ls_lo(:,:) = 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:)
+          else
+             loc_conv_ls_lo(:,:) = conv_ls_lo_N_N2(:,:)
+          end if
+       else
+          ! situation #2
+          ! the POC flux will create too-large an NO3 flux compared to the empirical equation
+          ! => apply oxic-only transformation to the excess POC
+          ! calculate proportion of denitrification vs. redox remin (loc_sed_remin_fracC) and create blended array
+          loc_sed_remin_fracN = (loc_fNO3 - loc_LNO3)/loc_fNO3
+          ! modify according to seafloor depth
+          if (dum_D <= 1000.0) then
+             loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
+                  & (1.0 - loc_sed_remin_fracN)*( 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:) )
+          else
+             loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
+                  & (1.0 - loc_sed_remin_fracN)*conv_ls_lo_N_N2(:,:)
+          end if
+       end if
+    else
+       loc_conv_ls_lo(:,:) = dum_conv_ls_lo(:,:)
+    end if
+    ! -------------------------------------------------------- ! convert dissolved solids to solutes
     DO ls=1,n_l_sed
        loc_tot_m = conv_ls_lo_i(0,ls)
        do loc_m=1,loc_tot_m
           lo = conv_ls_lo_i(loc_m,ls)
           if (lo > 0) then
-             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + dum_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),dum_i,dum_j)
+             loc_lslo_fnet(lo) = loc_lslo_fnet(lo) + loc_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),dum_i,dum_j)
           end if
        end do
     end DO
