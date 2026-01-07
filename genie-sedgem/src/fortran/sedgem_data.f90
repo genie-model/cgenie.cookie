@@ -1496,11 +1496,15 @@ CONTAINS
   ! SAVE SEDIMENT DIAGNOSTICS DATA
   SUBROUTINE sub_data_save_seddiag_GLOBAL(dum_dtyr,dum_sfcsumocn,dum_SLT)
     USE genie_util, ONLY: check_unit, check_iostat
-    ! dummy valiables
+    ! ---------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! ---------------------------------------------------------- !
     real,INTENT(in)::dum_dtyr                                  ! 
     real,DIMENSION(n_ocn,n_i,n_j),intent(in)::dum_sfcsumocn    ! 
-    real,INTENT(in)::dum_SLT                                  ! 
-    ! local variables
+    real,INTENT(in)::dum_SLT
+    ! ---------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! ---------------------------------------------------------- !
     INTEGER::i,j,l,is 
     integer::ios  ! for file checks
     CHARACTER(len=255)::loc_filename
@@ -1531,8 +1535,9 @@ CONTAINS
     real::loc_tot_FCaCO3_d13C,loc_tot_FPOC_d13C
     real::loc_gamma,loc_Foutgassing,loc_Fkerogen
     real::loc_FCaCO3_d13C,loc_tot_FO2
-    
-    ! *** INITIALIZE LOCAL VARIABLES ***
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     ! averaging time-step
     loc_dt = 2.0*dum_dtyr
     ! area (units: cm2)
@@ -1560,7 +1565,7 @@ CONTAINS
           end do
        end do
     end do
-    ! calculate d13C
+    ! -------------------------------------------------------- ! calculate d13C
     DO i=1,n_i
        DO j=1,n_j
           if (loc_fsed(is_CaCO3,i,j) > const_real_nullsmall) then
@@ -1581,7 +1586,7 @@ CONTAINS
           end if
        end do
     end do
-    ! summary component values
+    ! -------------------------------------------------------- ! summary component values
     loc_deep_FCaCO3      = 0.0
     loc_mud_FCaCO3       = 0.0
     loc_reef_FCaCO3      = 0.0
@@ -1597,32 +1602,37 @@ CONTAINS
     loc_deep_FPOP        = 0.0
     loc_mud_FPOP         = 0.0
     loc_reef_FPOP        = 0.0
-    
+    ! -------------------------------------------------------- !
     ! *** SAVE GLOBAL SUMMARY DATA ***
-
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! create output file
     ! set filename
     loc_filename = TRIM(par_outdir_name)//'INFO_sediment_summary_AT_END'//string_results_ext
     ! open file
     call check_unit(out,__LINE__,__FILE__)
     OPEN(out,file=TRIM(loc_filename),action='write',iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
-
-    ! HEADER
+    ! -------------------------------------------------------- ! write file header
     Write(unit=out,fmt=*) '================================='
     Write(unit=out,fmt=*) '=== GLOBAL SEDIMENT DIAG DATA ==='
     Write(unit=out,fmt=*) '================================='
-
-    ! DIAGNOSTICS ON SEDIMENT GRID
+    ! -------------------------------------------------------- !
+    ! DEEP-SEA SEDIMENT GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- DEEP-SEA SEDIMENT GRID ------'
+    write(unit=out,fmt='(A6,f9.3,A19)',iostat=ios) &
+         & ' --- > ',par_sed_Dmax_neritic,' m          -------'
+    call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) ' '
     ! MISC
     Write(unit=out,fmt=*) '---------------------------------'
     write(unit=out,fmt='(A28,I6)',iostat=ios) &
          & ' Total # deep-sea grid pts :',int(sum(loc_mask_dsea(:,:)))
     call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,e14.6,A3)',iostat=ios) &
-         & ' Total deep-sea area       :',sum(loc_mask_dsea(:,:)*phys_sed(ips_A,:,:)),'m2'
+    write(unit=out,fmt='(A28,e14.6,A3,A6,f6.2,A2)',iostat=ios) &
+         & ' Total deep-sea area       :',sum(loc_mask_dsea(:,:)*phys_sed(ips_A,:,:)),' m2', &
+         & '   =  ',100.0*sum(loc_mask_dsea(:,:)*phys_sed(ips_A,:,:))/sum(loc_mask(:,:)*phys_sed(ips_A,:,:)),' %'
     call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) '---------------------------------'
     ! local variables 
@@ -1803,143 +1813,23 @@ CONTAINS
        call check_iostat(ios,__LINE__,__FILE__)
        Write(unit=out,fmt=*) '---------------------------------'
     end if
-
-    ! CORAL REEF DIAGNOSTICS
-    Write(unit=out,fmt=*) ' '
-    Write(unit=out,fmt=*) '--- REEF SEDIMENT GRID ----------'
-    Write(unit=out,fmt=*) ' '
-    ! MISC
-    Write(unit=out,fmt=*) '---------------------------------'
-    write(unit=out,fmt='(A28,I6)',iostat=ios) &
-         & ' Total # reef grid pts     :',int(sum(loc_mask_reef(:,:)))
-    call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,e14.6,A3)',iostat=ios) &
-         & ' Total reef area           :',sum(loc_mask_reef(:,:)*phys_sed(ips_A,:,:)),' m2'
-    call check_iostat(ios,__LINE__,__FILE__)
-    Write(unit=out,fmt=*) '---------------------------------'
-    ! local variables 
-    loc_tot_mask_area = sum(loc_mask_reef(:,:)*loc_area(:,:))
-    ! CaCO3
-    loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
-    loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_CaCO3,:,:))
-    if (abs(loc_tot1_sedgrid) > const_real_nullsmall) then 
-       loc_pres_sedgrid = 100.0*(loc_tot1_sedgrid - loc_tot2_sedgrid)/loc_tot1_sedgrid
-    else
-       loc_pres_sedgrid = 0.0
-    end if
-    if (loc_tot_mask_area > const_real_nullsmall) then 
-       loc_mean_sedgrid = sum(loc_mask_reef(:,:)*loc_sed_coretop(is_CaCO3,:,:)*loc_area(:,:))/loc_tot_mask_area
-    else
-       loc_mean_sedgrid = 0.0
-    end if
-    write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-         & ' CaCO3 production          :',loc_tot1_sedgrid,' mol yr-1 = ',1.0E-12*conv_CaCO3_mol_kgC*loc_tot1_sedgrid,' GtC yr-1'
-    call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,f6.2,A2)',iostat=ios) &
-         & ' Mean wt% CaCO3            :',loc_mean_sedgrid,' %'
-    call check_iostat(ios,__LINE__,__FILE__)
-    Write(unit=out,fmt=*) '---------------------------------'
-    ! SAVE !
-    loc_reef_FCaCO3 = loc_tot1_sedgrid
-    ! d13C (weighted by area and CaCO3 sedimentation rate)
-    if (sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)) > const_real_nullsmall) then
-       loc_sed_d13C_mean = &
-            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)*loc_CaCO3_d13C(:,:))/ &
-            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
-    else
-       loc_sed_d13C_mean = 0.0
-    end if
-    write(unit=out,fmt='(A28,f6.2,A5)',iostat=ios) &
-         & ' Mean weighted d13C CaCO3  :',loc_sed_d13C_mean,'o/oo'
-    Write(unit=out,fmt=*) '---------------------------------'
-    ! SAVE !
-    loc_reef_FCaCO3_d13C = loc_sed_d13C_mean
-    ! Li
-    if (sed_select(is_LiCO3) .AND. sed_select(is_detLi)) then
-       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_LiCO3,:,:))
-       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_LiCO3,:,:))
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li CaCO3 sink             :',loc_tot1_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li CaCO3 source           :',loc_tot2_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_detLi,:,:))
-       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_detLi,:,:))
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li detrital sink          :',loc_tot1_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li detrital source        :',loc_tot2_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       Write(unit=out,fmt=*) '---------------------------------'
-    end if
-    ! Sr
-    IF (sed_select(is_SrCO3_87Sr) .AND. sed_select(is_SrCO3_88Sr)) THEN
-       ! local variables
-       loc_tot1_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3,:,:))
-       loc_tot1a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_87Sr,:,:))
-       loc_tot1b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_88Sr,:,:))
-       loc_tot2_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3,:,:))
-       loc_tot2a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_87Sr,:,:))
-       loc_tot2b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_88Sr,:,:))
-       ! bulk Sr
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' SrCO3 sink                :',loc_tot1_sedgrid,' mol yr-1'
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Sr source                 :',loc_tot2_sedgrid,' mol yr-1'
-       ! 87Sr
-       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
-       if (loc_tot > const_real_nullsmall) then
-          loc_sig = loc_tot1a_sedgrid/loc_tot
-       else
-          loc_sig = 0.0
-       end if
-       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
-            & ' SrCO3 sink -- 87Sr        :',loc_sig
-       loc_tot = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
-       if (loc_tot > const_real_nullsmall) then
-          loc_sig = loc_tot2a_sedgrid/loc_tot
-       else
-          loc_sig = 0.0
-       end if
-       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
-            & ' Sr source -- 87Sr         :',loc_sig
-       ! 88Sr
-       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
-       if (loc_tot > const_real_nullsmall) then
-          loc_frac     = loc_tot1b_sedgrid
-          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
-          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
-       else
-          loc_sig = -999.9
-       end if
-       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
-            & ' SrCO3 sink -- 88Sr        :',loc_sig,' o/oo'
-       loc_tot  = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
-       if (abs(loc_tot) > const_real_nullsmall) then
-          loc_frac     = loc_tot2b_sedgrid
-          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
-          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
-       else
-          loc_sig = -999.9
-       end if
-       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
-            & ' Sr source -- 88Sr         :',loc_sig,' o/oo'
-       Write(unit=out,fmt=*) '---------------------------------'
-    end if
-
-    ! SHALLOW WATER SEDIMENTS DIAGNOSTICS
+    ! -------------------------------------------------------- !
+    ! SHALLOW WATER SEDIMENT GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- SHALLOW SEDIMENT GRID -------'
+    write(unit=out,fmt='(A6,f9.3,A19)',iostat=ios) &
+         & ' --- < ',par_sed_Dmax_neritic,' m          -------'
+    call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) ' '
     ! MISC
     Write(unit=out,fmt=*) '---------------------------------'
     write(unit=out,fmt='(A28,I6)',iostat=ios) &
          & ' Total # grid pts          :',int(sum(loc_mask_muds(:,:)))
     call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,e14.6,A3)',iostat=ios) &
-         & ' Total area                :',sum(loc_mask_muds(:,:)*phys_sed(ips_A,:,:)),'m2'
+    write(unit=out,fmt='(A28,e14.6,A3,A6,f6.2,A2)',iostat=ios) &
+         & ' Total area                :',sum(loc_mask_muds(:,:)*phys_sed(ips_A,:,:)),' m2', &
+         & '   =  ',100.0*sum(loc_mask_muds(:,:)*phys_sed(ips_A,:,:))/sum(loc_mask(:,:)*phys_sed(ips_A,:,:)),' %'
     call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) '---------------------------------'
     ! local variables 
@@ -2106,8 +1996,136 @@ CONTAINS
        call check_iostat(ios,__LINE__,__FILE__)
        Write(unit=out,fmt=*) '---------------------------------'
     end if
-
-    ! DIAGNOSTICS ON GLOBAL GRID
+    ! -------------------------------------------------------- !
+    ! CARBONATE REEF GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
+    Write(unit=out,fmt=*) ' '
+    Write(unit=out,fmt=*) '--- REEF SEDIMENT GRID ----------'
+    Write(unit=out,fmt=*) ' '
+    ! MISC
+    Write(unit=out,fmt=*) '---------------------------------'
+    write(unit=out,fmt='(A28,I6)',iostat=ios) &
+         & ' Total # reef grid pts     :',int(sum(loc_mask_reef(:,:)))
+    call check_iostat(ios,__LINE__,__FILE__)
+    write(unit=out,fmt='(A28,e14.6,A3,A6,f6.2,A2)',iostat=ios) &
+         & ' Total reef area           :',sum(loc_mask_reef(:,:)*phys_sed(ips_A,:,:)),' m2', &
+         & '   =  ',100.0*sum(loc_mask_reef(:,:)*phys_sed(ips_A,:,:))/sum(loc_mask(:,:)*phys_sed(ips_A,:,:)),' %'
+    call check_iostat(ios,__LINE__,__FILE__)
+    Write(unit=out,fmt=*) '---------------------------------'
+    ! local variables 
+    loc_tot_mask_area = sum(loc_mask_reef(:,:)*loc_area(:,:))
+    ! CaCO3
+    loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
+    loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_CaCO3,:,:))
+    if (abs(loc_tot1_sedgrid) > const_real_nullsmall) then 
+       loc_pres_sedgrid = 100.0*(loc_tot1_sedgrid - loc_tot2_sedgrid)/loc_tot1_sedgrid
+    else
+       loc_pres_sedgrid = 0.0
+    end if
+    if (loc_tot_mask_area > const_real_nullsmall) then 
+       loc_mean_sedgrid = sum(loc_mask_reef(:,:)*loc_sed_coretop(is_CaCO3,:,:)*loc_area(:,:))/loc_tot_mask_area
+    else
+       loc_mean_sedgrid = 0.0
+    end if
+    write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+         & ' CaCO3 production          :',loc_tot1_sedgrid,' mol yr-1 = ',1.0E-12*conv_CaCO3_mol_kgC*loc_tot1_sedgrid,' GtC yr-1'
+    call check_iostat(ios,__LINE__,__FILE__)
+    write(unit=out,fmt='(A28,f6.2,A2)',iostat=ios) &
+         & ' Mean wt% CaCO3            :',loc_mean_sedgrid,' %'
+    call check_iostat(ios,__LINE__,__FILE__)
+    Write(unit=out,fmt=*) '---------------------------------'
+    ! SAVE !
+    loc_reef_FCaCO3 = loc_tot1_sedgrid
+    ! d13C (weighted by area and CaCO3 sedimentation rate)
+    if (sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)) > const_real_nullsmall) then
+       loc_sed_d13C_mean = &
+            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)*loc_CaCO3_d13C(:,:))/ &
+            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
+    else
+       loc_sed_d13C_mean = 0.0
+    end if
+    write(unit=out,fmt='(A28,f6.2,A5)',iostat=ios) &
+         & ' Mean weighted d13C CaCO3  :',loc_sed_d13C_mean,'o/oo'
+    Write(unit=out,fmt=*) '---------------------------------'
+    ! SAVE !
+    loc_reef_FCaCO3_d13C = loc_sed_d13C_mean
+    ! Li
+    if (sed_select(is_LiCO3) .AND. sed_select(is_detLi)) then
+       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_LiCO3,:,:))
+       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_LiCO3,:,:))
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li CaCO3 sink             :',loc_tot1_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li CaCO3 source           :',loc_tot2_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_detLi,:,:))
+       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_detLi,:,:))
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li detrital sink          :',loc_tot1_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li detrital source        :',loc_tot2_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       Write(unit=out,fmt=*) '---------------------------------'
+    end if
+    ! Sr
+    IF (sed_select(is_SrCO3_87Sr) .AND. sed_select(is_SrCO3_88Sr)) THEN
+       ! local variables
+       loc_tot1_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3,:,:))
+       loc_tot1a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_87Sr,:,:))
+       loc_tot1b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_88Sr,:,:))
+       loc_tot2_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3,:,:))
+       loc_tot2a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_87Sr,:,:))
+       loc_tot2b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_88Sr,:,:))
+       ! bulk Sr
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' SrCO3 sink                :',loc_tot1_sedgrid,' mol yr-1'
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Sr source                 :',loc_tot2_sedgrid,' mol yr-1'
+       ! 87Sr
+       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
+       if (loc_tot > const_real_nullsmall) then
+          loc_sig = loc_tot1a_sedgrid/loc_tot
+       else
+          loc_sig = 0.0
+       end if
+       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
+            & ' SrCO3 sink -- 87Sr        :',loc_sig
+       loc_tot = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
+       if (loc_tot > const_real_nullsmall) then
+          loc_sig = loc_tot2a_sedgrid/loc_tot
+       else
+          loc_sig = 0.0
+       end if
+       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
+            & ' Sr source -- 87Sr         :',loc_sig
+       ! 88Sr
+       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
+       if (loc_tot > const_real_nullsmall) then
+          loc_frac     = loc_tot1b_sedgrid
+          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
+          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
+       else
+          loc_sig = -999.9
+       end if
+       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
+            & ' SrCO3 sink -- 88Sr        :',loc_sig,' o/oo'
+       loc_tot  = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
+       if (abs(loc_tot) > const_real_nullsmall) then
+          loc_frac     = loc_tot2b_sedgrid
+          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
+          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
+       else
+          loc_sig = -999.9
+       end if
+       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
+            & ' Sr source -- 88Sr         :',loc_sig,' o/oo'
+       Write(unit=out,fmt=*) '---------------------------------'
+    end if
+    ! -------------------------------------------------------- !
+    ! GLOBAL GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- TOTAL SEDIMENT GRID ---------'
     Write(unit=out,fmt=*) '--- (as seen by BIOGEM) ---------'
@@ -2140,8 +2158,9 @@ CONTAINS
          & ' Mean detrital flux        :',loc_mean_sedgrid,' g cm-2 kyr-1'
     call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) '---------------------------------'
-
+    ! -------------------------------------------------------- !
     ! WEATHERING PARAMETER CALCULATIONS
+    ! -------------------------------------------------------- !
     ! NOTE: originally assumed are:
     !       (1) CaSiO3:CaCO3 weathering is assumed to be in a 2:3 proportion
     !       (2) CO2 outgassing d13C is assumed to be -6 o/oo
@@ -2195,8 +2214,9 @@ CONTAINS
     ! for updating kerogen weathering O2:C -- calculate O2 gain (mol yr-1) associated with the bural of reduced species
     ! NOTE: the value of sg_par_sed_diag_red_POC_O2 excludes the contribution from P (and N etc.)
     loc_tot_FO2 = (-par_sed_diag_C2O2)*loc_tot_FPOC + 2.0*loc_tot_FPOP
-    
-    ! write out data
+    ! -------------------------------------------------------- !
+    ! WRITE WEATHERING PARAMETERS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- DERIVED PARAMETER VALUES ----'
     Write(unit=out,fmt=*) ' '
@@ -2255,12 +2275,10 @@ CONTAINS
             & ' O2 consumption ratio      =',-loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '---------------------------------'
-
-    ! FOOTER
+    ! -------------------------------------------------------- ! write file footer
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '================================='
-
-    ! close file
+    ! -------------------------------------------------------- ! close file
     Write(unit=out,fmt=*) ' '
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
@@ -2524,6 +2542,9 @@ CONTAINS
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
 
+    ! ---------------------------------------------------------- !
+    ! END
+    ! ---------------------------------------------------------- !
   end SUBROUTINE sub_data_save_seddiag_GLOBAL
   ! ****************************************************************************************************************************** !
 
