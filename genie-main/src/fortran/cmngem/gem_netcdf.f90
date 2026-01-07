@@ -37,8 +37,8 @@ CONTAINS
     integer,intent(in)::dum_i
     integer,intent(out)::dum_ncid,dum_ntrec
     ! local variables
-    character(120)::loc_name
-    character(120)::loc_lname
+    character(192)::loc_name
+    character(192)::loc_lname
     integer::i
     integer::loc_id,loc_iv,loc_ln
     real(kind=8)::loc_time
@@ -91,7 +91,7 @@ CONTAINS
     !=======================================================================
 
     character(len=*), intent(in) :: dum_fname
-    character(120) :: loc_name
+    character(192) :: loc_name
 
     integer, intent(out) :: dum_ncid
     integer :: i
@@ -161,7 +161,7 @@ CONTAINS
     !=======================================================================
 
     character(len=*), intent(in) :: dum_fname
-    character(120) :: loc_name
+    character(192) :: loc_name
 
     integer, intent(out) :: dum_ncid
     integer :: i

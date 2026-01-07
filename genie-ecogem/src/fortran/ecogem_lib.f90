@@ -207,8 +207,10 @@ MODULE ecogem_lib
   ! ------------------- I/O DIRECTORY DEFINITIONS -------------------------------------------------------------------------------- !
   CHARACTER(len=255)::par_indir_name                           !
   CHARACTER(len=255)::par_outdir_name                          !
-  CHARACTER(len=255)::par_rstdir_name                          !
-  NAMELIST /ini_ecogem_nml/par_indir_name,par_outdir_name,par_rstdir_name
+  NAMELIST /ini_ecogem_nml/par_indir_name,par_outdir_name
+  CHARACTER(len=255)::par_inrstdir_name                          !
+  CHARACTER(len=255)::par_outrstdir_name                          !
+  NAMELIST /ini_ecogem_nml/par_inrstdir_name,par_outrstdir_name
   CHARACTER(len=127)::par_infile_name,par_outfile_name         !
   NAMELIST /ini_ecogem_nml/par_infile_name,par_outfile_name
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !

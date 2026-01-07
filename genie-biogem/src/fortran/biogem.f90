@@ -900,7 +900,9 @@ subroutine biogem(        &
                  end do
                  ! surface-only properties only! -- estimate Revelle factor
                  ! NOTE: always calculate this -- needed in air-sea gas excahnge (limitation)
+                 !       unless ... there was a failure to calculate carbonate chemsitry (carb(ic_err,i,j,n_k) == 1.0)
                  ! NOTE: for RF used in air-sea gas exchange limitaiton -- use same pH tolerance as per for pH solving
+                 if (carb(ic_err,i,j,n_k) < const_real_nullsmall) then
                  carb(ic_RF0,i,j,n_k) = fun_calc_carb_RF0( &
                       & par_carbchem_pH_tolerance, &
                       & ocn(io_DIC,i,j,n_k),  &
@@ -916,13 +918,19 @@ subroutine biogem(        &
                       & carbconst(:,i,j,n_k), &
                       & carb(:,i,j,n_k)       &
                       & )
+                 else
+                 carb(ic_RF0,i,j,n_k) = 0.0
+                 end if
                  ! surface-only properties only! -- estimate:
                  ! (1) pCO2 'sensitivity' factor
                  ! (2) ALK addition efficiency factor
                  ! (3) DIC addition CaCO3 neutralization factor
                  ! NOTE: used in time-series diagnostics AND for certain 'preformed' tracers if selected
+                 ! NOTE: do not calculate if there was a failure to calculate carbonate chemsitry (carb(ic_err,i,j,n_k) == 1.0)
+                 !       => assign a value of zero
                  if (ctrl_data_save_buffering) then
-                    carb(ic_RdfCO2dDIC,i,j,n_k)  = fun_calc_carb_SF0( &
+                 if (carb(ic_err,i,j,n_k) < const_real_nullsmall) then
+                    carb(ic_RdfCO2dDIC,i,j,n_k) = fun_calc_carb_SF0( &
                          & par_carbchem_pH_tolerance, &
                          & ocn(io_DIC,i,j,n_k),  &
                          & ocn(io_ALK,i,j,n_k),  &
@@ -967,6 +975,11 @@ subroutine biogem(        &
                          & carbconst(:,i,j,n_k), &
                          & carb(:,i,j,n_k)       &
                          & )
+                 end if
+                 else
+                 carb(ic_RdfCO2dDIC,i,j,n_k) = 0.0
+                 carb(ic_RdDICdALK,i,j,n_k)  = 0.0
+                 carb(ic_RdALKdDIC,i,j,n_k)  = 0.0
                  end if
               end if
 
@@ -3940,16 +3953,17 @@ SUBROUTINE diag_biogem_timeseries( &
   REAL,DIMENSION(n_atm,n_i,n_j)::locij_focnatm                   ! local ocn->atm flux (atm tracer currency) (mol yr-1)
   REAL,DIMENSION(n_sed,n_i,n_j)::locij_focnsed                   ! local ocn->sed change (sed tracer currency) (mol)
   REAL,DIMENSION(n_ocn,n_i,n_j)::locij_fsedocn                   ! local sed->ocean change (ocn tracer currency) (mol)
-  REAL,DIMENSION(n_ocn,n_i,n_j)::locij_ocn_ben                   ! local benthic ocean composition
-  REAL,DIMENSION(n_i,n_j)::locij_mask_ben                        ! benthic save mask
+  REAL,DIMENSION(n_ocn,n_i,n_j)::locij_ocn_ben,locij_ocn_shf     ! local benthic (/shelf) ocean composition
+  REAL,DIMENSION(n_i,n_j)::locij_mask_ben,locij_mask_shf         ! benthic (/shelf) save mask
   real::loc_ocn_tot_M                                            !
   real::loc_ocn_rtot_M                                           !
   real::loc_ocn_tot_A,loc_opn_tot_A,loc_ocnatm_tot_A             !
   real::loc_ocn_rtot_A,loc_opn_rtot_A,loc_ocnatm_rtot_A          !
-  real::loc_ocnsed_tot_A,loc_ocnsed_tot_A_ben                    !
-  real::loc_ocnsed_rtot_A,loc_ocnsed_rtot_A_ben                  !
-  real::loc_tot_A,loc_tot_EP                                     !
-  real::loc_sig                                                  !
+  real::loc_ocnsed_tot_A,loc_ocnsed_tot_A_ben,loc_ocnsed_tot_A_shf
+  real::loc_ocnsed_rtot_A,loc_ocnsed_rtot_A_ben,loc_ocnsed_rtot_A_shf
+  real::loc_tot_A,loc_tot_A_ben,loc_tot_A_shf 
+  real::loc_tot_EP                                               !
+  real::loc_sig,loc_sig_ben,loc_sig_shf                          !
   REAL,DIMENSION(2)::loc_opsia_minmax,loc_opsip_minmax           !
   real::loc_opsi_D                                !
 
@@ -3967,7 +3981,9 @@ SUBROUTINE diag_biogem_timeseries( &
   locij_focnsed(:,:,:) = 0.0;
   locij_fsedocn(:,:,:) = 0.0;
   locij_ocn_ben(:,:,:) = 0.0;
+  locij_ocn_shf(:,:,:) = 0.0;
   locij_mask_ben(:,:)  = 0.0;
+  locij_mask_shf(:,:)  = 0.0;
     
   ! update time slice data
   ! NOTE: carried out only when the local (BioGeM) time falls between a selected time slice time plus integration time,
@@ -4070,16 +4086,23 @@ SUBROUTINE diag_biogem_timeseries( &
                        io = conv_iselected_io(l)
                        locij_fsedocn(io,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxocn1(io,i,j)
                     end do
-                    ! interface
+                    ! interface (extended for 'shelf' mask == all seafloor which is not 'benthic')
                     if (phys_ocn(ipo_Dbot,i,j,loc_k1) > par_data_save_ben_Dmin) then
+                       locij_mask_ben(i,j) = 1.0
+                       locij_mask_shf(i,j) = 0.0
                        DO l=1,n_l_ocn
                           io = conv_iselected_io(l)
                           locij_ocn_ben(io,i,j) = ocn(io,i,j,loc_k1)
+                          locij_ocn_shf(io,i,j) = 0.0
                        end do
-                       locij_mask_ben(i,j) = 1.0
                     else
                        locij_mask_ben(i,j)  = 0.0
-                       locij_ocn_ben(:,i,j) = 0.0
+                       locij_mask_shf(i,j)  = 1.0
+                       DO l=1,n_l_ocn
+                          io = conv_iselected_io(l)
+                          locij_ocn_ben(io,i,j) = 0.0
+                          locij_ocn_shf(io,i,j) = ocn(io,i,j,loc_k1)
+                       end do
                     end if
                  end IF
               end DO
@@ -4090,6 +4113,13 @@ SUBROUTINE diag_biogem_timeseries( &
               loc_ocnsed_rtot_A_ben = 1.0/loc_ocnsed_tot_A_ben
            else
               loc_ocnsed_rtot_A_ben = 0.0
+           end if
+           ! benthic (shelf) mask area
+           loc_ocnsed_tot_A_shf = sum(locij_mask_shf(:,:)*phys_ocn(ipo_A,:,:,n_k))
+           if (loc_ocnsed_tot_A_shf > const_real_nullsmall) then
+              loc_ocnsed_rtot_A_shf = 1.0/loc_ocnsed_tot_A_shf
+           else
+              loc_ocnsed_rtot_A_shf = 0.0
            end if
            ! update signal-averaging ingetrated tracers
            ! NOTE: mass-weight ocean tracers, and surface area-weight atmospheric tracers
@@ -4216,6 +4246,8 @@ SUBROUTINE diag_biogem_timeseries( &
                  io = conv_iselected_io(l)
                  int_ocn_ben_sig(io) = int_ocn_ben_sig(io) + loc_dtyr*loc_ocnsed_rtot_A_ben*&
                       & SUM(locij_mask_ben(:,:)*phys_ocn(ipo_A,:,:,n_k)*locij_ocn_ben(io,:,:))
+                 int_ocn_shf_sig(io) = int_ocn_shf_sig(io) + loc_dtyr*loc_ocnsed_rtot_A_shf*&
+                      & SUM(locij_mask_shf(:,:)*phys_ocn(ipo_A,:,:,n_k)*locij_ocn_shf(io,:,:))
               END DO
               IF (ctrl_force_ocn_age) THEN
                  DO i=1,n_i
@@ -4225,6 +4257,10 @@ SUBROUTINE diag_biogem_timeseries( &
                           if (locij_ocn_ben(io_colr,i,j) > const_real_nullsmall) then
                              int_misc_age_ben_sig = int_misc_age_ben_sig + loc_dtyr*loc_ocnsed_rtot_A_ben*locij_mask_ben(i,j)*&
                                   & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_ben(io_colb,i,j)/locij_ocn_ben(io_colr,i,j)
+                          end if
+                          if (locij_ocn_shf(io_colr,i,j) > const_real_nullsmall) then
+                             int_misc_age_shf_sig = int_misc_age_shf_sig + loc_dtyr*loc_ocnsed_rtot_A_shf*locij_mask_shf(i,j)*&
+                                  & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_shf(io_colb,i,j)/locij_ocn_shf(io_colr,i,j)
                           end if
                        end IF
                     end DO
@@ -4236,6 +4272,8 @@ SUBROUTINE diag_biogem_timeseries( &
                        IF (n_k >= loc_k1) THEN
                           int_misc_age_ben_sig = int_misc_age_ben_sig + loc_dtyr*loc_ocnsed_rtot_A_ben*locij_mask_ben(i,j)*&
                                & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_ben(io_colr,i,j)
+                          int_misc_age_shf_sig = int_misc_age_shf_sig + loc_dtyr*loc_ocnsed_rtot_A_shf*locij_mask_shf(i,j)*&
+                               & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_shf(io_colr,i,j)
                        end IF
                     end DO
                  end DO
@@ -4308,13 +4346,17 @@ SUBROUTINE diag_biogem_timeseries( &
                       & sum(phys_ocnatm(ipoa_A,:,par_sig_j_S))
               end if
            end if
-           ! calcualte mean global sediement properties
+           ! calcualte mean global sediment properties
+           ! do not bother splitting isotopic properties into deep and shallow benthic
            ! NOTE: for isotopic properties, set thresholds for including sediments in the global mean
            !       (to avoid possible NaNs or non-sensicle values associated with vanishigly small bulk abundances):
            !        0.1% for wt% POM
            !       10.0% for wt% CaCO3
            !        1.0% for wt% opal
            !        0.1% for wt% det
+           ! NOTE: isotopic properties are already as per mil (rather than isotopic weight percent)
+           ! NOTE: deep == ben
+           !       neri == shf
            IF (ctrl_data_save_sig_ocnsed) THEN
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
@@ -4324,6 +4366,10 @@ SUBROUTINE diag_biogem_timeseries( &
                       & par_sed_type_scavenged)
                     loc_sig = SUM(phys_ocn(ipo_A,:,:,n_k)*dum_sfcsed1(is,:,:))
                     loc_tot_A = loc_ocnsed_tot_A
+                    loc_sig_ben = SUM(locij_mask_ben*phys_ocn(ipo_A,:,:,n_k)*dum_sfcsed1(is,:,:))
+                    loc_tot_A_ben = loc_ocnsed_tot_A_ben
+                    loc_sig_shf = SUM(locij_mask_shf*phys_ocn(ipo_A,:,:,n_k)*dum_sfcsed1(is,:,:))
+                    loc_tot_A_shf = loc_ocnsed_tot_A_shf
                  case (par_sed_type_age,n_itype_min:n_itype_max)
                     loc_sig = 0.0
                     loc_tot_A = 0.0
@@ -4356,14 +4402,19 @@ SUBROUTINE diag_biogem_timeseries( &
                        end DO
                     end DO
                  case default
-                    loc_sig = 0.0
-                    loc_tot_A = 0.0
+                    loc_sig       = 0.0
+                    loc_tot_A     = 0.0
+                    loc_sig_ben   = 0.0
+                    loc_tot_A_ben = 0.0
+                    loc_sig_shf   = 0.0
+                    loc_tot_A_shf = 0.0
                  end SELECT
-                 if (loc_tot_A > const_real_nullsmall) then
-                    int_ocnsed_sig(is) = int_ocnsed_sig(is) + loc_dtyr*loc_sig/loc_tot_A
-                 else
-                    int_ocnsed_sig(is) = 0.0
-                 end if
+                 if (loc_tot_A > const_rns) int_ocnsed_sig(is)          = int_ocnsed_sig(is) + &
+                      & loc_dtyr*loc_sig/loc_tot_A
+                 if (loc_tot_A_ben > const_rns) int_ocnsed_deep_sig(is) = int_ocnsed_deep_sig(is) + &
+                      & loc_dtyr*loc_sig_ben/loc_tot_A_ben
+                 if (loc_tot_A_shf > const_rns) int_ocnsed_neri_sig(is) = int_ocnsed_neri_sig(is) + &
+                      & loc_dtyr*loc_sig_shf/loc_tot_A_shf
               END DO
            end if
            ! aeolian Fe input and solubility etc

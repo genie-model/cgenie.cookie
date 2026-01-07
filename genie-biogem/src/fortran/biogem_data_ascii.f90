@@ -26,12 +26,14 @@ CONTAINS
     integer::ib,id
     CHARACTER(len=255)::loc_filename
     CHARACTER(len=255)::loc_string,loc_string_title
-    CHARACTER(len=12)::loc_string_Dmin
+    CHARACTER(len=16)::loc_string_Dmin,loc_string_Ddeep,loc_string_Dneri
     real::loc_t = 0.0
     logical::loc_save
 
     ! convert benthic cut-off depth value and form string
-    loc_string_Dmin = ' [> '// fun_conv_num_char_n(4,int(par_data_save_ben_Dmin)) //' m] '
+    loc_string_Dmin  = '(>'// fun_conv_num_char_n(4,int(par_data_save_ben_Dmin)) //'m)'
+    loc_string_Ddeep = '(>'// fun_conv_num_char_n(4,int(par_data_save_ben_Dmin)) //'m)'
+    loc_string_Dneri = '(<'// fun_conv_num_char_n(4,int(par_data_save_ben_Dmin)) //'m)'
 
     ! tracers
     IF (ctrl_data_save_sig_ocn) THEN
@@ -48,20 +50,20 @@ CONTAINS
                      & '_benT (C)' //trim(loc_string_Dmin)// ' / _surT (C)'
                 If (io == io_S) loc_string = &
                      & '% time (yr) / salinity (o/oo) / _surS (ice-free) (o/oo) / '//&
-                     & '_benS (o/oo)' //loc_string_Dmin//' / _surS (o/oo)'
+                     & '_benS (o/oo)' //TRIM(loc_string_Dmin)//' / _surS (o/oo)'
              CASE (1)
                 loc_string = '% time (yr) / ' //&
                      & 'global total ' //TRIM(string_ocn(io))//' (mol) / ' //&
                      & 'global mean ' //TRIM(string_ocn(io))//' (mol kg-1) / ' //&
                      & 'surface (ice-free) ' //TRIM(string_ocn(io))//' (mol kg-1) / ' //&
-                     & 'benthic '//loc_string_Dmin//TRIM(string_ocn(io))//' (mol kg-1) / ' //&
+                     & 'benthic '//TRIM(loc_string_Dmin)//' '//TRIM(string_ocn(io))//' (mol kg-1) / ' //&
                      & 'surface (total area) ' //TRIM(string_ocn(io))//' (mol kg-1)'
              CASE (n_itype_min:n_itype_max)
                 loc_string = '% time (yr) / ' //&
                      & 'global total '//TRIM(string_ocn(io))//' (mol) / ' //&
                      & 'global ' // TRIM(string_ocn(io))//' (o/oo) / ' //&
                      & 'surface (ice-free) ' //TRIM(string_ocn(io))//' (o/oo) / ' //&
-                     & 'benthic'//loc_string_Dmin//TRIM(string_ocn(io))//' (o/oo) / ' //&
+                     & 'benthic'//TRIM(loc_string_Dmin)//' '//TRIM(string_ocn(io))//' (o/oo) / ' //&
                      & 'surface (total area) ' //TRIM(string_ocn(io))//' (o/oo)'
              end SELECT
           else
@@ -378,7 +380,10 @@ CONTAINS
           CASE (par_sed_type_bio,par_sed_type_abio, &
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
                & par_sed_type_scavenged)
-             loc_string = '% time (yr) / mean '//TRIM(string_sed(is))//' composition (wt%)'
+             loc_string = '% time (yr) / ' //&
+                  & 'mean '//TRIM(string_sed(is))//' composition (wt%) / ' //&
+                  & 'deep '//TRIM(loc_string_Ddeep)//' '//TRIM(string_sed(is))//' composition (wt%) / ' //&
+                  & 'neritic '//TRIM(loc_string_Dneri)//' '//TRIM(string_sed(is))//' composition (wt%)'
           CASE (par_sed_type_age)
              loc_string = '% time (yr) / mean core-top age (yr)'
           CASE (n_itype_min:n_itype_max)
@@ -622,7 +627,7 @@ CONTAINS
                   & 'global total ' // 'Fe' //' (mol) / ' //&
                   & 'global mean ' // 'Fe' //' (mol kg-1) / ' //&
                   & 'surface (ice-free) ' // 'Fe' //' (mol kg-1) / ' //&
-                  & 'benthic' // loc_string_Dmin // 'Fe' //' (mol kg-1) / ' //&
+                  & 'benthic' //TRIM(loc_string_Dmin)// 'Fe' //' (mol kg-1) / ' //&
                   & 'surface ' // 'Fe' //' (mol kg-1)'
           else
              loc_string = '% time (yr) / global total '// 'Fe' //' (mol) / global mean ' // &
@@ -1161,8 +1166,8 @@ CONTAINS
        loc_filename=fun_data_timeseries_filename(loc_t, &
             & par_outdir_name,'timeseries','misc_vent_age',string_results_ext)
        IF (ctrl_data_save_sig_ocn_sur) THEN
-          loc_string = '% time (yr) / mean global idealized ventilation age (yr) / '// &
-               & 'surface ventilation age (yr) / benthic'//loc_string_Dmin//'ventilation age (yr) '
+          loc_string = '% time (yr) / mean global ventilation age (yr) / '// &
+               & 'surface ventilation age (yr) / benthic '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
        else
           loc_string = '% time (yr) / mean global ventilation age (yr)'
        end if
@@ -1426,8 +1431,8 @@ CONTAINS
     REAL::loc_t
     real::loc_opsi_scale
     real::loc_ocn_tot_M,loc_ocn_tot_M_sur,loc_ocn_tot_A
-    real::loc_sig,loc_sigNORM,loc_sig_sur,loc_sig_opn,loc_sig_ben,loc_rsig
-    real::loc_tot,loc_tot_sur,loc_tot_opn,loc_tot_ben
+    real::loc_sig,loc_sigNORM,loc_sig_sur,loc_sig_opn,loc_sig_ben,loc_sig_shf,loc_rsig
+    real::loc_tot,loc_tot_sur,loc_tot_opn,loc_tot_ben,loc_tot_shf
     real::loc_frac,loc_frac_sur,loc_frac_opn,loc_frac_ben,loc_standard
     real::loc_d13C,loc_d14C
     REAL,DIMENSION(n_k)::loc_sig_3D,loc_tot_3D,loc_frac_3D,loc_standard_3D
@@ -2056,13 +2061,17 @@ CONTAINS
           SELECT CASE (sed_type(is))
           CASE (par_sed_type_bio,par_sed_type_abio,par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
                & par_sed_type_scavenged)
-             loc_sig = int_ocnsed_sig(is)/int_t_sig
+             loc_sig_opn = int_ocnsed_sig(is)/int_t_sig
+             loc_sig_ben = int_ocnsed_deep_sig(is)/int_t_sig
+             loc_sig_shf = int_ocnsed_neri_sig(is)/int_t_sig
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
+             WRITE(unit=out,fmt='(f12.3,3f12.6)',iostat=ios) &
                   & loc_t, &
-                  & loc_sig
+                  & loc_sig_opn, &
+                  & loc_sig_ben, &
+                  & loc_sig_shf
              call check_iostat(ios,__LINE__,__FILE__)
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)

@@ -465,6 +465,7 @@ CONTAINS
        print*,'Forcings (input) dir. name                          : ',trim(par_fordir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
+       print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
        ! --- DATA SAVING: TIME-SLICES -------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: TIME-SLICES ----------------'
        print*,'Atmospheric (interface) composition (2D)?           : ',ctrl_data_save_slice_ocnatm
@@ -534,7 +535,6 @@ CONTAINS
        print*,'Generic N j value (for time-series data saving)     : ',par_sig_j_N
        print*,'Generic S j value (for time-series data saving)     : ',par_sig_j_S
        print*,'Restart in netCDF format?                           : ',ctrl_ncrst
-       print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
        print*,'Save 2D netCDF data?                                : ',ctrl_data_save_2d
        print*,'Save 3D netCDF data?                                : ',ctrl_data_save_3d
        print*,'2D netCDF ocean output file name                    : ',trim(par_ncout2d_name)
@@ -734,7 +734,7 @@ CONTAINS
        IF (ctrl_ncrst) THEN
           call sub_openfile(loc_filename,loc_ncid)
           ! -------------------------------------------------------- ! determine number of variables
-          call sub_inqdims (loc_filename,loc_ncid,loc_ndims,loc_nvars)
+          call sub_inqdims(loc_filename,loc_ncid,loc_ndims,loc_nvars)
           ! -------------------------------------------------------- ! allocate arrays
           ALLOCATE(loc_dimlen(loc_ndims),STAT=alloc_error)
           call check_iostat(alloc_error,__LINE__,__FILE__)
@@ -1913,12 +1913,15 @@ CONTAINS
     int_ocn_sur_sig(:)      = 0.0
     int_ocn_opn_sig(:)      = 0.0
     int_ocn_ben_sig(:)      = 0.0
+    int_ocn_shf_sig(:)      = 0.0
     int_carb_sur_sig(:)     = 0.0
     int_carb_opn_sig(:)     = 0.0
     int_carb_ben_sig(:)     = 0.0
+    int_carb_shf_sig(:)     = 0.0
     int_misc_age_sig        = 0.0
     int_misc_age_sur_sig    = 0.0
     int_misc_age_ben_sig    = 0.0
+    int_misc_age_shf_sig    = 0.0
     int_misc_seaice_sig     = 0.0
     int_misc_seaice_sig_th  = 0.0
     int_misc_seaice_sig_vol = 0.0
@@ -1951,7 +1954,14 @@ CONTAINS
     int_diag_redox_sig(:)   = 0.0
     int_diag_ecogem_part    = 0.0
     int_diag_ecogem_remin   = 0.0
-    int_diag_bio_red_POC_CaCO3  = 0.0
+    int_diag_bio_red_POC_CaCO3  = 0.0    
+    ! deep ocean vs. shallow sediments
+    int_ocnsed_deep_sig     = 0.0
+    int_ocnsed_neri_sig     = 0.0
+    int_focnsed_deep_sig    = 0.0
+    int_focnsed_neri_sig    = 0.0
+    int_fsedocn_deep_sig    = 0.0
+    int_fsedocn_neri_sig    = 0.0
     ! high resolution 3D! (an exception to the time-series concept that rather spoils things)
     if (ctrl_data_save_3d_sig) int_misc_3D_sig(:,:,:,:) = 0.0
     ! ### ADD ADDITIONAL TIME-SERIES ARRAY INITIALIZATIONS HERE ################################################################## !
@@ -2504,7 +2514,7 @@ CONTAINS
        force_ocn_point_j(:) = par_force_point_j
        force_ocn_point_k(:) = par_force_point_k
     end IF
-
+    
   END SUBROUTINE sub_init_tracer_forcing_ocn
   ! ****************************************************************************************************************************** !
 

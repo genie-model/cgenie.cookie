@@ -659,6 +659,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_inrstdir_name,par_outrstdir_name
   CHARACTER(len=127)::par_infile_name,par_outfile_name           !
   NAMELIST /ini_biogem_nml/par_infile_name,par_outfile_name
+  CHARACTER(len=127)::par_ncrst_name                             !
+  NAMELIST /ini_biogem_nml/par_ncrst_name
   LOGICAL::ctrl_ncout_expid_name                                 ! align netCDF filenames with experiment name?
   NAMELIST /ini_biogem_nml/ctrl_ncout_expid_name
   ! ------------------- DATA SAVING: TIME-SLICES --------------------------------------------------------------------------------- !
@@ -765,8 +767,6 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_sig_j_N,par_sig_j_S
   LOGICAL::ctrl_ncrst                                            ! restart as netCDF format?
   NAMELIST /ini_biogem_nml/ctrl_ncrst
-  CHARACTER(len=127)::par_ncrst_name                             !
-  NAMELIST /ini_biogem_nml/par_ncrst_name
   LOGICAL::ctrl_data_save_2d                                     ! save 2D netCDF data?
   LOGICAL::ctrl_data_save_3d                                     ! save 3D netCDF data?
   NAMELIST /ini_biogem_nml/ctrl_data_save_2d,ctrl_data_save_3d
@@ -1357,11 +1357,13 @@ MODULE biogem_lib
   REAL,DIMENSION(n_ocn)::int_ocn_sur_sig                         !
   REAL,DIMENSION(n_ocn)::int_ocn_opn_sig                         !
   REAL,DIMENSION(n_ocn)::int_ocn_ben_sig                         !
+  REAL,DIMENSION(n_ocn)::int_ocn_shf_sig                         !
   REAL,DIMENSION(n_carb)::int_carb_sur_sig                       !
   REAL,DIMENSION(n_carb)::int_carb_opn_sig                       !
   REAL,DIMENSION(n_carb)::int_carb_ben_sig                       !
+  REAL,DIMENSION(n_carb)::int_carb_shf_sig                       !
   REAL::int_misc_age_sig                                         !
-  real::int_misc_age_sur_sig,int_misc_age_ben_sig                !
+  real::int_misc_age_sur_sig,int_misc_age_ben_sig,int_misc_age_shf_sig
   REAL::int_misc_seaice_sig                                      !
   real::int_misc_seaice_sig_th,int_misc_seaice_sig_vol           !
   real::int_misc_opsi_min_sig,int_misc_opsi_max_sig              !
@@ -1393,6 +1395,14 @@ MODULE biogem_lib
   real,DIMENSION(:,:,:,:),ALLOCATABLE::int_misc_3D_sig           !
   ! redox
   real,DIMENSION(:),ALLOCATABLE::int_diag_redox_sig              ! redox diagnostics time-series
+  ! deep ocean vs. shallow sediments
+  REAL,DIMENSION(n_sed)::int_ocnsed_deep_sig                     !
+  REAL,DIMENSION(n_sed)::int_ocnsed_neri_sig                     !
+  REAL,DIMENSION(n_sed)::int_focnsed_deep_sig                    !
+  REAL,DIMENSION(n_sed)::int_focnsed_neri_sig                    !
+  REAL,DIMENSION(n_ocn)::int_fsedocn_deep_sig                    !
+  REAL,DIMENSION(n_ocn)::int_fsedocn_neri_sig                    !
+  
   ! ### ADD ADDITIONAL TIME-SERIES ARRAY DEFINITIONS HERE ######################################################################## !
   
   ! ############################################################################################################################## !

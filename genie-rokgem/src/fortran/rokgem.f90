@@ -108,7 +108,7 @@ SUBROUTINE rest_rokgem()
   if (debug_init > 1) PRINT*,'saving netcdf record number',ncout2d_ntrec_rg
 
   ! dump restart data
-  loc_filename = TRIM(par_outrstdir_name)//trim(par_outfile_name)
+  loc_filename = TRIM(par_outrstdir_name)//trim(par_ncrst_name)
   OPEN(20,status='replace',file=loc_filename,form='formatted',action='write',iostat=ios)
   !call check_iostat(ios,__LINE__,__FILE__)
   WRITE(20,fmt='(i6)') ncout2d_ntrec_rg                             
