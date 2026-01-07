@@ -1674,7 +1674,10 @@ CONTAINS
     integer::loc_k1
     integer::l,loc_m,loc_tot_m
     INTEGER::loc_iou,loc_ntrec
-    real,DIMENSION(n_i,n_j)::loc_ij,loc_ij_tot,loc_mask_surf,loc_ij_O,loc_ij_N,loc_ij_S
+    real,DIMENSION(n_i,n_j)::loc_ij,loc_ij_tot,loc_mask_surf
+    real,DIMENSION(n_i,n_j)::loc_ij_OC,loc_ij_NC,loc_ij_SC
+    real,DIMENSION(n_i,n_j)::loc_ij_ON,loc_ij_NN,loc_ij_SN
+    real,DIMENSION(n_i,n_j)::loc_ij_OP,loc_ij_NP,loc_ij_SP
     real,DIMENSION(n_sed,n_i,n_j)::loc_isij
     CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
     CHARACTER(len=31)::loc_string     !
@@ -2257,94 +2260,92 @@ CONTAINS
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_diag_geochem) then
        ! NOTE: divide by conv_sed_ocn_x(io_y,is_POz) to convert from oxidant consumed to POC remineralized
+       !       sign switch (for consumption flux) is done by dividing by conv_sed_ocn_x(io_y,is_POz)
        ! NOTE: POM only (and hence ocean interior)
-       loc_ij_tot(:,:) = const_real_zero
-       loc_ij_O(:,:)   = const_real_zero
-       loc_ij_N(:,:)   = const_real_zero
-       loc_ij_S(:,:)   = const_real_zero
-       ! -------------------------------------------------------- ! (1) O2 consumption for POM
+       ! NOTE: scale int_diag_redox_timeslice by area and integration time
+       loc_ij_OC(:,:)  = const_real_zero
+       loc_ij_NC(:,:)  = const_real_zero
+       loc_ij_SC(:,:)  = const_real_zero
+       loc_ij_ON(:,:)  = const_real_zero
+       loc_ij_NN(:,:)  = const_real_zero
+       loc_ij_SN(:,:)  = const_real_zero
+       loc_ij_OP(:,:)  = const_real_zero
+       loc_ij_NP(:,:)  = const_real_zero
+       loc_ij_SP(:,:)  = const_real_zero
+       ! -------------------------------------------------------- ! (1) oxic remineralization
        if (ocn_select(io_O2)) then
+          loc_ij_tot(:,:) = const_real_zero
           loc_unitsname = 'mol C+N+P m-2 yr-1'
-          loc_shortname = 'misc_int_remin_O2'
-          loc_longname  = 'total water-column integrated consumption of O2 during POM remineralization'   
-          loc_ij(:,:) = const_real_zero
+          loc_shortname = 'misc_int_remin_O2_POM'
+          loc_longname  = 'total water-column integrated remineraliaztion of POM by O2'
           DO i=1,n_i
              DO j=1,n_j
                 If (goldstein_k1(i,j) <= n_k) then
                    if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_O(io_O2,is_POC)) > const_real_nullsmall)) then
                       loc_string = 'reminP_POC_dO2'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_POC)
+                      loc_ij_OC(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_POC)
+                      loc_ij_OC(i,j) = loc_ij_OC(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                    if (sed_select(is_PON) .AND. (abs(conv_sed_ocn_O(io_O2,is_PON)) > const_real_nullsmall)) then
                       loc_string = 'reminP_PON_dO2'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_PON)
+                      loc_ij_ON(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_PON)
+                      loc_ij_ON(i,j) = loc_ij_ON(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                    if (sed_select(is_POP) .AND. (abs(conv_sed_ocn_O(io_O2,is_POP)) > const_real_nullsmall)) then
                       loc_string = 'reminP_POP_dO2'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_POP)
-                      ! scale by area and integration time
-                      ! NOTE: sign switch (for consumption flux) is done by dividing by conv_sed_ocn_x(io_y,is_POz)
-                      loc_ij(i,j) = loc_ij(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                      loc_ij_OP(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_POP)
+                      loc_ij_OP(i,j) = loc_ij_OP(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                 end if
              end DO
           end DO
+          loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:)
           call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
                & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-          loc_ij_O(:,:)   = loc_ij(:,:)
-          loc_ij_tot(:,:) = loc_ij_tot(:,:) + loc_ij_O(:,:)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        end if
-       ! -------------------------------------------------------- ! (2) NO3 consumption for POM
+       ! -------------------------------------------------------- ! (2) denitrification
        if (ocn_select(io_NO3)) then
           loc_unitsname = 'mol C+N+P m-2 yr-1'
-          loc_shortname = 'misc_int_remin_NO3'
-          loc_longname  = 'total water-column integrated consumption of NO3 during POM remineralization'   
-          loc_ij(:,:) = const_real_zero
+          loc_shortname = 'misc_int_remin_NO3_POM' 
+          loc_longname  = 'total water-column integrated remineraliaztion of POM by NO3'
           DO i=1,n_i
              DO j=1,n_j
                 If (goldstein_k1(i,j) <= n_k) then
                    if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_N(io_NO3,is_POC)) > const_real_nullsmall)) then
                       loc_string = 'reminP_POC_dNO3'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_POC)
+                      loc_ij_NC(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_POC)
+                      loc_ij_NC(i,j) = loc_ij_NC(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                    if (sed_select(is_PON) .AND. (abs(conv_sed_ocn_N(io_NO3,is_PON)) > const_real_nullsmall)) then
                       loc_string = 'reminP_PON_dNO3'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_PON)
+                      loc_ij_NN(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_PON)
+                      loc_ij_NN(i,j) = loc_ij_NN(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                    if (sed_select(is_POP) .AND. (abs(conv_sed_ocn_N(io_NO3,is_POP)) > const_real_nullsmall)) then
                       loc_string = 'reminP_POP_dNO3'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_POP)
-                      ! scale by area and integration time
-                      ! NOTE: sign switch (for consumption flux) is done by dividing by conv_sed_ocn_x(io_y,is_POz)
-                      loc_ij(i,j) = loc_ij(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                      loc_ij_NP(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_POP)
+                      loc_ij_NP(i,j) = loc_ij_NP(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                 end if
              end DO
           end DO
+          loc_ij_tot(:,:) = loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:)
           call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
                & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-          loc_ij_N(:,:)   = loc_ij(:,:)
-          loc_ij_tot(:,:) = loc_ij_tot(:,:) + loc_ij_N(:,:)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        end if
-       ! -------------------------------------------------------- ! (3) SO4 consumption for POM
+       ! -------------------------------------------------------- ! (3) sulphate reduction
        if (ocn_select(io_SO4)) then
           loc_unitsname = 'mol C+N+P m-2 yr-1'
-          loc_shortname = 'misc_int_remin_SO4'
-          loc_longname  = 'total water-column integrated consumption of SO4 during POM remineralization'   
+          loc_shortname = 'misc_int_remin_SO4_POM' 
+          loc_longname  = 'total water-column integrated remineraliaztion of POM by SO4'  
           loc_ij(:,:) = const_real_zero
           DO i=1,n_i
              DO j=1,n_j
@@ -2352,51 +2353,75 @@ CONTAINS
                    if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_S(io_SO4,is_POC)) > const_real_nullsmall)) then
                       loc_string = 'reminP_POC_dSO4'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_POC)
+                      loc_ij_SC(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_POC)
+                      loc_ij_SC(i,j) = loc_ij_SC(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                    if (sed_select(is_PON) .AND. (abs(conv_sed_ocn_S(io_SO4,is_PON)) > const_real_nullsmall)) then
                       loc_string = 'reminP_PON_dSO4'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_PON)
+                      loc_ij_SN(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_PON)
+                      loc_ij_SN(i,j) = loc_ij_SN(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                    if (sed_select(is_POP) .AND. (abs(conv_sed_ocn_S(io_SO4,is_POP)) > const_real_nullsmall)) then
                       loc_string = 'reminP_POP_dSO4'
                       id = fun_find_str_i(trim(loc_string),string_diag_redox)
-                      loc_ij(i,j) = loc_ij(i,j) + &
-                           & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_POP)
-                      ! scale by area and integration time
-                      ! NOTE: sign switch (for consumption flux) is done by dividing by conv_sed_ocn_x(io_y,is_POz)
-                      loc_ij(i,j) = loc_ij(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                      loc_ij_SP(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_POP)
+                      loc_ij_SP(i,j) = loc_ij_SP(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
                    end if
                 end if
              end DO
           end DO
+          loc_ij_tot(:,:) = loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
           call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
                & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-          loc_ij_S(:,:)   = loc_ij(:,:)
-          loc_ij_tot(:,:) = loc_ij_tot(:,:) + loc_ij_S(:,:)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        end if
-       ! -------------------------------------------------------- ! (4) total
+       ! -------------------------------------------------------- ! (4) totals
+       loc_unitsname = 'mol C m-2 yr-1'
+       loc_shortname = 'misc_int_remin_ALL_POC'
+       loc_longname  = 'total water-column integrated remineralization of POC by all oxidants'
+       loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
+       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        loc_unitsname = 'mol C+N+P m-2 yr-1'
-       loc_shortname = 'misc_int_remin_ALL'
-       loc_longname  = 'total water-column integrated consumption of all oxidants during POM remineralization'
-       loc_ij(:,:) = const_real_zero
-       loc_ij(:,:) = loc_ij_O(:,:) + loc_ij_N(:,:) + loc_ij_S(:,:) 
+       loc_shortname = 'misc_int_remin_ALL_POM'
+       loc_longname  = 'total water-column integrated remineralization of POM by all oxidants'
+       loc_ij_tot(:,:) = &
+            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
        call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
             & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        ! -------------------------------------------------------- ! (5) percentatges -- denitrification
-       loc_unitsname = 'mol C+N+P m-2 yr-1'
-       loc_shortname = 'misc_int_remin_pctden'
-       loc_longname  = '% of total water-column POM remineralization via denitrification'  
+       loc_unitsname = '% C'
+       loc_shortname = 'misc_int_remin_pctden_POC'
+       loc_longname  = '% of total water-column POC remineralized via denitrification' 
+       loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
        loc_ij(:,:) = const_real_zero
        DO i=1,n_i
           DO j=1,n_j
              If (loc_ij_tot(i,j) > const_real_nullsmall) then
-                loc_ij(i,j) = 100.0*loc_ij_N(i,j)/loc_ij_tot(i,j)
+                loc_ij(i,j) = 100.0*loc_ij_NC(i,j)/loc_ij_tot(i,j)
+             end if
+          end DO
+       end DO
+       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       loc_unitsname = '% C+N+P'
+       loc_shortname = 'misc_int_remin_pctden_POM'
+       loc_longname  = '% of total water-column POM remineralized via denitrification' 
+       loc_ij_tot(:,:) = &
+            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+       loc_ij(:,:) = const_real_zero
+       DO i=1,n_i
+          DO j=1,n_j
+             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+                loc_ij(i,j) = 100.0*(loc_ij_NC(i,j)+loc_ij_NN(i,j)+loc_ij_NP(i,j))/loc_ij_tot(i,j)
              end if
           end DO
        end DO
@@ -2404,14 +2429,33 @@ CONTAINS
             & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! -------------------------------------------------------- ! (5) percentatges -- sulphate reduction
-       loc_unitsname = 'mol C+N+P m-2 yr-1'
-       loc_shortname = 'misc_int_remin_pctsul'
-       loc_longname  = '% of total water-column POM remineralization via sulphate reduction'  
+       loc_unitsname = '% C'
+       loc_shortname = 'misc_int_remin_pctsul_POC'
+       loc_longname  = '% of total water-column POC remineralized via sulphate reduction' 
+       loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
        loc_ij(:,:) = const_real_zero
        DO i=1,n_i
           DO j=1,n_j
              If (loc_ij_tot(i,j) > const_real_nullsmall) then
-                loc_ij(i,j) = 100.0*loc_ij_S(i,j)/loc_ij_tot(i,j)
+                loc_ij(i,j) = 100.0*loc_ij_SC(i,j)/loc_ij_tot(i,j)
+             end if
+          end DO
+       end DO
+       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       loc_unitsname = '% C+N+P'
+       loc_shortname = 'misc_int_remin_pctsul_POM'
+       loc_longname  = '% of total water-column POM remineralized via sulphate reduction' 
+       loc_ij_tot(:,:) = &
+            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+       loc_ij(:,:) = const_real_zero
+       DO i=1,n_i
+          DO j=1,n_j
+             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+                loc_ij(i,j) = 100.0*(loc_ij_SC(i,j)+loc_ij_SN(i,j)+loc_ij_SP(i,j))/loc_ij_tot(i,j)
              end if
           end DO
        end DO
