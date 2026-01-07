@@ -301,6 +301,7 @@ if [ -n "$5" ]; then
       echo "   Restart directory $RESTARTPATH cannot be found"
     exit 1
   fi
+  # add restart parameter values
   echo ea_7=c >> $CONFIGPATH/$CONFIGNAME
   echo go_7=c >> $CONFIGPATH/$CONFIGNAME
   echo gs_7=c >> $CONFIGPATH/$CONFIGNAME
@@ -323,11 +324,21 @@ if [ -n "$5" ]; then
   echo go_rstdir_name=$RESTARTPATH"/goldstein" >> $CONFIGPATH/$CONFIGNAME
   echo gs_rstdir_name=$RESTARTPATH"/goldsteinseaice" >> $CONFIGPATH/$CONFIGNAME
   echo el_rstdir_name=$RESTARTPATH"/ents" >> $CONFIGPATH/$CONFIGNAME
-  echo ac_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
-  echo bg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
-  echo sg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
-  echo rg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
-  echo eg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
+  echo ac_par_rstdir_name=$RESTARTPATH"/atchem" >> $CONFIGPATH/$CONFIGNAME
+  echo bg_par_rstdir_name=$RESTARTPATH"/biogem" >> $CONFIGPATH/$CONFIGNAME
+  echo sg_par_rstdir_name=$RESTARTPATH"/sedgem" >> $CONFIGPATH/$CONFIGNAME
+  echo rg_par_rstdir_name=$RESTARTPATH"/rokgem" >> $CONFIGPATH/$CONFIGNAME
+  echo eg_par_rstdir_name=$RESTARTPATH"/ecogem" >> $CONFIGPATH/$CONFIGNAME
+  # look for sedcore restart and copy to restart folder if exist
+  SEDCORERESTART=$RESTARTPATH"/results/fields_sedcores_1d.nc"
+  echo ">> Checking whether sedcore restart $SEDCORERESTART exists and can be copied ..."
+  if test -s $SEDCORERESTART
+  then
+    cp $SEDCORERESTART $RESTARTPATH"/restarts/fields_sedcores_1d.nc"
+    echo "   OK :)"
+  else
+    echo "   sedcore restart $SEDCORERESTART does not exist"
+  fi
 else
   echo ea_7=n >> $CONFIGPATH/$CONFIGNAME
   echo go_7=n >> $CONFIGPATH/$CONFIGNAME
@@ -351,7 +362,7 @@ echo bg_ctrl_force_oldformat=.false. >> $CONFIGPATH/$CONFIGNAME
 #
 # (8) INCORPORATE RUN CONFIGURATION
 # ---------------------------------
-echo "   Make safe goin format"
+echo ">> Add user-config parameter-value pairs"
 #dos2unix $GOIN
 #tr ‘\r’ ‘\n’ < $GOIN
 cat $GOIN >> $CONFIGPATH/$CONFIGNAME

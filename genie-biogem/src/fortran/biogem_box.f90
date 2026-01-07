@@ -2063,8 +2063,8 @@ CONTAINS
     ! record diagnostics
     ! NOTE: scale productivity modifiers by time-step to get correct average
     ! ### NOTE ################################################################################################################### !
-    ! need to adjust (units?) diagnostics consistent with MLD changes(?)
     ! added *2 for nitrogen fixation diagnostic to calculate rate in molN/kg/yr (rather than molN2/kg/yr) - Fanny (July 2010)
+    ! removed this ... added new simpler output which includes the x 2.0 - Andy (Jan 2025)
     ! ############################################################################################################################ !
     diag_bio(idiag_bio_dPO4,dum_i,dum_j) = loc_dPO4
     diag_bio(idiag_bio_DOMfrac,dum_i,dum_j) = dum_dt*loc_bio_red_DOMfrac
@@ -2078,7 +2078,8 @@ CONTAINS
        diag_bio(idiag_bio_frac_Fe2,dum_i,dum_j)   = dum_dt*loc_frac_Fe2
        diag_bio(idiag_bio_dPO4_1,dum_i,dum_j)     = loc_dPO4_1
        diag_bio(idiag_bio_dPO4_2,dum_i,dum_j)     = loc_dPO4_2
-       diag_bio(idiag_bio_N2fixation,dum_i,dum_j) = loc_bio_uptake(io_N2,n_k)*2
+       diag_bio(idiag_bio_dNO3,dum_i,dum_j)       = loc_bio_uptake(io_NO3,n_k)
+       diag_bio(idiag_bio_N2fixation,dum_i,dum_j) = loc_bio_uptake(io_N2,n_k)
        diag_bio(idiag_bio_NH4assim,dum_i,dum_j)   = loc_bio_uptake(io_NH4,n_k)
        diag_bio(idiag_bio_knut,dum_i,dum_j)       = dum_dt*min(loc_kPO4,loc_kN,loc_kFe)
     case (                   &

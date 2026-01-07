@@ -312,6 +312,7 @@ if [ -n "$5" ]; then
       echo "   Restart directory $RESTARTPATH cannot be found"
     exit 1
   fi
+  # add restart parameter values
   echo ea_7=c >> $CONFIGPATH/$CONFIGNAME
   echo go_7=c >> $CONFIGPATH/$CONFIGNAME
   echo gs_7=c >> $CONFIGPATH/$CONFIGNAME
@@ -337,8 +338,18 @@ if [ -n "$5" ]; then
   echo ac_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
   echo bg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
   echo sg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
-  echo rg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
-  echo eg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
+  echo rg_par_rstdir_name=$RESTARTPATH"/rokgem" >> $CONFIGPATH/$CONFIGNAME
+  echo eg_par_rstdir_name=$RESTARTPATH"/ecogem" >> $CONFIGPATH/$CONFIGNAME
+  # look for sedcore restart and copy to restart folder if exist
+  SEDCORERESTART=$RESTARTPATH"/results/fields_sedcores_1d.nc"
+  echo ">> Checking whether sedcore restart $SEDCORERESTART exists and can be copied ..."
+  if test -s $SEDCORERESTART
+  then
+    cp $SEDCORERESTART $RESTARTPATH"/restarts/fields_sedcores_1d.nc"
+    echo "   OK :)"
+  else
+    echo "   sedcore restart $SEDCORERESTART does not exist"
+  fi
 else
   echo ea_7=n >> $CONFIGPATH/$CONFIGNAME
   echo go_7=n >> $CONFIGPATH/$CONFIGNAME
@@ -362,7 +373,7 @@ echo bg_ctrl_force_oldformat=.false. >> $CONFIGPATH/$CONFIGNAME
 # ---------------------------------
 # (8) INCORPORATE RUN CONFIGURATION
 # ---------------------------------
-echo "   Make safe goin format"
+echo ">> Add user-config parameter-value pairs"
 #dos2unix $GOIN
 #tr ‘\r’ ‘\n’ < $GOIN
 cat $GOIN >> $CONFIGPATH/$CONFIGNAME
@@ -400,19 +411,6 @@ fi
 rm -f $CONFIGPATH/$CONFIGNAME
 # change to output dir
 cd $OUTPUTDIR
-# remove empty results directories
-if [ -z "$( ls -A $RUNID'/atchem' )" ]; then rm -d $RUNID'/atchem'; fi
-if [ -z "$( ls -A $RUNID'/biogem' )" ]; then rm -d $RUNID'/biogem'; fi
-if [ -z "$( ls -A $RUNID'/ecogem' )" ]; then rm -d $RUNID'/ecogem'; fi
-if [ -z "$( ls -A $RUNID'/embm' )" ]; then rm -d $RUNID'/embm'; fi
-if [ -z "$( ls -A $RUNID'/ents' )" ]; then rm -d $RUNID'/ents'; fi
-if [ -z "$( ls -A $RUNID'/gemlite' )" ]; then rm -d $RUNID'/gemlite'; fi
-if [ -z "$( ls -A $RUNID'/goldstein' )" ]; then rm -d $RUNID'/goldstein'; fi
-if [ -z "$( ls -A $RUNID'/goldsteinseaice' )" ]; then rm -d $RUNID'/goldsteinseaice'; fi
-if [ -z "$( ls -A $RUNID'/main' )" ]; then rm -d $RUNID'/main'; fi
-if [ -z "$( ls -A $RUNID'/plasim' )" ]; then rm -d $RUNID'/plasim'; fi
-if [ -z "$( ls -A $RUNID'/rokgem' )" ]; then rm -d $RUNID'/rokgem'; fi
-if [ -z "$( ls -A $RUNID'/sedgem' )" ]; then rm -d $RUNID'/sedgem'; fi
 # Archive
 echo ""
 echo ">> Archiving ..."
