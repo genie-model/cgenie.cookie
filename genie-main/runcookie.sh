@@ -5,9 +5,9 @@
 #####################################################################
 #
 echo ""
-#
+# ---------------------------------------------------------------------
 # (0) USER OPTIONS
-# ----------------
+# ---------------------------------------------------------------------
 #####################################################################
 # CHANGE THIS FOR INSTALLATIONS OTHER THAN IN $HOME
 # SET THE SAME AS IN user.mak AND user.sh
@@ -24,9 +24,9 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/share/apps/lib:/share/apps/netcdf/lib
 export PATH=/state/partition1/apps/intel/bin:$PATH
 # ensure stack size is adequate (could be ulimit -s unlimited ?)
 ulimit -s 20480
-#
+# ---------------------------------------------------------------------
 # (1) GET PASSED PARAMETERS
-# -------------------------
+# ---------------------------------------------------------------------
 # [1] base configuration ID
 if [ -z "$1" ]; then
     echo "Usage: '$1' 1st parameter must be the base configuration ID"
@@ -68,9 +68,9 @@ if [ -n "$5" ]; then
         exit 65
     fi
 fi
-#
+# ---------------------------------------------------------------------
 # (2) SET LOCAL FILE AND DIRECTORY NAMES
-# --------------------------------------
+# ---------------------------------------------------------------------
 #
 OMP_NUM_THREADS=2
 export OMP_NUM_THREADS
@@ -80,9 +80,9 @@ CONFIGPATH=$HOMEDIR/cgenie.cookie/genie-baseconfigs
 CONFIGNAME=$RUNID".config"
 BINARYPATH=$HOMEDIR/cgenie.cookie/genie-main
 RESTARTNAME="rst.1"
-#
+# ---------------------------------------------------------------------
 # (3) CHECK PARAMETERS
-# --------------------------------------
+# ---------------------------------------------------------------------
 #
 echo ">> Checking parameters ..."
 #
@@ -150,9 +150,9 @@ if [ -n "$5" ]; then
 else
     echo "   #5 NO restart specified"
 fi
-#
+# ---------------------------------------------------------------------
 # (3) CREATE RUN CONFIG FILE
-# --------------------------
+# ---------------------------------------------------------------------
 echo ""
 echo ">> Configuring ..."
 # Copy template config file
@@ -163,9 +163,9 @@ echo '\n' >> $CONFIGPATH/$CONFIGNAME
 #echo EXPID=$MODELID.$RUNID >> $CONFIGPATH/$CONFIGNAME
 echo EXPID=$RUNID >> $CONFIGPATH/$CONFIGNAME
 echo ma_expid_name=$RUNID >> $CONFIGPATH/$CONFIGNAME
-#
+# ---------------------------------------------------------------------
 # (4) SET MODEL TIME-STEPPING
-# ---------------------------
+# ---------------------------------------------------------------------
 # extract ocean (lon,lat) dimension
 LONS=$(grep -o '$(DEFINE)GOLDSTEINNLONS=..\>' $CONFIGPATH/$MODELID".config" | sed -e s/.*=//)
 LATS=$(grep -o '$(DEFINE)GOLDSTEINNLATS=..\>' $CONFIGPATH/$MODELID".config" | sed -e s/.*=//)
@@ -276,9 +276,9 @@ echo el_6=$stp >> $CONFIGPATH/$CONFIGNAME
 echo ea_9=$N_TIMESTEPS >> $CONFIGPATH/$CONFIGNAME
 echo go_9=$N_TIMESTEPS >> $CONFIGPATH/$CONFIGNAME
 echo gs_9=$N_TIMESTEPS >> $CONFIGPATH/$CONFIGNAME
-#
+# ---------------------------------------------------------------------
 # (5) SET CLIMATE MODEL RE-START FILE DETAILS
-# -------------------------------------------
+# ---------------------------------------------------------------------
 # Set default flags
 # Set netCDF restart saving flag
 echo ea_31=n >> $CONFIGPATH/$CONFIGNAME
@@ -294,9 +294,9 @@ echo go_17=rst >> $CONFIGPATH/$CONFIGNAME
 echo gs_12=rst >> $CONFIGPATH/$CONFIGNAME
 echo el_17="rst" >> $CONFIGPATH/$CONFIGNAME
 echo el_24="rst.sland" >> $CONFIGPATH/$CONFIGNAME
-#
+# ---------------------------------------------------------------------
 # (6) CONFIGURE USE OF RESTART
-# -----------------------------
+# ---------------------------------------------------------------------
 # Set continuing/new run flags
 # => set restart input flags
 # => disable netCDF restart input flag
@@ -338,8 +338,8 @@ if [ -n "$5" ]; then
   echo ac_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
   echo bg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
   echo sg_par_inrstdir_name=$RESTARTPATH"/restarts" >> $CONFIGPATH/$CONFIGNAME
-  echo rg_par_rstdir_name=$RESTARTPATH"/rokgem" >> $CONFIGPATH/$CONFIGNAME
-  echo eg_par_rstdir_name=$RESTARTPATH"/ecogem" >> $CONFIGPATH/$CONFIGNAME
+  echo rg_par_inrstdir_name=$RESTARTPATH"/rokgem" >> $CONFIGPATH/$CONFIGNAME
+  echo eg_par_inrstdir_name=$RESTARTPATH"/ecogem" >> $CONFIGPATH/$CONFIGNAME
   # look for sedcore restart and copy to restart folder if exist
   SEDCORERESTART=$RESTARTPATH"/results/fields_sedcores_1d.nc"
   echo ">> Checking whether sedcore restart $SEDCORERESTART exists and can be copied ..."
