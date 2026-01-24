@@ -649,8 +649,10 @@ CONTAINS
     INTEGER::loc_iou,loc_ntrec
     real,DIMENSION(n_i,n_j)::loc_ij
     real,DIMENSION(n_i,n_j,n_k)::loc_ijk,loc_mask
+    real,DIMENSION(n_i,n_j,n_k)::loc_ijk_OC,loc_ijk_NC,loc_ijk_SC,loc_ijk_tot
     CHARACTER(len=255)::loc_name
-    CHARACTER(len=255)::loc_unitsname
+    CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
+    CHARACTER(len=31)::loc_string     !
     real::loc_tot,loc_frac,loc_standard
     real::loc_min,loc_max
     logical::loc_save
@@ -1606,6 +1608,118 @@ CONTAINS
        end if
        !
     end If
+    !----------------------------------------------------------------
+    ! GEOCHEMICAL DIAGNOSTICS -- REMIN FRACTIONAL OXIDANTS
+    !----------------------------------------------------------------
+    If (ctrl_data_save_slice_diag_geochem .AND. ctrl_bio_remin_redox_save) then
+       loc_ijk_tot(:,:,:) = const_real_zero
+       ! -------------------------------------------------------- ! (1) oxic remineralization
+       loc_ijk(:,:,:) = const_real_zero
+       if (ocn_select(io_O2)) then
+          loc_unitsname = 'mol C kg-1 yr-1'
+          loc_shortname = 'misc_POCremin_O2'
+          loc_longname  = 'remineraliaztion of POC by O2'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_O(io_O2,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dO2'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ijk(i,j,k) = int_diag_redox_timeslice(id,i,j,k)/int_t_timeslice/conv_sed_ocn_O(io_O2,is_POC)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       loc_ijk_OC(:,:,:) = loc_ijk(:,:,:) 
+       loc_ijk_tot(:,:,:) = loc_ijk_tot(:,:,:) + loc_ijk_OC(:,:,:)
+       ! -------------------------------------------------------- ! (2) NO3 remineralization
+       loc_ijk(:,:,:) = const_real_zero
+       if (ocn_select(io_NO3)) then
+          loc_unitsname = 'mol C kg-1 yr-1'
+          loc_shortname = 'misc_POCremin_NO3'
+          loc_longname  = 'remineraliaztion of POC by NO3'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_N(io_NO3,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dNO3'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ijk(i,j,k) = int_diag_redox_timeslice(id,i,j,k)/int_t_timeslice/conv_sed_ocn_N(io_NO3,is_POC)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       loc_ijk_NC(:,:,:) = loc_ijk(:,:,:) 
+       loc_ijk_tot(:,:,:) = loc_ijk_tot(:,:,:) + loc_ijk_NC(:,:,:)
+       ! -------------------------------------------------------- ! (3) SO4 remineralization
+       loc_ijk(:,:,:) = const_real_zero
+       if (ocn_select(io_SO4)) then
+          loc_unitsname = 'mol C kg-1 yr-1'
+          loc_shortname = 'misc_POCremin_SO4'
+          loc_longname  = 'remineraliaztion of POC by SO4'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_S(io_SO4,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dSO4'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ijk(i,j,k) = int_diag_redox_timeslice(id,i,j,k)/int_t_timeslice/conv_sed_ocn_S(io_SO4,is_POC)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       loc_ijk_SC(:,:,:)  = loc_ijk(:,:,:) 
+       loc_ijk_tot(:,:,:) = loc_ijk_tot(:,:,:) + loc_ijk_SC(:,:,:)
+       ! -------------------------------------------------------- ! (4) fractions
+       if (ocn_select(io_NO3)) then
+          loc_ijk(:,:,:) = const_real_zero
+          loc_unitsname = 'n/a'
+          loc_shortname = 'misc_POCremin_fNO3'
+          loc_longname  = 'fraction of remineraliaztion of POC by NO3'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (loc_ijk_tot(i,j,k) > const_real_nullsmall) then
+                      loc_ijk(i,j,k) = loc_ijk_NC(i,j,k)/loc_ijk_tot(i,j,k)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       if (ocn_select(io_SO4)) then
+          loc_ijk(:,:,:) = const_real_zero
+          loc_unitsname = 'n/a'
+          loc_shortname = 'misc_POCremin_fSO4'
+          loc_longname  = 'fraction of remineraliaztion of POC by SO4'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (loc_ijk_tot(i,j,k) > const_real_nullsmall) then
+                      loc_ijk(i,j,k) = loc_ijk_SC(i,j,k)/loc_ijk_tot(i,j,k)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+    end If
     ! ### INSERT CODE TO SAVE ADDITIONAL 3-D DATA FIELDS ######################################################################### !
     !
     ! ############################################################################################################################ !
@@ -2276,7 +2390,7 @@ CONTAINS
        if (ocn_select(io_O2)) then
           loc_ij_tot(:,:) = const_real_zero
           loc_unitsname = 'mol C+N+P m-2 yr-1'
-          loc_shortname = 'misc_int_remin_O2_POM'
+          loc_shortname = 'misc_int_POMremin_O2'
           loc_longname  = 'total water-column integrated remineraliaztion of POM by O2'
           DO i=1,n_i
              DO j=1,n_j
@@ -2310,7 +2424,7 @@ CONTAINS
        ! -------------------------------------------------------- ! (2) denitrification
        if (ocn_select(io_NO3)) then
           loc_unitsname = 'mol C+N+P m-2 yr-1'
-          loc_shortname = 'misc_int_remin_NO3_POM' 
+          loc_shortname = 'misc_int_POMremin_NO3' 
           loc_longname  = 'total water-column integrated remineraliaztion of POM by NO3'
           DO i=1,n_i
              DO j=1,n_j
@@ -2344,7 +2458,7 @@ CONTAINS
        ! -------------------------------------------------------- ! (3) sulphate reduction
        if (ocn_select(io_SO4)) then
           loc_unitsname = 'mol C+N+P m-2 yr-1'
-          loc_shortname = 'misc_int_remin_SO4_POM' 
+          loc_shortname = 'misc_int_POMremin_SO4' 
           loc_longname  = 'total water-column integrated remineraliaztion of POM by SO4'  
           loc_ij(:,:) = const_real_zero
           DO i=1,n_i
@@ -2378,14 +2492,14 @@ CONTAINS
        end if
        ! -------------------------------------------------------- ! (4) totals
        loc_unitsname = 'mol C m-2 yr-1'
-       loc_shortname = 'misc_int_remin_ALL_POC'
+       loc_shortname = 'misc_int_POCremin_ALL'
        loc_longname  = 'total water-column integrated remineralization of POC by all oxidants'
        loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
        call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
             & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        loc_unitsname = 'mol C+N+P m-2 yr-1'
-       loc_shortname = 'misc_int_remin_ALL_POM'
+       loc_shortname = 'misc_int_POMremin_ALL'
        loc_longname  = 'total water-column integrated remineralization of POM by all oxidants'
        loc_ij_tot(:,:) = &
             & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
@@ -2395,8 +2509,8 @@ CONTAINS
             & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        ! -------------------------------------------------------- ! (5) percentatges -- denitrification
-       loc_unitsname = '% C'
-       loc_shortname = 'misc_int_remin_pctden_POC'
+       loc_unitsname = '%'
+       loc_shortname = 'misc_int_POCremin_fNO3'
        loc_longname  = '% of total water-column POC remineralized via denitrification' 
        loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
        loc_ij(:,:) = const_real_zero
@@ -2410,27 +2524,27 @@ CONTAINS
        call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
             & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-       loc_unitsname = '% C+N+P'
-       loc_shortname = 'misc_int_remin_pctden_POM'
-       loc_longname  = '% of total water-column POM remineralized via denitrification' 
-       loc_ij_tot(:,:) = &
-            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
-            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
-            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
-       loc_ij(:,:) = const_real_zero
-       DO i=1,n_i
-          DO j=1,n_j
-             If (loc_ij_tot(i,j) > const_real_nullsmall) then
-                loc_ij(i,j) = 100.0*(loc_ij_NC(i,j)+loc_ij_NN(i,j)+loc_ij_NP(i,j))/loc_ij_tot(i,j)
-             end if
-          end DO
-       end DO
-       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
-            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+!!$       loc_unitsname = '% C+N+P'
+!!$       loc_shortname = 'misc_int_remin_pctden_POM'
+!!$       loc_longname  = '% of total water-column POM remineralized via denitrification' 
+!!$       loc_ij_tot(:,:) = &
+!!$            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+!!$            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+!!$            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+!!$       loc_ij(:,:) = const_real_zero
+!!$       DO i=1,n_i
+!!$          DO j=1,n_j
+!!$             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+!!$                loc_ij(i,j) = 100.0*(loc_ij_NC(i,j)+loc_ij_NN(i,j)+loc_ij_NP(i,j))/loc_ij_tot(i,j)
+!!$             end if
+!!$          end DO
+!!$       end DO
+!!$       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+!!$            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+!!$       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! -------------------------------------------------------- ! (5) percentatges -- sulphate reduction
-       loc_unitsname = '% C'
-       loc_shortname = 'misc_int_remin_pctsul_POC'
+       loc_unitsname = '%'
+       loc_shortname = 'misc_int_POCremin_fSO4'
        loc_longname  = '% of total water-column POC remineralized via sulphate reduction' 
        loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
        loc_ij(:,:) = const_real_zero
@@ -2444,24 +2558,24 @@ CONTAINS
        call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
             & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-       loc_unitsname = '% C+N+P'
-       loc_shortname = 'misc_int_remin_pctsul_POM'
-       loc_longname  = '% of total water-column POM remineralized via sulphate reduction' 
-       loc_ij_tot(:,:) = &
-            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
-            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
-            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
-       loc_ij(:,:) = const_real_zero
-       DO i=1,n_i
-          DO j=1,n_j
-             If (loc_ij_tot(i,j) > const_real_nullsmall) then
-                loc_ij(i,j) = 100.0*(loc_ij_SC(i,j)+loc_ij_SN(i,j)+loc_ij_SP(i,j))/loc_ij_tot(i,j)
-             end if
-          end DO
-       end DO
-       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
-            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+!!$       loc_unitsname = '% C+N+P'
+!!$       loc_shortname = 'misc_int_remin_pctsul_POM'
+!!$       loc_longname  = '% of total water-column POM remineralized via sulphate reduction' 
+!!$       loc_ij_tot(:,:) = &
+!!$            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+!!$            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+!!$            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+!!$       loc_ij(:,:) = const_real_zero
+!!$       DO i=1,n_i
+!!$          DO j=1,n_j
+!!$             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+!!$                loc_ij(i,j) = 100.0*(loc_ij_SC(i,j)+loc_ij_SN(i,j)+loc_ij_SP(i,j))/loc_ij_tot(i,j)
+!!$             end if
+!!$          end DO
+!!$       end DO
+!!$       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+!!$            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+!!$       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end If
     ! ### INSERT CODE TO SAVE ADDITIONAL 2-D DATA FIELDS ######################################################################### !
     !
