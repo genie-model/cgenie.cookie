@@ -3273,6 +3273,103 @@ CONTAINS
 
 
   ! ****************************************************************************************************************************** !
+  ! DATA SAVE OPTION FILTERING
+  SUBROUTINE sub_filter_data_save()
+    ! ----------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! ---------------------------------------------------------- !
+    
+    ! ---------------------------------------------------------- !
+    ! INITIALIZE VARIABLES
+    ! ---------------------------------------------------------- !
+
+    
+    ! ---------------------------------------------------------- !
+    ! FILTER BASIC DATA SAVING OPTIONS
+    ! ---------------------------------------------------------- !
+    ! basic options need not be specified as the defauls are adjusted as appropriate
+    ! => none of these parameters would typically appear in a user-config
+    ! NOTE: opt_select(iopt_select_carbchem) is used as a proxy in filtering for tracer selection beyond T+S and age
+    ! ---------------------------------------------------------- ! grid info saving
+    ! save grid etc. info
+    ! ctrl_data_save_grid = .true. [DEFAULT]
+    ! ---------------------------------------------------------- ! climate data
+    ! save climate-related data (e.g., atm T,Q, circulation, sea-ice, etc.)
+    ! NOTE: age tracer is automatically saved if selected
+    ! ctrl_data_save_climate = .true. [DEFAULT]
+    ! ---------------------------------------------------------- ! tracers
+    ! save basic atm, ocn, sed tracers
+    ! ctrl_data_save_tracers = .true. [DEFAULT]
+    IF (.NOT. opt_select(iopt_select_carbchem)) ctrl_data_save_tracers = .false.
+    ! ---------------------------------------------------------- ! carbonate chemsitry
+    ! NOTE: do not save carbonate chemsitry related data if carb chem tracers not selected
+    ! ctrl_data_save_carbchem = .true. [DEFAULT]
+    IF (.NOT. opt_select(iopt_select_carbchem)) ctrl_data_save_carbchem = .false.
+    ! ---------------------------------------------------------- ! 'biology'
+    ! NOTE: do not save export production data if a biological option is not selected
+    ! ctrl_data_save_bioexport = .true. [DEFAULT]
+    if (par_bio_prodopt == 'NONE') ctrl_data_save_bioexport = .false.
+    ! ---------------------------------------------------------- ! preformed tracers
+    ! always save preformed tracers if they are selected
+    ! ctrl_data_save_preformed = .true. [DEFAULT]
+    IF (.NOT. ctrl_bio_preformed) ctrl_data_save_preformed = .false.
+    ! ---------------------------------------------------------- !
+    ! FILTER ADVANCED DATA SAVING OPTIONS
+    ! ---------------------------------------------------------- !
+    ! advanced options are .false. by default (and are further filtered)
+    ! => only these parameters would typically appear in a user-config
+    ! NOTE: ctrl_data_save_tracers is now used as a proxy in filtering
+    ! ---------------------------------------------------------- ! complete 'physics'
+    if (.NOT. ctrl_data_save_climate) ctrl_data_save_physics = .false.
+    ! ---------------------------------------------------------- ! isotopes
+    ! save isotopes if they are selected and data saving is requested
+    ! NOTE: existence of isotopes is tested in data saving subroutines and we do not need to further filter
+    ! ctrl_data_save_isotopes = .false. [DEFAULT]
+    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_isotopes = .false.
+    ! ---------------------------------------------------------- ! biology
+    ! NOTE: do not save biology-related data if a biological option is not selected
+    ! ctrl_data_save_export = .false. [DEFAULT]
+    if (par_bio_prodopt == 'NONE') ctrl_data_save_biology = .false.
+    ! ---------------------------------------------------------- ! biopump
+    ! includes 3D fluxes
+    ! NOTE: do not save biological pump related data if a biological option is not selected
+    ! ctrl_data_save_biopump = .false. [DEFAULT]
+    if (par_bio_prodopt == 'NONE') ctrl_data_save_biopump = .false.
+    ! ---------------------------------------------------------- ! proxies
+    ! includes planktic-benthic
+    ! ctrl_data_save_proxies = .false. [DEFAULT]
+    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_proxies = .false.
+    ! ---------------------------------------------------------- ! geochem (+ redox)
+    ! includes redox fields
+    ! ctrl_data_save_geochem = .false. [DEFAULT]
+    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_geochem = .false.
+    ! ---------------------------------------------------------- ! sediments
+    ! includes rain, dissolution, and burial fluxes
+    ! NOTE: sediment composition is automatically saved if tracer saving is selected and SEDGEM is enabled
+    ! ctrl_data_save_sediments = .false. [DEFAULT]
+    if (.NOT. flag_sedgem) ctrl_data_save_sediments = .false.
+    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_sediments = .false.
+    ! ---------------------------------------------------------- ! further details
+    ! save further details for whatever is already selected (above)
+    ! NOTE: plus 'hidden' data fields
+    ! ctrl_data_save_more = .false. [DEFAULT]
+
+
+    
+
+
+
+
+
+    
+    ! ---------------------------------------------------------- !
+    ! END
+    ! ---------------------------------------------------------- !
+  END SUBROUTINE sub_filter_data_save
+  ! ****************************************************************************************************************************** !
+  
+
+  ! ****************************************************************************************************************************** !
   ! DATA SAVE META CONFIG
   SUBROUTINE sub_adj_par_save()
 

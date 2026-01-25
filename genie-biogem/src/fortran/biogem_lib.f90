@@ -663,6 +663,28 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_ncrst_name
   LOGICAL::ctrl_ncout_expid_name                                 ! align netCDF filenames with experiment name?
   NAMELIST /ini_biogem_nml/ctrl_ncout_expid_name
+  ! ------------------- SIMPLE DATA SAVING --------------------------------------------------------------------------------------- !
+  ! basic data saving
+  LOGICAL::ctrl_data_save_grid                                   ! 
+  LOGICAL::ctrl_data_save_climate                                ! 
+  LOGICAL::ctrl_data_save_tracers                                ! 
+  LOGICAL::ctrl_data_save_carbchem                               ! 
+  LOGICAL::ctrl_data_save_bioexport                              ! 
+  LOGICAL::ctrl_data_save_preformed                              ! 
+  NAMELIST /ini_biogem_nml/ctrl_data_save_grid,ctrl_data_save_climate,ctrl_data_save_tracers, &
+       & ctrl_data_save_carbchem,ctrl_data_save_bioexport,ctrl_data_save_preformed
+  ! advanced data saving
+  LOGICAL::ctrl_data_save_physics
+  LOGICAL::ctrl_data_save_isotopes 
+  LOGICAL::ctrl_data_save_biology                                ! 
+  LOGICAL::ctrl_data_save_biopump                                ! 
+  LOGICAL::ctrl_data_save_proxies                                ! 
+  LOGICAL::ctrl_data_save_geochem                                ! 
+  LOGICAL::ctrl_data_save_sediments                              ! 
+  LOGICAL::ctrl_data_save_more                                   ! 
+  LOGICAL::ctrl_data_save_misc                                   ! 
+  NAMELIST /ini_biogem_nml/ctrl_data_save_isotopes,ctrl_data_save_biology,ctrl_data_save_biopump,ctrl_data_save_proxies, &
+       & ctrl_data_save_geochem,ctrl_data_save_sediments,ctrl_data_save_more,ctrl_data_save_misc
   ! ------------------- DATA SAVING: TIME-SLICES --------------------------------------------------------------------------------- !
   LOGICAL::ctrl_data_save_slice_ocnatm                           ! time-slice data save: Atmospheric (interface) composition (2D)?
   LOGICAL::ctrl_data_save_slice_ocn                              ! time-slice data save: Ocean composition (3D)?
