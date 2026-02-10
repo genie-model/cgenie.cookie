@@ -5573,6 +5573,95 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>Align netCDF filenames with experiment name?</description>
                     </param>
+<!-- DATA SAVING: SIMPLIFIED SCHEME -->
+                    <param name="ctrl_save_basic_modelgrid">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_geochemicalcomposition">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_carbonatechemsitry">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_biologicalpump">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_interfacefluxes">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_geochemicalreactions">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_proxies">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_ALL">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_modelgrid">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_geochemicalcomposition">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_carbonatechemsitry">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_biologicalpump">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_interfacefluxes">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_geochemicalreactions">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_proxies">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_ALL">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_climate">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_preformedtracers">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_radiocarbon">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_diagnostics">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_genieexercises">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_ALL">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
 <!-- DATA SAVING: TIME-SLICES  -->
                     <param name="ctrl_data_save_slice_ocnatm">
 			<value datatype="boolean">.false.</value>

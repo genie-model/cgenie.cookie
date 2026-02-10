@@ -294,13 +294,13 @@ CONTAINS
     CASE (2)
        loc_it(1) = loc_id_lonm
        loc_it(2) = loc_id_latm
-       call sub_defvar('grid_level',dum_iou,2,loc_it(1:2),loc_c0,100.0,' ','I', &
+       call sub_defvar('axes_level',dum_iou,2,loc_it(1:2),loc_c0,100.0,' ','I', &
             & 'grid definition','model_level_number','n/a')
-       call sub_defvar ('grid_mask', dum_iou, 2, loc_it(1:2), loc_c0, 100.0, ' ', 'F', &
+       call sub_defvar ('axes_mask_landsea', dum_iou, 2, loc_it(1:2), loc_c0, 100.0, ' ', 'F', &
             &'land-sea mask', ' ' ,'n/a')
-       call sub_defvar ('grid_topo', dum_iou, 2, loc_it(1:2), loc_c0, 100000., ' ', 'F', &
+       call sub_defvar ('axes_topo', dum_iou, 2, loc_it(1:2), loc_c0, 100000., ' ', 'F', &
             &'ocean depth ', ' ' ,'m')
-       call sub_defvar ('grid_area', dum_iou, 2, loc_it(1:2), loc_c0, 0.5099044E+15, ' ', 'F', &
+       call sub_defvar ('axes_area', dum_iou, 2, loc_it(1:2), loc_c0, 0.5099044E+15, ' ', 'F', &
             &'grid area ', ' ' ,'m2')
     end select
     SELECT CASE (dum_dd)
@@ -308,15 +308,15 @@ CONTAINS
        loc_it(1) = loc_id_lonm
        loc_it(2) = loc_id_latm
        loc_it(3) = loc_id_zt
-       call sub_defvar('grid_level',dum_iou,2,loc_it(1:2),loc_c0,100.0,' ','I', &
+       call sub_defvar('axes_level',dum_iou,2,loc_it(1:2),loc_c0,100.0,' ','I', &
             & 'grid definition','model_level_number','n/a')
-       call sub_defvar ('grid_mask', dum_iou, 2, loc_it(1:2), loc_c0, 100.0, ' ', 'F', &
+       call sub_defvar ('axes_mask_landsea', dum_iou, 2, loc_it(1:2), loc_c0, 100.0, ' ', 'F', &
             &'land-sea mask', ' ' ,'n/a')
-       call sub_defvar ('grid_topo', dum_iou, 2, loc_it(1:2), loc_c0, 100000., ' ', 'F', &
+       call sub_defvar ('axes_topo', dum_iou, 2, loc_it(1:2), loc_c0, 100000., ' ', 'F', &
             &'ocean depth ', ' ' ,'m')
-       call sub_defvar ('grid_area', dum_iou, 2, loc_it(1:2), loc_c0, 0.5099044E+15, ' ', 'F', &
+       call sub_defvar ('axes_area', dum_iou, 2, loc_it(1:2), loc_c0, 0.5099044E+15, ' ', 'F', &
             &'grid area ', ' ' ,'m2')
-       call sub_defvar('grid_mask_3d',dum_iou,3,loc_it(1:3),loc_c0, 1.,' ','F', &
+       call sub_defvar('axes_mask_seafloor',dum_iou,3,loc_it(1:3),loc_c0, 1.,' ','F', &
             & 'ocean mask',' ','n/a')
     end select
     !-----------------------------------------------------------------------
@@ -480,27 +480,27 @@ CONTAINS
        ! write 2D grid data
        SELECT CASE (dum_dd)
        CASE (2)
-          call sub_putvar2dI ('grid_level', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2dI ('axes_level', loc_iou, n_i, n_j, loc_ntrec, &
                & goldstein_k1(:,:))
-          call sub_putvar2d ('grid_mask', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d ('axes_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('grid_topo', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d ('axes_topo', loc_iou, n_i, n_j, loc_ntrec, &
                & loc_data(:,:), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('grid_area', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d ('axes_area', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocnatm(ipoa_A,:,:), loc_mask_ALL)
        end select
        ! write 3D grid data
        SELECT CASE (dum_dd)
        CASE (3,4)
-          call sub_putvar2dI ('grid_level', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2dI ('axes_level', loc_iou, n_i, n_j, loc_ntrec, &
                & goldstein_k1(:,:))
-          call sub_putvar2d ('grid_mask', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d ('axes_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('grid_topo', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d ('axes_topo', loc_iou, n_i, n_j, loc_ntrec, &
                & loc_data(:,:), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('grid_area', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d ('axes_area', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocn(ipo_A,:,:,n_k), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar3d('grid_mask_3d',loc_iou,n_i,n_j,n_k,loc_ntrec, &
+          call sub_putvar3d('axes_mask_seafloor',loc_iou,n_i,n_j,n_k,loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k:1:-1),phys_ocn(ipo_mask_ocn,:,:,n_k:1:-1))
        end select
     end if
@@ -663,7 +663,7 @@ CONTAINS
     loc_ijk(:,:,:)  = 0.0
     loc_mask        = phys_ocn(ipo_mask_ocn,:,:,:)
     !----------------------------------------------------------------
-    !       SAVE OCEAN TRACER FIELD
+    !       OCEAN TRACER FIELD
     !----------------------------------------------------------------
     DO l=1,n_l_ocn
        io = conv_iselected_io(l)
@@ -691,21 +691,24 @@ CONTAINS
        end do
        SELECT CASE (ocn_type(io))
        CASE (0)
-          If (ctrl_data_save_climate) then
-             call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn_tname(l)), &
-                  & trim(string_ocn_tlname(l)),trim(string_ocn_unit(l)),ocn_mima(l,1),ocn_mima(l,2))
-             call sub_putvar3d_g('ocn_'//trim(string_ocn(io)),loc_iou,n_i,n_j,n_k, &
+          ! T,S
+          If (ctrl_save_hidden_climate) then
+             call sub_adddef_netcdf(loc_iou,4,'climate_'//trim(string_ocn_tname(l)), &
+                  & 'ocean climatology - '//trim(string_ocn_tlname(l)),trim(string_ocn_unit(l)),ocn_mima(l,1),ocn_mima(l,2))
+             call sub_putvar3d_g('climate_'//trim(string_ocn(io)),loc_iou,n_i,n_j,n_k, &
                   & loc_ntrec,loc_ijk(:,:,:),loc_mask)
           end if
        CASE (1)
-          If (ctrl_data_save_tracers) then
+          ! bulk tracers
+          If (ctrl_save_basic_geochemicalcomposition) then
              call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn_tname(l)), &
                   & trim(string_ocn_tlname(l)),trim(string_ocn_unit(l)),ocn_mima(l,1),ocn_mima(l,2))
              call sub_putvar3d_g('ocn_'//trim(string_ocn(io)),loc_iou,n_i,n_j,n_k, &
                   & loc_ntrec,loc_ijk(:,:,:),loc_mask)
           end if
        CASE (n_itype_min:n_itype_max)
-          If (ctrl_data_save_isotopes) then
+          ! isotopes
+          If (ctrl_save_basic_proxies) then
              call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn_tname(l)), &
                   & trim(string_ocn_tlname(l)),trim(string_ocn_unit(l)),ocn_mima(l,1),ocn_mima(l,2))
              call sub_putvar3d_g('ocn_'//trim(string_ocn(io)),loc_iou,n_i,n_j,n_k, &
@@ -731,7 +734,7 @@ CONTAINS
           end do
        end do
        loc_unitsname = 'o/oo'
-       If (ctrl_data_save_isotopes) then
+       If (ctrl_save_hidden_radiocarbon) then
           call sub_adddef_netcdf(loc_iou,4,'ocn_DIC_D14C', &
                & ' oceanic D14C (big delta)',trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('ocn_DIC_D14C',loc_iou,n_i,n_j,n_k, &
@@ -761,7 +764,7 @@ CONTAINS
           end do
        end do
        loc_unitsname = 'years'
-       If (ctrl_data_save_isotopes) then
+       If (ctrl_save_hidden_radiocarbon) then
           call sub_adddef_netcdf(loc_iou,4,'ocn_DIC_D14C_age', &
                & ' oceanic D14C age',trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('ocn_DIC_D14C_age',loc_iou,n_i,n_j,n_k, &
@@ -769,9 +772,9 @@ CONTAINS
        end if
     end if
     !----------------------------------------------------------------
-    !       SAVE SALINITY-NORMALIZED OCEAN TRACER FIELD
+    !       SALINITY-NORMALIZED OCEAN TRACER FIELD
     !----------------------------------------------------------------
-    If (ctrl_data_save_misc) then
+    If (ctrl_save_hidden_diagnostics) then
        loc_ocn_mean_S = SUM(int_ocn_timeslice(io_S,:,:,:)*phys_ocn(ipo_M,:,:,:))/SUM(phys_ocn(ipo_M,:,:,:))
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
@@ -800,7 +803,7 @@ CONTAINS
     !----------------------------------------------------------------
     !       SAVE TRACER INVENTORIES
     !----------------------------------------------------------------
-    If (ctrl_data_save_misc) then
+    If (ctrl_save_hidden_diagnostics) then
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
           loc_ijk(:,:,:) = const_real_zero
@@ -816,18 +819,29 @@ CONTAINS
              end DO
           end DO
           SELECT CASE (ocn_type(io))
-          CASE (1,n_itype_min:n_itype_max)
-             call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn(io))//'_tot', &
-                  & trim(string_ocn(io))//' volume integrated inventory',trim(loc_unitsname),const_real_zero,const_real_zero)
-             call sub_putvar3d_g('ocn_'//trim(string_ocn(io))//'_tot',loc_iou, &
-                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          CASE (1)
+             ! bulk tracers
+             If (ctrl_save_basic_geochemicalcomposition) then
+                call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn(io))//'_tot', &
+                     & trim(string_ocn(io))//' volume integrated inventory',trim(loc_unitsname),const_real_zero,const_real_zero)
+                call sub_putvar3d_g('ocn_'//trim(string_ocn(io))//'_tot',loc_iou, &
+                     & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+             end if
+          CASE (n_itype_min:n_itype_max)
+             ! isotopes
+             If (ctrl_save_basic_proxies) then
+                call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn(io))//'_tot', &
+                     & trim(string_ocn(io))//' volume integrated inventory',trim(loc_unitsname),const_real_zero,const_real_zero)
+                call sub_putvar3d_g('ocn_'//trim(string_ocn(io))//'_tot',loc_iou, &
+                     & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+             end if
           END SELECT
        END DO
     end If
     !----------------------------------------------------------------
     !       REMINERALIZATION FIELD
     !----------------------------------------------------------------
-    If (ctrl_data_save_biopump) then
+    If (ctrl_save_advanced_biologicalpump) then
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
           is = maxval(maxloc(abs(conv_DOM_POM(:,io))))-1
@@ -851,48 +865,107 @@ CONTAINS
                 end do
              end do
              SELECT CASE (ocn_type(io))
-             CASE (1,n_itype_min:n_itype_max)
-                call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn(io))//'_remin', &
-                     & 'remineralization flux - '//trim(string_ocn(io)), trim(loc_unitsname),const_real_zero,const_real_zero)
-                call sub_putvar3d_g('ocn_'//trim(string_ocn(io))//'_remin',loc_iou, &
-                     & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+             CASE (1)
+                ! bulk tracers
+                If (ctrl_save_basic_geochemicalcomposition) then
+                   call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn(io))//'_remin', &
+                        & 'remineralization flux - '//trim(string_ocn(io)), trim(loc_unitsname),const_real_zero,const_real_zero)
+                   call sub_putvar3d_g('ocn_'//trim(string_ocn(io))//'_remin',loc_iou, &
+                        & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+                end if
+             CASE (n_itype_min:n_itype_max)
+                ! isotopes
+                If (ctrl_save_basic_proxies) then
+                   call sub_adddef_netcdf(loc_iou,4,'ocn_'//trim(string_ocn(io))//'_remin', &
+                        & 'remineralization flux - '//trim(string_ocn(io)), trim(loc_unitsname),const_real_zero,const_real_zero)
+                   call sub_putvar3d_g('ocn_'//trim(string_ocn(io))//'_remin',loc_iou, &
+                        & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+                end if
              END SELECT
           end if
        END DO
     end if
     !----------------------------------------------------------------
-    !       OCEAN 'PHYSICS'
+    !       phys_ocn -- OCEAN GRID
     !----------------------------------------------------------------
-    If (ctrl_data_save_physics) then
+    if (ctrl_save_advanced_modelgrid) then
        DO ip=1,n_phys_ocn
           loc_ijk(:,:,:) = int_phys_ocn_timeslice(ip,:,:,:)/int_t_timeslice
-          call sub_adddef_netcdf(loc_iou,4,'phys_ocn_'//trim(string_phys_ocn(ip)), &
-               & 'ocean physical properties - '//trim(string_phys_ocn(ip)),' ',const_real_zero,const_real_zero)
-          call sub_putvar3d_g('phys_ocn_'//trim(string_phys_ocn(ip)),loc_iou, &
+          call sub_adddef_netcdf(loc_iou,4,'grid_'//trim(string_phys_ocn(ip)), &
+               & 'ocean grid - '//trim(string_phys_ocn(ip)),' ',const_real_zero,const_real_zero)
+          call sub_putvar3d_g('grid_'//trim(string_phys_ocn(ip)),loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       END DO
+    elseif (ctrl_save_basic_modelgrid) then
+       DO ip=1,n_phys_ocn
+          loc_ijk(:,:,:) = int_phys_ocn_timeslice(ip,:,:,:)/int_t_timeslice
+          SELECT CASE (ip)
+          CASE (ipo_dD,ipo_A,ipo_V,ipo_M) 
+             call sub_adddef_netcdf(loc_iou,4,'grid_'//trim(string_phys_ocn(ip)), &
+                  & 'ocean grid - '//trim(string_phys_ocn(ip)),' ',const_real_zero,const_real_zero)
+             call sub_putvar3d_g('grid_'//trim(string_phys_ocn(ip)),loc_iou, &
+                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          end SELECT
+       END DO
+    end if
+    !----------------------------------------------------------------
+    !       phys_ocn -- OCEAN 'CLIMATE'
+    !----------------------------------------------------------------
+    If (ctrl_save_hidden_climate) then
+       DO ip=1,n_phys_ocn
+          loc_ijk(:,:,:) = int_phys_ocn_timeslice(ip,:,:,:)/int_t_timeslice
+          SELECT CASE (ip)
+          CASE (ipo_rho,ipo_gu,ipo_gv,ipo_gw) 
+             call sub_adddef_netcdf(loc_iou,4,'climate_'//trim(string_phys_ocn(ip)), &
+                  & 'ocean climatology - '//trim(string_phys_ocn(ip)),' ',const_real_zero,const_real_zero)
+             call sub_putvar3d_g('climate_'//trim(string_phys_ocn(ip)),loc_iou, &
+                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          end SELECT
        END DO
     end if
     !----------------------------------------------------------------
     !       CARBONATE CHEMISTRY FIELD
     !----------------------------------------------------------------
-    If (ctrl_data_save_slice_carb) then
+    If (ctrl_save_basic_carbonatechemsitry) then
        DO ic=1,n_carb
           loc_ijk(:,:,:) = int_carb_timeslice(ic,:,:,:)/int_t_timeslice
           SELECT CASE (ic)
           CASE (ic_pHsws)
              loc_unitsname = 'pH(sws)'                
-          CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
+          CASE (ic_ohm_cal,ic_ohm_arg)
              loc_unitsname = 'n/a'
+          CASE (ic_RF0)
+             loc_unitsname = 'n/a' 
+          case default
+             loc_unitsname = 'mol kg-1'
+          end SELECT
+          SELECT CASE (ic)
+          CASE (ic_pHsws,ic_conc_CO2,ic_conc_CO3,ic_conc_HCO3,ic_ohm_cal,ic_ohm_arg,ic_RF0)
+             call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
+                  & 'carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar3d_g('carb_'//trim(string_carb(ic)),loc_iou, &
+                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          end SELECT
+       END DO
+    end if
+    If (ctrl_save_advanced_carbonatechemsitry) then
+       DO ic=1,n_carb
+          loc_ijk(:,:,:) = int_carb_timeslice(ic,:,:,:)/int_t_timeslice
+          SELECT CASE (ic)
           CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
              loc_unitsname = 'n/a' 
           case default
              loc_unitsname = 'mol kg-1'
           end SELECT
-          call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
-               & 'carbonate chemistry -- '//trim(string_longname_carb(ic)), &
-               & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('carb_'//trim(string_carb(ic)),loc_iou, &
-               & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          SELECT CASE (ic)
+          CASE (ic_H,ic_fug_CO2,ic_dCO3_cal,ic_dCO3_arg,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+             call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
+                  & 'carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar3d_g('carb_'//trim(string_carb(ic)),loc_iou, &
+                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          end SELECT
        END DO
        ! save accumulated carbchem error occurrence array
        loc_ijk(:,:,:) = diag_carb_errsum(:,:,:)
@@ -901,10 +974,31 @@ CONTAINS
        call sub_adddef_netcdf(loc_iou,4,trim(loc_shortname),trim(loc_longname),' ',const_real_zero,const_real_zero)
        call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end if
+    If (ctrl_save_hidden_diagnostics) then
+       DO ic=1,n_carb
+          loc_ijk(:,:,:) = int_carb_timeslice(ic,:,:,:)/int_t_timeslice
+          loc_unitsname = 'n/a'
+          SELECT CASE (ic)
+          CASE (ic_pH_n,ic_err)
+             call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
+                  & 'carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar3d_g('carb_'//trim(string_carb(ic)),loc_iou, &
+                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          end SELECT
+       END DO
+       ! save accumulated carbchem error occurrence array
+       loc_ijk(:,:,:) = diag_carb_errsum(:,:,:)
+       loc_unitsname = 'n/a'
+       loc_shortname = 'carb_errsum'
+       loc_longname  = 'carbonate chemistry -- '//'Summed occurrence of failure of the pH calculation.'
+       call sub_adddef_netcdf(loc_iou,4,trim(loc_shortname),trim(loc_longname),' ',const_real_zero,const_real_zero)
+       call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+    end if
     !----------------------------------------------------------------
     !       CARBONATE CHEMISTRY CONSTANTS (YAWN)
     !----------------------------------------------------------------
-    If (ctrl_data_save_carbchem .AND. ctrl_data_save_more) then
+    If (ctrl_save_advanced_carbonatechemsitry) then
        DO icc=1,n_carbconst
           loc_ijk(:,:,:) = int_carbconst_timeslice(icc,:,:,:)/int_t_timeslice
           call sub_adddef_netcdf(loc_iou,4, 'carb_const_'//trim(string_carbconst(icc)), &
@@ -913,11 +1007,85 @@ CONTAINS
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        END DO
     end if
+!!$    !-----------------------------------------------------------------------
+!!$    !       pH FIELD
+!!$    !-----------------------------------------------------------------------
+!!$    if (ctrl_save_basic_carbonatechemsitry) then
+!!$       loc_unitsname = 'pH units (SWS)'
+!!$       loc_ijk(:,:,:) = const_real_zero
+!!$       DO i=1,n_i
+!!$          DO j=1,n_j
+!!$             DO k=goldstein_k1(i,j),n_k
+!!$                loc_ijk(i,j,k) = -LOG10(int_carb_timeslice(ic_H,i,j,k)/int_t_timeslice)
+!!$             END DO
+!!$          END DO
+!!$       END DO
+!!$       call sub_adddef_netcdf(loc_iou,4,'misc_pH','ocean pH', &
+!!$            & trim(loc_unitsname),const_real_zero,const_real_zero)
+!!$       call sub_putvar3d_g('misc_pH',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+!!$    end if
+    !-----------------------------------------------------------------------
+    !       ocean carbonate system isotopic properties
+    !-----------------------------------------------------------------------
+    if (ctrl_save_advanced_carbonatechemsitry) then
+       if (ocn_select(io_DIC_13C)) then
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_CO2,i,j,k), &
+                        & int_carbisor_timeslice(ici_CO2_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO2,i,j,k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo', &
+               & const_real_zero,const_real_zero)
+          call sub_putvar3d_g('carb_d13C_CO2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          loc_ijk(:,:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_HCO3,i,j,k), &
+                        & int_carbisor_timeslice(ici_HCO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_HCO3,i,j,k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo', &
+               & const_real_zero,const_real_zero)
+          call sub_putvar3d_g('carb_d13C_HCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          loc_ijk(:,:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_CO3,i,j,k), &
+                        & int_carbisor_timeslice(ici_CO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO3,i,j,k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo', &
+               & const_real_zero,const_real_zero)
+          call sub_putvar3d_g('carb_d13C_CO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+    end If
     !----------------------------------------------------------------
     !       PARTICULATE CONCENTRATION FIELD
     !----------------------------------------------------------------
-    loc_sed_mask = loc_mask
-    If (ctrl_data_save_biopump .AND. ctrl_data_save_more) then
+    If (ctrl_save_advanced_biologicalpump .AND. ctrl_save_hidden_diagnostics) then
+       loc_sed_mask = loc_mask
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_ijk(:,:,:) = const_real_zero
@@ -947,12 +1115,16 @@ CONTAINS
           CASE (par_sed_type_bio,par_sed_type_abio, &
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
                & par_sed_type_scavenged,par_sed_type_frac)
-             call sub_adddef_netcdf(loc_iou,4,'bio_part_'//trim(string_sed(is)), &
-                  & 'particulate density - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-             call sub_putvar3d_g('bio_part_'//trim(string_sed(is)),loc_iou, &
-                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             ! bulk tracers
+             If (ctrl_save_basic_geochemicalcomposition) then
+                call sub_adddef_netcdf(loc_iou,4,'bio_part_'//trim(string_sed(is)), &
+                     & 'particulate density - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
+                call sub_putvar3d_g('bio_part_'//trim(string_sed(is)),loc_iou, &
+                     & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             end if
           CASE (n_itype_min:n_itype_max)
-             if (ctrl_data_save_isotopes) then
+             ! isotopes
+             If (ctrl_save_basic_proxies) then
                 call sub_adddef_netcdf(loc_iou,4,'bio_part_'//trim(string_sed(is)), &
                      & 'particulate density - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
                 call sub_putvar3d_g('bio_part_'//trim(string_sed(is)),loc_iou, &
@@ -964,7 +1136,7 @@ CONTAINS
     !----------------------------------------------------------------
     !       PARTICULATE FLUXES
     !----------------------------------------------------------------
-    If (ctrl_data_save_biopump) then
+    If (ctrl_save_advanced_biologicalpump) then
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_ijk(:,:,:) = const_real_zero
@@ -995,12 +1167,16 @@ CONTAINS
           CASE (par_sed_type_bio,par_sed_type_abio, &
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
                & par_sed_type_scavenged,par_sed_type_frac)
-             call sub_adddef_netcdf(loc_iou,4,'bio_fpart_'//trim(string_sed(is)), &
-                  & 'particulate flux (density) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-             call sub_putvar3d_g('bio_fpart_'//trim(string_sed(is)), loc_iou, &
-                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             ! bulk tracers
+             If (ctrl_save_basic_geochemicalcomposition) then
+                call sub_adddef_netcdf(loc_iou,4,'bio_fpart_'//trim(string_sed(is)), &
+                     & 'particulate flux (density) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
+                call sub_putvar3d_g('bio_fpart_'//trim(string_sed(is)), loc_iou, &
+                     & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             end if
           CASE (n_itype_min:n_itype_max)
-             if (ctrl_data_save_isotopes) then
+             ! isotopes
+             If (ctrl_save_basic_proxies) then
                 call sub_adddef_netcdf(loc_iou,4,'bio_fpart_'//trim(string_sed(is)), &
                      & 'particulate flux (density) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
                 call sub_putvar3d_g('bio_fpart_'//trim(string_sed(is)), loc_iou, &
@@ -1029,10 +1205,13 @@ CONTAINS
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
                & par_sed_type_scavenged, &
                & par_sed_type_frac)
-             call sub_adddef_netcdf(loc_iou,4,'bio_fparttot_'//trim(string_sed(is)), &
-                  & 'particulate flux (total) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-             call sub_putvar3d_g('bio_fparttot_'//trim(string_sed(is)), loc_iou, &
-                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             ! bulk tracers
+             If (ctrl_save_basic_geochemicalcomposition) then
+                call sub_adddef_netcdf(loc_iou,4,'bio_fparttot_'//trim(string_sed(is)), &
+                     & 'particulate flux (total) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
+                call sub_putvar3d_g('bio_fparttot_'//trim(string_sed(is)), loc_iou, &
+                     & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             end if
           end SELECT
           !---------------------------------------------------------- normalized flux
           DO i=1,n_i
@@ -1047,57 +1226,128 @@ CONTAINS
           end do
           SELECT CASE (sed_type(is))
           CASE (par_sed_type_bio,par_sed_type_det)
-             call sub_adddef_netcdf(loc_iou,4,'bio_fpartnorm_'//trim(string_sed(is)), &
-                  & 'export-normalized particulate flux - '//trim(string_sed(is)),'n/a',const_real_zero,const_real_zero)
-             call sub_putvar3d_g('bio_fpartnorm_'//trim(string_sed(is)),loc_iou, &
-                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             ! bulk tracers
+             If (ctrl_save_basic_geochemicalcomposition) then
+                call sub_adddef_netcdf(loc_iou,4,'bio_fpartnorm_'//trim(string_sed(is)), &
+                     & 'export-normalized particulate flux - '//trim(string_sed(is)),'n/a',const_real_zero,const_real_zero)
+                call sub_putvar3d_g('bio_fpartnorm_'//trim(string_sed(is)),loc_iou, &
+                     & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_sed_mask)
+             end if
           end SELECT
+          !
        END DO
+       !---------------------------------------------------------- CaCO3:POC 'rain ratio'
+       IF (sed_select(is_CaCO3) .AND. sed_select(is_POC)) THEN
+          loc_unitsname = 'n/a'
+          loc_ijk(:,:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (int_bio_settle_timeslice(is_POC,i,j,k) > const_real_nullsmall) then
+                      loc_ijk(i,j,k) = int_bio_settle_timeslice(is_CaCO3,i,j,k)/int_bio_settle_timeslice(is_POC,i,j,k)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'misc_rCaCO3toPOC','CaCO3 to POC rain ratio', &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g('misc_rCaCO3toPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end IF
+       !---------------------------------------------------------- opal:POC 'rain ratio'
+       IF (sed_select(is_opal) .AND. sed_select(is_POC)) THEN
+          loc_unitsname = 'n/a'
+          loc_ijk(:,:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (int_bio_settle_timeslice(is_POC,i,j,k) > const_real_nullsmall) then
+                      loc_ijk(i,j,k) = int_bio_settle_timeslice(is_opal,i,j,k)/int_bio_settle_timeslice(is_POC,i,j,k)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'misc_ropaltoPOC','opal to POC rain ratio', &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g('misc_ropaltoPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end IF
+       !---------------------------------------------------------- Particulate flux fractions
+       IF (sed_select(is_POC_frac2)) THEN
+          loc_unitsname = 'n/a'
+          loc_ijk(:,:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = int_bio_settle_timeslice(is_POC_frac2,i,j,k)/real(int_t_timeslice_count)
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'misc_frac2_POC','POC fraction #2', &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g('misc_frac2_POC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end IF
+       IF (sed_select(is_CaCO3_frac2)) THEN
+          loc_unitsname = 'n/a'
+          loc_ijk(:,:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = int_bio_settle_timeslice(is_CaCO3_frac2,i,j,k)/real(int_t_timeslice_count)
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'misc_frac2_CaCO3','CaCO3 fraction #2', &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g('misc_frac2_CaCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end IF
+       IF (sed_select(is_opal_frac2)) THEN
+          loc_unitsname = 'n/a'
+          loc_ijk(:,:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = int_bio_settle_timeslice(is_opal_frac2,i,j,k)/real(int_t_timeslice_count)
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'misc_frac2_opal','opal fraction #2', &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g('misc_frac2_opal',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end IF
     end if
-!!$    !----------------------------------------------------------------
-!!$    ! GEOCHEMICAL DIAGNOSTICS -- OLD
-!!$    !----------------------------------------------------------------
-!!$    If (ctrl_data_save_slice_diag_redox_old) then
-!!$       loc_unitsname = 'mol kg-1 yr-1'
-!!$       DO id=1,n_diag_geochem_old
-!!$          loc_ijk(:,:,:) = int_diag_geochem_old_timeslice(id,:,:,:)/int_t_timeslice
-!!$          call sub_adddef_netcdf(loc_iou,4,'diag_'//trim(string_diag_geochem_old(id)), &
-!!$               & 'production/oxidation rate - '//trim(string_diag_geochem_old(id)), &
-!!$               & trim(loc_unitsname),const_real_zero,const_real_zero)
-!!$          call sub_putvar3d_g('diag_'//trim(string_diag_geochem_old(id)),loc_iou, &
-!!$               & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-!!$       end DO
-!!$    end If
     !----------------------------------------------------------------
     ! GEOCHEMICAL DIAGNOSTICS -- PRECIP
     !----------------------------------------------------------------
-    If (ctrl_data_save_geochem) then
+    If (ctrl_save_basic_geochemicalreactions) then
        loc_unitsname = 'mol kg-1 yr-1'
        DO id=1,n_diag_precip
           loc_ijk(:,:,:) = int_diag_precip_timeslice(id,:,:,:)/int_t_timeslice
-          call sub_adddef_netcdf(loc_iou,4,'diag_'//trim(string_diag_precip(id)), &
-               & 'production rate - '//trim(string_diag_precip(id)),trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('diag_'//trim(string_diag_precip(id)),loc_iou, &
-               & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          if (ctrl_save_n_diag_precip(id)) then
+             call sub_adddef_netcdf(loc_iou,4,'diag_'//trim(string_diag_precip(id)), &
+                  & 'production rate - '//trim(string_diag_precip(id)),trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar3d_g('diag_'//trim(string_diag_precip(id)),loc_iou, &
+                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          end if
        end DO
     end If
     !----------------------------------------------------------------
     ! GEOCHEMICAL DIAGNOSTICS -- REACTION
     !----------------------------------------------------------------
-    If (ctrl_data_save_geochem) then
+    If (ctrl_save_basic_geochemicalreactions) then
        loc_unitsname = 'mol kg-1 yr-1'
        DO id=1,n_diag_react
           loc_ijk(:,:,:) = int_diag_react_timeslice(id,:,:,:)/int_t_timeslice
-          call sub_adddef_netcdf(loc_iou,4,'diag_'//trim(string_diag_react(id)), &
-               & 'reaction rate - '//trim(string_diag_react(id)),trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('diag_'//trim(string_diag_react(id)),loc_iou, &
-               & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          if (ctrl_save_n_diag_react(id)) then
+             call sub_adddef_netcdf(loc_iou,4,'diag_'//trim(string_diag_react(id)), &
+                  & 'reaction rate - '//trim(string_diag_react(id)),trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar3d_g('diag_'//trim(string_diag_react(id)),loc_iou, &
+                  & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          end if
        end DO
     end If
     !----------------------------------------------------------------
     ! GEOCHEMICAL DIAGNOSTICS -- REDOX
     !----------------------------------------------------------------
-    If (ctrl_data_save_geochem) then
+    If (ctrl_save_advanced_geochemicalreactions) then
        loc_unitsname = 'mol kg-1 yr-1'
        DO id=1,n_diag_redox
           loc_ijk(:,:,:) = int_diag_redox_timeslice(id,:,:,:)/int_t_timeslice
@@ -1111,17 +1361,27 @@ CONTAINS
     ! COLOR AGE TRACER
     !----------------------------------------------------------------
     ! NOTE: automatically save if ctrl_force_ocn_age = .true. is set
-    If (ctrl_force_ocn_age) then
+    If (ctrl_save_hidden_preformedtracers) then
        loc_unitsname = 'yrs'
        loc_ijk(:,:,:) = int_ocn_timeslice(io_colr,:,:,:)/int_t_timeslice
        call sub_adddef_netcdf(loc_iou,4,'misc_age','color tracer; ventilation age','(yrs)',const_real_zero,const_real_zero)
        call sub_putvar3d_g('misc_age',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end If
-    !----------------------------------------------------------------
-    !       OCEAN VELOCITY FIELD
-    !----------------------------------------------------------------
-    If (ctrl_data_save_climate) CALL sub_save_netcdf_goldstein_u()
-    !----------------------------------------------------------------
+!!$    !----------------------------------------------------------------
+!!$    !       OCEAN VELOCITY FIELD
+!!$    !----------------------------------------------------------------
+!!$    If (ctrl_save_hidden_climate) CALL sub_save_netcdf_goldstein_u()
+!!$    !----------------------------------------------------------------
+!!$    !----------------------------------------------------------------
+!!$    !       USED-DEFINED Fe-related FIELDS
+!!$    !----------------------------------------------------------------
+!!$    CALL sub_save_netcdf_3d_Fe()
+!!$    !----------------------------------------------------------------
+!!$    !----------------------------------------------------------------
+!!$    !       USED-DEFINED proxy-related FIELDS
+!!$    !----------------------------------------------------------------
+!!$    CALL sub_save_netcdf_3d_proxy()
+!!$    !----------------------------------------------------------------
     !----------------------------------------------------------------
     !       USED-DEFINED (MISC) FIELDS
     !----------------------------------------------------------------
@@ -1167,113 +1427,6 @@ CONTAINS
     loc_ij(:,:)     = 0.0
     loc_ijk(:,:,:)  = 0.0
     loc_mask(:,:,:) = phys_ocn(ipo_mask_ocn,:,:,:)
-    !-----------------------------------------------------------------------
-    !       pH FIELD
-    !-----------------------------------------------------------------------
-    if (ctrl_data_save_carbchem) then
-       loc_unitsname = 'pH units (SWS)'
-       IF (opt_select(iopt_select_carbchem)) THEN
-          loc_ijk(:,:,:) = const_real_zero
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = -LOG10(int_carb_timeslice(ic_H,i,j,k)/int_t_timeslice)
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'misc_pH','ocean pH', &
-               & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('misc_pH',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end if
-    end if
-    !-----------------------------------------------------------------------
-    !       CaCO3:POC 'rain ratio'
-    !-----------------------------------------------------------------------
-    IF (ctrl_data_save_biopump) THEN
-       loc_unitsname = 'n/a'
-       IF (sed_select(is_CaCO3) .AND. sed_select(is_POC)) THEN
-          loc_ijk(:,:,:) = const_real_null
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   if (int_bio_settle_timeslice(is_POC,i,j,k) > const_real_nullsmall) then
-                      loc_ijk(i,j,k) = int_bio_settle_timeslice(is_CaCO3,i,j,k)/int_bio_settle_timeslice(is_POC,i,j,k)
-                   end if
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'misc_rCaCO3toPOC','CaCO3 to POC rain ratio', &
-               & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('misc_rCaCO3toPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end IF
-    end if
-    !-----------------------------------------------------------------------
-    !       opal:POC 'rain ratio'
-    !-----------------------------------------------------------------------
-    IF (ctrl_data_save_biopump) THEN
-       loc_unitsname = 'n/a'
-       IF (sed_select(is_opal) .AND. sed_select(is_POC)) THEN
-          loc_ijk(:,:,:) = const_real_null
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   if (int_bio_settle_timeslice(is_POC,i,j,k) > const_real_nullsmall) then
-                      loc_ijk(i,j,k) = int_bio_settle_timeslice(is_opal,i,j,k)/int_bio_settle_timeslice(is_POC,i,j,k)
-                   end if
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'misc_ropaltoPOC','opal to POC rain ratio', &
-               & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('misc_ropaltoPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end IF
-    end if
-    !-----------------------------------------------------------------------
-    !       Particulate flux fractions
-    !-----------------------------------------------------------------------
-    ! NOTE: divied by real(int_t_timeslice_count) because the flux arrays has been integrated (rather than averaged)
-    IF (ctrl_data_save_biopump) THEN
-       loc_unitsname = 'n/a'
-       IF (sed_select(is_POC_frac2)) THEN
-          loc_ijk(:,:,:) = const_real_null
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = int_bio_settle_timeslice(is_POC_frac2,i,j,k)/real(int_t_timeslice_count)
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'misc_frac2_POC','POC fraction #2', &
-               & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('misc_frac2_POC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end IF
-       IF (sed_select(is_CaCO3_frac2)) THEN
-          loc_ijk(:,:,:) = const_real_null
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = int_bio_settle_timeslice(is_CaCO3_frac2,i,j,k)/real(int_t_timeslice_count)
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'misc_frac2_CaCO3','CaCO3 fraction #2', &
-               & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('misc_frac2_CaCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end IF
-       IF (sed_select(is_opal_frac2)) THEN
-          loc_ijk(:,:,:) = const_real_null
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = int_bio_settle_timeslice(is_opal_frac2,i,j,k)/real(int_t_timeslice_count)
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'misc_frac2_opal','opal fraction #2', &
-               & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar3d_g('misc_frac2_opal',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end IF
-    end if
     !-----------------------------------------------------------------------
     !       Cd trace metal ratios (in sea-water)
     !-----------------------------------------------------------------------
@@ -1478,78 +1631,21 @@ CONTAINS
        call sub_putvar3d_g('ocn_Sr_d88Sr',loc_iou, &
             & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end If
-    !-----------------------------------------------------------------------
-    !       misc 'physics'
-    !-----------------------------------------------------------------------
-    If (ctrl_data_save_slice_misc) then
-       ! NOTE: save selected ocean 'physics' as an alternative to having to select to save ALL of the ocean physical properties
-       loc_ijk(:,:,:) = int_phys_ocn_timeslice(ipo_rho,:,:,:)/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,4,'misc_rho','ocean density','kg m-3',const_real_zero,const_real_zero)
-       call sub_putvar3d_g('misc_rho',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       loc_ijk(:,:,:) = int_phys_ocn_timeslice(ipo_A,:,:,:)/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,4,'grid_A','ocean cell surface area','m2',const_real_zero,const_real_zero)
-       call sub_putvar3d_g('grid_A',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       loc_ijk(:,:,:) = int_phys_ocn_timeslice(ipo_dD,:,:,:)/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,4,'grid_dD','ocean cell thickness','m2',const_real_zero,const_real_zero)
-       call sub_putvar3d_g('grid_dD',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-    end If
-    !-----------------------------------------------------------------------
-    !       ocean carbonate system isotopic properties
-    !-----------------------------------------------------------------------
-    If (ctrl_data_save_slice_carb) then
-       if (ocn_select(io_DIC_13C)) then
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
-                        & int_carb_timeslice(ic_conc_CO2,i,j,k), &
-                        & int_carbisor_timeslice(ici_CO2_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO2,i,j,k), &
-                        & const_standards(11), &
-                        & .FALSE., &
-                        & const_real_null &
-                        & )
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo', &
-               & const_real_zero,const_real_zero)
-          call sub_putvar3d_g('carb_d13C_CO2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-          loc_ijk(:,:,:) = const_real_zero
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
-                        & int_carb_timeslice(ic_conc_HCO3,i,j,k), &
-                        & int_carbisor_timeslice(ici_HCO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_HCO3,i,j,k), &
-                        & const_standards(11), &
-                        & .FALSE., &
-                        & const_real_null &
-                        & )
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo', &
-               & const_real_zero,const_real_zero)
-          call sub_putvar3d_g('carb_d13C_HCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-          loc_ijk(:,:,:) = const_real_zero
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
-                        & int_carb_timeslice(ic_conc_CO3,i,j,k), &
-                        & int_carbisor_timeslice(ici_CO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO3,i,j,k), &
-                        & const_standards(11), &
-                        & .FALSE., &
-                        & const_real_null &
-                        & )
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo', &
-               & const_real_zero,const_real_zero)
-          call sub_putvar3d_g('carb_d13C_CO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end if
-    end If
+!!$    !-----------------------------------------------------------------------
+!!$    !       misc 'physics'
+!!$    !-----------------------------------------------------------------------
+!!$    If (ctrl_data_save_slice_misc) then
+!!$       ! NOTE: save selected ocean 'physics' as an alternative to having to select to save ALL of the ocean physical properties
+!!$       loc_ijk(:,:,:) = int_phys_ocn_timeslice(ipo_rho,:,:,:)/int_t_timeslice
+!!$       call sub_adddef_netcdf(loc_iou,4,'misc_rho','ocean density','kg m-3',const_real_zero,const_real_zero)
+!!$       call sub_putvar3d_g('misc_rho',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+!!$       loc_ijk(:,:,:) = int_phys_ocn_timeslice(ipo_A,:,:,:)/int_t_timeslice
+!!$       call sub_adddef_netcdf(loc_iou,4,'grid_A','ocean cell surface area','m2',const_real_zero,const_real_zero)
+!!$       call sub_putvar3d_g('grid_A',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+!!$       loc_ijk(:,:,:) = int_phys_ocn_timeslice(ipo_dD,:,:,:)/int_t_timeslice
+!!$       call sub_adddef_netcdf(loc_iou,4,'grid_dD','ocean cell thickness','m2',const_real_zero,const_real_zero)
+!!$       call sub_putvar3d_g('grid_dD',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+!!$    end If
     !-----------------------------------------------------------------------
     ! ocean carbonate system isotopic properties -- proxies
     !-----------------------------------------------------------------------
@@ -2697,9 +2793,9 @@ CONTAINS
        end if
     end if
     !----------------------------------------------------------------
-    ! PARTICULATE FLUXES -- surface
+    ! PARTICULATE FLUXES -- surface export
     !----------------------------------------------------------------
-    If (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_bio) then
+    If (ctrl_save_basic_biologicalpump) then
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_ij(:,:) = const_real_zero
@@ -2738,23 +2834,26 @@ CONTAINS
              call sub_putvar2d('bio_fdexport_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           end SELECT
           !---------------------------------------------------------- flux
-          ! simply multiply bulk (flux density) array by area again
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio, &
-               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged)
-             loc_ij(:,:) = phys_ocn(ipo_A,:,:,n_k)*loc_ij(:,:)
-             loc_unitsname = 'mol yr-1'
-             call sub_adddef_netcdf(loc_iou,3,'bio_fexport_'//trim(string_sed(is)), &
-                  & 'particulate biological export (flux) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-             call sub_putvar2d('bio_fexport_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
-          end SELECT
+          If (ctrl_save_basic_biologicalpump) then
+             ! simply multiply bulk (flux density) array by area again
+             SELECT CASE (sed_type(is))
+             CASE (par_sed_type_bio,par_sed_type_abio, &
+                  & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+                  & par_sed_type_scavenged)
+                loc_ij(:,:) = phys_ocn(ipo_A,:,:,n_k)*loc_ij(:,:)
+                loc_unitsname = 'mol yr-1'
+                call sub_adddef_netcdf(loc_iou,3,'bio_fexport_'//trim(string_sed(is)), &
+                     & 'particulate biological export (flux) - '//trim(string_sed(is)), &
+                     & loc_unitsname,const_real_zero,const_real_zero)
+                call sub_putvar2d('bio_fexport_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+             end SELECT
+          end if
        end do
     end if
     !----------------------------------------------------------------
     ! PARTICULATE FLUXES -- benthic
     !----------------------------------------------------------------
-    If (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_bio) then
+    If (ctrl_save_basic_biologicalpump) then
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_ij(:,:) = const_real_zero
@@ -2793,18 +2892,21 @@ CONTAINS
              call sub_putvar2d('biosed_fdrain_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           end SELECT
           !---------------------------------------------------------- flux
-          ! simply multiply bulk (flux density) array by area again
-          ! NOTE: being lazy ... simply multiplying by surface area ...
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio, &
-               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged)
-             loc_ij(:,:) = phys_ocn(ipo_A,:,:,n_k)*loc_ij(:,:)
-             loc_unitsname = 'mol yr-1'
-             call sub_adddef_netcdf(loc_iou,3,'biosed_frain_'//trim(string_sed(is)), &
-                  & 'particulate sediment rain (flux) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-             call sub_putvar2d('biosed_frain_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
-          end SELECT
+          If (ctrl_save_basic_biologicalpump) then
+             ! simply multiply bulk (flux density) array by area again
+             ! NOTE: being lazy ... simply multiplying by surface area ...
+             SELECT CASE (sed_type(is))
+             CASE (par_sed_type_bio,par_sed_type_abio, &
+                  & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+                  & par_sed_type_scavenged)
+                loc_ij(:,:) = phys_ocn(ipo_A,:,:,n_k)*loc_ij(:,:)
+                loc_unitsname = 'mol yr-1'
+                call sub_adddef_netcdf(loc_iou,3,'biosed_frain_'//trim(string_sed(is)), &
+                     & 'particulate sediment rain (flux) - '//trim(string_sed(is)), &
+                     & loc_unitsname,const_real_zero,const_real_zero)
+                call sub_putvar2d('biosed_frain_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+             end SELECT
+          end if
        end do
     end if
     !-----------------------------------------------------------------------
@@ -4112,44 +4214,44 @@ CONTAINS
   ! ****************************************************************************************************************************** !
 
 
-  ! ****************************************************************************************************************************** !
-  ! *** save velocity field data ***
-  SUBROUTINE sub_save_netcdf_goldstein_u()
-    !-----------------------------------------------------------------------
-    !       DEFINE LOCAL VARIABLES
-    !-----------------------------------------------------------------------
-    real,DIMENSION(n_i,n_j,n_k)::loc_ijk,loc_mask
-    real::loc_c100
-    INTEGER::loc_iou,loc_ntrec
-    !-----------------------------------------------------------------------
-    !       INITIALIZE LOCAL VARIABLES
-    !-----------------------------------------------------------------------
-    loc_iou = ncout3d_iou
-    loc_ntrec = ncout3d_ntrec
-    loc_c100 = 100.0
-    !-----------------------------------------------------------------------
-    !       WRITE OCEAN CIRCULATION FIELDS
-    !-----------------------------------------------------------------------
-    ! NOTE: scale to give velocity components in units of (m s-1);
-    !       for the horizontal velocity components, the scale factor is usc (= 0.05) [Edwards and Shepherd, 2002]
-    !       for the vertical velocity component, the overall scale factor is usc*dsc/rsc
-    !       (= 0.05*5000.0/6.36e6) [Edwards and Shepherd, 2002]
-    loc_mask = phys_ocn(ipo_mask_ocn,:,:,:)
-    !
-    loc_ijk(:,:,:) = goldstein_usc*int_u_timeslice(1,:,:,:)/int_t_timeslice
-    call sub_adddef_netcdf(loc_iou,4,'phys_u','ocean velocity - u','m/s',-loc_c100,loc_c100)
-    call sub_putvar3d_g('phys_u',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-    !
-    loc_ijk(:,:,:) = goldstein_usc*int_u_timeslice(2,:,:,:)/int_t_timeslice
-    call sub_adddef_netcdf(loc_iou,4,'phys_v','ocean velocity - v', 'm/s',-loc_c100,loc_c100)
-    call sub_putvar3d_g('phys_v',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-    !
-    loc_ijk(:,:,:) = (goldstein_usc*goldstein_dsc/const_rEarth)*int_u_timeslice(3,:,:,:)/int_t_timeslice
-    call sub_adddef_netcdf(loc_iou,4,'phys_w','ocean velocity - w', 'm/s',-loc_c100,loc_c100)
-    call sub_putvar3d_g('phys_w',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-    !-----------------------------------------------------------------------
-  END SUBROUTINE sub_save_netcdf_goldstein_u
-  ! ****************************************************************************************************************************** !
+!!$  ! ****************************************************************************************************************************** !
+!!$  ! *** save velocity field data ***
+!!$  SUBROUTINE sub_save_netcdf_goldstein_u()
+!!$    !-----------------------------------------------------------------------
+!!$    !       DEFINE LOCAL VARIABLES
+!!$    !-----------------------------------------------------------------------
+!!$    real,DIMENSION(n_i,n_j,n_k)::loc_ijk,loc_mask
+!!$    real::loc_c100
+!!$    INTEGER::loc_iou,loc_ntrec
+!!$    !-----------------------------------------------------------------------
+!!$    !       INITIALIZE LOCAL VARIABLES
+!!$    !-----------------------------------------------------------------------
+!!$    loc_iou = ncout3d_iou
+!!$    loc_ntrec = ncout3d_ntrec
+!!$    loc_c100 = 100.0
+!!$    !-----------------------------------------------------------------------
+!!$    !       WRITE OCEAN CIRCULATION FIELDS
+!!$    !-----------------------------------------------------------------------
+!!$    ! NOTE: scale to give velocity components in units of (m s-1);
+!!$    !       for the horizontal velocity components, the scale factor is usc (= 0.05) [Edwards and Shepherd, 2002]
+!!$    !       for the vertical velocity component, the overall scale factor is usc*dsc/rsc
+!!$    !       (= 0.05*5000.0/6.36e6) [Edwards and Shepherd, 2002]
+!!$    loc_mask = phys_ocn(ipo_mask_ocn,:,:,:)
+!!$    !
+!!$    loc_ijk(:,:,:) = goldstein_usc*int_u_timeslice(1,:,:,:)/int_t_timeslice
+!!$    call sub_adddef_netcdf(loc_iou,4,'phys_u','ocean velocity - u','m/s',-loc_c100,loc_c100)
+!!$    call sub_putvar3d_g('phys_u',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+!!$    !
+!!$    loc_ijk(:,:,:) = goldstein_usc*int_u_timeslice(2,:,:,:)/int_t_timeslice
+!!$    call sub_adddef_netcdf(loc_iou,4,'phys_v','ocean velocity - v', 'm/s',-loc_c100,loc_c100)
+!!$    call sub_putvar3d_g('phys_v',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+!!$    !
+!!$    loc_ijk(:,:,:) = (goldstein_usc*goldstein_dsc/const_rEarth)*int_u_timeslice(3,:,:,:)/int_t_timeslice
+!!$    call sub_adddef_netcdf(loc_iou,4,'phys_w','ocean velocity - w', 'm/s',-loc_c100,loc_c100)
+!!$    call sub_putvar3d_g('phys_w',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+!!$    !-----------------------------------------------------------------------
+!!$  END SUBROUTINE sub_save_netcdf_goldstein_u
+!!$  ! ****************************************************************************************************************************** !
 
 
 END MODULE biogem_data_netCDF

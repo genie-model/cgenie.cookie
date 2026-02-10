@@ -179,6 +179,7 @@ subroutine biogem(        &
      DO l=3,n_l_atm
         ia = conv_iselected_ia(l)
         IF (force_restore_atm_select(ia)) THEN
+           IF (ctrl_debug_lvl1) print*,ia
            loc_force_restore_atm_tmod(ia) = 1.0 - EXP(-loc_dtyr/force_restore_atm_tconst(ia))
         END IF
      END DO
@@ -186,10 +187,12 @@ subroutine biogem(        &
      DO l=1,n_l_ocn
         io = conv_iselected_io(l)
         IF (force_restore_ocn_select(io)) THEN
+           IF (ctrl_debug_lvl1) print*,io
            loc_force_restore_ocn_tmod(io) = 1.0 - EXP(-loc_dtyr/force_restore_ocn_tconst(io))
         END IF
      END DO
 
+     IF (ctrl_debug_lvl1) print*, '*** UPDATE DERIVED FORCING DATA ***'
      ! *** UPDATE DERIVED FORCING DATA ***
      loc_n_k_tot               = 0
      loc_k_tot_icefree         = 0.0
@@ -417,6 +420,8 @@ subroutine biogem(        &
      ! ****************************************************************************************************************************
      ! ****************************************************************************************************************************
 
+     IF (ctrl_debug_lvl1) print*,'*** ORIGINAL CODE FRAGMENT  ***'
+              
      ! *** ORIGINAL CODE FRAGMENT *************************************************************************************************
      DO i=1,n_i
         DO j=1,n_j

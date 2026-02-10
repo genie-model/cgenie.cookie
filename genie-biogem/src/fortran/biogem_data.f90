@@ -466,6 +466,30 @@ CONTAINS
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
        print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
+       ! --- DATA SAVING: SIMPLIFIED SCHEME -------------------------------------------------------------------------------------- !
+       print*,'--- DATA SAVING: SIMPLIFIED SCHEME -----------------'
+       print*,'save area, volumn, mass?                            : ',ctrl_save_basic_modelgrid
+       print*,'save atm, ocn, sed tracer fields?                   : ',ctrl_save_basic_geochemicalcomposition
+       print*,'save basic carb chem?                               : ',ctrl_save_basic_carbonatechemsitry
+       print*,'save 2D export, 3D flux field?                      : ',ctrl_save_basic_biologicalpump
+       print*,'save ocn-atm, ocn-sed, weathering?                  : ',ctrl_save_basic_interfacefluxes
+       print*,'save O2/NO3/SO4 remin summary?                      : ',ctrl_save_basic_geochemicalreactions
+       print*,'save trace-metal ratios?                            : ',ctrl_save_basic_proxies
+       print*,'                                                    : ',ctrl_save_basic_ALL
+       print*,'save (all other phys array variables)?              : ',ctrl_save_advanced_modelgrid
+       print*,'save inventories?                                   : ',ctrl_save_advanced_geochemicalcomposition
+       print*,'save diagnostic fields, dissociation constants?     : ',ctrl_save_advanced_carbonatechemsitry
+       print*,'save controls on export, fluxes in other units?     : ',ctrl_save_advanced_biologicalpump
+       print*,'save forcing fluxes?                                : ',ctrl_save_advanced_interfacefluxes
+       print*,'save reactions, remineralization pathways?          : ',ctrl_save_advanced_geochemicalreactions
+       print*,'save tracer isotopic properties (if selected)?      : ',ctrl_save_advanced_proxies
+       print*,'                                                    : ',ctrl_save_advanced_ALL
+       print*,'save velocity fields, OPSI/PSI?                     : ',ctrl_save_hidden_climate
+       print*,'save preformed tracers if selected?                 : ',ctrl_save_hidden_preformedtracers
+       print*,'save radiocarbon if selected?                       : ',ctrl_save_hidden_radiocarbon
+       print*,'save 2D tracer column inventories, S-normalized?    : ',ctrl_save_hidden_diagnostics
+       print*,'save CO2 column inventory ?                         : ',ctrl_save_hidden_genieexercises
+       print*,'                                                    : ',ctrl_save_hidden_ALL
        ! --- DATA SAVING: TIME-SLICES -------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: TIME-SLICES ----------------'
        print*,'Atmospheric (interface) composition (2D)?           : ',ctrl_data_save_slice_ocnatm
@@ -3274,94 +3298,197 @@ CONTAINS
 
   ! ****************************************************************************************************************************** !
   ! DATA SAVE OPTION FILTERING
-  SUBROUTINE sub_filter_data_save()
-    ! ----------------------------------------------------- !
-    ! DEFINE LOCAL VARIABLES
+  SUBROUTINE sub_filter_data_save()    
     ! ---------------------------------------------------------- !
-    
+    ! INITIALIZE ITEMIZED SAVING
     ! ---------------------------------------------------------- !
-    ! INITIALIZE VARIABLES
+    ! ---------------------------------------------------------- ! reactions
+    ctrl_save_n_diag_precip = .false.
+    if (sed_select(is_FeS2)) then
+       ctrl_save_n_diag_precip(idiag_precip_FeS2_dFe) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_FeS2_dH2S) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_FeS2_dSO4) = .true.
+    end if
+    if (sed_select(is_FeCO3)) then
+       ctrl_save_n_diag_precip(idiag_precip_FeCO3_dFe) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_FeCO3_dDIC) = .true.
+    end if
+    if (sed_select(is_FeOOH)) then
+       ctrl_save_n_diag_precip(idiag_precip_FeOOH_dFe) = .true.
+    end if
+    if (sed_select(is_Fe3Si2O4)) then
+       ctrl_save_n_diag_precip(idiag_precip_Fe3Si2O4_dFe) = .true.
+    end if
+    if (sed_select(is_Fe3PO42)) then
+       ctrl_save_n_diag_precip(idiag_precip_Fe3PO42_dFe) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_Fe3PO42_dPO4) = .true.
+    end if
+    ctrl_save_n_diag_react = .false.
+    if (sed_select(is_POM_S)) then
+       ctrl_save_n_diag_react(idiag_react_POMS_dH2S) = .true.
+    end if
+    if (sed_select(is_FeOOH)) then
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dFe2) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dH2S) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dSO4) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dALK) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dPO4) = .true.
+    end if
+    if (sed_select(is_POM_FeOOH)) then
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dFe2) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dH2S) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dSO4) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dALK) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dPO4) = .true.
+    end if
+    ! IMPOSE META SELECTIONS
     ! ---------------------------------------------------------- !
-
+    if (ctrl_save_basic_ALL) then
+       ctrl_save_basic_modelgrid = .true.
+       ctrl_save_basic_geochemicalcomposition = .true.
+       ctrl_save_basic_carbonatechemsitry = .true.
+       ctrl_save_basic_biologicalpump = .true.
+       ctrl_save_basic_interfacefluxes = .true.
+       ctrl_save_basic_geochemicalreactions = .true.
+       ctrl_save_basic_proxies = .true.
+    end if
+    if (ctrl_save_advanced_ALL) then
+       ctrl_save_advanced_modelgrid = .true.
+       ctrl_save_advanced_geochemicalcomposition = .true.
+       ctrl_save_advanced_carbonatechemsitry = .true.
+       ctrl_save_advanced_biologicalpump = .true.
+       ctrl_save_advanced_interfacefluxes = .true.
+       ctrl_save_advanced_geochemicalreactions = .true.
+       ctrl_save_advanced_proxies = .true.
+    end if
+    if (ctrl_save_hidden_ALL) then
+       ctrl_save_hidden_climate = .true.
+       ctrl_save_hidden_preformedtracers = .true.
+       ctrl_save_hidden_radiocarbon = .true.
+       ctrl_save_hidden_diagnostics = .true.
+       ctrl_save_hidden_genieexercises = .true.
+    end if
     
     ! ---------------------------------------------------------- !
     ! FILTER BASIC DATA SAVING OPTIONS
     ! ---------------------------------------------------------- !
-    ! basic options need not be specified as the defauls are adjusted as appropriate
-    ! => none of these parameters would typically appear in a user-config
-    ! NOTE: opt_select(iopt_select_carbchem) is used as a proxy in filtering for tracer selection beyond T+S and age
+!!$    ! basic options need not be specified as the defauls are adjusted as appropriate
+!!$    ! => none of these parameters would typically appear in a user-config
+!!$    ! NOTE: opt_select(iopt_select_carbchem) is used as a proxy in filtering for tracer selection beyond T+S and age
     ! ---------------------------------------------------------- ! grid info saving
     ! save grid etc. info
-    ! ctrl_data_save_grid = .true. [DEFAULT]
-    ! ---------------------------------------------------------- ! climate data
-    ! save climate-related data (e.g., atm T,Q, circulation, sea-ice, etc.)
-    ! NOTE: age tracer is automatically saved if selected
-    ! ctrl_data_save_climate = .true. [DEFAULT]
+    ! ctrl_save_basic_modelgrid = .false. [DEFAULT]
+!!$    ! ---------------------------------------------------------- ! climate data
+!!$    ! save climate-related data (e.g., atm T,Q, circulation, sea-ice, etc.)
+!!$    ! NOTE: age tracer is automatically saved if selected
+!!$    ! ctrl_data_save_climate = .true. [DEFAULT]
     ! ---------------------------------------------------------- ! tracers
     ! save basic atm, ocn, sed tracers
-    ! ctrl_data_save_tracers = .true. [DEFAULT]
-    IF (.NOT. opt_select(iopt_select_carbchem)) ctrl_data_save_tracers = .false.
-    ! ---------------------------------------------------------- ! carbonate chemsitry
-    ! NOTE: do not save carbonate chemsitry related data if carb chem tracers not selected
-    ! ctrl_data_save_carbchem = .true. [DEFAULT]
-    IF (.NOT. opt_select(iopt_select_carbchem)) ctrl_data_save_carbchem = .false.
-    ! ---------------------------------------------------------- ! 'biology'
-    ! NOTE: do not save export production data if a biological option is not selected
-    ! ctrl_data_save_bioexport = .true. [DEFAULT]
-    if (par_bio_prodopt == 'NONE') ctrl_data_save_bioexport = .false.
-    ! ---------------------------------------------------------- ! preformed tracers
-    ! always save preformed tracers if they are selected
-    ! ctrl_data_save_preformed = .true. [DEFAULT]
-    IF (.NOT. ctrl_bio_preformed) ctrl_data_save_preformed = .false.
-    ! ---------------------------------------------------------- !
-    ! FILTER ADVANCED DATA SAVING OPTIONS
-    ! ---------------------------------------------------------- !
-    ! advanced options are .false. by default (and are further filtered)
-    ! => only these parameters would typically appear in a user-config
-    ! NOTE: ctrl_data_save_tracers is now used as a proxy in filtering
-    ! ---------------------------------------------------------- ! complete 'physics'
-    if (.NOT. ctrl_data_save_climate) ctrl_data_save_physics = .false.
-    ! ---------------------------------------------------------- ! isotopes
-    ! save isotopes if they are selected and data saving is requested
-    ! NOTE: existence of isotopes is tested in data saving subroutines and we do not need to further filter
-    ! ctrl_data_save_isotopes = .false. [DEFAULT]
-    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_isotopes = .false.
+    ! ctrl_save_basic_geochemicalcomposition = .false. [DEFAULT]
+    IF (n_l_ocn < 3) ctrl_save_basic_geochemicalcomposition = .false.
+!!$    ! ---------------------------------------------------------- ! carbonate chemsitry
+!!$    ! NOTE: do not save carbonate chemsitry related data if carb chem tracers not selected
+!!$    ! ctrl_data_save_carbchem = .true. [DEFAULT]
+!!$    IF (.NOT. opt_select(iopt_select_carbchem)) ctrl_data_save_carbchem = .false.
+!!$    ! ---------------------------------------------------------- ! 'biology'
+!!$    ! NOTE: do not save export production data if a biological option is not selected
+!!$    ! ctrl_data_save_bioexport = .true. [DEFAULT]
+!!$    if (par_bio_prodopt == 'NONE') ctrl_data_save_bioexport = .false.
+
     ! ---------------------------------------------------------- ! biology
-    ! NOTE: do not save biology-related data if a biological option is not selected
-    ! ctrl_data_save_export = .false. [DEFAULT]
-    if (par_bio_prodopt == 'NONE') ctrl_data_save_biology = .false.
-    ! ---------------------------------------------------------- ! biopump
-    ! includes 3D fluxes
-    ! NOTE: do not save biological pump related data if a biological option is not selected
-    ! ctrl_data_save_biopump = .false. [DEFAULT]
-    if (par_bio_prodopt == 'NONE') ctrl_data_save_biopump = .false.
-    ! ---------------------------------------------------------- ! proxies
-    ! includes planktic-benthic
-    ! ctrl_data_save_proxies = .false. [DEFAULT]
-    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_proxies = .false.
-    ! ---------------------------------------------------------- ! geochem (+ redox)
-    ! includes redox fields
-    ! ctrl_data_save_geochem = .false. [DEFAULT]
-    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_geochem = .false.
-    ! ---------------------------------------------------------- ! sediments
-    ! includes rain, dissolution, and burial fluxes
-    ! NOTE: sediment composition is automatically saved if tracer saving is selected and SEDGEM is enabled
-    ! ctrl_data_save_sediments = .false. [DEFAULT]
-    if (.NOT. flag_sedgem) ctrl_data_save_sediments = .false.
-    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_sediments = .false.
-    ! ---------------------------------------------------------- ! further details
-    ! save further details for whatever is already selected (above)
-    ! NOTE: plus 'hidden' data fields
-    ! ctrl_data_save_more = .false. [DEFAULT]
+    select case (par_bio_prodopt)
+    case (                         &
+         & '1N1T_PO4restore',      &
+         & '1N1T_PO4restoreLL',    &
+         & '1N1T_PO4MM',           &
+         & '1N1T_PO4MM_Tdep',      &
+         & '2N1T_PO4MM_SiO2',      &
+         & '1N1T_PO4MM_Cd',        &
+         & '2N2T_PO4MM_NO3',       &
+         & '2N2T_PN_Tdep',         &
+         & '2N1T_PFe_Tdep',        &
+         & '3N2T_PNFe_Tdep',       &
+         & 'Payal_Cd',             &
+         & 'bio_P',                &
+         & 'bio_PFe',              &
+         & 'bio_PFe_OCMIP2',       &
+         & 'bio_PFeSi',            &
+         & 'bio_PFeSi_Ridgwell02', &
+         & 'bio_POCflux',          &
+         & 'bio_PNFe'              &
+         & )
+    case default
+       ctrl_save_basic_biologicalpump = .false.
+    end select
+!!$    ! ---------------------------------------------------------- ! preformed tracers
+!!$    ! always save preformed tracers if they are selected
+!!$    ! ctrl_data_save_preformed = .true. [DEFAULT]
+!!$    IF (.NOT. ctrl_bio_preformed) ctrl_data_save_preformed = .false.
+!!$    ! ---------------------------------------------------------- !
+!!$    ! FILTER ADVANCED DATA SAVING OPTIONS
+!!$    ! ---------------------------------------------------------- !
+!!$    ! advanced options are .false. by default (and are further filtered)
+!!$    ! => only these parameters would typically appear in a user-config
+!!$    ! NOTE: ctrl_data_save_tracers is now used as a proxy in filtering
+!!$    ! ---------------------------------------------------------- ! complete 'physics'
+!!$    if (.NOT. ctrl_data_save_climate) ctrl_data_save_physics = .false.
+!!$    ! ---------------------------------------------------------- ! isotopes
+!!$    ! save isotopes if they are selected and data saving is requested
+!!$    ! NOTE: existence of isotopes is tested in data saving subroutines and we do not need to further filter
+!!$    ! ctrl_data_save_isotopes = .false. [DEFAULT]
+!!$    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_isotopes = .false.
+!!$    ! ---------------------------------------------------------- ! biology
+!!$    ! NOTE: do not save biology-related data if a biological option is not selected
+!!$    ! ctrl_data_save_export = .false. [DEFAULT]
+!!$    if (par_bio_prodopt == 'NONE') ctrl_data_save_biology = .false.
+!!$    ! ---------------------------------------------------------- ! biopump
+!!$    ! includes 3D fluxes
+!!$    ! NOTE: do not save biological pump related data if a biological option is not selected
+!!$    ! ctrl_data_save_biopump = .false. [DEFAULT]
+!!$    if (par_bio_prodopt == 'NONE') ctrl_data_save_biopump = .false.
+!!$    ! ---------------------------------------------------------- ! proxies
+!!$    ! includes planktic-benthic
+!!$    ! ctrl_data_save_proxies = .false. [DEFAULT]
+!!$    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_proxies = .false.
+!!$    ! ---------------------------------------------------------- ! geochem (+ redox)
+!!$    ! includes redox fields
+!!$    ! ctrl_data_save_geochem = .false. [DEFAULT]
+!!$    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_geochem = .false.
+!!$    ! ---------------------------------------------------------- ! sediments
+!!$    ! includes rain, dissolution, and burial fluxes
+!!$    ! NOTE: sediment composition is automatically saved if tracer saving is selected and SEDGEM is enabled
+!!$    ! ctrl_data_save_sediments = .false. [DEFAULT]
+!!$    if (.NOT. flag_sedgem) ctrl_data_save_sediments = .false.
+!!$    if (.NOT. ctrl_data_save_tracers) ctrl_data_save_sediments = .false.
+!!$    ! ---------------------------------------------------------- ! further details
+!!$    ! save further details for whatever is already selected (above)
+!!$    ! NOTE: plus 'hidden' data fields
+!!$    ! ctrl_data_save_more = .false. [DEFAULT]
+!!$    ! ---------------------------------------------------------- !
 
-
-    
-
-
-
-
-
-    
+    ! ---------------------------------------------------------- !
+    ! FILTER BASIC <-> ADVANCED
+    ! ---------------------------------------------------------- !
+    if (ctrl_save_advanced_modelgrid) ctrl_save_basic_modelgrid = .true.
+    if (ctrl_save_advanced_geochemicalcomposition) ctrl_save_basic_geochemicalcomposition = .true.
+    if (ctrl_save_advanced_carbonatechemsitry) ctrl_save_basic_carbonatechemsitry = .true.
+    if (ctrl_save_advanced_biologicalpump) ctrl_save_basic_biologicalpump = .true.
+    if (ctrl_save_advanced_interfacefluxes) ctrl_save_basic_interfacefluxes = .true.
+    if (ctrl_save_advanced_geochemicalreactions) ctrl_save_basic_geochemicalreactions = .true.
+    if (ctrl_save_advanced_proxies) ctrl_save_basic_proxies = .true.
+    if (.NOT. ctrl_save_basic_modelgrid) ctrl_save_advanced_modelgrid = .false.
+    if (.NOT. ctrl_save_basic_geochemicalcomposition) ctrl_save_advanced_geochemicalcomposition = .false.
+    if (.NOT. ctrl_save_basic_carbonatechemsitry) ctrl_save_advanced_carbonatechemsitry = .false.
+    if (.NOT. ctrl_save_basic_biologicalpump) ctrl_save_advanced_biologicalpump = .false.
+    if (.NOT. ctrl_save_basic_interfacefluxes) ctrl_save_advanced_interfacefluxes = .false.
+    if (.NOT. ctrl_save_basic_geochemicalreactions) ctrl_save_advanced_geochemicalreactions = .false.
+    if (.NOT. ctrl_save_basic_proxies) ctrl_save_advanced_proxies = .false.
+    ! ---------------------------------------------------------- !
+    ! FINAL FILTERING
+    ! ---------------------------------------------------------- !
+    if (ctrl_force_ocn_age .OR. ctrl_force_ocn_age1 .OR. ctrl_bio_preformed) ctrl_save_hidden_preformedtracers = .true.
+    if (.NOT. opt_select(iopt_select_carbchem)) ctrl_save_basic_carbonatechemsitry = .false.
+    if (.NOT. opt_select(iopt_select_carbchem)) ctrl_save_advanced_carbonatechemsitry = .false.
     ! ---------------------------------------------------------- !
     ! END
     ! ---------------------------------------------------------- !

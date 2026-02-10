@@ -2095,10 +2095,9 @@ CONTAINS
     ! NOTE: the units of the Corg flux must be changed from (cm3 cm-2) to (mol cm-2 yr-1),
     !       in order to calculate CaCO3 diagenesis
     ! NOTE: the lookup table is only generated over a range of POC flux up to 50 (umol cm-2 yr-1)
-    !       (set by the parameter 'lookup_fCorg_max')
-    !       so care must be taken when exceeding this range (hence the purpose of 'par_sed_diagen_fPOCmax')
-    !       and enough [O2] may not in actual fact be available to oxidize such a flux in the sediments fully
-    ! mass fraction (dry) of calcite in sediments
+    !       originally the Corg flux was limited (set by the parameter 'lookup_fCorg_max')
+    !       but the lookup table automatically truncates the Corg flux anyway and this restriction is not necessary
+    !       => the limitaiton has been removed and hence more CaCo3 dissoltuion not occurs using the Archer explicit scheme
     loc_sed_wt_top      = fun_calc_sed_mass(dum_sed_top(:))
     loc_frac_CaCO3_top  = conv_cal_cm3_g*dum_sed_top(is_CaCO3)/loc_sed_wt_top
     ! Corg rain rate
