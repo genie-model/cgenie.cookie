@@ -5574,11 +5574,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Align netCDF filenames with experiment name?</description>
                     </param>
 <!-- DATA SAVING: SIMPLIFIED SCHEME -->
-                    <param name="ctrl_save_basic_modelgrid">
-			<value datatype="boolean">.true.</value>
-                        <description></description>
-                    </param>
-                    <param name="ctrl_save_basic_geochemicalcomposition">
+                    <param name="ctrl_save_basic_reservoirs">
 			<value datatype="boolean">.true.</value>
                         <description></description>
                     </param>
@@ -5590,11 +5586,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.true.</value>
                         <description></description>
                     </param>
-                    <param name="ctrl_save_basic_interfacefluxes">
-			<value datatype="boolean">.false.</value>
-                        <description></description>
-                    </param>
-                    <param name="ctrl_save_basic_geochemicalreactions">
+                    <param name="ctrl_save_basic_geochemistry">
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
@@ -5606,11 +5598,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
-                    <param name="ctrl_save_advanced_modelgrid">
-			<value datatype="boolean">.false.</value>
-                        <description></description>
-                    </param>
-                    <param name="ctrl_save_advanced_geochemicalcomposition">
+                    <param name="ctrl_save_advanced_reservoirs">
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
@@ -5622,11 +5610,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
-                    <param name="ctrl_save_advanced_interfacefluxes">
-			<value datatype="boolean">.false.</value>
-                        <description></description>
-                    </param>
-                    <param name="ctrl_save_advanced_geochemicalreactions">
+                    <param name="ctrl_save_advanced_geochemistry">
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
@@ -5638,8 +5622,20 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
+                    <param name="ctrl_save_hidden_grid">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
                     <param name="ctrl_save_hidden_climate">
 			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_seafloor">
+			<value datatype="boolean">.true.</value>
+                        <description>save seafloor as well as seasurface data?</description>
+                    </param>
+                    <param name="ctrl_save_hidden_interfacefluxes">
+			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
                     <param name="ctrl_save_hidden_preformedtracers">

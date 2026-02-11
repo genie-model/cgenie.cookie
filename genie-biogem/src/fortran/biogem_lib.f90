@@ -666,43 +666,41 @@ MODULE biogem_lib
   ! ------------------- SIMPLE DATA SAVING SCHEME -------------------------------------------------------------------------------- !
   ! basic data saving
   ! catagories of basic/fundamental data saving designed as default teaching options
-  LOGICAL::ctrl_save_basic_modelgrid                             ! area, volumn, mass
-  LOGICAL::ctrl_save_basic_geochemicalcomposition                ! atm, ocn (surface and benthic), sed tracer fields
+  LOGICAL::ctrl_save_basic_reservoirs                            ! atm, ocn (surface and benthic), sed tracer fields
   LOGICAL::ctrl_save_basic_carbonatechemsitry                    ! basic carb chem
   LOGICAL::ctrl_save_basic_biologicalpump                        ! export, 3D flux field
-  LOGICAL::ctrl_save_basic_interfacefluxes                       ! ocn-atm, ocn-sed, weathering
-  LOGICAL::ctrl_save_basic_geochemicalreactions                  ! O2/NO3/SO4 remin summary [requires redox saving]
+  LOGICAL::ctrl_save_basic_geochemistry                          ! O2/NO3/SO4 remin summary [requires redox saving]
   LOGICAL::ctrl_save_basic_proxies                               ! trace-metal ratios, tracer isotopic properties (if selected)
   LOGICAL::ctrl_save_basic_ALL                                   ! 
-  NAMELIST /ini_biogem_nml/ctrl_save_basic_modelgrid, ctrl_save_basic_geochemicalcomposition, &
-       & ctrl_save_basic_carbonatechemsitry, ctrl_save_basic_biologicalpump, &
-       & ctrl_save_basic_interfacefluxes, ctrl_save_basic_geochemicalreactions, ctrl_save_basic_proxies, &
+  NAMELIST /ini_biogem_nml/ctrl_save_basic_reservoirs,ctrl_save_basic_carbonatechemsitry, &
+       & ctrl_save_basic_biologicalpump,ctrl_save_basic_geochemistry, ctrl_save_basic_proxies, &
        & ctrl_save_basic_ALL
   ! advanced data saving
   ! catagories of more advannced data saving for R&D
-  LOGICAL::ctrl_save_advanced_modelgrid                          ! (all other phys array variables)
-  LOGICAL::ctrl_save_advanced_geochemicalcomposition             ! inventories
+  LOGICAL::ctrl_save_advanced_reservoirs                         ! inventories
   LOGICAL::ctrl_save_advanced_carbonatechemsitry                 ! diagnostic fields, dissociation constants
   LOGICAL::ctrl_save_advanced_biologicalpump                     ! controls on export, fluxes in other units
-  LOGICAL::ctrl_save_advanced_interfacefluxes                    ! forcing fluxes
-  LOGICAL::ctrl_save_advanced_geochemicalreactions               ! reactions, remineralization pathways
+  LOGICAL::ctrl_save_advanced_geochemistry                       ! reactions, remineralization pathways
   LOGICAL::ctrl_save_advanced_proxies                            ! forward-proxy models
   LOGICAL::ctrl_save_advanced_ALL                                ! 
-  NAMELIST /ini_biogem_nml/ctrl_save_advanced_modelgrid, ctrl_save_advanced_geochemicalcomposition, &
-       & ctrl_save_advanced_carbonatechemsitry, ctrl_save_advanced_biologicalpump, &
-       & ctrl_save_advanced_interfacefluxes, ctrl_save_advanced_proxies, ctrl_save_advanced_geochemicalreactions, &
+  NAMELIST /ini_biogem_nml/ctrl_save_advanced_reservoirs,ctrl_save_advanced_carbonatechemsitry, &
+       & ctrl_save_advanced_biologicalpump,ctrl_save_advanced_proxies, ctrl_save_advanced_geochemistry, &
        & ctrl_save_advanced_ALL
   ! hidden data saving options
   ! options that are default 'on' but can be turned off, rarely used diagnostic fields, and fields used for teaching
+  LOGICAL::ctrl_save_hidden_grid                                 ! (automatically save essential model grid info)
   LOGICAL::ctrl_save_hidden_climate                              ! (automatically save climate data --  velocity fields, OPSI/PSI)
+  LOGICAL::ctrl_save_hidden_seafloor                             ! save seafloor as well as seasurface data?
+  LOGICAL::ctrl_save_hidden_interfacefluxes                      ! ocn-atm, ocn-sed, weathering
   LOGICAL::ctrl_save_hidden_preformedtracers                     ! (automatically save preformed tracers if selected)
   LOGICAL::ctrl_save_hidden_radiocarbon                          ! (automatically save radiocarbon if selected)
   LOGICAL::ctrl_save_hidden_diagnostics                          ! 2D tracer column inventories, S-normalized
   LOGICAL::ctrl_save_hidden_genieexercises                       ! CO2 column inventory
   LOGICAL::ctrl_save_hidden_ALL                                  ! 
-  NAMELIST /ini_biogem_nml/ctrl_save_hidden_climate, ctrl_save_hidden_preformedtracers,ctrl_save_hidden_radiocarbon, &
-       & ctrl_save_hidden_diagnostics,ctrl_save_hidden_genieexercises , &
-       & ctrl_save_hidden_ALL
+  NAMELIST /ini_biogem_nml/ctrl_save_hidden_grid,ctrl_save_hidden_climate,ctrl_save_hidden_seafloor, &
+       & ctrl_save_hidden_interfacefluxes,ctrl_save_hidden_preformedtracers,ctrl_save_hidden_radiocarbon, &
+       & ctrl_save_hidden_diagnostics,ctrl_save_hidden_genieexercises, &
+       & ctrl_save_hidden_ALL  
   ! ------------------- DATA SAVING: TIME-SLICES --------------------------------------------------------------------------------- !
   LOGICAL::ctrl_data_save_slice_ocnatm                           ! time-slice data save: Atmospheric (interface) composition (2D)?
   LOGICAL::ctrl_data_save_slice_ocn                              ! time-slice data save: Ocean composition (3D)?

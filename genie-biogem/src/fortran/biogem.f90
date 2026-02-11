@@ -431,18 +431,15 @@ subroutine biogem(        &
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** AGE TRACERS ***'
               ! *** AGE TRACERS ***
-              ! NOTE: red has unit concentraton input to the surface per year
               ! NOTE: ctrl_force_ocn_age1 enables a single tracer -- as a 'preformed' age
+              !      (now replaced with just ctrl_force_ocn_age)
               ! force surface value
               if (ctrl_force_ocn_age) then
-                 bio_remin(io_colr,i,j,n_k) = bio_remin(io_colr,i,j,n_k) + (1.0 - ocn(io_colr,i,j,n_k))
-                 bio_remin(io_colb,i,j,n_k) = bio_remin(io_colb,i,j,n_k) + (loc_t*1.0 - ocn(io_colb,i,j,n_k))
-              elseif (ctrl_force_ocn_age1) then
                  bio_remin(io_colr,i,j,n_k) = bio_remin(io_colr,i,j,n_k) + (0.0 - ocn(io_colr,i,j,n_k))
               end if
               ! age ocean interior
               ! NOTE: exclude surface layer
-              if (ctrl_force_ocn_age1) then
+              if (ctrl_force_ocn_age) then
                  DO k=loc_k1,n_k-1
                     bio_remin(io_colr,i,j,k) = bio_remin(io_colr,i,j,k) + loc_dtyr
                  END DO
@@ -4148,20 +4145,6 @@ SUBROUTINE diag_biogem_timeseries( &
                        loc_k1 = goldstein_k1(i,j)
                        IF (n_k >= loc_k1) THEN
                           DO k=loc_k1,n_k
-                             if (ocn(io_colr,i,j,k) > const_real_nullsmall) then
-                                int_misc_age_sig = int_misc_age_sig + &
-                                     & loc_dtyr*loc_ocn_rtot_M*phys_ocn(ipo_M,i,j,k)*ocn(io_colb,i,j,k)/ocn(io_colr,i,j,k)
-                             end if
-                          end DO
-                       end IF
-                    end DO
-                 end DO
-              elseIF (ctrl_force_ocn_age1) THEN
-                 DO i=1,n_i
-                    DO j=1,n_j
-                       loc_k1 = goldstein_k1(i,j)
-                       IF (n_k >= loc_k1) THEN
-                          DO k=loc_k1,n_k
                              int_misc_age_sig = int_misc_age_sig + &
                                   & loc_dtyr*loc_ocn_rtot_M*phys_ocn(ipo_M,i,j,k)*ocn(io_colr,i,j,k)
                           end DO
@@ -4219,18 +4202,6 @@ SUBROUTINE diag_biogem_timeseries( &
                     DO j=1,n_j
                        loc_k1 = goldstein_k1(i,j)
                        IF (n_k >= loc_k1) THEN
-                          if (ocn(io_colr,i,j,n_k) > const_real_nullsmall) then
-                             int_misc_age_sur_sig = int_misc_age_sur_sig + &
-                                  & loc_dtyr*loc_ocn_rtot_A*phys_ocn(ipo_A,i,j,n_k)*ocn(io_colb,i,j,n_k)/ocn(io_colr,i,j,n_k)
-                          end if
-                       end IF
-                    end DO
-                 end DO
-              elseIF (ctrl_force_ocn_age1) THEN
-                 DO i=1,n_i
-                    DO j=1,n_j
-                       loc_k1 = goldstein_k1(i,j)
-                       IF (n_k >= loc_k1) THEN
                           int_misc_age_sur_sig = int_misc_age_sur_sig + &
                                & loc_dtyr*loc_ocn_rtot_A*phys_ocn(ipo_A,i,j,n_k)*ocn(io_colr,i,j,n_k)
                        end IF
@@ -4255,22 +4226,6 @@ SUBROUTINE diag_biogem_timeseries( &
                       & SUM(locij_mask_shf(:,:)*phys_ocn(ipo_A,:,:,n_k)*locij_ocn_shf(io,:,:))
               END DO
               IF (ctrl_force_ocn_age) THEN
-                 DO i=1,n_i
-                    DO j=1,n_j
-                       loc_k1 = goldstein_k1(i,j)
-                       IF (n_k >= loc_k1) THEN
-                          if (locij_ocn_ben(io_colr,i,j) > const_real_nullsmall) then
-                             int_misc_age_ben_sig = int_misc_age_ben_sig + loc_dtyr*loc_ocnsed_rtot_A_ben*locij_mask_ben(i,j)*&
-                                  & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_ben(io_colb,i,j)/locij_ocn_ben(io_colr,i,j)
-                          end if
-                          if (locij_ocn_shf(io_colr,i,j) > const_real_nullsmall) then
-                             int_misc_age_shf_sig = int_misc_age_shf_sig + loc_dtyr*loc_ocnsed_rtot_A_shf*locij_mask_shf(i,j)*&
-                                  & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_shf(io_colb,i,j)/locij_ocn_shf(io_colr,i,j)
-                          end if
-                       end IF
-                    end DO
-                 end DO
-              elseIF (ctrl_force_ocn_age1) THEN
                  DO i=1,n_i
                     DO j=1,n_j
                        loc_k1 = goldstein_k1(i,j)
