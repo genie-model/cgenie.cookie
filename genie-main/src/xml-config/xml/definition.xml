@@ -5833,6 +5833,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.true.</value>
                         <description>Save 3D netCDF data?</description>
                     </param>
+                    <param name="par_ncout2d_name">
+			<value datatype="string">fields_ocean_2d.nc</value>
+                        <description>2D netCDF output file name</description>
+                    </param>
+                    <param name="par_ncout3d_name">
+			<value datatype="string">fields_ocean_3d.nc</value>
+                        <description>3D netCDF output file name</description>
+                    </param>
                     <param name="par_misc_save_i">
                         <value datatype="integer">1</value>
                         <description>i location for water column timeseries saving</description>
@@ -7434,30 +7442,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>Prevent frac2 from being remineralzied?</description>
                     </param>
-                    <param name="par_sed_diagen_fracCpres_ox">
-			            <value datatype="real">0.0</value>
-                        <description>Fractional POC burial -- oxic conditions</description>
-                    </param>
-                    <param name="par_sed_diagen_fracCpres_anox">
-			            <value datatype="real">0.0</value>
-                        <description>Fractional POC burial -- anoxic conditions</description>
-                    </param>
-                    <param name="par_sed_diagen_fracCpres_eux">
-			            <value datatype="real">0.0</value>
-                        <description>Fractional POC burial -- euxinic conditions</description>
-                    </param>
-                    <param name="par_sed_diagen_fracC2Ppres_ox">
-			            <value datatype="real">1.0</value>
-                        <description>Fraction of P relative to C buried -- oxic</description>
-                    </param>
-                    <param name="par_sed_diagen_fracC2Ppres_anox">
-			            <value datatype="real">1.0</value>
-                        <description>Fraction of P relative to C buried -- anoxic</description>
-                    </param>
-                    <param name="par_sed_diagen_fracC2Ppres_eux">
-			            <value datatype="real">1.0</value>
-                        <description>Fraction of P relative to C buried -- euxinic</description>
-                    </param>
                     <param name="par_sed_diagen_fracCpres_scale">
 			<value datatype="real">1.0</value>
                         <description>Fractional POC burial scaling (Dunne scheme)</description>
@@ -7484,7 +7468,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="ctrl_sed_conv_sed_ocn_old">
 			<value datatype="boolean">.true.</value>
-                        <description>etain original (Redfield) remin transformation? </description>
+                        <description>Retain original (Redfield) remin transformation?</description>
                     </param>
                     <param name="par_sed_diagen_O2thresh">
 			<value datatype="real">20.0E-6</value>
@@ -7497,6 +7481,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_sed_diagen_SO4thresh">
 			<value datatype="real">20.0E-6</value>
                         <description>[SO4] threshold for switching redox arrays (mol kg-1) </description>
+                    </param>
+                    <param name="ctrl_sed_conv_sed_ocn_redox">
+			<value datatype="boolean">.true.</value>
+                        <description>Use BIOGEM redox-dependent remin transformation?</description>
+                    </param>
+                    <param name="ctrl_sed_conv_sedocn_bohlen2012">
+			<value datatype="boolean">.false.</value>
+                        <description>Use Bohlen 2012 denitrification remin?</description>
                     </param>
 <!-- DIAGENESIS SCHEME: HUELSE 2017  -->
                     <param name="par_sed_huelse2017_kscheme">
@@ -7633,18 +7625,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_d88Sr_SrCO3recryst">
 			<value datatype="real">0.172</value>
                         <description>d88Sr of recrystalizing SrCO3 [Payton et al.]</description>
-                    </param>
-                    <param name="par_sed_Corgburial">
-			<value datatype="real">0.0</value>
-                        <description>Prescribed Corg production rate (mol cm-2 yr-1)</description>
-                    </param>
-                    <param name="par_sed_CorgburialTOT">
-			<value datatype="real">0.0</value>
-                        <description>Prescribed global Corg production rate (mol yr-1)</description>
-                    </param>
-                    <param name="par_sed_Corgburial_Dd13C">
-			<value datatype="real">-30.0</value>
-                        <description>POC d13C offset compared to the d13C of CaCO3</description>
                     </param>
 <!-- TRACE METALS -->
                     <param name="par_bio_red_CaCO3_LiCO3">
@@ -7850,18 +7830,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Mean ocean floor reference temeprature (C)</description>
                     </param>
 <!-- MISC CONTROLS  -->
-                    <param name="ctrl_sed_forcedohmega_ca">
-			<value datatype="boolean">.true.</value>
-                        <description>Ca-only adjustment for forced ocean saturation?</description>
-                    </param>
-                    <param name="par_sed_ohmegamin">
-			<value datatype="real">0.00</value>
-                        <description>forced minimum saturation (calcite ohmega) anywhere</description>
-                    </param>
-                    <param name="par_sed_ohmegamin_flux">
-			<value datatype="real">0.00</value>
-                        <description>imposed sed->ocn flux (mol Ca cm-2 per time-step) for saturation</description>
-                    </param>
                     <param name="ctrl_sed_Fdet">
                         <value datatype="boolean">.false.</value>
                         <description>Use alt detrital burial field?</description>
@@ -7959,6 +7927,9 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_sed_mix_k.dat</value>
                         <description>Biodiffusion profile name</description>
                     </param>
+                    
+                    
+                    
                     <param name="par_output_years_file_0d">
 			<value datatype="string">sedgem_output_years_0d.dat</value>
                         <description>file containing years for 0D output to be generated (to summary file)</description>
@@ -7967,6 +7938,9 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_output_years_2d.dat</value>
                         <description>file containing years for 2D output to be generated (to netcdf/ascii)</description>
                     </param>
+                    
+                    
+                    
                     <param name="par_sed_Fdet_name">
                         <value datatype="string">hello_world</value>
                         <description>Alt detrital burial flux field file name</description>
@@ -8061,8 +8035,12 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">restart.sg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
+                    <param name="par_ncout2d_name">
+			<value datatype="string">fields_sediments_2d.nc</value>
+                        <description>2D netCDF output file name</description>
+                    </param>
                     <param name="par_ncsedcore_name">
-			<value datatype="string">sedgem_sedcore.nc</value>
+			<value datatype="string">fields_sedcores_1d.nc</value>
                         <description>netCDF sedcore file name</description>
                     </param>
                     <param name="par_sed_save_av_dtyr">
@@ -8133,7 +8111,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>output restart filename</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">restart.rg.nc</value>
+			<value datatype="string">restart.rg</value>
                         <description>netCDF restart file name</description>
                     </param>
                     <param name="opt_screen_output">

@@ -83,13 +83,14 @@ MODULE gem_cmn
   ! *** MODEL CONFIGURATION CONSTANTS ******************************************************************************************** !
   ! ****************************************************************************************************************************** !
 
-  ! *** array dimensions ***
+  ! *** define array sizes *********************************************************************************************************
   ! main biogeochem ocean array dimensions 
   INTEGER,PARAMETER::n_carb                               = 16          ! number of ocean box chemistry descriptors
   INTEGER,PARAMETER::n_carbconst                          = 17          ! number of ocean box chemistry constants descriptors
   INTEGER,PARAMETER::n_carbalk                            = 13          ! number of alkalinty chemistry descriptors
   INTEGER,PARAMETER::n_carbisor                           = 08          ! number of carbonate isotopic ratio descriptors
-  ! *** array index values ***
+
+  ! *** define array index values **************************************************************************************************
   ! ocean tracer IDs
   INTEGER,PARAMETER::io_T                                 = 01    ! 
   INTEGER,PARAMETER::io_S                                 = 02    ! 
@@ -406,7 +407,7 @@ MODULE gem_cmn
   INTEGER,PARAMETER::par_sed_type_misc                    = 10    ! 
 !!!  INTEGER,PARAMETER::par_sed_type_indepsinking            = 21    !
 
-  ! *** tracer arrays ***
+  ! *** define arrays **************************************************************************************************************
   ! tracer description - 'type'
   integer,DIMENSION(n_atm)::atm_type
   integer,DIMENSION(n_ocn)::ocn_type
@@ -463,11 +464,16 @@ MODULE gem_cmn
   real,DIMENSION(n_ocn,n_sed)::conv_sed_ocn_Fe                          ! tracer conversion array for FeOOH-reduction
   real,DIMENSION(n_ocn,n_sed)::conv_sed_ocn_S                           ! tracer conversion array for S-reduction redox conditions
   real,DIMENSION(n_ocn,n_sed)::conv_sed_ocn_meth                        ! tracer conversion array for methanogenesis
+  real,DIMENSION(n_ocn,n_sed)::conv_sed_ocn_N_NH4                       ! sed denitrification specific array (Bohlen et al. [2012]
+  real,DIMENSION(n_ocn,n_sed)::conv_sed_ocn_N_N2                        ! sed denitrification specific array (Bohlen et al. [2012]
   real,DIMENSION(n_sed,n_ocn)::conv_DOM_POM
   real,DIMENSION(n_ocn,n_sed)::conv_POM_DOM
   real,DIMENSION(n_sed,n_ocn)::conv_RDOM_POM
   real,DIMENSION(n_ocn,n_sed)::conv_POM_RDOM
-  ! tracer conversion -- transformation ratios -- compaxt index format
+  ! ---------------------------------------------------------- !
+  ! primary redox transformations
+  ! ---------------------------------------------------------- !
+  ! tracer conversion -- transformation ratios -- compact index format
   real,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo
   real,DIMENSION(:,:),ALLOCATABLE::conv_lD_lP
   real,DIMENSION(:,:),ALLOCATABLE::conv_lP_lD
@@ -478,6 +484,8 @@ MODULE gem_cmn
   real,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_Fe                          ! 
   real,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_S                           ! 
   real,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_meth                        ! 
+  real,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_N_NH4                       ! 
+  real,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_N_N2                        ! 
   ! tracer conversion - indices for non-zero transformation ratio values
   ! NOTE: the zero index place in the array is used in algorithms identifying null relationships (or something)
   integer,DIMENSION(0:n_ocn,0:n_atm)::conv_atm_ocn_i
@@ -487,11 +495,13 @@ MODULE gem_cmn
   integer,DIMENSION(0:n_ocn,0:n_sed)::conv_sed_ocn_i_Fe                 ! tracer conversion array for FeOOH-reduction
   integer,DIMENSION(0:n_ocn,0:n_sed)::conv_sed_ocn_i_S                  ! tracer conversion array for S-reduction redox conditions
   integer,DIMENSION(0:n_ocn,0:n_sed)::conv_sed_ocn_i_meth               ! tracer conversion array for methanogenesis
+  integer,DIMENSION(0:n_ocn,0:n_sed)::conv_sed_ocn_i_N_NH4              ! sed denitrification specific array (Bohlen et al. [2012])
+  integer,DIMENSION(0:n_ocn,0:n_sed)::conv_sed_ocn_i_N_N2               ! sed denitrification specific array (Bohlen et al. [2012])
   integer,DIMENSION(0:n_sed,0:n_ocn)::conv_DOM_POM_i
   integer,DIMENSION(0:n_ocn,0:n_sed)::conv_POM_DOM_i
   integer,DIMENSION(0:n_sed,0:n_ocn)::conv_RDOM_POM_i
   integer,DIMENSION(0:n_ocn,0:n_sed)::conv_POM_RDOM_i
-  ! tracer conversion -- transformation ratios -- compaxt index format
+  ! tracer conversion -- transformation ratios -- compact index format
   integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i                ! 
   integer,DIMENSION(:,:),ALLOCATABLE::conv_lD_lP_i                ! 
   integer,DIMENSION(:,:),ALLOCATABLE::conv_lP_lD_i                ! 
@@ -501,7 +511,11 @@ MODULE gem_cmn
   integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i_N              ! 
   integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i_Fe             ! 
   integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i_S              ! 
-  integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i_meth           ! 
+  integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i_meth           !
+  integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i_N_NH4          ! 
+  integer,DIMENSION(:,:),ALLOCATABLE::conv_ls_lo_i_N_N2           ! 
+
+  ! *** define variable index names ************************************************************************************************
   ! carbonate chemistry
   CHARACTER(len=16),DIMENSION(n_carb),PARAMETER::string_carb = (/ &
        & 'H               ', &
@@ -565,7 +579,7 @@ MODULE gem_cmn
        & 'CO3_r14C        ', &
        & 'HCO3_r14C       ' /)
   
-  ! *** netCDF longnames ***
+  ! *** netCDF longnames ***********************************************************************************************************
   ! carbonate chemistry
   CHARACTER(len=63),DIMENSION(n_carb),PARAMETER::string_longname_carb = (/  &
        & 'Hydrogen ion concentration -- [H+]                             ', &
@@ -585,7 +599,7 @@ MODULE gem_cmn
        & 'Number of iterations required to converge pH                   ', &
        & 'Failure to solve for pH                                        '/)
 
-  ! *** I/O ***
+  ! *** I/O ************************************************************************************************************************
   ! default I/O parameters
   INTEGER,PARAMETER::in                                   = 12
   INTEGER,PARAMETER::out                                  = 13
@@ -853,7 +867,11 @@ MODULE gem_cmn
   real,dimension(4,n_atm)::par_Sc_coef                                  ! 
   !  Bunsen Solubility Coefficient coefficients
   real,dimension(6,n_atm)::par_bunsen_coef    
-  ! *** look-up table dimenstions for carbonate constants ***
+  
+  ! *** look-up tables *************************************************************************************************************
+  ! ---------------------------------------------------------- !
+  ! MyAMI
+  ! ---------------------------------------------------------- !
   INTEGER,PARAMETER::lookup_i_Ca_min      = 1                   ! 1-60 mmol
   INTEGER,PARAMETER::lookup_i_Ca_max      = 60                  ! 1-60 mmol
   INTEGER,PARAMETER::lookup_i_Mg_min   = 1                      ! 1-60 mmol
@@ -866,14 +884,13 @@ MODULE gem_cmn
   REAL,PARAMETER::lookup_Mg_max   = 0.060                       ! 
   REAL,PARAMETER::lookup_sal_max   = 45                         ! 
   REAL,PARAMETER::lookup_temp_max  = 323.15                         ! 
-  ! -------------------- look-up tables ------------------------------------------------------------------------------------------ !
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kcal  ! equilibrium constant kspCal look-up table (Hain et al. 2015)
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_karg  ! equilibrium constant kspArg look-up table (Hain et al. 2015)
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_k1   ! dissociation constant k1 look-up table (Hain et al. 2015)     
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_k2   ! dissociation constant k2 look-up table (Hain et al. 2015)     
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kW   ! dissociation constant kW look-up table (Hain et al. 2015)    
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_k   ! equilibrium constant k look-up table (Hain et al. 2015) 
-  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kb   ! dissociation constant kb look-up table (Hain et al. 2015)               
+  REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kb   ! dissociation constant kb look-up table (Hain et al. 2015) 
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)   :: lookup_gem_MyAMI_kSO4   ! carbonate constant kb look-up table (Hain et al. 2015)        
 
   ! *** miscellaneous - dummy values ***
@@ -889,6 +906,28 @@ MODULE gem_cmn
   integer,PARAMETER::const_integer_zero    = 0                             ! 
   integer,PARAMETER::const_integer_one     = 1                             ! 
 
+  ! *** parameters for sharing between all biogeochem modules **********************************************************************
+  ! ---------------------------------------------------------- !
+  ! REMIN
+  ! ---------------------------------------------------------- !
+  !       par_bio_remin_c0_O2,    par_bio_remin_ci_O2,    par_bio_remin_k_O2
+  !       par_bio_remin_c0_NO3,   par_bio_remin_ci_NO3,   par_bio_remin_k_NO3
+  !       par_bio_remin_c0_FeOOH, par_bio_remin_ci_FeOOH, par_bio_remin_k_FeOOH
+  !       par_bio_remin_c0_SO4,   par_bio_remin_ci_SO4,   par_bio_remin_k_SO4
+  !                                                       par_bio_remin_k_meth
+  real::conv_ls_lo_c0_O2
+  real::conv_ls_lo_ci_O2
+  real::conv_ls_lo_k_O2
+  real::conv_ls_lo_c0_NO3
+  real::conv_ls_lo_ci_NO3
+  real::conv_ls_lo_k_NO3
+  real::conv_ls_lo_c0_FeOOH
+  real::conv_ls_lo_ci_FeOOH
+  real::conv_ls_lo_k_FeOOH
+  real::conv_ls_lo_c0_SO4
+  real::conv_ls_lo_ci_SO4
+  real::conv_ls_lo_k_SO4
+  real::conv_ls_lo_k_meth
 
   ! ****************************************************************************************************************************** !
   ! *** END ********************************************************************************************************************** !

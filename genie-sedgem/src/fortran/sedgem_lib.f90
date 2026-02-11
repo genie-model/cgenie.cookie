@@ -82,14 +82,6 @@ MODULE sedgem_lib
   ! ------------------- DIAGENESIS SCHEME: ORGANIC MATTER ------------------------------------------------------------------------ !
   LOGICAL::ctrl_sed_diagen_preserve_frac2                        ! Prevent frac2 from being remineralzied?
   NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_preserve_frac2
-  REAL::par_sed_diagen_fracCpres_ox                              ! Fractional POC burial -- oxic conditions 
-  REAL::par_sed_diagen_fracCpres_anox                            ! Fractional POC burial -- anoxic conditions
-  REAL::par_sed_diagen_fracCpres_eux                             ! Fractional POC burial -- euxinic conditions
-  NAMELIST /ini_sedgem_nml/par_sed_diagen_fracCpres_ox,par_sed_diagen_fracCpres_anox,par_sed_diagen_fracCpres_eux
-  REAL::par_sed_diagen_fracC2Ppres_ox                            ! Fraction of P relative to C buried -- oxic
-  REAL::par_sed_diagen_fracC2Ppres_anox                          ! Fraction of P relative to C buried -- anoxic
-  REAL::par_sed_diagen_fracC2Ppres_eux                           ! Fraction of P relative to C buried -- euxinic
-  NAMELIST /ini_sedgem_nml/par_sed_diagen_fracC2Ppres_ox,par_sed_diagen_fracC2Ppres_anox,par_sed_diagen_fracC2Ppres_eux
   REAL::par_sed_diagen_fracCpres_scale                           ! Fractional POC burial scaling (Dunne scheme)
   NAMELIST /ini_sedgem_nml/par_sed_diagen_fracCpres_scale
   LOGICAL::ctrl_sed_diagen_fracC2Ppres_wallmann2010              ! Apply Wallmann [2010] C:P remin parameterization?
@@ -105,6 +97,10 @@ MODULE sedgem_lib
   REAL::par_sed_diagen_NO3thresh                                 ! [NO3] threshold for switching redox transformtion arrays
   REAL::par_sed_diagen_SO4thresh                                 ! [SO4] threshold for switching redox transformtion arrays
   NAMELIST /ini_sedgem_nml/par_sed_diagen_O2thresh,par_sed_diagen_NO3thresh,par_sed_diagen_SO4thresh
+  LOGICAL::ctrl_sed_conv_sed_ocn_redox                           ! Use BIOGEM redox-dependent remin transformation?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_conv_sed_ocn_redox
+  LOGICAL::ctrl_sed_conv_sedocn_bohlen2012                       ! Use Bohlen 2012 denitrification remin?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_conv_sedocn_bohlen2012
   ! ------------------- DIAGENESIS SCHEME: ORGANIC MATTER HUELSE 2017 ------------------------------------------------------------ !
   character(len=63)::par_sed_huelse2017_kscheme                  ! Corg k parametrisation scheme ID string
   NAMELIST /ini_sedgem_nml/par_sed_huelse2017_kscheme
@@ -162,11 +158,6 @@ MODULE sedgem_lib
   REAL::par_r87Sr_SrCO3recryst                                   ! 
   REAL::par_d88Sr_SrCO3recryst                                   ! 
   NAMELIST /ini_sedgem_nml/par_r87Sr_SrCO3recryst,par_d88Sr_SrCO3recryst
-  ! ------------------- Corg PRODUCTION ------------------------------------------------------------------------------------------ !
-  REAL::par_sed_Corgburial                                       ! prescribed Corg production rate (mol cm-2 yr-1)
-  REAL::par_sed_CorgburialTOT                                    ! prescribed global Corg production rate (mol yr-1)
-  REAL::par_sed_Corgburial_Dd13C                                 ! POC d13C offset compared to the d13C of CaCO3
-  NAMELIST /ini_sedgem_nml/par_sed_Corgburial,par_sed_CorgburialTOT,par_sed_Corgburial_Dd13C
   ! ------------------- TRACE METALS --------------------------------------------------------------------------------------------- !
   real::par_bio_red_CaCO3_LiCO3                                  ! Default CaCO3 Ca:Li ratio
   real::par_bio_red_CaCO3_LiCO3_alpha                            ! Partition coefficient (alpha)
@@ -281,7 +272,7 @@ MODULE sedgem_lib
   CHARACTER(len=255)::par_pindir_name                            ! 
   CHARACTER(len=255)::par_indir_name                             ! 
   CHARACTER(len=255)::par_outdir_name                            ! 
-  NAMELIST /ini_sedgem_nml/par_indir_name,par_outdir_name,par_pindir_name
+  NAMELIST /ini_sedgem_nml/par_pindir_name,par_indir_name,par_outdir_name
   CHARACTER(len=255)::par_inrstdir_name                          !
   CHARACTER(len=255)::par_outrstdir_name                         !
   NAMELIST /ini_sedgem_nml/par_inrstdir_name,par_outrstdir_name
@@ -330,6 +321,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/ctrl_ncrst
   CHARACTER(len=127)::par_ncrst_name                             ! 
   NAMELIST /ini_sedgem_nml/par_ncrst_name
+  CHARACTER(len=127)::par_ncout2d_name                           ! 
+  NAMELIST /ini_sedgem_nml/par_ncout2d_name
   CHARACTER(len=127)::par_ncsedcore_name
   NAMELIST /ini_sedgem_nml/par_ncsedcore_name
   real::par_sed_save_av_dtyr                                     ! time interval for averaging final sed data over (yr)
@@ -581,19 +574,6 @@ MODULE sedgem_lib
   ! ash tracing
   logical::par_sed_ashevent              ! ash event?
   real::par_sed_ashevent_fash            ! ash flux (g cm-2 kyr-1)
-  !GHC 20/05/09 time-series saving parameters
-  INTEGER                                        :: tstep_count
-  REAL                                           :: tsteps_per_year
-  INTEGER,PARAMETER                              :: n_output_years_max = 10000
-  REAL, DIMENSION(:), ALLOCATABLE                :: output_years_0d
-  REAL, DIMENSION(:), ALLOCATABLE                :: output_years_2d
-  INTEGER , DIMENSION(:), ALLOCATABLE            :: output_tsteps_0d
-  INTEGER , DIMENSION(:), ALLOCATABLE            :: output_tsteps_2d
-  INTEGER                                        :: output_counter_0d
-  INTEGER                                        :: output_counter_2d
-  REAL                                           :: year
-  INTEGER                                        :: year_int, year_remainder
-  CHARACTER(LEN=11)                              :: year_text
   real::sed_age                                           ! sediment age (years)
   real::sed_time                                          ! sediment time counter (years)
   real::sed_time_save                                     ! sediment time save counter (years)

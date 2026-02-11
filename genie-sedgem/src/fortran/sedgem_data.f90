@@ -96,12 +96,6 @@ CONTAINS
        ! --- DIAGENESIS SCHEME: ORGANIC MATTER ----------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: ORGANIC MATTER --------------'
        print*,'Prevent frac2 from being remineralzied?             : ',ctrl_sed_diagen_preserve_frac2
-       print*,'Fractional POC burial -- oxic conditions            : ',par_sed_diagen_fracCpres_ox
-       print*,'Fractional POC burial -- anoxic conditions          : ',par_sed_diagen_fracCpres_anox
-       print*,'Fractional POC burial -- euxinic conditions         : ',par_sed_diagen_fracCpres_eux
-       print*,'Fraction of P relative to C buried -- oxic          : ',par_sed_diagen_fracC2Ppres_ox
-       print*,'Fraction of P relative to C buried -- anoxic        : ',par_sed_diagen_fracC2Ppres_anox
-       print*,'Fraction of P relative to C buried -- euxinic       : ',par_sed_diagen_fracC2Ppres_eux
        print*,'Fractional POC burial scaling (Dunne scheme)        : ',par_sed_diagen_fracCpres_scale
        print*,'Apply Wallmann [2010] C:P remin parameterization?   : ',ctrl_sed_diagen_fracC2Ppres_wallmann2010
        print*,'C:P remin C/P offset                                : ',par_sed_diagen_fracC2Ppres_off
@@ -112,6 +106,8 @@ CONTAINS
        print*,'[O2] thresh for switching redox arrays (mol kg-1)   : ',par_sed_diagen_O2thresh
        print*,'[NO3] thresh for switching redox arrays (mol kg-1)  : ',par_sed_diagen_NO3thresh
        print*,'[SO4] thresh for switching redox arrays (mol kg-1)  : ',par_sed_diagen_SO4thresh
+       print*,'Use BIOGEM redox-dependent remin transformation     : ',ctrl_sed_conv_sed_ocn_redox
+       print*,'Use Bohlen 2012 denitrification remin?              : ',ctrl_sed_conv_sedocn_bohlen2012
        ! --- DIAGENESIS SCHEME: HUELSE 2017 -------------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: HUELSE 2017 -----------------'
        print*,'Corg rate constant parameterization scheme          : ',par_sed_huelse2017_kscheme
@@ -152,11 +148,6 @@ CONTAINS
        print*,'prescribed global SrCO3 recryst rate (mol yr-1)     : ',par_sed_SrCO3recrystTOT
        print*,'carbonate recrystalization r87Sr                    : ',par_r87Sr_SrCO3recryst
        print*,'carbonate recrystalization d88Sr                    : ',par_d88Sr_SrCO3recryst
-       ! --- Corg PRODUCTION ----------------------------------------------------------------------------------------------------- !
-       print*,'--- Coeg PRODUCTION --------------------------------'
-       print*,'prescribed Corg production rate (mol cm-2 yr-1)     : ',par_sed_Corgburial
-       print*,'prescribed global Corg production rate (mol yr-1)   : ',par_sed_CorgburialTOT
-       print*,'POC d13C offset compared to the d13C of CaCO3       : ',par_sed_Corgburial_Dd13C
        ! --- TRACE METALS -------------------------------------------------------------------------------------------------------- !
        print*,'--- TRACE METALS -----------------------------------'
        print*,'Default CaCO3 Ca:Li ratio                           : ',par_bio_red_CaCO3_LiCO3
@@ -206,9 +197,6 @@ CONTAINS
        print*,'Mean ocean floor reference temeprature (C)          : ',par_sed_T0C
        ! --- MISC CONTROLS ------------------------------------------------------------------------------------------------------- !
        print*,'--- MISC CONTROLS ----------------------------------'
-       print*,'Ca-only adjustment for forced ocean saturation?     : ',ctrl_sed_forcedohmega_ca
-       print*,'Forced minimum saturation (calcite ohmega) anywhere : ',par_sed_ohmegamin
-       print*,'Imposed sed->ocn flux (mol Ca cm-2 (time-step)-1)   : ',par_sed_ohmegamin_flux
        print*,'Impose alt detrital burial flux forcing?            : ',ctrl_sed_Fdet
        print*,'Impose alt CaCO3 burial flux forcing?               : ',ctrl_sed_Fcaco3
        print*,'Impose alt opal burial flux forcing?                : ',ctrl_sed_Fopal
@@ -265,6 +253,8 @@ CONTAINS
        print*,'--- DATA SAVING: MISC ------------------------------'
        print*,'Restart in netCDF format?                           : ',ctrl_ncrst
        print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
+       print*,'2D netCDF sediments output file name                : ',trim(par_ncout2d_name)
+       print*,'1D netCDF sedcore output file name                  : ',trim(par_ncsedcore_name)
        print*,'time interval for averaging final data over (yr)    : ',par_sed_save_av_dtyr
        print*,'Save diagenesis error details?                      : ',ctrl_sed_diagen_error_save
        ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ########################################################################## !
@@ -1234,7 +1224,7 @@ CONTAINS
     DO i = 1,n_i
        DO j = 1,n_j
           if (sed_save_mask(i,j)) then
-             loc_filename = TRIM(par_outdir_name)//'sedcoreenv_'// &
+             loc_filename = TRIM(par_outdir_name)//'timeseries_x_sedcores_'// &
                   & fun_conv_num_char_n(2,i)//fun_conv_num_char_n(2,j)// &
                   & string_results_ext
              call check_unit(out,__LINE__,__FILE__)
@@ -1392,7 +1382,7 @@ CONTAINS
          & fun_calc_isotope_delta(dum_sed_fdis(is_CaCO3),dum_sed_fdis(is_CaCO3_13C),const_standards(11),.FALSE.,const_nulliso)
     ! re-open file and write (append) data
     ! NOTE: for fdet, convert units from (mol cm-2 (per time-step)) to (g cm-2 kyr-1)
-    loc_filename = TRIM(par_outdir_name)//'sedcoreenv_'// &
+    loc_filename = TRIM(par_outdir_name)//'timeseries_x_sedcores_'// &
          & fun_conv_num_char_n(2,dum_i)//fun_conv_num_char_n(2,dum_j)// &
          & string_results_ext
     call check_unit(out,__LINE__,__FILE__)
@@ -1506,11 +1496,15 @@ CONTAINS
   ! SAVE SEDIMENT DIAGNOSTICS DATA
   SUBROUTINE sub_data_save_seddiag_GLOBAL(dum_dtyr,dum_sfcsumocn,dum_SLT)
     USE genie_util, ONLY: check_unit, check_iostat
-    ! dummy valiables
+    ! ---------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! ---------------------------------------------------------- !
     real,INTENT(in)::dum_dtyr                                  ! 
     real,DIMENSION(n_ocn,n_i,n_j),intent(in)::dum_sfcsumocn    ! 
-    real,INTENT(in)::dum_SLT                                  ! 
-    ! local variables
+    real,INTENT(in)::dum_SLT
+    ! ---------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! ---------------------------------------------------------- !
     INTEGER::i,j,l,is 
     integer::ios  ! for file checks
     CHARACTER(len=255)::loc_filename
@@ -1541,8 +1535,9 @@ CONTAINS
     real::loc_tot_FCaCO3_d13C,loc_tot_FPOC_d13C
     real::loc_gamma,loc_Foutgassing,loc_Fkerogen
     real::loc_FCaCO3_d13C,loc_tot_FO2
-    
-    ! *** INITIALIZE LOCAL VARIABLES ***
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     ! averaging time-step
     loc_dt = 2.0*dum_dtyr
     ! area (units: cm2)
@@ -1570,7 +1565,7 @@ CONTAINS
           end do
        end do
     end do
-    ! calculate d13C
+    ! -------------------------------------------------------- ! calculate d13C
     DO i=1,n_i
        DO j=1,n_j
           if (loc_fsed(is_CaCO3,i,j) > const_real_nullsmall) then
@@ -1591,7 +1586,7 @@ CONTAINS
           end if
        end do
     end do
-    ! summary component values
+    ! -------------------------------------------------------- ! summary component values
     loc_deep_FCaCO3      = 0.0
     loc_mud_FCaCO3       = 0.0
     loc_reef_FCaCO3      = 0.0
@@ -1607,36 +1602,37 @@ CONTAINS
     loc_deep_FPOP        = 0.0
     loc_mud_FPOP         = 0.0
     loc_reef_FPOP        = 0.0
-    
+    ! -------------------------------------------------------- !
     ! *** SAVE GLOBAL SUMMARY DATA ***
-    
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! create output file
     ! set filename
-    IF (ctrl_timeseries_output) THEN
-       loc_filename = TRIM(par_outdir_name)//'seddiag_misc_DATA_GLOBAL_'//year_text//string_results_ext
-    ELSE
-       loc_filename = TRIM(par_outdir_name)//'seddiag_misc_DATA_GLOBAL'//string_results_ext
-    ENDIF
+    loc_filename = TRIM(par_outdir_name)//'INFO_sediment_summary_AT_END'//string_results_ext
     ! open file
     call check_unit(out,__LINE__,__FILE__)
     OPEN(out,file=TRIM(loc_filename),action='write',iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
-
-    ! HEADER
+    ! -------------------------------------------------------- ! write file header
     Write(unit=out,fmt=*) '================================='
     Write(unit=out,fmt=*) '=== GLOBAL SEDIMENT DIAG DATA ==='
     Write(unit=out,fmt=*) '================================='
-
-    ! DIAGNOSTICS ON SEDIMENT GRID
+    ! -------------------------------------------------------- !
+    ! DEEP-SEA SEDIMENT GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- DEEP-SEA SEDIMENT GRID ------'
+    write(unit=out,fmt='(A6,f9.3,A19)',iostat=ios) &
+         & ' --- > ',par_sed_Dmax_neritic,' m          -------'
+    call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) ' '
     ! MISC
     Write(unit=out,fmt=*) '---------------------------------'
     write(unit=out,fmt='(A28,I6)',iostat=ios) &
          & ' Total # deep-sea grid pts :',int(sum(loc_mask_dsea(:,:)))
     call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,e14.6,A3)',iostat=ios) &
-         & ' Total deep-sea area       :',sum(loc_mask_dsea(:,:)*phys_sed(ips_A,:,:)),'m2'
+    write(unit=out,fmt='(A28,e14.6,A3,A6,f6.2,A2)',iostat=ios) &
+         & ' Total deep-sea area       :',sum(loc_mask_dsea(:,:)*phys_sed(ips_A,:,:)),' m2', &
+         & '   =  ',100.0*sum(loc_mask_dsea(:,:)*phys_sed(ips_A,:,:))/sum(loc_mask(:,:)*phys_sed(ips_A,:,:)),' %'
     call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) '---------------------------------'
     ! local variables 
@@ -1817,174 +1813,23 @@ CONTAINS
        call check_iostat(ios,__LINE__,__FILE__)
        Write(unit=out,fmt=*) '---------------------------------'
     end if
-
-    ! CORAL REEF DIAGNOSTICS
-    Write(unit=out,fmt=*) ' '
-    Write(unit=out,fmt=*) '--- REEF SEDIMENT GRID ----------'
-    Write(unit=out,fmt=*) ' '
-    ! MISC
-    Write(unit=out,fmt=*) '---------------------------------'
-    write(unit=out,fmt='(A28,I6)',iostat=ios) &
-         & ' Total # reef grid pts     :',int(sum(loc_mask_reef(:,:)))
-    call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,e14.6,A3)',iostat=ios) &
-         & ' Total reef area           :',sum(loc_mask_reef(:,:)*phys_sed(ips_A,:,:)),' m2'
-    call check_iostat(ios,__LINE__,__FILE__)
-    Write(unit=out,fmt=*) '---------------------------------'
-    ! local variables 
-    loc_tot_mask_area = sum(loc_mask_reef(:,:)*loc_area(:,:))
-    ! CaCO3
-    loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
-    loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_CaCO3,:,:))
-    if (abs(loc_tot1_sedgrid) > const_real_nullsmall) then 
-       loc_pres_sedgrid = 100.0*(loc_tot1_sedgrid - loc_tot2_sedgrid)/loc_tot1_sedgrid
-    else
-       loc_pres_sedgrid = 0.0
-    end if
-    if (loc_tot_mask_area > const_real_nullsmall) then 
-       loc_mean_sedgrid = sum(loc_mask_reef(:,:)*loc_sed_coretop(is_CaCO3,:,:)*loc_area(:,:))/loc_tot_mask_area
-    else
-       loc_mean_sedgrid = 0.0
-    end if
-    write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-         & ' CaCO3 production          :',loc_tot1_sedgrid,' mol yr-1 = ',1.0E-12*conv_CaCO3_mol_kgC*loc_tot1_sedgrid,' GtC yr-1'
-    call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,f6.2,A2)',iostat=ios) &
-         & ' Mean wt% CaCO3            :',loc_mean_sedgrid,' %'
-    call check_iostat(ios,__LINE__,__FILE__)
-    Write(unit=out,fmt=*) '---------------------------------'
-    ! SAVE !
-    loc_reef_FCaCO3 = loc_tot1_sedgrid
-    ! d13C (weighted by area and CaCO3 sedimentation rate)
-    if (sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)) > const_real_nullsmall) then
-       loc_sed_d13C_mean = &
-            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)*loc_CaCO3_d13C(:,:))/ &
-            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
-    else
-       loc_sed_d13C_mean = 0.0
-    end if
-    write(unit=out,fmt='(A28,f6.2,A5)',iostat=ios) &
-         & ' Mean weighted d13C CaCO3  :',loc_sed_d13C_mean,'o/oo'
-    Write(unit=out,fmt=*) '---------------------------------'
-    ! SAVE !
-    loc_reef_FCaCO3_d13C = loc_sed_d13C_mean
-    ! Li
-    if (sed_select(is_LiCO3) .AND. sed_select(is_detLi)) then
-       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_LiCO3,:,:))
-       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_LiCO3,:,:))
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li CaCO3 sink             :',loc_tot1_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li CaCO3 source           :',loc_tot2_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_detLi,:,:))
-       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_detLi,:,:))
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li detrital sink          :',loc_tot1_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Li detrital source        :',loc_tot2_sedgrid,' mol yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       Write(unit=out,fmt=*) '---------------------------------'
-    end if
-    ! Corg
-    if (par_sed_Corgburial > const_real_nullsmall) then
-       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:))
-       if (loc_tot_mask_area > const_real_nullsmall) then 
-          loc_mean_sedgrid = sum(loc_mask_reef(:,:)*loc_sed_coretop(is_POC,:,:)*loc_area(:,:))/loc_tot_mask_area
-       else
-          loc_mean_sedgrid = 0.0
-       end if
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' POC production            :',loc_tot1_sedgrid,' mol yr-1 = ',1.0E-12*conv_C_mol_kg*loc_tot1_sedgrid,' GtC yr-1'
-       call check_iostat(ios,__LINE__,__FILE__)
-       write(unit=out,fmt='(A28,f6.2,A2)',iostat=ios) &
-            & ' Mean wt% POC              :',loc_mean_sedgrid,' %'
-       call check_iostat(ios,__LINE__,__FILE__)
-       Write(unit=out,fmt=*) '---------------------------------'
-       ! SAVE !
-       loc_reef_FPOC = loc_tot1_sedgrid
-       ! d13C (weighted by area and POC sedimentation rate)
-       if (sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:)) > const_real_nullsmall) then
-          loc_sed_d13C_mean = &
-               & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:)*loc_POC_d13C(:,:))/ &
-               & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_POC,:,:))
-       else
-          loc_sed_d13C_mean = 0.0
-       end if
-       write(unit=out,fmt='(A28,f6.2,A5)',iostat=ios) &
-            & ' Mean weighted d13C CaCO3  :',loc_sed_d13C_mean,'o/oo'
-       Write(unit=out,fmt=*) '---------------------------------'
-       ! SAVE !
-       loc_reef_FPOC_d13C = loc_sed_d13C_mean
-    end if
-    ! Sr
-    IF (sed_select(is_SrCO3_87Sr) .AND. sed_select(is_SrCO3_88Sr)) THEN
-       ! local variables
-       loc_tot1_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3,:,:))
-       loc_tot1a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_87Sr,:,:))
-       loc_tot1b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_88Sr,:,:))
-       loc_tot2_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3,:,:))
-       loc_tot2a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_87Sr,:,:))
-       loc_tot2b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_88Sr,:,:))
-       ! bulk Sr
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' SrCO3 sink                :',loc_tot1_sedgrid,' mol yr-1'
-       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
-            & ' Sr source                 :',loc_tot2_sedgrid,' mol yr-1'
-       ! 87Sr
-       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
-       if (loc_tot > const_real_nullsmall) then
-          loc_sig = loc_tot1a_sedgrid/loc_tot
-       else
-          loc_sig = 0.0
-       end if
-       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
-            & ' SrCO3 sink -- 87Sr        :',loc_sig
-       loc_tot = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
-       if (loc_tot > const_real_nullsmall) then
-          loc_sig = loc_tot2a_sedgrid/loc_tot
-       else
-          loc_sig = 0.0
-       end if
-       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
-            & ' Sr source -- 87Sr         :',loc_sig
-       ! 88Sr
-       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
-       if (loc_tot > const_real_nullsmall) then
-          loc_frac     = loc_tot1b_sedgrid
-          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
-          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
-       else
-          loc_sig = -999.9
-       end if
-       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
-            & ' SrCO3 sink -- 88Sr        :',loc_sig,' o/oo'
-       loc_tot  = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
-       if (abs(loc_tot) > const_real_nullsmall) then
-          loc_frac     = loc_tot2b_sedgrid
-          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
-          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
-       else
-          loc_sig = -999.9
-       end if
-       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
-            & ' Sr source -- 88Sr         :',loc_sig,' o/oo'
-       Write(unit=out,fmt=*) '---------------------------------'
-    end if
-
-    ! SHALLOW WATER SEDIMENTS DIAGNOSTICS
+    ! -------------------------------------------------------- !
+    ! SHALLOW WATER SEDIMENT GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- SHALLOW SEDIMENT GRID -------'
+    write(unit=out,fmt='(A6,f9.3,A19)',iostat=ios) &
+         & ' --- < ',par_sed_Dmax_neritic,' m          -------'
+    call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) ' '
     ! MISC
     Write(unit=out,fmt=*) '---------------------------------'
     write(unit=out,fmt='(A28,I6)',iostat=ios) &
          & ' Total # grid pts          :',int(sum(loc_mask_muds(:,:)))
     call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A28,e14.6,A3)',iostat=ios) &
-         & ' Total area                :',sum(loc_mask_muds(:,:)*phys_sed(ips_A,:,:)),'m2'
+    write(unit=out,fmt='(A28,e14.6,A3,A6,f6.2,A2)',iostat=ios) &
+         & ' Total area                :',sum(loc_mask_muds(:,:)*phys_sed(ips_A,:,:)),' m2', &
+         & '   =  ',100.0*sum(loc_mask_muds(:,:)*phys_sed(ips_A,:,:))/sum(loc_mask(:,:)*phys_sed(ips_A,:,:)),' %'
     call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) '---------------------------------'
     ! local variables 
@@ -2151,8 +1996,136 @@ CONTAINS
        call check_iostat(ios,__LINE__,__FILE__)
        Write(unit=out,fmt=*) '---------------------------------'
     end if
-
-    ! DIAGNOSTICS ON GLOBAL GRID
+    ! -------------------------------------------------------- !
+    ! CARBONATE REEF GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
+    Write(unit=out,fmt=*) ' '
+    Write(unit=out,fmt=*) '--- REEF SEDIMENT GRID ----------'
+    Write(unit=out,fmt=*) ' '
+    ! MISC
+    Write(unit=out,fmt=*) '---------------------------------'
+    write(unit=out,fmt='(A28,I6)',iostat=ios) &
+         & ' Total # reef grid pts     :',int(sum(loc_mask_reef(:,:)))
+    call check_iostat(ios,__LINE__,__FILE__)
+    write(unit=out,fmt='(A28,e14.6,A3,A6,f6.2,A2)',iostat=ios) &
+         & ' Total reef area           :',sum(loc_mask_reef(:,:)*phys_sed(ips_A,:,:)),' m2', &
+         & '   =  ',100.0*sum(loc_mask_reef(:,:)*phys_sed(ips_A,:,:))/sum(loc_mask(:,:)*phys_sed(ips_A,:,:)),' %'
+    call check_iostat(ios,__LINE__,__FILE__)
+    Write(unit=out,fmt=*) '---------------------------------'
+    ! local variables 
+    loc_tot_mask_area = sum(loc_mask_reef(:,:)*loc_area(:,:))
+    ! CaCO3
+    loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
+    loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_CaCO3,:,:))
+    if (abs(loc_tot1_sedgrid) > const_real_nullsmall) then 
+       loc_pres_sedgrid = 100.0*(loc_tot1_sedgrid - loc_tot2_sedgrid)/loc_tot1_sedgrid
+    else
+       loc_pres_sedgrid = 0.0
+    end if
+    if (loc_tot_mask_area > const_real_nullsmall) then 
+       loc_mean_sedgrid = sum(loc_mask_reef(:,:)*loc_sed_coretop(is_CaCO3,:,:)*loc_area(:,:))/loc_tot_mask_area
+    else
+       loc_mean_sedgrid = 0.0
+    end if
+    write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+         & ' CaCO3 production          :',loc_tot1_sedgrid,' mol yr-1 = ',1.0E-12*conv_CaCO3_mol_kgC*loc_tot1_sedgrid,' GtC yr-1'
+    call check_iostat(ios,__LINE__,__FILE__)
+    write(unit=out,fmt='(A28,f6.2,A2)',iostat=ios) &
+         & ' Mean wt% CaCO3            :',loc_mean_sedgrid,' %'
+    call check_iostat(ios,__LINE__,__FILE__)
+    Write(unit=out,fmt=*) '---------------------------------'
+    ! SAVE !
+    loc_reef_FCaCO3 = loc_tot1_sedgrid
+    ! d13C (weighted by area and CaCO3 sedimentation rate)
+    if (sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)) > const_real_nullsmall) then
+       loc_sed_d13C_mean = &
+            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:)*loc_CaCO3_d13C(:,:))/ &
+            & sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_CaCO3,:,:))
+    else
+       loc_sed_d13C_mean = 0.0
+    end if
+    write(unit=out,fmt='(A28,f6.2,A5)',iostat=ios) &
+         & ' Mean weighted d13C CaCO3  :',loc_sed_d13C_mean,'o/oo'
+    Write(unit=out,fmt=*) '---------------------------------'
+    ! SAVE !
+    loc_reef_FCaCO3_d13C = loc_sed_d13C_mean
+    ! Li
+    if (sed_select(is_LiCO3) .AND. sed_select(is_detLi)) then
+       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_LiCO3,:,:))
+       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_LiCO3,:,:))
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li CaCO3 sink             :',loc_tot1_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li CaCO3 source           :',loc_tot2_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       loc_tot1_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_detLi,:,:))
+       loc_tot2_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_detLi,:,:))
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li detrital sink          :',loc_tot1_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Li detrital source        :',loc_tot2_sedgrid,' mol yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       Write(unit=out,fmt=*) '---------------------------------'
+    end if
+    ! Sr
+    IF (sed_select(is_SrCO3_87Sr) .AND. sed_select(is_SrCO3_88Sr)) THEN
+       ! local variables
+       loc_tot1_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3,:,:))
+       loc_tot1a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_87Sr,:,:))
+       loc_tot1b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fsed(is_SrCO3_88Sr,:,:))
+       loc_tot2_sedgrid  = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3,:,:))
+       loc_tot2a_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_87Sr,:,:))
+       loc_tot2b_sedgrid = sum(loc_mask_reef(:,:)*loc_area(:,:)*loc_fdis(is_SrCO3_88Sr,:,:))
+       ! bulk Sr
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' SrCO3 sink                :',loc_tot1_sedgrid,' mol yr-1'
+       write(unit=out,fmt='(A28,e14.6,A12,f7.3,A9)',iostat=ios) &
+            & ' Sr source                 :',loc_tot2_sedgrid,' mol yr-1'
+       ! 87Sr
+       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
+       if (loc_tot > const_real_nullsmall) then
+          loc_sig = loc_tot1a_sedgrid/loc_tot
+       else
+          loc_sig = 0.0
+       end if
+       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
+            & ' SrCO3 sink -- 87Sr        :',loc_sig
+       loc_tot = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
+       if (loc_tot > const_real_nullsmall) then
+          loc_sig = loc_tot2a_sedgrid/loc_tot
+       else
+          loc_sig = 0.0
+       end if
+       write(unit=out,fmt='(A28,f10.6)',iostat=ios) &
+            & ' Sr source -- 87Sr         :',loc_sig
+       ! 88Sr
+       loc_tot = loc_tot1_sedgrid-loc_tot1a_sedgrid-loc_tot1b_sedgrid
+       if (loc_tot > const_real_nullsmall) then
+          loc_frac     = loc_tot1b_sedgrid
+          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
+          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
+       else
+          loc_sig = -999.9
+       end if
+       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
+            & ' SrCO3 sink -- 88Sr        :',loc_sig,' o/oo'
+       loc_tot  = loc_tot2_sedgrid-loc_tot2a_sedgrid-loc_tot2b_sedgrid
+       if (abs(loc_tot) > const_real_nullsmall) then
+          loc_frac     = loc_tot2b_sedgrid
+          loc_standard = const_standardsR(ocn_type(io_Sr_88Sr))
+          loc_sig      = fun_calc_isotope_deltaR(loc_tot,loc_frac,loc_standard,const_real_null)
+       else
+          loc_sig = -999.9
+       end if
+       write(unit=out,fmt='(A28,f10.2,A5)',iostat=ios) &
+            & ' Sr source -- 88Sr         :',loc_sig,' o/oo'
+       Write(unit=out,fmt=*) '---------------------------------'
+    end if
+    ! -------------------------------------------------------- !
+    ! GLOBAL GRID DIAGNOSTICS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- TOTAL SEDIMENT GRID ---------'
     Write(unit=out,fmt=*) '--- (as seen by BIOGEM) ---------'
@@ -2185,8 +2158,9 @@ CONTAINS
          & ' Mean detrital flux        :',loc_mean_sedgrid,' g cm-2 kyr-1'
     call check_iostat(ios,__LINE__,__FILE__)
     Write(unit=out,fmt=*) '---------------------------------'
-
+    ! -------------------------------------------------------- !
     ! WEATHERING PARAMETER CALCULATIONS
+    ! -------------------------------------------------------- !
     ! NOTE: originally assumed are:
     !       (1) CaSiO3:CaCO3 weathering is assumed to be in a 2:3 proportion
     !       (2) CO2 outgassing d13C is assumed to be -6 o/oo
@@ -2240,8 +2214,9 @@ CONTAINS
     ! for updating kerogen weathering O2:C -- calculate O2 gain (mol yr-1) associated with the bural of reduced species
     ! NOTE: the value of sg_par_sed_diag_red_POC_O2 excludes the contribution from P (and N etc.)
     loc_tot_FO2 = (-par_sed_diag_C2O2)*loc_tot_FPOC + 2.0*loc_tot_FPOP
-    
-    ! write out data
+    ! -------------------------------------------------------- !
+    ! WRITE WEATHERING PARAMETERS
+    ! -------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '--- DERIVED PARAMETER VALUES ----'
     Write(unit=out,fmt=*) ' '
@@ -2300,12 +2275,10 @@ CONTAINS
             & ' O2 consumption ratio      =',-loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '---------------------------------'
-
-    ! FOOTER
+    ! -------------------------------------------------------- ! write file footer
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '================================='
-
-    ! close file
+    ! -------------------------------------------------------- ! close file
     Write(unit=out,fmt=*) ' '
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
@@ -2313,7 +2286,7 @@ CONTAINS
     ! *** SAVE WEATHERING PARAMETERS ***
     
     ! set filename
-    loc_filename = TRIM(par_outdir_name)//'seddiag_misc_ROKGEM_parameters'//string_results_ext
+    loc_filename = TRIM(par_outdir_name)//'INFO_weathering_parameters_AT_END'//string_results_ext
     
     ! open file
     call check_unit(out,__LINE__,__FILE__)
@@ -2396,7 +2369,7 @@ CONTAINS
     ! *** SAVE FULL CORE-TOP DATA IN TEXT FILE FORMAT ***
     
     ! set filename
-    loc_filename = TRIM(par_outdir_name)//'seddiag_misc_DATA_FULL'//string_results_ext
+    loc_filename = TRIM(par_outdir_name)//'INFO_sediment_locations_AT_END'//string_results_ext
     
     ! open file
     call check_unit(out,__LINE__,__FILE__)
@@ -2569,757 +2542,11 @@ CONTAINS
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
 
+    ! ---------------------------------------------------------- !
+    ! END
+    ! ---------------------------------------------------------- !
   end SUBROUTINE sub_data_save_seddiag_GLOBAL
   ! ****************************************************************************************************************************** !
-
-
-  ! ############################################################################################################################## !
-  ! ### TO BE REMOVED? ########################################################################################################### !
-  ! ############################################################################################################################## !
-
-
-  ! ****************************************************************************************************************************** !
-  ! SAVE SEDIMENT CORES
-  SUBROUTINE sub_sedgem_save_sedcore()
-    USE genie_util, ONLY: check_unit, check_iostat
-    ! local variables
-    integer::i,j,o,l,is                                                ! 
-    integer::ios                                                       ! file checks
-    CHARACTER(len=255)::loc_filename                                   ! 
-    real::loc_tot,loc_frac,loc_standard                                ! 
-    real::loc_delta
-    REAL,ALLOCATABLE,DIMENSION(:,:,:,:)::loc_sed_save                  ! hold reordered data saving array
-    REAL,ALLOCATABLE,DIMENSION(:,:,:)::loc_sed_save_age_cal            ! sediment age data saving array
-    REAL,ALLOCATABLE,DIMENSION(:,:,:)::loc_sed_save_age_ash            ! sediment age data saving array
-    REAL,ALLOCATABLE,DIMENSION(:,:,:)::loc_sed_save_ash_norm           ! sediment age data saving array
-    REAL,ALLOCATABLE,DIMENSION(:,:,:)::loc_sed_save_age_14C            ! sediment age data saving array
-    REAL,ALLOCATABLE,DIMENSION(:,:,:)::loc_sed_save_CaCO3_D14C         ! sediment CaCO3 D14C data saving array
-    REAL,ALLOCATABLE,DIMENSION(:,:,:)::loc_sed_save_poros              ! sediment porosity
-    REAL,ALLOCATABLE,DIMENSION(:,:,:)::loc_sed_save_th                 ! sediment layer thickness (as a check)
-    REAL::loc_sed_tot_wt                                               ! total mass of solid coponents
-    REAL::loc_sed_tot_vol                                              ! total volume of solid coponents
-    INTEGER::loc_ash_max_o                                             ! running ash volume maximum sub-layer number
-    REAL::loc_ash_max                                                  ! running ash volume maximum
-    REAL::loc_ash_max_depth                                            ! running ash volume maximum down-core depth
-    REAL::loc_ash_conv_dbs_age                                         ! convert depth to age using ash stratigraphy
-    real::loc_ash_tot                                                  ! 
-    INTEGER,DIMENSION(n_i,n_j)::loc_n_sed_stack_top    ! sediment stack top layer number
-    REAL,DIMENSION(n_i,n_j)::loc_sed_stack_top_th      ! sediment stack top layer thickness
-    integer::loc_l,loc_n_l_sed                                         ! 
-    integer,DIMENSION(n_sed_tot)::loc_conv_iselected_is                ! 
-
-    ! *** initialize variables ***
-    ! allocate array for holding sediment data reordered for writing to file
-    ! NOTE: the array bounds extend from ZERO up to 'n_sedtot' 
-    !       so that core top layer data can be more easily assimilated
-    ALLOCATE(loc_sed_save(n_sed,n_i,n_j,0:n_sed_tot),STAT=alloc_error) 
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_sed_save_age_cal(n_i,n_j,0:n_sed_tot),STAT=alloc_error)      
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_sed_save_age_ash(n_i,n_j,0:n_sed_tot),STAT=alloc_error)       
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_sed_save_ash_norm(n_i,n_j,0:n_sed_tot),STAT=alloc_error)     
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_sed_save_age_14C(n_i,n_j,0:n_sed_tot),STAT=alloc_error)     
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_sed_save_CaCO3_D14C(n_i,n_j,0:n_sed_tot),STAT=alloc_error)  
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_sed_save_poros(n_i,n_j,0:n_sed_tot),STAT=alloc_error)      
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_sed_save_th(n_i,n_j,0:n_sed_tot),STAT=alloc_error)     
-    call check_iostat(alloc_error,__LINE__,__FILE__)
-    ! check for problems allocating array space
-    IF (alloc_error /= 0) THEN
-       CALL sub_report_error( &
-            & 'sedgem_data','sub_sedgem_save_sedcore', &
-            & 'Array space could not be allocated', &
-            & 'STOPPING', &
-            & (/const_real_null/),.true. &
-            & )
-    ENDIF
-    ! zero local variables
-    loc_sed_save(:,:,:,:)          = const_real_zero
-    loc_sed_save_age_cal(:,:,:)    = const_real_zero
-    loc_sed_save_age_ash(:,:,:)    = const_real_zero
-    loc_sed_save_ash_norm(:,:,:)   = const_real_zero
-    loc_sed_save_age_14C(:,:,:)    = const_real_zero
-    loc_sed_save_CaCO3_D14C(:,:,:) = const_real_zero
-    loc_sed_save_poros(:,:,:)      = const_real_zero
-    loc_sed_save_th(:,:,:)         = const_real_zero
-
-    ! *** transform sediment array for saving to file ***
-    ! NOTE: the sediment array needs to be re-ordered so that the youngest sediment in the sediment stack 
-    !       starts with an array index of '1',
-    !       and the sediment top material is added at index position '0'
-    ! NOTE: sediment composition descriptors ired to %calcite, such as age and pH,
-    !       need to be normailzed to %calcite
-    ! NOTE: the sediment composition descriptors in the top layer sediments 
-    !       need to be normailzed to a thickness of 1.0 cm
-    ! NOTE: the sediment composition descriptors in the top (incomplete) sub-layer of the sediment stack 
-    !       need to be normailzed to a thickness of 1.0 cm
-    ! NOTE: the overall scheme is to loop through each sediment layer, and
-    !       (a) calculate local constants
-    !       (b) copy sediment core top layer data to data-file export array
-    !       (c) copy sediment core stack sub-layer data to data-file export array
-    !       (d) calculate age of CaCO3 sediment fraction
-    !       (e) normailze solid sediment components to a mass fraction basis normalize sediment
-    !       (f) normalize ash (volume) content to unit (cm) layer thickness
-    !       (g) produce stratigraphic marker age scale
-    !       (h) convert composition to percent
-    !       (i) calculate isotope per mils
-    !       (j) calculate D14C and radiocarbon age 
-
-    ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    ! *** (i,j) GRID PT LOOP START ***
-    ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    DO i = 1,n_i
-       DO j = 1,n_j
-          IF (sed_mask(i,j)) THEN
-
-             ! *** (a) calculate local constants
-             loc_n_sed_stack_top(i,j)  = INT(sed_top_h(i,j)) + 1
-             loc_sed_stack_top_th(i,j) = sed_top_h(i,j) - REAL((loc_n_sed_stack_top(i,j) - 1))
-
-             ! *** (b) copy core top layer data
-             loc_sed_save(:,i,j,0) = sed_top(:,i,j)
-
-             ! *** (c) copy core stack sub-layer data
-             DO o = loc_n_sed_stack_top(i,j),1,-1
-                loc_sed_save(:,i,j,(loc_n_sed_stack_top(i,j) - o + 1)) = sed(:,i,j,o)
-             END DO
-
-             ! *** (x) calculate porosity and actual layer thickness (actually, cm3 per cm) (as a check)
-             !         NOTE: currently assume mud porosity the same as pelagic sediments
-             o = 0
-             loc_sed_tot_vol = fun_calc_sed_vol(loc_sed_save(:,i,j,o))
-             if (loc_sed_tot_vol > const_real_nullsmall) then
-                if (sed_mask_reef(i,j)) then
-                   loc_sed_save_poros(i,j,o) = par_sed_poros_CaCO3_reef
-                elseif (sed_mask_muds(i,j)) then
-                   loc_sed_save_poros(i,j,o) = fun_calc_sed_poros_nsur(loc_sed_save(is_CaCO3,i,j,o)/loc_sed_tot_vol,par_sed_top_th)
-                else
-                   loc_sed_save_poros(i,j,o) = fun_calc_sed_poros_nsur(loc_sed_save(is_CaCO3,i,j,o)/loc_sed_tot_vol,par_sed_top_th)
-                end if
-                loc_sed_save_th(i,j,o) = loc_sed_tot_vol/(1.0 - loc_sed_save_poros(i,j,o))
-             else
-                loc_sed_save_poros(i,j,o) = 1.0
-                loc_sed_save_th(i,j,o)    = 0.0
-             end if
-             DO o = 1,n_sed_tot
-                loc_sed_tot_vol = fun_calc_sed_vol(loc_sed_save(:,i,j,o))
-                if (loc_sed_tot_vol > const_real_nullsmall) then
-                   if (sed_mask_reef(i,j)) then
-                      loc_sed_save_poros(i,j,o) = par_sed_poros_CaCO3_reef
-                   elseif (sed_mask_muds(i,j)) then
-                      loc_sed_save_poros(i,j,o) = fun_calc_sed_poros(loc_sed_save(is_CaCO3,i,j,o)/loc_sed_tot_vol)
-                   else
-                      loc_sed_save_poros(i,j,o) = fun_calc_sed_poros(loc_sed_save(is_CaCO3,i,j,o)/loc_sed_tot_vol)
-                   end if
-                   loc_sed_save_th(i,j,o) = loc_sed_tot_vol/(1.0 - loc_sed_save_poros(i,j,o))
-                else
-                   loc_sed_save_poros(i,j,o) = 1.0
-                   loc_sed_save_th(i,j,o)    = 0.0
-                end if
-             end DO
-
-             ! *** (d) calculate carbonate internal age
-             DO o = 0,n_sed_tot
-                IF (loc_sed_save(is_CaCO3,i,j,o) > const_real_nullsmall) THEN
-                   loc_sed_save_age_cal(i,j,o) = loc_sed_save(is_CaCO3_age,i,j,o)/loc_sed_save(is_CaCO3,i,j,o)
-                ELSE
-                   loc_sed_save_age_cal(i,j,o) = 0.0
-                ENDIF
-             ENDDO
-
-             ! *** (e) normailze solid sediment components to a mass fraction basis (if required),
-             !         + treat stable isotopes in a same manner
-             !         NOTE: as a first step, calculate total mass of solid components in the sediment sub-layer
-             DO o = 0,n_sed_tot
-                IF (ctrl_data_save_wtfrac) THEN
-                   loc_sed_tot_wt = fun_calc_sed_mass(loc_sed_save(:,i,j,o))
-                   IF (loc_sed_tot_wt > const_real_nullsmall) THEN
-                      loc_sed_save(:,i,j,o) = conv_sed_cm3_g(:)*loc_sed_save(:,i,j,o)/loc_sed_tot_wt
-                   end IF
-                else
-                   loc_sed_tot_vol = fun_calc_sed_vol(loc_sed_save(:,i,j,o))
-                   IF (loc_sed_tot_vol > const_real_nullsmall) THEN
-                      loc_sed_save(:,i,j,o) = loc_sed_save(:,i,j,o)/loc_sed_tot_vol
-                   end IF
-                end if
-             END DO
-
-             ! *** (f) calculate normalized ash content
-             !         NOTE: this is a teeny weeny bit redundant as the data is not currently saved ... d'uh!
-             loc_ash_tot = &
-                  & par_sed_top_th*loc_sed_save(is_ash,i,j,0) + &
-                  & loc_sed_stack_top_th(i,j)*loc_sed_save(is_ash,i,j,1)+ &
-                  & sum(loc_sed_save(is_ash,i,j,2:n_sed_tot))
-             if (loc_ash_tot > const_real_nullsmall) then
-                loc_sed_save_ash_norm(i,j,:) = loc_sed_save(is_ash,i,j,:)/loc_ash_tot
-             else
-                loc_sed_save_ash_norm(i,j,:) = const_real_zero
-             end if
-
-             ! *** (g) produce stratigraphic marker age scale
-             !         NOTE: this assumes that the maximum ash volume fraction represents the ash impulse deposition age
-             !               and that the sediment ages inbetween this depth and the surface
-             !               can be linearly interpolated
-             !         NOTE: sediment deeper then the ash maximum is aged by linear extrapolation
-             !         NOTE: first, the ash maximum must be found
-             !         NOTE: once the first maximum has been passed then stop searching,
-             !               because there may be other maxima deeper down ...
-             ! find ash maximum
-             loc_ash_max = 0.0
-             loc_ash_max_o = 0
-             DO o = 0,n_sed_tot
-                IF (loc_sed_save(is_ash,i,j,o) > (loc_ash_max + const_real_nullsmall)) THEN
-                   loc_ash_max   = loc_sed_save(is_ash,i,j,o)
-                   loc_ash_max_o = o
-                ENDIF
-                IF (loc_sed_save(is_ash,i,j,o) < (loc_ash_max - const_real_nullsmall)) exit
-             END DO
-             ! calculate ash maximum depth
-             SELECT CASE (loc_ash_max_o)
-             CASE (0)
-                loc_ash_max_depth = par_sed_top_th/2.0
-             CASE (1)
-                loc_ash_max_depth = par_sed_top_th + loc_sed_stack_top_th(i,j)/2.0
-             CASE default
-                loc_ash_max_depth = par_sed_top_th + loc_sed_stack_top_th(i,j) + REAL((loc_ash_max_o - 2)) + 0.5
-             END SELECT
-             ! calculate linear age-depth relation
-             loc_ash_conv_dbs_age = par_misc_t_runtime/loc_ash_max_depth
-             ! generate age scale
-             o = 0
-             loc_sed_save_age_ash(i,j,o) = loc_ash_conv_dbs_age*(par_sed_top_th/2.0)
-             o = 1
-             loc_sed_save_age_ash(i,j,o) = loc_ash_conv_dbs_age*(par_sed_top_th + loc_sed_stack_top_th(i,j)/2.0)
-             DO o = 2,n_sed_tot
-                loc_sed_save_age_ash(i,j,o) = loc_ash_conv_dbs_age * &
-                     (par_sed_top_th + loc_sed_stack_top_th(i,j) + REAL((o - 2)) + 0.5)
-             END DO
-
-             ! *** (i) calculate isotopic values in 'per mil' units
-             !         NOTE: filter the result to remove the 'null' value when a delta cannot be calculated
-             !               because this will screw up writing in the ASCII format later
-             DO l=1,n_l_sed
-                is = conv_iselected_is(l)
-                SELECT CASE (sed_type(is))
-                case (n_itype_min:n_itype_max)
-                   DO o = 0,n_sed_tot
-                      loc_tot  = loc_sed_save(sed_dep(is),i,j,o)
-                      loc_frac = loc_sed_save(is,i,j,o)
-                      loc_standard = const_standards(sed_type(is))
-                      loc_delta = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-                      If (loc_delta == const_real_null) then
-                         loc_sed_save(is,i,j,o) = const_real_zero
-                      else
-                         loc_sed_save(is,i,j,o) = loc_delta
-                      end If
-                   end DO
-                end SELECT
-             end do
-
-             ! *** (h) convert mass or volume fraction to % units
-             DO l=1,n_l_sed
-                is = conv_iselected_is(l)
-                SELECT CASE (sed_type(is))
-                case (par_sed_type_bio,par_sed_type_abio)
-                   DO o = 0,n_sed_tot
-                      loc_sed_save(is,i,j,o) = 100.0*loc_sed_save(is,i,j,o)
-                   end DO
-                end SELECT
-             end do
-
-             ! *** (j) calculate D14C and radiocarbon age
-             !         NOTE: this will be saved regardless of whether 14C is a included tracer in the model or not ...
-             ! NOTE: rather than trying to obtain and pass atmospheric D14C, 
-             !       a dummy pre-industrila value of 0.0 is passed instead to fun_convert_D14Ctoage
-             !       (a recent code change/correction added atmospheric D14C to the calculation of radiocarbon age)
-             loc_sed_save_CaCO3_D14C(i,j,:) = const_real_zero
-             loc_sed_save_age_14C(i,j,:) = const_real_zero
-             if (sed_select(is_CaCO3_14C)) then
-                DO o = 0,n_sed_tot
-                   IF (loc_sed_save(is_CaCO3,i,j,o) > const_real_nullsmall) THEN
-                      loc_sed_save_CaCO3_D14C(i,j,o) = &
-                           & fun_convert_delta14CtoD14C(loc_sed_save(is_CaCO3_13C,i,j,o),loc_sed_save(is_CaCO3_14C,i,j,o))
-                      loc_sed_save_age_14C(i,j,o) = &
-                           & fun_convert_D14Ctoage(loc_sed_save_CaCO3_D14C(i,j,o),0.0)
-                   end if
-                end DO
-             end if
-
-          end IF
-       END DO
-    END DO
-
-    ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    ! *** (i,j) GRID PT LOOP END ***
-    ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    ! *** save prescribed sediment (code) location data ***
-    ! NOTE: data saved in plain text (ASCII) format
-    ! NOTE: only save SELECTED sedimet tracer information
-    ! NOTE: the '%' character is included at the start of the column header as an aid to MATLAB data importing
-    ! define sub-set of selected tracer to be saved
-    loc_conv_iselected_is(:) = 0
-    loc_l = 0
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       SELECT CASE (sed_type(is))
-       CASE (par_sed_type_bio,par_sed_type_abio,n_itype_min:n_itype_max)
-          loc_l = loc_l + 1
-          loc_conv_iselected_is(loc_l) = is
-       END SELECT
-    end DO
-    loc_n_l_sed = loc_l
-    ! save data
-    DO i = 1,n_i
-       DO j = 1,n_j
-          if (sed_save_mask(i,j)) then
-             loc_filename = TRIM(par_outdir_name)//'sedcore_'// &
-                  & fun_conv_num_char_n(2,i)//fun_conv_num_char_n(2,j)// &
-                  & string_results_ext
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             write(unit=out,fmt='(A4,2A10,3A14,A12,A15,999A10)',iostat=ios) &
-                  & '%  #',                                      &
-                  & '  dbs (cm)',                                &
-                  & '   th (cm)',                                &
-                  & '   CaCO3 age',                              &
-                  & '  linear age',                              &
-                  & '     14C age',                              &
-                  & ' D14C (o/oo)',                              &
-                  & ' Phi (cm3 cm-3)',                           &
-                  & (trim(string_sed(loc_conv_iselected_is(loc_l))),loc_l=1,loc_n_l_sed)
-             call check_iostat(ios,__LINE__,__FILE__)
-             o = 0
-             write(unit=out,fmt='(I4,2f10.3,3f14.3,f12.3,f15.3,999f10.3)',iostat=ios) &
-                  & o,                                                     &
-                  & par_sed_top_th/2.0,                                    &
-                  & loc_sed_save_th(i,j,o),                                &
-                  & loc_sed_save_age_cal(i,j,o),                           &
-                  & loc_sed_save_age_ash(i,j,o),                           &
-                  & loc_sed_save_age_14C(i,j,o),                           &
-                  & loc_sed_save_CaCO3_D14C(i,j,o),                        &
-                  & loc_sed_save_poros(i,j,o),                             &
-                  & (loc_sed_save(loc_conv_iselected_is(loc_l),i,j,o),loc_l=1,loc_n_l_sed)
-             call check_iostat(ios,__LINE__,__FILE__)
-             o = 1
-             write(unit=out,fmt='(I4,2f10.3,3f14.3,f12.3,f15.3,999f10.3)',iostat=ios) &
-                  & o,                                                     &
-                  & par_sed_top_th + loc_sed_stack_top_th(i,j)/2.0,        &
-                  & loc_sed_save_th(i,j,o),                                &
-                  & loc_sed_save_age_cal(i,j,o),                           &
-                  & loc_sed_save_age_ash(i,j,o),                           &
-                  & loc_sed_save_age_14C(i,j,o),                           &
-                  & loc_sed_save_CaCO3_D14C(i,j,o),                        &
-                  & loc_sed_save_poros(i,j,o),                             &
-                  & (loc_sed_save(loc_conv_iselected_is(loc_l),i,j,o),loc_l=1,loc_n_l_sed)
-             call check_iostat(ios,__LINE__,__FILE__)
-             do o=2,n_sed_tot
-                write(unit=out,fmt='(I4,2f10.3,3f14.3,f12.3,f15.3,999f10.3)',iostat=ios) &
-                     & o,                                                                &
-                     & par_sed_top_th + loc_sed_stack_top_th(i,j) + REAL((o - 2)) + 0.5, &
-                     & loc_sed_save_th(i,j,o),                                           &
-                     & loc_sed_save_age_cal(i,j,o),                                      &
-                     & loc_sed_save_age_ash(i,j,o),                                      &
-                     & loc_sed_save_age_14C(i,j,o),                                      &
-                     & loc_sed_save_CaCO3_D14C(i,j,o),                                   &
-                     & loc_sed_save_poros(i,j,o),                                        &
-                     & (loc_sed_save(loc_conv_iselected_is(loc_l),i,j,o),loc_l=1,loc_n_l_sed)
-                call check_iostat(ios,__LINE__,__FILE__)
-             end do
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          end if
-       end DO
-    end DO
-
-    ! *** clean up ***
-    ! deallocate local arrays
-    if(allocated(loc_sed_save)) DEALLOCATE(loc_sed_save,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    if(allocated(loc_sed_save_age_cal)) DEALLOCATE(loc_sed_save_age_cal,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    if(allocated(loc_sed_save_age_ash)) DEALLOCATE(loc_sed_save_age_ash,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    if(allocated(loc_sed_save_ash_norm)) DEALLOCATE(loc_sed_save_ash_norm,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    if(allocated(loc_sed_save_age_14C)) DEALLOCATE(loc_sed_save_age_14C,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    if(allocated(loc_sed_save_CaCO3_D14C)) DEALLOCATE(loc_sed_save_CaCO3_D14C,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    if(allocated(loc_sed_save_poros)) DEALLOCATE(loc_sed_save_poros,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    if(allocated(loc_sed_save_th)) DEALLOCATE(loc_sed_save_th,STAT=dealloc_error)
-    call check_iostat(dealloc_error,__LINE__,__FILE__)
-    ! check for problems de-allocating array space
-    IF (dealloc_error /= 0) THEN
-       CALL sub_report_error( &
-            & 'sedgem_data','sub_sedgem_save_sedcore', &
-            & 'Array space could not be deallocated', &
-            & 'STOPPING', &
-            & (/const_real_null/),.true. &
-            & )
-    ENDIF
-
-  end SUBROUTINE sub_sedgem_save_sedcore
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! SAVE SEDIMENT DIAGNOSTICS DATA
-  SUBROUTINE sub_data_save_seddiag_2D(dum_dtyr,dum_sfcsumocn)
-    ! dummy valiables
-    real,INTENT(in)::dum_dtyr
-    real,DIMENSION(n_ocn,n_i,n_j),intent(in)::dum_sfcsumocn
-    ! local variables
-    INTEGER::i,j,l,io,is,ic,ips          ! 
-    CHARACTER(len=255)::loc_filename
-    REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_coretop
-    REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_preservation
-    REAL,DIMENSION(n_i,n_j)::loc_ij
-    real::loc_tot,loc_frac,loc_standard
-    ! calculate core-top sediment composition data
-    loc_sed_coretop(:,:,:) = fun_sed_coretop()
-    ! calculate local sediment preservation (%)
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       DO i=1,n_i
-          DO j=1,n_j
-             IF (sed_fsed(is,i,j) > const_real_nullsmall) THEN
-                loc_sed_preservation(is,i,j) = 100.0*(sed_fsed(is,i,j) - sed_fdis(is,i,j))/sed_fsed(is,i,j)
-             else
-                loc_sed_preservation(is,i,j) = 0.0
-             end if
-          end do
-       end do
-    end do
-    ! save grid data
-    loc_filename = TRIM(par_outdir_name)//'seddiag_grid_topography'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,-phys_sed(ips_mask_sed,:,:)*phys_sed(ips_D,:,:))
-    loc_filename = TRIM(par_outdir_name)//'seddiag_grid_lat_mid'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,phys_sed(ips_lat,:,:))
-    loc_filename = TRIM(par_outdir_name)//'seddiag_grid_lon_mid'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,phys_sed(ips_lon,:,:))
-    loc_filename = TRIM(par_outdir_name)//'seddiag_grid_lat_n'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,phys_sed(ips_latn,:,:))
-    loc_filename = TRIM(par_outdir_name)//'seddiag_grid_lat_s'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,phys_sed(ips_latn,:,:) - phys_sed(ips_dlat,:,:))
-    loc_filename = TRIM(par_outdir_name)//'seddiag_grid_lon_e'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,phys_sed(ips_lone,:,:))
-    loc_filename = TRIM(par_outdir_name)//'seddiag_grid_lon_w'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,phys_sed(ips_lone,:,:) - phys_sed(ips_dlon,:,:))
-    ! save interface flux data
-    ! NOTE: flux data must be converted from units of (mol cm-2) to (mol cm-2 yr-1)
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       loc_ij(:,:) = const_real_zero
-       DO i=1,n_i
-          DO j=1,n_j
-             SELECT CASE (sed_type(is))
-             CASE (par_sed_type_bio,par_sed_type_abio)
-                ! solids
-                loc_ij(i,j) = sed_fsed(is,i,j)/dum_dtyr
-             case (n_itype_min:n_itype_max)
-                ! isotopes
-                loc_tot  = sed_fsed(sed_dep(is),i,j)
-                loc_frac = sed_fsed(is,i,j)
-                loc_standard = const_standards(sed_type(is))
-                loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-             END SELECT
-          end do
-       end do
-       SELECT CASE (sed_type(is))
-       CASE (par_sed_type_bio,par_sed_type_abio,n_itype_min:n_itype_max)
-          loc_filename = &
-               & TRIM(par_outdir_name)//'seddiag_fsed_'//TRIM(string_sed(is))//string_results_ext
-          CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
-       END SELECT
-    END DO
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       loc_ij(:,:) = const_real_zero
-       DO i=1,n_i
-          DO j=1,n_j
-             SELECT CASE (sed_type(is))
-             CASE (par_sed_type_bio,par_sed_type_abio)
-                ! solids
-                loc_ij(i,j) = sed_fdis(is,i,j)/dum_dtyr
-             case (n_itype_min:n_itype_max)
-                ! isotopes
-                loc_tot  = sed_fsed(sed_dep(is),i,j)
-                loc_frac = sed_fsed(is,i,j)
-                loc_standard = const_standards(sed_type(is))
-                loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-             END SELECT
-          end do
-       end do
-       SELECT CASE (sed_type(is))
-       CASE (par_sed_type_bio,par_sed_type_abio,n_itype_min:n_itype_max)
-          loc_filename = &
-               & TRIM(par_outdir_name)//'seddiag_fdis_'//TRIM(string_sed(is))//string_results_ext
-          CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
-       END SELECT
-    END DO
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       loc_ij(:,:) = const_real_zero
-       DO i=1,n_i
-          DO j=1,n_j
-             SELECT CASE (sed_type(is))
-             CASE (par_sed_type_bio,par_sed_type_abio)
-                loc_ij(i,j) = loc_sed_preservation(is,i,j)
-             END SELECT
-          end do
-       end do
-       SELECT CASE (sed_type(is))
-       CASE (par_sed_type_bio,par_sed_type_abio)
-          loc_filename = &
-               & TRIM(par_outdir_name)//'seddiag_pres_'//TRIM(string_sed(is))//string_results_ext
-          CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
-       end SELECT
-    END DO
-    ! save interface flux data - misc
-    ! dust (log10)
-    IF (sed_select(is_det)) THEN
-       loc_ij(:,:) = const_real_zero
-       ! log10 data
-       DO i=1,n_i
-          DO j=1,n_j
-             IF (sed_fsed(is_det,i,j) > 0.0) THEN
-                loc_ij(:,:) = log10(sed_fsed(is_det,i,j)/dum_dtyr)
-             else
-                loc_ij(:,:) = const_real_null
-             end if
-          end do
-       end do
-       loc_filename = &
-            & TRIM(par_outdir_name)//'seddiag_misc_fsed_'//TRIM(string_sed(is_det))//'_log10'//string_results_ext
-       CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
-    END IF
-    ! CaCO3:POC 'rain ratio'
-    IF (sed_select(is_CaCO3) .AND. sed_select(is_POC)) THEN
-       loc_ij(:,:) = const_real_zero
-       DO i=1,n_i
-          DO j=1,n_j
-             if (sed_fsed(is_POC,i,j) > const_real_nullsmall) then
-                loc_ij(i,j) = sed_fsed(is_CaCO3,i,j)/sed_fsed(is_POC,i,j)
-             end if
-          END DO
-       END DO
-       loc_filename = &
-            & TRIM(par_outdir_name)//'seddiag_misc_fCaCO3tofPOC'//string_results_ext
-       CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
-    end if
-    ! save ocean interface tracer data field
-    DO l=1,n_l_ocn
-       io = conv_iselected_io(l)
-       loc_ij(:,:) = const_real_zero
-       DO i=1,n_i
-          DO j=1,n_j
-             SELECT CASE (ocn_type(io))
-             CASE (1)
-                loc_ij(i,j) = dum_sfcsumocn(io,i,j)
-             case (n_itype_min:n_itype_max)
-                loc_tot  = dum_sfcsumocn(ocn_dep(io),i,j)
-                loc_frac = dum_sfcsumocn(io,i,j)
-                loc_standard = const_standards(ocn_type(io))
-                loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-             end SELECT
-          end do
-       end do
-       loc_filename = &
-            & TRIM(par_outdir_name)//'seddiag_ocn_'//TRIM(string_ocn(io))//string_results_ext
-       CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
-    END DO
-    ! save carbonate chemistry data field
-    DO ic=1,n_carb
-       loc_filename = &
-            & TRIM(par_outdir_name)//'seddiag_carb_'//TRIM(string_carb(ic))//string_results_ext
-       CALL sub_save_data_ij(loc_filename,n_i,n_j,sed_carb(ic,:,:))
-    END DO
-    ! save core-top data
-    ! NOTE: the call to fun_sed_coretop made in populating <loc_sed_coretop> has already made the necessary type conversions
-    !       for solid tracers as wt%, isotopes in per mill, and recovery of the carbonate 'age' value
-    DO l=1,n_l_sed
-       is = conv_iselected_is(l)
-       SELECT CASE (sed_type(is))
-       CASE (par_sed_type_bio,par_sed_type_abio,par_sed_type_age,n_itype_min:n_itype_max)
-          loc_filename = &
-               & TRIM(par_outdir_name)//'seddiag_sed_'//TRIM(string_sed(is))//string_results_ext
-          CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_sed_coretop(is,:,:))
-       end SELECT
-    END DO
-    ! save phys (grid) details
-    DO ips=1,n_phys_sed
-       loc_filename = &
-            & TRIM(par_outdir_name)//'seddiag_sedphys_'//TRIM(string_phys_sed(ips))//string_results_ext
-       CALL sub_save_data_ij(loc_filename,n_i,n_j,phys_sed(ips,:,:))
-    END DO
-  end SUBROUTINE sub_data_save_seddiag_2D
-  ! ****************************************************************************************************************************** !
-
-
-  ! GHC 10/06/09
-  !======= SUBROUTINE TO READ IN OUTPUT YEARS ========================================================!
-
-  ! Subroutine: sub_data_output_years
-  !
-  ! Reads in years to output data from file.
-  !
-  ! Uses:
-  !
-  ! <genie_util>
-  !
-  ! Calls:
-  !
-  ! - <check_unit>
-  ! - <check_iostat>
-
-  SUBROUTINE sub_data_output_years()
-
-    USE genie_util, ONLY: check_unit, check_iostat
-
-    IMPLICIT NONE
-
-    !local variables
-    INTEGER:: i, n_years, n_output_years, ios, alloc_stat
-    REAL:: year
-
-    ! For 0d
-    call check_unit(18,__LINE__,__FILE__)
-    open(18,file=TRIM(par_indir_name)//TRIM(par_output_years_file_0d),action='read',iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    n_years = 0
-    n_output_years=0
-    DO
-       READ(18,*,iostat=ios) year
-       !call check_iostat(ios,__LINE__,__FILE__)
-       IF (ios.lt.0) EXIT
-       n_years = n_years + 1
-       IF (year.gt.start_year) THEN
-          n_output_years = n_output_years + 1
-       ENDIF
-    END DO
-
-    PRINT*,'number of output years in '//TRIM(par_output_years_file_0d)//': ',n_output_years
-    rewind(18)
-
-    ALLOCATE(output_years_0d(n_output_years),stat=alloc_stat)
-    call check_iostat(alloc_stat,__LINE__,__FILE__)
-    ALLOCATE(output_tsteps_0d(n_output_years),stat=alloc_stat)
-    call check_iostat(alloc_stat,__LINE__,__FILE__)
-
-    i = 1
-    DO
-       READ(18,*,iostat=ios) year
-       !call check_iostat(ios,__LINE__,__FILE__)
-       IF (ios.lt.0) EXIT
-       IF (year.gt.start_year) THEN
-          output_years_0d(i) = year
-          i = i + 1
-       ENDIF
-    END DO
-    close(18)
-
-    !PRINT*,'output years_0d:'
-    !write(6,fmt='(f14.1)'),output_years_0d
-    output_tsteps_0d = int(tsteps_per_year*(output_years_0d-start_year))
-    output_counter_0d = 1
-
-    ! For 2d
-    call check_unit(18,__LINE__,__FILE__)
-    open(18,file=TRIM(par_indir_name)//TRIM(par_output_years_file_2d),action='read',iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    n_years = 0
-    n_output_years=0
-    DO
-       READ(18,*,iostat=ios) year
-       !call check_iostat(ios,__LINE__,__FILE__)
-       IF (ios.lt.0) EXIT
-       n_years = n_years + 1
-       IF (year.gt.start_year) THEN
-          n_output_years = n_output_years + 1
-       ENDIF
-    END DO
-
-    PRINT*,'number of output years in '//TRIM(par_output_years_file_2d)//': ',n_output_years
-    rewind(18)
-
-    ALLOCATE(output_years_2d(n_output_years),stat=alloc_stat)
-    call check_iostat(alloc_stat,__LINE__,__FILE__)
-    ALLOCATE(output_tsteps_2d(n_output_years),stat=alloc_stat)
-    call check_iostat(alloc_stat,__LINE__,__FILE__)
-
-    i = 1
-    DO
-       READ(18,*,iostat=ios) year
-       !call check_iostat(ios,__LINE__,__FILE__)
-       IF (ios.lt.0) EXIT
-       IF (year.gt.start_year) THEN
-          output_years_2d(i) = year
-          i = i + 1
-       ENDIF
-    END DO
-    close(18)
-
-    !PRINT*,'output years_2d:'
-    !write(6,fmt='(f14.1)'),output_years_2d
-    output_tsteps_2d = int(tsteps_per_year*(output_years_2d-start_year))
-    output_counter_2d = 1
-
-  END SUBROUTINE sub_data_output_years
-
-
-  !======= SUBROUTINE TO CHANGE OUTPUT YEAR  ==================================================!
-
-  ! Subroutine: sub_output_year
-  !
-  ! year is read from list of output years depending on whether 0D or 2D output is due
-
-  SUBROUTINE sub_output_year()
-
-    IMPLICIT NONE
-
-    IF (tstep_count.eq.output_tsteps_0d(output_counter_0d)) THEN
-       year = output_years_0d(output_counter_0d)
-    ENDIF
-
-    IF (tstep_count.eq.output_tsteps_2d(output_counter_2d)) THEN 
-       year = output_years_2d(output_counter_2d)
-    ENDIF
-
-    !print*,tstep_count,output_counter_0d,output_counter_2d,year
-
-    year_int = int(year)
-    year_remainder = int(1000*(year - real(year_int)))
-    year_text = fun_conv_num_char_n(8,year_int)//'_'//fun_conv_num_char_n(3,year_remainder)
-
-  END SUBROUTINE sub_output_year
-
-  !======= SUBROUTINE TO INCREMENT OUTPUT COUNTERS  ==================================================!
-
-  ! Subroutine: sub_output_counters
-  !
-  ! output_counters go up by 1 after each output
-
-  SUBROUTINE sub_output_counters()
-
-    IMPLICIT NONE
-
-    IF (tstep_count.eq.output_tsteps_0d(output_counter_0d)) THEN
-       output_counter_0d = output_counter_0d + 1
-    ENDIF
-
-    IF (tstep_count.eq.output_tsteps_2d(output_counter_2d)) THEN 
-       output_counter_2d = output_counter_2d + 1 
-    ENDIF
-
-  END SUBROUTINE sub_output_counters
 
 
 END MODULE sedgem_data

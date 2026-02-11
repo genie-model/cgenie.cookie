@@ -537,6 +537,8 @@ CONTAINS
        print*,'Restart in netCDF format?                           : ',ctrl_ncrst
        print*,'Save 2D netCDF data?                                : ',ctrl_data_save_2d
        print*,'Save 3D netCDF data?                                : ',ctrl_data_save_3d
+       print*,'2D netCDF ocean output file name                    : ',trim(par_ncout2d_name)
+       print*,'3D netCDF ocean output file name                    : ',trim(par_ncout3d_name)
        print*,'i coordinate for saving water column results        : ',par_misc_save_i
        print*,'j coordinate for saving water column results        : ',par_misc_save_j
        print*,'                                                    : ',n_orb_pts_nmax
@@ -652,6 +654,22 @@ CONTAINS
     if (sed_select(is_FeCO3))    ctrl_carbchemupdate_full = .true.
     if (sed_select(is_Fe3Si2O4)) ctrl_carbchemupdate_full = .true.
     if (ocn_select(io_CH4))      ctrl_carbchemupdate_full = .true.
+    ! -------------------------------------------------------- !
+    ! CREATE GLOBALLY-SHARED COPIES OF KEY REDOX PARAMETERS
+    ! -------------------------------------------------------- !
+    conv_ls_lo_c0_O2    = par_bio_remin_c0_O2
+    conv_ls_lo_ci_O2    = par_bio_remin_ci_O2
+    conv_ls_lo_k_O2     = par_bio_remin_k_O2
+    conv_ls_lo_c0_NO3   = par_bio_remin_c0_NO3
+    conv_ls_lo_ci_NO3   = par_bio_remin_ci_NO3
+    conv_ls_lo_k_NO3    = par_bio_remin_k_NO3
+    conv_ls_lo_c0_FeOOH = par_bio_remin_c0_FeOOH
+    conv_ls_lo_ci_FeOOH = par_bio_remin_ci_FeOOH
+    conv_ls_lo_k_FeOOH  = par_bio_remin_k_FeOOH
+    conv_ls_lo_c0_SO4   = par_bio_remin_c0_SO4
+    conv_ls_lo_ci_SO4   = par_bio_remin_ci_SO4
+    conv_ls_lo_k_SO4    = par_bio_remin_k_SO4
+    conv_ls_lo_k_meth   = par_bio_remin_k_meth
     ! -------------------------------------------------------- !
     ! MISC
     ! -------------------------------------------------------- !
@@ -1358,11 +1376,11 @@ CONTAINS
     ! Fe -- assume Fe2+ is intercellular for of Fe
     ! NOTE: for other Fe schemes, there is no oxidation/reduction
     if (ocn_select(io_Fe) .AND. ocn_select(io_Fe2)) then
-       conv_sed_ocn(io_Fe,is_POFe)  = 0.0
-       conv_sed_ocn(io_Fe2,is_POFe) = 1.0
+       conv_sed_ocn(io_Fe,is_POFe)            = 0.0
+       conv_sed_ocn(io_Fe2,is_POFe)           = 1.0
        conv_sed_ocn(io_Fe_56Fe,is_POFe_56Fe)  = 0.0
        conv_sed_ocn(io_Fe2_56Fe,is_POFe_56Fe) = 1.0
-       conv_sed_ocn(io_O2,is_POFe) = 0.0
+       conv_sed_ocn(io_O2,is_POFe)            = 0.0
     end if
     ! -------------------------------------------------------- !
     ! UPDATE ALT REDOX SED->OCN RELATIONSHIPS
@@ -1408,11 +1426,11 @@ CONTAINS
        !       BUT, it is going to be implicitly assumed to be oxidized during remin under oxic conditions
        ! NOTE: conv_sed_ocn assumes that scavenged Fe is reduced and released as Fe2+
        if (ocn_select(io_Fe) .AND. ocn_select(io_Fe2)) then
-          conv_sed_ocn_O(io_Fe,is_POFe)  = 1.0
-          conv_sed_ocn_O(io_Fe2,is_POFe) = 0.0
+          conv_sed_ocn_O(io_Fe,is_POFe)            = 1.0
+          conv_sed_ocn_O(io_Fe2,is_POFe)           = 0.0
           conv_sed_ocn_O(io_Fe_56Fe,is_POFe_56Fe)  = 1.0
           conv_sed_ocn_O(io_Fe2_56Fe,is_POFe_56Fe) = 0.0
-          conv_sed_ocn_O(io_O2,is_POFe) = -1.0/4.0
+          conv_sed_ocn_O(io_O2,is_POFe)            = -1.0/4.0
        end if
     end if
     ! -------------------------------------------------------- ! Modify for N-reducing conditions
@@ -1435,6 +1453,8 @@ CONTAINS
     ! NOTE: for biological update -- assuemd stiochometry: 
     !       2NO3- + 2H+ <-> (5/2)O2 + N2 + H2O
     !       NO3- + H2O + 2H+ <-> 2O2 + NH4+
+    ! NOTE: nitrogen fixation is simply assumed:
+    !       N2 --> 2PON
     ! Wikipedia summary ...
     ! NO3− + 2 H+ + 2 e−→ NO2− + H2O (Nitrate reductase)
     ! NO2− + 2 H+ + e− → NO + H2O (Nitrite reductase)
@@ -1445,6 +1465,8 @@ CONTAINS
     ! NH4+ + NO2− → N2 + 2 H2O
     ! NOTE: will have to assume NO2- as part of the ALK balance ... ?
     !       (then this must be taken inot account when NO or N2O is formed)
+    ! NOTE: conv_sed_ocn_N_NH4 and conv_sed_ocn_N_N2 are specific to the empirical sediemntary denitrification scheme of
+    !       Bohlen et al. [2012]
     !
     ! For N2O ... simple would be: O2 == (4/5)NO3- - (2/5)N2O
     ! However ... this would mean:
@@ -1460,7 +1482,9 @@ CONTAINS
     ! => O2 = (4/5)NO3- - (2/5)N2O
     !
     if (ocn_select(io_NO3)) then
-       conv_sed_ocn_N(:,:)  = conv_sed_ocn(:,:)
+       conv_sed_ocn_N(:,:)      = conv_sed_ocn(:,:)
+       conv_sed_ocn_N_N2(:,:)   = conv_sed_ocn(:,:)
+       conv_sed_ocn_N_NH4(:,:)  = conv_sed_ocn(:,:)
        ! > N
        if (ocn_select(io_NH4)) then
           ! PON + (3/2)H2O + H+ --> NH4+ + (3/4)O2
@@ -1547,14 +1571,59 @@ CONTAINS
        ! NOTE: reduced iron (Fe2+) is the assumed intercellular phase
        ! NOTE: conv_sed_ocn assumes that scavenged Fe is reduced and released as Fe2+
        if (ocn_select(io_Fe) .AND. ocn_select(io_Fe2)) then
-          conv_sed_ocn_N(io_Fe,is_POFe)  = 1.0
-          conv_sed_ocn_N(io_Fe2,is_POFe) = 0.0
+          conv_sed_ocn_N(io_Fe,is_POFe)            = 1.0
+          conv_sed_ocn_N(io_Fe2,is_POFe)           = 0.0
           conv_sed_ocn_N(io_Fe_56Fe,is_POFe_56Fe)  = 1.0
           conv_sed_ocn_N(io_Fe2_56Fe,is_POFe_56Fe) = 0.0
-          conv_sed_ocn_N(io_O2,is_POFe) = -1.0/4.0
+          conv_sed_ocn_N(io_O2,is_POFe)            = -1.0/4.0
        end if
     else
        conv_sed_ocn_N(:,:) = 0.0
+    end if
+    ! -------------------------------------------------------- ! (sedimentary N-reducing conditions)
+    ! populate sedimentary denitrification end-member arrays
+    ! NOTE: for now, conv_sed_ocn_N_N2 and conv_sed_ocn_N_NH4 do not oxidize P using NO3 (only C)
+    !       (P is oxidized with the default stiochiometry with O2)
+    ! NOTE: assume that if io_NO3_15N is selected, all the corresponding N isotopes are ...
+    if (ocn_select(io_N2) .AND. ocn_select(io_NH4)) then
+       ! N2 end-member
+       conv_sed_ocn_N_N2(io_NO3,is_PON) = 0.0
+       conv_sed_ocn_N_N2(io_NH4,is_PON) = 0.0
+       conv_sed_ocn_N_N2(io_N2,is_PON)  = 1.0
+       conv_sed_ocn_N_N2(io_ALK,is_PON) = 0.0
+       conv_sed_ocn_N_N2(io_O2,is_PON)  = 0.0
+       conv_sed_ocn_N_N2(io_NO3,is_POC) = (4.0/5.0)*conv_sed_ocn_N_N2(io_O2,is_POC)
+       conv_sed_ocn_N_N2(io_NH4,is_POC) = 0.0
+       conv_sed_ocn_N_N2(io_N2,is_POC)  = -(1.0/2.0)*conv_sed_ocn_N_N2(io_NO3,is_POC)
+       conv_sed_ocn_N_N2(io_ALK,is_POC) = -conv_sed_ocn_N_N2(io_NO3,is_POC)
+       conv_sed_ocn_N_N2(io_O2,is_POC)  = 0.0
+       if (ocn_select(io_NO3_15N) .AND. ocn_select(io_N2_15N) .AND. ocn_select(io_NH4_15N)) then
+          conv_sed_ocn_N_N2(io_NO3_15N,is_POC) = conv_sed_ocn_N_N2(io_NO3,is_POC)
+          conv_sed_ocn_N_N2(io_NH4_15N,is_POC) = conv_sed_ocn_N_N2(io_NH4,is_POC)
+          conv_sed_ocn_N_N2(io_N2_15N,is_POC)  = conv_sed_ocn_N_N2(io_N2,is_POC)
+          conv_sed_ocn_N_N2(io_NO3_15N,is_PON) = conv_sed_ocn_N_N2(io_NO3,is_PON)
+          conv_sed_ocn_N_N2(io_NH4_15N,is_PON) = conv_sed_ocn_N_N2(io_NH4,is_PON)
+          conv_sed_ocn_N_N2(io_N2_15N,is_PON)  = conv_sed_ocn_N_N2(io_N2,is_PON)
+       end if
+       ! NH4 end-member
+       conv_sed_ocn_N_NH4(io_NO3,is_PON) = 0.0
+       conv_sed_ocn_N_NH4(io_NH4,is_PON) = 1.0
+       conv_sed_ocn_N_NH4(io_N2,is_PON)  = 0.0
+       conv_sed_ocn_N_NH4(io_ALK,is_PON) = conv_sed_ocn_N_NH4(io_NH4,is_PON)
+       conv_sed_ocn_N_NH4(io_O2,is_PON)  = (3.0/4.0)*conv_sed_ocn_N_NH4(io_NH4,is_PON)
+       conv_sed_ocn_N_NH4(io_NO3,is_POC) = (1.0/2.0)*conv_sed_ocn_N_NH4(io_O2,is_POC)
+       conv_sed_ocn_N_NH4(io_NH4,is_POC) = -conv_sed_ocn_N_NH4(io_NO3,is_POC)
+       conv_sed_ocn_N_NH4(io_N2,is_POC)  = 0.0
+       conv_sed_ocn_N_NH4(io_ALK,is_POC) = -2.0*conv_sed_ocn_N_NH4(io_NO3,is_POC)
+       conv_sed_ocn_N_NH4(io_O2,is_POC)  = 0.0
+       if (ocn_select(io_NO3_15N) .AND. ocn_select(io_N2_15N) .AND. ocn_select(io_NH4_15N)) then
+          conv_sed_ocn_N_NH4(io_NO3_15N,is_POC) = conv_sed_ocn_N_NH4(io_NO3,is_POC)
+          conv_sed_ocn_N_NH4(io_NH4_15N,is_POC) = conv_sed_ocn_N_NH4(io_NH4,is_POC)
+          conv_sed_ocn_N_NH4(io_N2_15N,is_POC)  = conv_sed_ocn_N_NH4(io_N2,is_POC)
+          conv_sed_ocn_N_NH4(io_NO3_15N,is_PON) = conv_sed_ocn_N_NH4(io_NO3,is_PON)
+          conv_sed_ocn_N_NH4(io_NH4_15N,is_PON) = conv_sed_ocn_N_NH4(io_NH4,is_PON)
+          conv_sed_ocn_N_NH4(io_N2_15N,is_PON)  = conv_sed_ocn_N_NH4(io_N2,is_PON)
+       end if
     end if
     ! -------------------------------------------------------- ! Modify for FeOOH-reducing(!) conditions
     ! NOTE: Fe3 (io_Fe) is associated with 1/4 O2 (comapred to Fe2 (io_Fe2))
@@ -1598,11 +1667,11 @@ CONTAINS
        ! NOTE: reduced iron (Fe2+) is the assumed intercellular phase
        ! NOTE: conv_sed_ocn assumes that scavenged Fe is reduced and released as Fe2+
        if (ocn_select(io_Fe) .AND. ocn_select(io_Fe2)) then
-          conv_sed_ocn_Fe(io_Fe,is_POFe)  = 0.0
-          conv_sed_ocn_Fe(io_Fe2,is_POFe) = 1.0
+          conv_sed_ocn_Fe(io_Fe,is_POFe)            = 0.0
+          conv_sed_ocn_Fe(io_Fe2,is_POFe)           = 1.0
           conv_sed_ocn_Fe(io_Fe_56Fe,is_POFe_56Fe)  = 0.0
           conv_sed_ocn_Fe(io_Fe2_56Fe,is_POFe_56Fe) = 1.0
-          conv_sed_ocn_Fe(io_O2,is_POFe) = 0.0
+          conv_sed_ocn_Fe(io_O2,is_POFe)            = 0.0
        end if
     else
        conv_sed_ocn_Fe(:,:) = 0.0
@@ -1655,11 +1724,11 @@ CONTAINS
        ! NOTE: reduced iron (Fe2+) is the assumed intercellular phase
        ! NOTE: conv_sed_ocn assumes that scavenged Fe is reduced and released as Fe2+
        if (ocn_select(io_Fe) .AND. ocn_select(io_Fe2)) then
-          conv_sed_ocn_S(io_Fe,is_POFe)  = 0.0
-          conv_sed_ocn_S(io_Fe2,is_POFe) = 1.0
+          conv_sed_ocn_S(io_Fe,is_POFe)            = 0.0
+          conv_sed_ocn_S(io_Fe2,is_POFe)           = 1.0
           conv_sed_ocn_S(io_Fe_56Fe,is_POFe_56Fe)  = 0.0
           conv_sed_ocn_S(io_Fe2_56Fe,is_POFe_56Fe) = 1.0
-          conv_sed_ocn_S(io_O2,is_POFe) = 0.0
+          conv_sed_ocn_S(io_O2,is_POFe)            = 0.0
        end if
     else
        conv_sed_ocn_S(:,:) = 0.0
@@ -1727,7 +1796,7 @@ CONTAINS
     ! -------------------------------------------------------- ! Set local remin array reflecting 'mix' of redox possibilities
     ! NOTE: this is the 'redox tree' of all enabled posibilities
     ! NOTE: without this, the elemental transformation from particulate formation to tracer update misses
-    !       e.g. NO3update into PON ...
+    !       e.g. NO3 uptake into PON ...
     !       (the 'compact equivalent' also includes this)
     !       effectively, the bug-fix of the original code (see note below) introduced its own bug ...
     if (ocn_select(io_O2))    loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn)
@@ -1736,6 +1805,9 @@ CONTAINS
     if (ocn_select(io_FeOOH)) loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn_Fe)
     if (ocn_select(io_SO4))   loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn_S)
     if (ocn_select(io_CH4))   loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn_meth)
+    if (ocn_select(io_N2) .AND. ocn_select(io_NH4)) then
+       loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn_N_N2) + abs(conv_sed_ocn_N_NH4)
+    end if
     ! -------------------------------------------------------- ! indexing array (all possible)
     ! NOTE: original code set conv_sed_ocn_i only as the indices of conv_sed_ocn (and basic/oxic-only)
     conv_sed_ocn_i(:,:) = fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:))
@@ -1749,7 +1821,12 @@ CONTAINS
     if (ocn_select(io_FeOOH)) conv_ls_lo_Fe(:,:)   =  fun_conv_sedocn2lslo(conv_sed_ocn_Fe(:,:))
     if (ocn_select(io_SO4))   conv_ls_lo_S(:,:)    =  fun_conv_sedocn2lslo(conv_sed_ocn_S(:,:))
     if (ocn_select(io_CH4))   conv_ls_lo_meth(:,:) =  fun_conv_sedocn2lslo(conv_sed_ocn_meth(:,:))
+    if (ocn_select(io_N2) .AND. ocn_select(io_NH4)) then
+       conv_ls_lo_N_N2(:,:)  =  fun_conv_sedocn2lslo(conv_sed_ocn_N_N2(:,:))
+       conv_ls_lo_N_NH4(:,:) =  fun_conv_sedocn2lslo(conv_sed_ocn_N_NH4(:,:))
+    end if
     ! -------------------------------------------------------- ! indexing array (all possible)
+    ! NOTE: fun_recalc_tracerrelationships_i works on the full (ocn,sed) tracer matrix (and hence loc_conv_sed_ocn)
     conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:)))
     ! -------------------------------------------------------- ! POM -> DOM
     conv_lP_lD(:,:)   =  fun_conv_sedocn2lslo(conv_POM_DOM(:,:))
@@ -3332,6 +3409,7 @@ CONTAINS
        ctrl_data_save_slice_diag_bio = .true.
        ctrl_data_save_slice_diag_proxy = .true.
        ctrl_data_save_slice_diag_tracer = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_carb_sur = .true.
@@ -3347,6 +3425,7 @@ CONTAINS
        ctrl_data_save_slice_diag_proxy = .true.
        ctrl_data_save_slice_diag_tracer = .true.
        ctrl_data_save_slice_focnsed = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_fairsea = .true.
@@ -3369,6 +3448,7 @@ CONTAINS
        ctrl_data_save_slice_carbconst = .true.
 !!$       ctrl_data_save_slice_diag_geochem = .true.
        ctrl_data_save_sig_carb_sur = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_fairsea = .true.
@@ -3382,6 +3462,7 @@ CONTAINS
        ctrl_data_save_slice_diag_bio = .true.
        ctrl_data_save_slice_diag_proxy = .true.
        ctrl_data_save_slice_diag_tracer = .true.
+       ctrl_data_save_sig_fairsea = .true.
        ctrl_data_save_sig_fexport = .true.
        ctrl_data_save_sig_focnsed = .true.
        ctrl_data_save_sig_carb_sur = .true.

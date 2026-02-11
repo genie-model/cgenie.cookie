@@ -148,19 +148,7 @@ SUBROUTINE initialise_sedgem( &
   if (par_sed_save_av_dtyr > par_misc_t_runtime) par_sed_save_av_dtyr = par_misc_t_runtime
   ! ---------------------------------------------------------- ! INITIALIZE netCDF OUTPUT
   IF (ctrl_misc_debug2) print*, 'INITIALIZE netCDF OUTPUT'
-  string_ncout2d = TRIM(par_outdir_name)//'sedgem_fields_2d.nc'
-  ntrec_sout = 0
-  ! ---------------------------------------------------------- ! INITIALIZE DATA SAVING
-  IF (ctrl_misc_debug2) print*, 'INITIALIZE DATA SAVING'
-  IF (ctrl_timeseries_output) THEN
-     ! initialize timestep counter
-     tstep_count = 0
-     tsteps_per_year = conv_yr_s/(dum_genie_timestep*kocn_loop*conv_kocn_ksedgem)
-     PRINT*,'timesteps per year                                  :',tsteps_per_year
-     ! load in years for output generation
-     CALL sub_data_output_years()
-     year = min(output_years_0d(output_counter_0d),output_years_2d(output_counter_2d))
-  ENDIF
+  string_ncout2d = TRIM(par_outdir_name)//TRIM(par_ncout2d_name)
   ! ---------------------------------------------------------- ! LOAD SEDIMENT RE-START
   IF (ctrl_misc_debug2) print*, 'LOAD SEDIMENT RE-START'
   IF (ctrl_continuing) then

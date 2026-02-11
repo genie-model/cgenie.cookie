@@ -770,6 +770,9 @@ MODULE biogem_lib
   LOGICAL::ctrl_data_save_2d                                     ! save 2D netCDF data?
   LOGICAL::ctrl_data_save_3d                                     ! save 3D netCDF data?
   NAMELIST /ini_biogem_nml/ctrl_data_save_2d,ctrl_data_save_3d
+  CHARACTER(len=127)::par_ncout2d_name                           ! 2D netCDF ocean output file name 
+  CHARACTER(len=127)::par_ncout3d_name                           ! 3D netCDF ocean output file name 
+  NAMELIST /ini_biogem_nml/par_ncout2d_name,par_ncout3d_name
   integer::par_misc_save_i
   integer::par_misc_save_j
   NAMELIST /ini_biogem_nml/par_misc_save_i,par_misc_save_j
@@ -860,7 +863,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_opt_force                          = 08 ! forcings
   INTEGER,PARAMETER::n_opt_data                           = 30 ! data (I/O)
   INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
-  INTEGER,PARAMETER::n_diag_bio                           = 23 !
+  INTEGER,PARAMETER::n_diag_bio                           = 24 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
   INTEGER,PARAMETER::n_diag_precip                        = 09 ! 
   INTEGER,PARAMETER::n_diag_react                         = 11 ! YK modified 12.28.2020
@@ -967,6 +970,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_bio_fspPOC                    = 21    !
   INTEGER,PARAMETER::idiag_bio_DOMlifetime               = 22    !
   INTEGER,PARAMETER::idiag_bio_frac_Fe2                  = 23    !
+  INTEGER,PARAMETER::idiag_bio_dNO3                      = 24    !
   ! diagnostics - OLD
   INTEGER,PARAMETER::idiag_geochem_old_ammox_dNO3        = 01    !
   INTEGER,PARAMETER::idiag_geochem_old_ammox_dNH4        = 02    !
@@ -1100,7 +1104,8 @@ MODULE biogem_lib
        & 'opaltoPOC_sp  ', &
        & 'fspPOC        ', &
        & 'DOMlifetime   ', &
-       & 'frac_Fe2      ' /)
+       & 'frac_Fe2      ', &
+       & 'dNO3          ' /)
   ! diagnostics - geochemistry -- OLD
   CHARACTER(len=14),DIMENSION(n_diag_geochem_old),PARAMETER::string_diag_geochem_old = (/ &
        & 'dNO3_NH4_oxid ', &
