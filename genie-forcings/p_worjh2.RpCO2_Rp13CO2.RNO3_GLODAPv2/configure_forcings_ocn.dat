@@ -3,7 +3,7 @@
   \/ \/ \/ \/   \/ \/ \/  \/  \/  \/
 
 -START-OF-DATA-
- 06  t  f  0.1  f  T   9  01  01  01  '[dissolved nitrate (NO3) (mol kg-1)]'
+ 06  t  f  2.08e-02 f  T   9  01  01  01  '[dissolved nitrate (NO3) (mol kg-1)]'
 -END-OF-DATA-
 
   /\ /\ /\ /\   /\ /\ /\  /\  /\  /\
@@ -23,3 +23,5 @@ COLUMN #07: i grid location of point forcing [DATA FORMAT: interger]
 COLUMN #08: j grid location of point forcing [DATA FORMAT: interger]
 COLUMN #09: k grid location of point forcing [DATA FORMAT: interger]
 COLUMN END: TRACER DESCRIPTION
+
+2.083333333333333e-02 == 1/48 time-steps per year
