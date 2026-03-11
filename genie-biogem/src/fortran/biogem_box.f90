@@ -731,7 +731,7 @@ CONTAINS
        ! ### temp code ########################################################################################################### !
        loc_kI = loc_intI/(loc_intI + par_bio_c0_I)
     case default
-       loc_kI = 0.0
+       loc_kI = 1.0
     end select
     diag_bio(idiag_bio_kI,dum_i,dum_j) = dum_dt*loc_kI
     ! ############################################################################################################################ !
@@ -755,7 +755,7 @@ CONTAINS
          & )
        loc_kT = (loc_TC + 2.0)/(loc_TC + 10.0)
     case default
-       loc_kT = 0.0
+       loc_kT = 1.0
     end SELECT
     diag_bio(idiag_bio_kT,dum_i,dum_j) = dum_dt*loc_kT
 

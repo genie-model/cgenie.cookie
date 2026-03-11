@@ -88,6 +88,21 @@ CONTAINS
              loc_NH4_oxidation = dum_dtyr*par_nitri_mu*min(loc_NH4,0.5*loc_O2)* &
                   & loc_NH4*loc_O2/ &
                   & (par_nitri_c0_NH4*par_nitri_c0_O2 + par_nitri_c0_O2*loc_NH4 + par_nitri_c0_NH4*loc_O2 + loc_NH4*loc_O2)
+          CASE ('MM')
+             ! e.g., see 'D. Bianchi et al.: A biogeochemical model of the ocean nitrogen cycle'
+             ! R = k * loc_O2/(loc_O2 + KO2) * loc_NH4/(loc_NH4 + KNH4)
+             ! RA the reaction rate (mmol N m-3 s-1)
+             ! k is the maximum (unlimited) reaction rate (umol N m-3 s-1)
+             ! NOTE: tuned values in Bianchi et al.: 
+             !       k    = 0.0167 mmol N m-3 d-1 (NOTE: no s-1 as in the text or GBS paper)
+             !       KO2  = 0.3300 mmol O2 m-3
+             !       KNH4 = 0.5091 mmol N m-3
+             ! NOTE: in GENIE units of mol kg-1 and mol kg-1 yr-1
+             !       k    = 1.0E-3 * conv_m3_kg * conv_yr_d * 0.0167 = 1.880866298094359e-13
+             !       KO2  = 1.0E-3 * conv_m3_kg * 0.3300 = 3.391241699999999e-01
+             !       KNH4 = 1.0E-3 * conv_m3_kg * 0.5091 = 5.231761058999999e-01
+             loc_NH4_oxidation = dum_dtyr*par_bio_remin_kNH4toNO2* &
+                  & (loc_O2/(loc_O2 + par_nitri_c0_O2)) * (loc_NH4/(loc_NH4 + par_nitri_c0_NH4))
           CASE ('NONE')
              loc_NH4_oxidation = 0.0
           case default
