@@ -1826,8 +1826,9 @@ CONTAINS
        conv_ls_lo_N_NH4(:,:) =  fun_conv_sedocn2lslo(conv_sed_ocn_N_NH4(:,:))
     end if
     ! -------------------------------------------------------- ! indexing array (all possible)
-    ! NOTE: fun_recalc_tracerrelationships_i works on the full (ocn,sed) tracer matrix (and hence loc_conv_sed_ocn)
-    conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:)))
+    ! NOTE: fun_recalc_tracerrelationships_i works on the full (ocn,sed) tracer matrix (and hence conv_sed_ocn_i)
+!!$    conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:)))
+    conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(conv_sed_ocn_i(:,:))
     ! -------------------------------------------------------- ! POM -> DOM
     conv_lP_lD(:,:)   =  fun_conv_sedocn2lslo(conv_POM_DOM(:,:))
     conv_lP_lD_i(:,:) =  fun_conv_sedocn2lslo_i(conv_POM_DOM_i(:,:))
@@ -2596,7 +2597,7 @@ CONTAINS
     CHARACTER(len=255)::loc_string
     CHARACTER(len=255)::loc_string1,loc_string2
     integer::l,io,ia,is
-
+    
     ! *** set-up ***
     ! initialize variables
     loc_flag = .FALSE.
@@ -5036,6 +5037,8 @@ CONTAINS
     ! local variables
     INTEGER::l,io
     REAL::loc_ocn_rM,loc_ocn_R
+    ! initialize
+    loc_ocn_R = 0.0
     ! calculate local constants
     loc_ocn_rM = 1.0/SUM(phys_ocn(ipo_M,:,:,:))
     DO l=3,n_l_ocn

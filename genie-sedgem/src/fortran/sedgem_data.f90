@@ -266,6 +266,7 @@ CONTAINS
     ! revise diagenesis options
     if (ctrl_sed_Fcaco3) par_sed_diagen_CaCO3opt = 'ALL'
     if (ctrl_sed_Fopal) par_sed_diagen_opalopt   = 'ALL'
+    if (ctrl_sed_conv_sedocn_bohlen2012) ctrl_sed_conv_sed_ocn_redox = .true.
 
   END SUBROUTINE sub_load_goin_sedgem
   ! ****************************************************************************************************************************** !

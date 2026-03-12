@@ -4102,6 +4102,7 @@ CONTAINS
     Write(unit=out,fmt=*) '--------------------------'
     Write(unit=out,fmt=*) 'N-CYCLE'
     Write(unit=out,fmt=*) ' '
+    
     if (sed_select(is_PON)) then
        ! -------------------------------------------------------- ! MISC TRANSFORMATIONS
        if (atm_select(ia_pN2)) then
@@ -4113,7 +4114,7 @@ CONTAINS
                & ' mol yr-1'
           Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                & '                                            : ',          &
-               & 16.0*2.0*1.0E-12*loc_tot,  &
+               & 14.0*2.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 N2        '
        end if
        ! -------------------------------------------------------- ! PLANKTON TRANSFORMATIONS
@@ -4127,7 +4128,7 @@ CONTAINS
                & ' mol yr-1'
           Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                & '                                            : ',          &
-               & 16.0*2.0*1.0E-12*loc_tot,  &
+               & 14.0*2.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 NO3       '
        end if
        if (ocn_select(io_NH4)) then
@@ -4140,7 +4141,7 @@ CONTAINS
                & ' mol yr-1'
           Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                & '                                            : ',          &
-               & 16.0*1.0E-12*loc_tot,  &
+               & 14.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 NH4       '
        end if
        if (ocn_select(io_N2)) then
@@ -4153,7 +4154,7 @@ CONTAINS
                & ' mol yr-1'
           Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                & '                                            : ',          &
-               & 16.0*2.0*1.0E-12*loc_tot,  &
+               & 14.0*2.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 N2        '
        end if
        ! -------------------------------------------------------- ! WATER COLUMN AND SEDIMENTARY REDOX TRANSFORMATIONS
@@ -4171,7 +4172,7 @@ CONTAINS
                   & ' mol yr-1'
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                   & '                                            : ',          &
-                  & 16.0*1.0E-12*loc_tot,  &
+                  & 14.0*1.0E-12*loc_tot,  &
                   & ' Tg N yr-1 N2        '
           end if
           ! -------------------------------------------------------- ! PON flux to the sediments
@@ -4182,7 +4183,7 @@ CONTAINS
                & ' mol yr-1'
           Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                & '                                            : ',          &
-               & 16.0*1.0E-12*loc_tot,  &
+               & 14.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 PON       '
           ! -------------------------------------------------------- ! NO3 redox consumption
           if (ocn_select(io_NO3)) then
@@ -4203,23 +4204,23 @@ CONTAINS
                      & '                                            : ',          &
                      & -sum(int_fsedocn_timeslice(io_NO3,:,:)),'               ', &
                      & ' mol yr-1',' (net sedimentary consumption)                '
-                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
-                     & '                                            = ',          &
+                Write(unit=out,fmt='(A46,F9.3,A14)',iostat=ios)                   &
+                     & '                                      TOTAL = ',          &
                      & -14.0*1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_NO3,:,:))/int_t_timeslice ),  &
-                     & ' Tg N yr-1 NO3 TOTAL '
+                     & ' Tg N yr-1 NO3'
                 Write(unit=out,fmt='(A46,F9.3,A46)',iostat=ios)                   &
-                     & '                                              ',          &
+                     & '                                     of which ',          &
                      & -14.0*1.0E-12*( sum(int_fsedocn_timeslice(io_NO3,:,:))/int_t_timeslice ),  &
-                     & ' Tg N yr-1 net sedimentary consumption only   '
+                     & ' Tg N yr-1 is net sedimentary consumption     '
              else
                 Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
                      & ' Global NO3 consumtpion rate (POM, DOM) ... : ',    &
                      & -loc_tot_POM,-loc_tot_DOM,                                 &
                      & ' mol yr-1',' (including reflective boundary condition)'
-                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
-                     & '                                            : ',          &
-                     & -16.0*1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
-                     & ' Tg N yr-1 NO3 TOTAL '
+                Write(unit=out,fmt='(A46,F9.3,A14)',iostat=ios)                   &
+                     & '                                      TOTAL : ',          &
+                     & -14.0*1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
+                     & ' Tg N yr-1 NO3'
              end if
              call check_iostat(ios,__LINE__,__FILE__)
           end if
@@ -4240,23 +4241,23 @@ CONTAINS
                      & '                                            : ',          &
                      & sum(int_fsedocn_timeslice(io_NH4,:,:)),'               ', &
                      & ' mol yr-1',' (sedimentary production)                 '
-                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
-                     & '                                            = ',          &
+                Write(unit=out,fmt='(A46,F9.3,A14)',iostat=ios)                   &
+                     & '                                      TOTAL = ',          &
                      & 14.0*1.0E-12*( loc_tot_POM+loc_tot_DOM+sum(int_fsedocn_timeslice(io_NH4,:,:))/int_t_timeslice ),  &
-                     & ' Tg N yr-1 NH4 TOTAL'
+                     & ' Tg N yr-1 NH4'
                 Write(unit=out,fmt='(A46,F9.3,A46)',iostat=ios)                   &
-                     & '                                              ',          &
+                     & '                                     of which ',          &
                      & 14.0*1.0E-12*( sum(int_fsedocn_timeslice(io_NH4,:,:))/int_t_timeslice ),  &
-                     & ' Tg N yr-1 sedimentary production only        '
+                     & ' Tg N yr-1 is sedimentary production          '
              else
                 Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
                      & ' Global NH4 production rate (POM, DOM) .... : ',    &
                      & loc_tot_POM,loc_tot_DOM,                                 &
                      & ' mol yr-1',' (including reflective boundary condition)'
-                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
-                     & '                                            : ',          &
+                Write(unit=out,fmt='(A46,F9.3,A14)',iostat=ios)                   &
+                     & '                                      TOTAL : ',          &
                      & 14.0*1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
-                     & ' Tg N yr-1 NH4 TOTAL'
+                     & ' Tg N yr-1 NH4'
              end if
              call check_iostat(ios,__LINE__,__FILE__)
           end if
@@ -4294,10 +4295,10 @@ CONTAINS
                      & ' Global N2 production rate (POM, DOM) ..... : ',    &
                      & loc_tot_POM,loc_tot_DOM,                                 &
                      & ' mol yr-1',' (including reflective boundary condition)'
-                Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
-                     & '                                            : ',          &
+                Write(unit=out,fmt='(A46,F9.3,A13)',iostat=ios)                   &
+                     & '                                      TOTAL : ',          &
                      & 14.0*2.0*1.0E-12*( loc_tot_POM+loc_tot_DOM ),  &
-                     & ' Tg N yr-1 N2 TOTAL '
+                     & ' Tg N yr-1 N2'
              end if
              call check_iostat(ios,__LINE__,__FILE__)
           end if
