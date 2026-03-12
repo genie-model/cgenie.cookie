@@ -2596,7 +2596,7 @@ CONTAINS
     CHARACTER(len=255)::loc_string
     CHARACTER(len=255)::loc_string1,loc_string2
     integer::l,io,ia,is
-
+    
     ! *** set-up ***
     ! initialize variables
     loc_flag = .FALSE.
@@ -5036,6 +5036,8 @@ CONTAINS
     ! local variables
     INTEGER::l,io
     REAL::loc_ocn_rM,loc_ocn_R
+    ! initialize
+    loc_ocn_R = 0.0
     ! calculate local constants
     loc_ocn_rM = 1.0/SUM(phys_ocn(ipo_M,:,:,:))
     DO l=3,n_l_ocn

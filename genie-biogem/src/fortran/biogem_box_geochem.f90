@@ -98,9 +98,10 @@ CONTAINS
              !       KO2  = 0.3300 mmol O2 m-3
              !       KNH4 = 0.5091 mmol N m-3
              ! NOTE: in GENIE units of mol kg-1 and mol kg-1 yr-1
-             !       k    = 1.0E-3 * conv_m3_kg * conv_yr_d * 0.0167 = 1.880866298094359e-13
-             !       KO2  = 1.0E-3 * conv_m3_kg * 0.3300 = 3.391241699999999e-01
-             !       KNH4 = 1.0E-3 * conv_m3_kg * 0.5091 = 5.231761058999999e-01
+             !       conv_kg_m3 = (1/1027.649), conv_yr_d = 365.25
+             !       k    = 1.0E-3 * conv_kg_m3 * conv_yr_d * 0.0167 = 5.935562628874256e-06
+             !       KO2  = 1.0E-3 * conv_kg_m3 * 0.3300 = 3.211213167141699e-07
+             !       KNH4 = 1.0E-3 * conv_kg_m3 * 0.5091 = 4.954026131490421e-07
              loc_NH4_oxidation = dum_dtyr*par_bio_remin_kNH4toNO2* &
                   & (loc_O2/(loc_O2 + par_nitri_c0_O2)) * (loc_NH4/(loc_NH4 + par_nitri_c0_NH4))
           CASE ('NONE')
