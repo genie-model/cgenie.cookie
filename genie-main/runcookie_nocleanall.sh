@@ -23,7 +23,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/share/apps/lib:/share/apps/netcdf/lib
 # also ifort ...
 export PATH=/state/partition1/apps/intel/bin:$PATH
 # ensure stack size is adequate
-ulimit -s 20480
+ulimit -s unlimited
 # ---------------------------------------------------------------------
 # (1) GET PASSED PARAMETERS
 # ---------------------------------------------------------------------
