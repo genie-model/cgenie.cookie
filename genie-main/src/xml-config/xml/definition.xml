@@ -7373,7 +7373,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
 <!-- DIAGENESIS SCHEME: SELECTION  -->
                     <param name="par_sed_diagen_CaCO3opt">
-			<value datatype="string">archer1991explicit</value>
+			<value datatype="string">none</value>
                         <description>CaCO3 diagenesis scheme</description>
                     </param>
                     <param name="par_sed_diagen_opalopt">
@@ -7436,6 +7436,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_sed_dyerestart_n">
 			<value datatype="integer">25</value>
                         <description>Taged restart CaCO3 depth in layers (n)</description>
+                    </param>
+                    <param name="par_sed_diagen_kcalmod">
+			<value datatype="real">1.0</value>
+                        <description>modification of calcite k (>1.0 == reduced solubility)</description>
                     </param>
 <!-- DIAGENESIS SCHEME: ORGANIC MATTER  -->
                     <param name="ctrl_sed_diagen_preserve_frac2">
