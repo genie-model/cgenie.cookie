@@ -93,6 +93,7 @@ CONTAINS
        print*,'CaCO3 blue tracer tag fraction                      : ',par_sed_CaCO3_fblue
        print*,'Tag restart CaCO3?                                  : ',ctrl_sed_dyerestart
        print*,'Taged restart CaCO3 depth in layers (n)             : ',par_sed_dyerestart_n
+       print*,'modification of calcite k (>1.0 == reduced sol)     : ',par_sed_diagen_kcalmod
        ! --- DIAGENESIS SCHEME: ORGANIC MATTER ----------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: ORGANIC MATTER --------------'
        print*,'Prevent frac2 from being remineralzied?             : ',ctrl_sed_diagen_preserve_frac2
