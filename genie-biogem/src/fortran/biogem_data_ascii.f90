@@ -3713,7 +3713,7 @@ CONTAINS
     loc_ocnatm_tot_A = sum(phys_ocnatm(ipoa_A,:,:))
 
     ! *** solve carbonate system ***
-    IF (opt_select(iopt_select_carbchem)) THEN
+    if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
        DO i=1,n_i
           DO j=1,n_j
              loc_k1 = goldstein_k1(i,j)
@@ -4505,7 +4505,7 @@ CONTAINS
     !       (unless set elsewhere to repeat the header line)
     if (par_misc_t_echo_header) then
        print*,' '
-       IF (.NOT. opt_select(iopt_select_carbchem)) THEN
+       if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
           PRINT'(A3,A12,A3,A12,A10,A3,4A10)', &
                & ' > ',          &
                & '  model year', &
@@ -4599,7 +4599,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! PRINT DATA!
     ! -------------------------------------------------------- !
-    IF (.NOT. opt_select(iopt_select_carbchem)) THEN
+    if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
        PRINT'(A3,F12.1,A3,A12,F10.3,A3,4F10.3)', &
             & ' > ', &
             & dum_yr, &
@@ -4757,7 +4757,7 @@ CONTAINS
     end if
 
     ! *** echo run-time ***
-    IF (opt_select(iopt_select_carbchem)) THEN
+    if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
        select case (fname_topo)
        case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
           ! print header (if necessary)

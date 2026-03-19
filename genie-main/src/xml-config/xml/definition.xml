@@ -5578,10 +5578,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.true.</value>
                         <description></description>
                     </param>
-                    <param name="ctrl_save_basic_carbonatechemsitry">
-			<value datatype="boolean">.true.</value>
-                        <description></description>
-                    </param>
                     <param name="ctrl_save_basic_biologicalpump">
 			<value datatype="boolean">.true.</value>
                         <description></description>
@@ -5599,10 +5595,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description></description>
                     </param>
                     <param name="ctrl_save_advanced_reservoirs">
-			<value datatype="boolean">.false.</value>
-                        <description></description>
-                    </param>
-                    <param name="ctrl_save_advanced_carbonatechemsitry">
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
@@ -5631,10 +5623,18 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description></description>
                     </param>
                     <param name="ctrl_save_hidden_seafloor">
-			<value datatype="boolean">.true.</value>
+			<value datatype="boolean">.false.</value>
                         <description>save seafloor as well as seasurface data?</description>
                     </param>
                     <param name="ctrl_save_hidden_interfacefluxes">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_redox">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_inversion">
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
@@ -5642,15 +5642,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
-                    <param name="ctrl_save_hidden_radiocarbon">
+                    <param name="ctrl_save_hidden_fossilfuelco2">
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>
-                    <param name="ctrl_save_hidden_diagnostics">
-			<value datatype="boolean">.false.</value>
-                        <description></description>
-                    </param>
-                    <param name="ctrl_save_hidden_genieexercises">
+                    <param name="ctrl_save_hidden_extra">
 			<value datatype="boolean">.false.</value>
                         <description></description>
                     </param>

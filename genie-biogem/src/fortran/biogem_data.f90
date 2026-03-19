@@ -469,15 +469,13 @@ CONTAINS
        ! --- DATA SAVING: SIMPLIFIED SCHEME -------------------------------------------------------------------------------------- !
        print*,'--- DATA SAVING: SIMPLIFIED SCHEME -----------------'
        print*,'save atm, ocn, sed tracer fields?                   : ',ctrl_save_basic_reservoirs
-       print*,'save basic carb chem?                               : ',ctrl_save_basic_carbonatechemsitry
        print*,'save 2D export, 3D flux field?                      : ',ctrl_save_basic_biologicalpump
-       print*,'save O2/NO3/SO4 remin summary?                      : ',ctrl_save_basic_geochemistry
+       print*,'savebasic carb chem, O2/NO3/SO4 remin summary?      : ',ctrl_save_basic_geochemistry
        print*,'save trace-metal ratios?                            : ',ctrl_save_basic_proxies
        print*,'                                                    : ',ctrl_save_basic_ALL
        print*,'save inventories?                                   : ',ctrl_save_advanced_reservoirs
-       print*,'save diagnostic fields, dissociation constants?     : ',ctrl_save_advanced_carbonatechemsitry
        print*,'save controls on export, fluxes in other units?     : ',ctrl_save_advanced_biologicalpump
-       print*,'save reactions, remineralization pathways?          : ',ctrl_save_advanced_geochemistry
+       print*,'save diagnostics, constants, remin, reactions?      : ',ctrl_save_advanced_geochemistry
        print*,'save tracer isotopic properties (if selected)?      : ',ctrl_save_advanced_proxies
        print*,'                                                    : ',ctrl_save_advanced_ALL
        print*,'save basic model grid info?                         : ',ctrl_save_hidden_grid
@@ -485,9 +483,10 @@ CONTAINS
        print*,'save seafloor as well as seasurface data?           : ',ctrl_save_hidden_seafloor
        print*,'save forcing fluxes?                                : ',ctrl_save_hidden_interfacefluxes
        print*,'save preformed tracers if selected?                 : ',ctrl_save_hidden_preformedtracers
-       print*,'save radiocarbon if selected?                       : ',ctrl_save_hidden_radiocarbon
-       print*,'save additional diagnostics?                        : ',ctrl_save_hidden_diagnostics
-       print*,'save genie manual required output?                  : ',ctrl_save_hidden_genieexercises
+       print*,'save redox diagnostics?                             : ',ctrl_save_hidden_redox
+       print*,'save inversion fluxes?                              : ',ctrl_save_hidden_inversion
+       print*,'save genie manual required output?                  : ',ctrl_save_hidden_fossilfuelco2
+       print*,'save additional output?                             : ',ctrl_save_hidden_extra
        print*,'                                                    : ',ctrl_save_hidden_ALL
        ! --- DATA SAVING: TIME-SLICES -------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: TIME-SLICES ----------------'
@@ -1226,6 +1225,8 @@ CONTAINS
           loc_string(n) = 'redox_Fe3toFe2_dALK'
        end if
     end if
+    ! -------------------------------------------------------- ! record aqueous reaction subtotal
+    n_diag_redox_aq = n
     ! -------------------------------------------------------- ! (2) solid -> dissolved
     !                                                                NOTE: repeat loop to add dissolved redox transformations
     !                                                                      (as if a 2nd set of particulates)
@@ -2625,10 +2626,6 @@ CONTAINS
     ! *** set-up ***
     ! initialize variables
     loc_flag = .FALSE.
-    opt_select(:) = .FALSE.
-    ! set derived tracer selection options
-    opt_select(iopt_select_carbchem)   = ocn_select(io_DIC) .AND. ocn_select(io_ALK)
-    opt_select(iopt_select_ocnatm_CO2) = opt_select(iopt_select_carbchem) .AND. atm_select(ia_pCO2)
 
     ! *** parameter consistency check - biological productivity ***
     ! first ... check for ECOGEM selction
@@ -3186,7 +3183,7 @@ CONTAINS
     end if
 
     ! *** parameter consistency check - data save options ***
-    IF (.NOT. opt_select(iopt_select_carbchem)) THEN
+    if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
        IF (ctrl_data_save_sig_carb_sur) THEN
           CALL sub_report_error( &
                & 'biogem_data','sub_check_par', &
@@ -3345,29 +3342,28 @@ CONTAINS
     ! IMPOSE META SELECTIONS
     ! ---------------------------------------------------------- !
     if (ctrl_save_basic_ALL) then
-       ctrl_save_basic_reservoirs = .true.
-       ctrl_save_basic_carbonatechemsitry = .true.
+       ctrl_save_basic_reservoirs     = .true.
+       ctrl_save_basic_geochemistry   = .true.
        ctrl_save_basic_biologicalpump = .true.
-       ctrl_save_basic_geochemistry = .true.
-       ctrl_save_basic_proxies = .true.
+       ctrl_save_basic_proxies        = .true.
     end if
     if (ctrl_save_advanced_ALL) then
-       ctrl_save_advanced_reservoirs = .true.
-       ctrl_save_advanced_carbonatechemsitry = .true.
+       ctrl_save_advanced_reservoirs     = .true.
+       ctrl_save_advanced_geochemistry   = .true.
        ctrl_save_advanced_biologicalpump = .true.
-       ctrl_save_advanced_geochemistry = .true.
-       ctrl_save_advanced_proxies = .true.
+       ctrl_save_advanced_proxies        = .true.
     end if
     if (ctrl_save_hidden_ALL) then
        ctrl_save_hidden_grid = .true.
        ctrl_save_hidden_climate = .true.
        ctrl_save_hidden_seafloor = .true.
+       ctrl_save_hidden_interfacefluxes = .true.
+       ctrl_save_hidden_inversion = .true.
        ctrl_save_hidden_preformedtracers = .true.
-       ctrl_save_hidden_radiocarbon = .true.
-       ctrl_save_hidden_diagnostics = .true.
-       ctrl_save_hidden_genieexercises = .true.
+       ctrl_save_hidden_redox = .true.
+       ctrl_save_hidden_extra = .true.
+       ctrl_save_hidden_fossilfuelco2 = .true.
     end if
-    
     ! ---------------------------------------------------------- !
     ! FILTER BASIC DATA SAVING OPTIONS
     ! ---------------------------------------------------------- !
@@ -3388,13 +3384,6 @@ CONTAINS
        ctrl_save_basic_reservoirs    = .false.
        ctrl_save_advanced_reservoirs = .false.
     end if
-    ! ---------------------------------------------------------- ! carbonate chemsitry
-    ! NOTE: do not save carbonate chemsitry related data if carb chem tracers not selected
-    ! ctrl_save_basic_carbonatechemsitry = .true. [DEFAULT]
-    if (.NOT. opt_select(iopt_select_carbchem)) then
-       ctrl_save_basic_carbonatechemsitry    = .false.
-       ctrl_save_advanced_carbonatechemsitry = .false.
-    end if
     ! ---------------------------------------------------------- ! 'biology'
     ! NOTE: do not save export production data if a biological option is not selected *and* ECOGEM is not selected
     ! ctrl_data_save_bioexport = .true. [DEFAULT]
@@ -3408,6 +3397,38 @@ CONTAINS
     IF (.NOT. ctrl_bio_preformed) then
        ctrl_save_hidden_preformedtracers = .false.
     end if
+    ! ---------------------------------------------------------- ! redox
+    ! select redox saving if advanced geochemsitry is selected
+    IF (ctrl_save_advanced_geochemistry) then
+       ctrl_save_hidden_redox = .true.
+    end if
+    ! if redox saving is selected, set legacy redox saving parameter to true
+    IF (ctrl_save_hidden_redox) then
+       ctrl_bio_remin_redox_save = .true.
+    end if
+    ! ---------------------------------------------------------- ! inversions
+    ! detrmine whether to save inversion diagnostics
+    IF ( &
+         & (force_restore_atm_select(ia_pCO2) .AND. (force_flux_atm_select(ia_pCO2) .OR. force_flux_ocn_select(io_DIC))) &
+         & .OR. &
+         & (force_restore_ocn_select(io_colr) .AND. (force_flux_atm_select(ia_pCO2) .OR. force_flux_ocn_select(io_DIC))) &
+         & .OR. &
+         & (force_restore_atm_select(ia_pCO2_13C) .AND. force_flux_atm_select(ia_pCO2_13C)) &
+         & .OR. &
+         & (force_restore_ocn_select(io_DIC_13C) .AND. force_flux_atm_select(ia_pCO2_13C)) &
+         & .OR. &
+         & (force_restore_ocn_select(io_DOM_C_13C) .AND. force_flux_atm_select(ia_pCO2_13C)) &
+         & .OR. &
+         & (force_restore_ocn_select(io_DIC_13C) .AND. force_flux_ocn_select(io_DIC_13C)) &
+         & .OR. &
+         & (force_restore_ocn_select(io_ALK) .AND. force_flux_ocn_select(io_ALK)) &
+         & .OR. &
+         & (force_restore_ocn_select(io_Ca_44Ca) .AND. force_flux_ocn_select(io_Ca_44Ca)) &
+         & ) THEN
+       ctrl_save_hidden_inversion = .true.
+    else
+       ctrl_save_hidden_inversion = .false.
+    end IF
 !!$    ! ---------------------------------------------------------- !
 !!$    ! FILTER ADVANCED DATA SAVING OPTIONS
 !!$    ! ---------------------------------------------------------- !
@@ -3454,17 +3475,18 @@ CONTAINS
     ! MAKE BASIC <-> ADVANCED CONSISTENT
     ! ---------------------------------------------------------- !
     if (ctrl_save_advanced_reservoirs) ctrl_save_basic_reservoirs = .true.
-    if (ctrl_save_advanced_carbonatechemsitry) ctrl_save_basic_carbonatechemsitry = .true.
-    if (ctrl_save_advanced_biologicalpump) ctrl_save_basic_biologicalpump = .true.
     if (ctrl_save_advanced_geochemistry) ctrl_save_basic_geochemistry = .true.
+    if (ctrl_save_advanced_biologicalpump) ctrl_save_basic_biologicalpump = .true.
     if (ctrl_save_advanced_proxies) ctrl_save_basic_proxies = .true.
     ! ---------------------------------------------------------- !
-    ! FINAL FILTERING
-    ! ---------------------------------------------------------- ! seafloor
-    if (ctrl_save_hidden_diagnostics) ctrl_save_hidden_seafloor = .true.
-    if (ctrl_save_advanced_proxies) ctrl_save_hidden_seafloor = .true.
 
 
+
+
+
+
+
+    
 
 
 
@@ -3831,7 +3853,7 @@ CONTAINS
                      & carbconst(:,i,j,k) &
                      & )
              END if
-             IF (opt_select(iopt_select_carbchem)) then
+             if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
                 ! estimate Ca and borate concentrations (if not selected and therefore explicitly treated)
                 IF (.NOT. ocn_select(io_Ca))  ocn(io_Ca,i,j,k)  = fun_calc_Ca(ocn(io_S,i,j,k))
                 IF (.NOT. ocn_select(io_B))   ocn(io_B,i,j,k)   = fun_calc_Btot(ocn(io_S,i,j,k))

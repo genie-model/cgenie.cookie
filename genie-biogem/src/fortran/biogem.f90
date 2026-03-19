@@ -822,7 +822,7 @@ subroutine biogem(        &
 
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** UPDATE CARBONATE CHEMSITRY ***'
-              IF (opt_select(iopt_select_carbchem)) THEN
+              if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
                  ! set local k loop limit
                  if (ctrl_carbchemupdate_full) then
                     loc_k = loc_k1
@@ -1882,7 +1882,7 @@ subroutine biogem(        &
                     end IF
                  end select
               END IF
-              IF (opt_select(iopt_select_carbchem)) THEN
+              if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
                  ! record air-sea gas exchange coefficient for posterity
                  if ((1.0 - phys_ocnatm(ipoa_seaice,i,j)) > const_real_nullsmall) then
                     phys_ocnatm(ipoa_KCO2,i,j) = conv_umol_mol*phys_ocn(ipo_rA,i,j,n_k)* &
@@ -3412,7 +3412,7 @@ SUBROUTINE diag_biogem_timeslice( &
         if_save3: if (dum_save) then
 
            ! reconstruct local interface fluxes
-           IF (opt_select(iopt_select_carbchem) .AND. ctrl_data_save_slice_carb_update) THEN
+           if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
               DO i=1,n_i
                  DO j=1,n_j
                     loc_k1 = goldstein_k1(i,j)
@@ -3444,7 +3444,7 @@ SUBROUTINE diag_biogem_timeslice( &
            ! update whole-ocean carbonate equilibrium
            ! NOTE: update seperate arrays from those used in the time-stepping
            !       to avoid time-slice saving impacting on evolving ocean pH
-           IF (opt_select(iopt_select_carbchem) .AND. ctrl_data_save_slice_carb_update) THEN
+           if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
               DO i=1,n_i
                  DO j=1,n_j
                     loc_k1 = goldstein_k1(i,j)

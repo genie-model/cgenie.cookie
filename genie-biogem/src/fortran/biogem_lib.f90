@@ -667,24 +667,22 @@ MODULE biogem_lib
   ! basic data saving
   ! catagories of basic/fundamental data saving designed as default teaching options
   LOGICAL::ctrl_save_basic_reservoirs                            ! atm, ocn (surface and benthic), sed tracer fields
-  LOGICAL::ctrl_save_basic_carbonatechemsitry                    ! basic carb chem
   LOGICAL::ctrl_save_basic_biologicalpump                        ! export, 3D flux field
-  LOGICAL::ctrl_save_basic_geochemistry                          ! O2/NO3/SO4 remin summary [requires redox saving]
+  LOGICAL::ctrl_save_basic_geochemistry                          ! basic carb chem, O2/NO3/SO4 remin summary [requires redox saving]
   LOGICAL::ctrl_save_basic_proxies                               ! trace-metal ratios, tracer isotopic properties (if selected)
   LOGICAL::ctrl_save_basic_ALL                                   ! 
-  NAMELIST /ini_biogem_nml/ctrl_save_basic_reservoirs,ctrl_save_basic_carbonatechemsitry, &
-       & ctrl_save_basic_biologicalpump,ctrl_save_basic_geochemistry, ctrl_save_basic_proxies, &
+  NAMELIST /ini_biogem_nml/ctrl_save_basic_reservoirs,ctrl_save_basic_biologicalpump, &
+       & ctrl_save_basic_geochemistry, ctrl_save_basic_proxies, &
        & ctrl_save_basic_ALL
   ! advanced data saving
   ! catagories of more advannced data saving for R&D
   LOGICAL::ctrl_save_advanced_reservoirs                         ! inventories
-  LOGICAL::ctrl_save_advanced_carbonatechemsitry                 ! diagnostic fields, dissociation constants
   LOGICAL::ctrl_save_advanced_biologicalpump                     ! controls on export, fluxes in other units
-  LOGICAL::ctrl_save_advanced_geochemistry                       ! reactions, remineralization pathways
+  LOGICAL::ctrl_save_advanced_geochemistry                       ! diagnostics, constants, reactions, remineralization pathways
   LOGICAL::ctrl_save_advanced_proxies                            ! forward-proxy models
   LOGICAL::ctrl_save_advanced_ALL                                ! 
-  NAMELIST /ini_biogem_nml/ctrl_save_advanced_reservoirs,ctrl_save_advanced_carbonatechemsitry, &
-       & ctrl_save_advanced_biologicalpump,ctrl_save_advanced_proxies, ctrl_save_advanced_geochemistry, &
+  NAMELIST /ini_biogem_nml/ctrl_save_advanced_reservoirs,ctrl_save_advanced_biologicalpump, &
+       & ctrl_save_advanced_geochemistry, ctrl_save_advanced_proxies,&
        & ctrl_save_advanced_ALL
   ! hidden data saving options
   ! options that are default 'on' but can be turned off, rarely used diagnostic fields, and fields used for teaching
@@ -692,15 +690,16 @@ MODULE biogem_lib
   LOGICAL::ctrl_save_hidden_climate                              ! (automatically save climate data --  velocity fields, OPSI/PSI)
   LOGICAL::ctrl_save_hidden_seafloor                             ! save seafloor as well as seasurface data?
   LOGICAL::ctrl_save_hidden_interfacefluxes                      ! ocn-atm, ocn-sed, weathering
+  LOGICAL::ctrl_save_hidden_inversion                            ! inversion fluxes
   LOGICAL::ctrl_save_hidden_preformedtracers                     ! (automatically save preformed tracers if selected)
-  LOGICAL::ctrl_save_hidden_radiocarbon                          ! (automatically save radiocarbon if selected)
-  LOGICAL::ctrl_save_hidden_diagnostics                          ! 2D tracer column inventories, S-normalized
-  LOGICAL::ctrl_save_hidden_genieexercises                       ! CO2 column inventory
+  LOGICAL::ctrl_save_hidden_redox                                ! save redox diagnostics?  
+  LOGICAL::ctrl_save_hidden_fossilfuelco2                        ! CO2 column inventory, CO2 fluxes
+  LOGICAL::ctrl_save_hidden_extra                                ! extra e.g., 2D tracer column inventories, S-normalized
   LOGICAL::ctrl_save_hidden_ALL                                  ! 
   NAMELIST /ini_biogem_nml/ctrl_save_hidden_grid,ctrl_save_hidden_climate,ctrl_save_hidden_seafloor, &
-       & ctrl_save_hidden_interfacefluxes,ctrl_save_hidden_preformedtracers,ctrl_save_hidden_radiocarbon, &
-       & ctrl_save_hidden_diagnostics,ctrl_save_hidden_genieexercises, &
-       & ctrl_save_hidden_ALL  
+       & ctrl_save_hidden_interfacefluxes,ctrl_save_hidden_inversion,ctrl_save_hidden_preformedtracers, &
+       & ctrl_save_hidden_redox,ctrl_save_hidden_extra,ctrl_save_hidden_fossilfuelco2, &
+       & ctrl_save_hidden_ALL
   ! ------------------- DATA SAVING: TIME-SLICES --------------------------------------------------------------------------------- !
   LOGICAL::ctrl_data_save_slice_ocnatm                           ! time-slice data save: Atmospheric (interface) composition (2D)?
   LOGICAL::ctrl_data_save_slice_ocn                              ! time-slice data save: Ocean composition (3D)?
@@ -900,7 +899,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_opt_bio                            = 06 ! biogeochemical cycling
   INTEGER,PARAMETER::n_opt_force                          = 08 ! forcings
   INTEGER,PARAMETER::n_opt_data                           = 30 ! data (I/O)
-  INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
+!!$  INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
   ! diagnostics arrays dimensions
   INTEGER,PARAMETER::n_diag_bio                           = 24 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
@@ -909,6 +908,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_diag_iron                          = 09 ! As in _DEV_tracers (03.19.2021)
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
+  INTEGER::n_diag_redox_aq                                =  0 !
 
   ! ****************************************************************************************************************************** !
   ! DEFINE ARRAY INDICES
@@ -977,12 +977,12 @@ MODULE biogem_lib
   ! options - save
   INTEGER,PARAMETER::iopt_data_save_timeslice_fnint       = 23   ! construct time slice filename with integer year only?
   INTEGER,PARAMETER::iopt_data_save_config                = 24   ! save copies of biogem config files?
-  ! tracer selection combination options
-  INTEGER,PARAMETER::iopt_select_carbchem                 = 01   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_CO2               = 02   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_O2                = 03   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_N2                = 04   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_HC                = 05   !
+!!$  ! tracer selection combination options
+!!$  INTEGER,PARAMETER::iopt_select_carbchem                 = 01   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_CO2               = 02   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_O2                = 03   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_N2                = 04   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_HC                = 05   !
   ! diagnostics - biology
   INTEGER,PARAMETER::idiag_bio_dPO4                      = 01    !
   INTEGER,PARAMETER::idiag_bio_dPO4_1                    = 02    !
@@ -1505,7 +1505,7 @@ MODULE biogem_lib
   LOGICAL,DIMENSION(n_opt_bio)::opt_bio                           !
   LOGICAL,DIMENSION(n_opt_force)::opt_force = .FALSE.             !
   LOGICAL,DIMENSION(n_opt_data)::opt_data                         !
-  LOGICAL,DIMENSION(n_opt_select)::opt_select                     !
+!!$  LOGICAL,DIMENSION(n_opt_select)::opt_select                     !
   ! integrated time series arrays
   REAL,DIMENSION(n_data_max)::par_data_save_sig                   !
   REAL,DIMENSION(n_data_max)::par_data_save_timeslice             !
