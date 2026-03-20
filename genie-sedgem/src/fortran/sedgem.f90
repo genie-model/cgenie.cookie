@@ -232,7 +232,7 @@ SUBROUTINE sedgem(          &
            !       at sedcore locations, sed_Fsed_det is over-written by ncMAR if defined
            if (sed_select(is_det)) then
               if (ctrl_sed_det_NOdust) then
-                 ! set zero det flux, which as passed form BIOGEM is assumed to be all pelagic (dust)
+                 ! set zero det dust flux, which as passed from BIOGEM is assumed to be all pelagic (dust)
                  dum_sfxsumsed(is_det,i,j) = 0.0
               endif
               if (ctrl_sed_Fdet) then

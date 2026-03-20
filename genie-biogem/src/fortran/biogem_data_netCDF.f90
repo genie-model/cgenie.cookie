@@ -3016,14 +3016,14 @@ CONTAINS
        end if
        ! -------------------------------------------------------- ! (4) totals
        loc_unitsname = 'mol C m-2 yr-1'
-       loc_shortname = 'redox_wcint_remin_ALL_POC'
+       loc_shortname = 'redox_wcint_ALL_POC'
        loc_longname  = 'total water-column integrated remineralization of POC by all oxidants'
        loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
        call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
             & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
        loc_unitsname = 'mol C+N+P m-2 yr-1'
-       loc_shortname = 'redox_wcint_remin_ALL_POM'
+       loc_shortname = 'redox_wcint_ALL_POM'
        loc_longname  = 'total water-column integrated remineralization of POM by all oxidants'
        loc_ij_tot(:,:) = &
             & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &

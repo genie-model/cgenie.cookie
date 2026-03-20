@@ -21,6 +21,9 @@ CONTAINS
   ! INITIALIZE DATA SAVING
   SUBROUTINE sub_init_data_save_runtime()
     USE genie_util, ONLY:check_unit,check_iostat
+    ! ---------------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! ---------------------------------------------------------------- !
     ! local variables
     INTEGER::l,io,ia,is,ic,ios,idm2D
     integer::ib,id
@@ -29,14 +32,86 @@ CONTAINS
     CHARACTER(len=16)::loc_string_Dmin,loc_string_Ddeep,loc_string_Dneri
     real::loc_t = 0.0
     logical::loc_save
-
+    ! ---------------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! ---------------------------------------------------------------- !
     ! convert benthic cut-off depth value and form string
     loc_string_Dmin  = '(>'// fun_conv_num_char_n(4,int(par_data_save_ben_Dmin)) //'m)'
     loc_string_Ddeep = '(>'// fun_conv_num_char_n(4,int(par_data_save_ben_Dmin)) //'m)'
     loc_string_Dneri = '(<'// fun_conv_num_char_n(4,int(par_data_save_ben_Dmin)) //'m)'
-
-    ! tracers
-    IF (ctrl_data_save_sig_ocn) THEN
+    ! ---------------------------------------------------------------- !
+    ! CLIMATE
+    ! ---------------------------------------------------------------- !
+    if (ctrl_save_hidden_climate) then
+       ! atmosphere
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_SAT',string_results_ext)
+       loc_string = '% time (yr) / global mean surface air temperature (degrees C)'
+       OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+       write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+       CLOSE(unit=out,iostat=ios)
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_humidity',string_results_ext)
+       loc_string = '% time (yr) / global mean surface humidity ( )'
+       OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+       write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+       CLOSE(unit=out,iostat=ios)
+       ! ocean surface
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_SST',string_results_ext)
+       loc_string = '% time (yr) / global mean sea surface temperature (degrees C)'
+       OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+       write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+       CLOSE(unit=out,iostat=ios)
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_SSS',string_results_ext)
+       loc_string = '% time (yr) / global mean sea surface salinity (PSU)'
+       OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+       write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+       CLOSE(unit=out,iostat=ios)
+    end if
+    ! ---------------------------------------------------------------- !
+    ! ATMOSPHERE TRACERS
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_basic_reservoirs) THEN
+       DO l=1,n_l_atm
+          ia = conv_iselected_ia(l)
+          loc_filename=fun_data_timeseries_filename( &
+               & loc_t,par_outdir_name,'timeseries','atm_'//TRIM(string_atm(ia)),string_results_ext &
+               & )
+          SELECT CASE (atm_type(ia))
+          CASE (0)
+             If (ia == ia_T) loc_string = '% time (yr) / surface air temperature (degrees C)'
+             If (ia == ia_q) loc_string = '% time (yr) / surface humidity (???)'
+             If (ia == ia_pcolr) &
+                  & loc_string = '% time (yr) / global '//TRIM(string_atm(ia))//' (mol) / global ' //TRIM(string_atm(ia))//' (atm)'
+          CASE (1)
+             loc_string = '% time (yr) / global '//TRIM(string_atm(ia))//' (mol) / global ' //TRIM(string_atm(ia))//' (atm)'
+          CASE (n_itype_min:n_itype_max)
+             loc_string = '% time (yr) / global '//TRIM(string_atm(ia))//' (mol) / global ' //TRIM(string_atm(ia))//' (o/oo)'
+          end SELECT
+          SELECT CASE (atm_type(ia))
+          CASE (0,1)
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+          end SELECT
+       END DO
+    END IF
+    ! ---------------------------------------------------------------- !
+    ! OCEAN TRACERS
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_basic_reservoirs) THEN
        DO l=1,n_l_ocn
           io = conv_iselected_io(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -80,7 +155,7 @@ CONTAINS
              end SELECT
           end IF
           SELECT CASE (ocn_type(io))
-          CASE (0,1,n_itype_min:n_itype_max)
+          CASE (0,1)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -88,45 +163,125 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
-          end SELECT
-       END DO
-    END IF
-    ! atmospheric tracer
-    IF (ctrl_data_save_sig_ocnatm) THEN
-       DO l=1,n_l_atm
-          ia = conv_iselected_ia(l)
-          loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','atm_'//TRIM(string_atm(ia)),string_results_ext &
-               & )
-          SELECT CASE (atm_type(ia))
-          CASE (0)
-             If (ia == ia_T) loc_string = '% time (yr) / surface air temperature (degrees C)'
-             If (ia == ia_q) loc_string = '% time (yr) / surface humidity (???)'
-             If (ia == ia_pcolr) &
-                  & loc_string = '% time (yr) / global '//TRIM(string_atm(ia))//' (mol) / global ' //TRIM(string_atm(ia))//' (atm)'
-          CASE (1)
-             loc_string = '% time (yr) / global '//TRIM(string_atm(ia))//' (mol) / global ' //TRIM(string_atm(ia))//' (atm)'
           CASE (n_itype_min:n_itype_max)
-             loc_string = '% time (yr) / global '//TRIM(string_atm(ia))//' (mol) / global ' //TRIM(string_atm(ia))//' (o/oo)'
-          end SELECT
-          SELECT CASE (atm_type(ia))
-          CASE (0,1,n_itype_min:n_itype_max)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     END IF
-    ! export flux
-    IF (ctrl_data_save_sig_fexport) THEN
+    ! ---------------------------------------------------------------- !
+    ! core-top sediment composition
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_basic_reservoirs) THEN
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','fexport_'//TRIM(string_sed(is)),string_results_ext &
+               & loc_t,par_outdir_name,'timeseries','sed_'//TRIM(string_sed(is)),string_results_ext &
+               & )
+          SELECT CASE (sed_type(is))
+          CASE (par_sed_type_bio,par_sed_type_abio, &
+               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+               & par_sed_type_scavenged)
+             loc_string = '% time (yr) / ' //&
+                  & 'mean '//TRIM(string_sed(is))//' composition (wt%) / ' //&
+                  & 'deep '//TRIM(loc_string_Ddeep)//' '//TRIM(string_sed(is))//' composition (wt%) / ' //&
+                  & 'neritic '//TRIM(loc_string_Dneri)//' '//TRIM(string_sed(is))//' composition (wt%)'
+          CASE (par_sed_type_age)
+             loc_string = '% time (yr) / mean core-top age (yr)'
+          CASE (n_itype_min:n_itype_max)
+             loc_string = '% time (yr) / mean core-top '//TRIM(string_sed(is))//' delta (o/oo)'
+          end SELECT
+          SELECT CASE (sed_type(is))
+          CASE (par_sed_type_bio,par_sed_type_abio, &
+               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+               & par_sed_type_scavenged,par_sed_type_age)
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+          end SELECT
+       END DO
+    END IF
+    ! ---------------------------------------------------------------- !
+    ! ocean surface carbonate chemistry
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_basic_geochemistry) THEN
+       DO ic=1,n_carb
+          loc_filename=fun_data_timeseries_filename( &
+               & loc_t,par_outdir_name,'timeseries','carbchem_seasur_'//TRIM(string_carb(ic)),string_results_ext &
+               & )
+          loc_string_title = '% surface ocean carbonate chemistry properties (and isotopic composition where relevant) - '// &
+               & string_longname_carb(ic)
+          SELECT CASE (ic)
+          CASE (ic_ohm_cal,ic_ohm_arg)
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (n/a) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (n/a)'
+          CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
+             if (ocn_select(io_DIC_14C)) then
+                loc_string = '% time (yr) / ' //&
+                     & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                     & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
+                     & 'surface '//TRIM(string_carb(ic))//' d14C (o/oo) / ' //&
+                     & 'surface mean (total area)  '//TRIM(string_carb(ic))//' (mol kg-1)'
+             elseif (ocn_select(io_DIC_13C)) then
+                loc_string = '% time (yr) / ' //&
+                     & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                     & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
+                     & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
+             else
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
+             end if
+          CASE (ic_fug_CO2)
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (atm) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (atm)'
+          case default
+             loc_string = '% time (yr) / ' //&
+                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
+          end SELECT
+          call check_unit(out,__LINE__,__FILE__)
+          OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+          call check_iostat(ios,__LINE__,__FILE__)
+          write(unit=out,fmt=*,iostat=ios) trim(loc_string_title)
+          call check_iostat(ios,__LINE__,__FILE__)
+          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+          call check_iostat(ios,__LINE__,__FILE__)
+          CLOSE(unit=out,iostat=ios)
+          call check_iostat(ios,__LINE__,__FILE__)
+       END DO
+    end if
+    ! ---------------------------------------------------------------- ! 
+    ! export flux
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_basic_biologicalpump) THEN
+       DO l=1,n_l_sed
+          is = conv_iselected_is(l)
+          loc_filename=fun_data_timeseries_filename( &
+               & loc_t,par_outdir_name,'timeseries','biop_f_'//TRIM(string_sed(is)),string_results_ext &
                & )
           SELECT CASE (sed_type(is))
           CASE (par_sed_type_bio,par_sed_type_abio, &
@@ -143,7 +298,7 @@ CONTAINS
           SELECT CASE (sed_type(is))
           CASE (par_sed_type_bio,par_sed_type_abio, &
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged,par_sed_type_age,n_itype_min:n_itype_max)
+               & par_sed_type_scavenged,par_sed_type_age)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -151,12 +306,26 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
-       ! export rain ratios
+    end if
+    ! ---------------------------------------------------------------- !
+    ! export rain ratios
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_basic_biologicalpump) THEN
        if (sed_select(is_POC) .AND. sed_select(is_CaCO3)) then
           loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','misc_CaCO3toPOC',string_results_ext)
+               & loc_t,par_outdir_name,'timeseries','biop_r_CaCO32POC',string_results_ext)
           loc_string = '% time (yr) / CaCO3/POC ratio / POC/CaCO3 ratio'
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
@@ -168,7 +337,7 @@ CONTAINS
        end if
        if (sed_select(is_POC) .AND. sed_select(is_opal)) then
           loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','misc_opaltoPOC',string_results_ext)
+               & loc_t,par_outdir_name,'timeseries','biop_r_opal2POC',string_results_ext)
           loc_string = '% time (yr) / opal/POC ratio / POC/opal ratio'
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
@@ -180,7 +349,7 @@ CONTAINS
        end if
        if (sed_select(is_POC) .AND. sed_select(is_POP)) then
           loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','misc_POPtoPOC',string_results_ext)
+               & loc_t,par_outdir_name,'timeseries','biop_r_POP2POC',string_results_ext)
           loc_string = '% time (yr) / POP/POC ratio (o/oo) / POC/POP ratio'
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
@@ -192,7 +361,7 @@ CONTAINS
        end if
        if (sed_select(is_POC) .AND. sed_select(is_POFe)) then
           loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','misc_POFetoPOC',string_results_ext)
+               & loc_t,par_outdir_name,'timeseries','biop_r_POFe2POC',string_results_ext)
           loc_string = '% time (yr) / POFe/POC ratio (1.0E3 o/oo) / POC/POFe ratio'
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
@@ -203,6 +372,18 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end if
     END IF
+
+
+
+
+
+
+
+
+
+
+
+    
     ! air-sea gas exchange
     IF (ctrl_data_save_sig_fairsea) THEN
        DO l=3,n_l_atm
@@ -309,90 +490,6 @@ CONTAINS
           end SELECT
           SELECT CASE (ocn_type(io))
           CASE (1,n_itype_min:n_itype_max)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          end SELECT
-       END DO
-    END IF
-    ! ocean surface carbonate chemistry
-    IF (ctrl_data_save_sig_carb_sur) THEN
-       DO ic=1,n_carb
-          loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','carb_sur_'//TRIM(string_carb(ic)),string_results_ext &
-               & )
-          loc_string_title = '% surface ocean carbonate chemistry properties (and isotopic composition where relevant) - '// &
-               & string_longname_carb(ic)
-          SELECT CASE (ic)
-          CASE (ic_ohm_cal,ic_ohm_arg)
-             loc_string = '% time (yr) / ' //&
-                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (n/a) / ' //&
-                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (n/a)'
-          CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
-             if (ocn_select(io_DIC_14C)) then
-                loc_string = '% time (yr) / ' //&
-                     & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                     & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
-                     & 'surface '//TRIM(string_carb(ic))//' d14C (o/oo) / ' //&
-                     & 'surface mean (total area)  '//TRIM(string_carb(ic))//' (mol kg-1)'
-             elseif (ocn_select(io_DIC_13C)) then
-                loc_string = '% time (yr) / ' //&
-                     & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                     & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
-                     & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
-             else
-             loc_string = '% time (yr) / ' //&
-                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
-             end if
-          CASE (ic_fug_CO2)
-             loc_string = '% time (yr) / ' //&
-                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (atm) / ' //&
-                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (atm)'
-          case default
-             loc_string = '% time (yr) / ' //&
-                  & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                  & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
-          end SELECT
-          call check_unit(out,__LINE__,__FILE__)
-          OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
-          call check_iostat(ios,__LINE__,__FILE__)
-          write(unit=out,fmt=*,iostat=ios) trim(loc_string_title)
-          call check_iostat(ios,__LINE__,__FILE__)
-          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-          call check_iostat(ios,__LINE__,__FILE__)
-          CLOSE(unit=out,iostat=ios)
-          call check_iostat(ios,__LINE__,__FILE__)
-       END DO
-    end if
-    ! core-top sediment composition
-    IF (ctrl_data_save_sig_ocnsed) THEN
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
-          loc_filename=fun_data_timeseries_filename( &
-               & loc_t,par_outdir_name,'timeseries','sed_'//TRIM(string_sed(is)),string_results_ext &
-               & )
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio, &
-               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged)
-             loc_string = '% time (yr) / ' //&
-                  & 'mean '//TRIM(string_sed(is))//' composition (wt%) / ' //&
-                  & 'deep '//TRIM(loc_string_Ddeep)//' '//TRIM(string_sed(is))//' composition (wt%) / ' //&
-                  & 'neritic '//TRIM(loc_string_Dneri)//' '//TRIM(string_sed(is))//' composition (wt%)'
-          CASE (par_sed_type_age)
-             loc_string = '% time (yr) / mean core-top age (yr)'
-          CASE (n_itype_min:n_itype_max)
-             loc_string = '% time (yr) / mean core-top '//TRIM(string_sed(is))//' delta (o/oo)'
-          end SELECT
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio, &
-               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged,par_sed_type_age,n_itype_min:n_itype_max)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -1419,13 +1516,82 @@ CONTAINS
   ! ****************************************************************************************************************************** !
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
   ! ****************************************************************************************************************************** !
   ! SAVE RUN-TIME DATA
   SUBROUTINE sub_data_save_runtime(dum_yr_save,dum_t)
     USE genie_util, ONLY:check_unit,check_iostat
+    ! ---------------------------------------------------------------- !
     ! dummy arguments
+    ! ---------------------------------------------------------------- !
     REAL,INTENT(in)::dum_yr_save,dum_t
-    ! local variables
+    ! ---------------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! ---------------------------------------------------------------- !
     INTEGER::l,io,ia,is,ic,ios,idm2D,k
     integer::ib,id
     REAL::loc_t
@@ -1439,8 +1605,9 @@ CONTAINS
     CHARACTER(len=255)::loc_filename
     REAL,DIMENSION(n_carbisor)::loc_carbisor
     logical::loc_save
-
-    ! *** set-up local constants ***
+    ! ---------------------------------------------------------------- !
+    ! set-up local constants
+    ! ---------------------------------------------------------------- !
     ! calculate local opsi conversion constant
     loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6
     ! total ocean mass
@@ -1451,12 +1618,110 @@ CONTAINS
     loc_ocn_tot_A = sum(phys_ocn(ipo_A,:,:,n_k))
     ! local time
     loc_t = dum_yr_save
-
-    ! *** initialize local arrays
+    ! ---------------------------------------------------------------- !
+    ! initialize local arrays
+    ! ---------------------------------------------------------------- !
     loc_carbisor(:) = 0.0
-
-    ! *** <sig_ocn_*> ***
-    ! write ocean tracer data
+    ! ---------------------------------------------------------------- !
+    ! CLIMATE
+    ! ---------------------------------------------------------------- !
+    if (ctrl_save_hidden_climate) then
+       ! atmosphere
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_SAT',string_results_ext)
+       loc_sig = int_ocnatm_sig(ia_T)/int_t_sig
+       OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+       WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
+            & loc_t,                                  &
+            & loc_sig
+       CLOSE(unit=out,iostat=ios)
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_humidity',string_results_ext)
+       loc_sig = int_ocnatm_sig(ia_q)/int_t_sig
+       OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+       WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
+            & loc_t,                                  &
+            & loc_sig
+       CLOSE(unit=out,iostat=ios)
+       ! ocean surface
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_SST',string_results_ext)
+       loc_sig = int_ocn_sur_sig(io_T)/int_t_sig - const_zeroC
+       OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+       WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
+            & loc_t,                                  &
+            & loc_sig
+       CLOSE(unit=out,iostat=ios)
+       loc_filename = fun_data_timeseries_filename(loc_t,par_outdir_name,'timeseries','climate_SSS',string_results_ext)
+       loc_sig = int_ocn_sur_sig(io_S)/int_t_sig
+       OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+       WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
+            & loc_t,                                  &
+            & loc_sig
+       CLOSE(unit=out,iostat=ios)
+    end if
+    ! ---------------------------------------------------------------- !
+    ! ATMOSPHERE TRACERS
+    ! ---------------------------------------------------------------- !
+    ! NOTE: write data both as the total inventory, and as the equivalent mean partial pressure
+    ! NOTE: simple conversion factor from atm to mol is used
+    IF (ctrl_save_basic_reservoirs) THEN
+       DO l=1,n_l_atm
+          ia = conv_iselected_ia(l)
+          loc_filename=fun_data_timeseries_filename( &
+               & dum_t,par_outdir_name,'timeseries','atm_'//TRIM(string_atm(ia)),string_results_ext &
+               & )
+          SELECT CASE (atm_type(ia))
+          CASE (0)
+             loc_sig = int_ocnatm_sig(ia)/int_t_sig
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             If (ia == ia_T .OR. ia == ia_q)  then
+                WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
+                     & loc_t, &
+                     & loc_sig
+             elseif (ia == ia_pcolr) then
+                WRITE(unit=out,fmt='(f12.3,e20.12,e14.6)',iostat=ios) &
+                     & loc_t, &
+                     & conv_atm_mol*loc_sig, &
+                     & loc_sig
+             end if
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          CASE (1)
+             loc_sig = int_ocnatm_sig(ia)/int_t_sig
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             WRITE(unit=out,fmt='(f12.3,e20.12,e14.6)',iostat=ios) &
+                  & loc_t, &
+                  & conv_atm_mol*loc_sig, &
+                  & loc_sig
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          case (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot  = int_ocnatm_sig(atm_dep(ia))/int_t_sig
+                loc_frac = int_ocnatm_sig(ia)/int_t_sig
+                loc_standard = const_standards(atm_type(ia))
+                loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,e20.12,f14.3)',iostat=ios) &
+                     & loc_t, &
+                     & conv_atm_mol*loc_frac, &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+          end SELECT
+       END DO
+    END IF    
+    ! ---------------------------------------------------------------- !
+    ! ocean tracers
+    ! ---------------------------------------------------------------- !
     ! NOTE: write data both as the total inventory, and as the equivalent mean concentration
     IF (ctrl_data_save_sig_ocn) THEN
        DO l=1,n_l_ocn
@@ -1536,79 +1801,137 @@ CONTAINS
                 call check_iostat(ios,__LINE__,__FILE__)
              end IF
           case (n_itype_min:n_itype_max)
-             loc_tot      = int_ocn_sig(ocn_dep(io))/int_t_sig
-             loc_frac     = int_ocn_sig(io)/int_t_sig
-             loc_standard = const_standards(ocn_type(io))
-             loc_sig      = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-             IF (ctrl_data_save_sig_ocn_sur) THEN
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot      = int_ocn_sig(ocn_dep(io))/int_t_sig
+                loc_frac     = int_ocn_sig(io)/int_t_sig
                 loc_standard = const_standards(ocn_type(io))
-                loc_tot_opn    = int_ocn_opn_sig(ocn_dep(io))/int_t_sig
-                loc_frac_opn   = int_ocn_opn_sig(io)/int_t_sig
-                loc_sig_opn    = fun_calc_isotope_delta(loc_tot_opn,loc_frac_opn,loc_standard,.FALSE.,const_nulliso)
-                loc_tot_ben    = int_ocn_ben_sig(ocn_dep(io))/int_t_sig
-                loc_frac_ben   = int_ocn_ben_sig(io)/int_t_sig
-                loc_sig_ben    = fun_calc_isotope_delta(loc_tot_ben,loc_frac_ben,loc_standard,.FALSE.,const_nulliso)
-                loc_tot_sur    = int_ocn_sur_sig(ocn_dep(io))/int_t_sig
-                loc_frac_sur   = int_ocn_sur_sig(io)/int_t_sig
-                loc_sig_sur    = fun_calc_isotope_delta(loc_tot_sur,loc_frac_sur,loc_standard,.FALSE.,const_nulliso)
-                call check_unit(out,__LINE__,__FILE__)
-                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-                call check_iostat(ios,__LINE__,__FILE__)
-                WRITE(unit=out,fmt='(f12.3,e20.12,4f12.3)',iostat=ios) &
-                     & loc_t,                                          &
-                     & loc_ocn_tot_M*loc_frac,                         &
-                     & loc_sig,                                        &
-                     & loc_sig_opn,                                    &
-                     & loc_sig_ben,                                    &
-                     & loc_sig_sur
-                call check_iostat(ios,__LINE__,__FILE__)
-                CLOSE(unit=out,iostat=ios)
-                call check_iostat(ios,__LINE__,__FILE__)
-             else
-                call check_unit(out,__LINE__,__FILE__)
-                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-                call check_iostat(ios,__LINE__,__FILE__)
-                WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
-                     & loc_t,                                        &
-                     & loc_ocn_tot_M*loc_frac,                       &
-                     & loc_sig
-                call check_iostat(ios,__LINE__,__FILE__)
-                CLOSE(unit=out,iostat=ios)
-                call check_iostat(ios,__LINE__,__FILE__)
+                loc_sig      = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+                IF (ctrl_data_save_sig_ocn_sur) THEN
+                   loc_standard = const_standards(ocn_type(io))
+                   loc_tot_opn    = int_ocn_opn_sig(ocn_dep(io))/int_t_sig
+                   loc_frac_opn   = int_ocn_opn_sig(io)/int_t_sig
+                   loc_sig_opn    = fun_calc_isotope_delta(loc_tot_opn,loc_frac_opn,loc_standard,.FALSE.,const_nulliso)
+                   loc_tot_ben    = int_ocn_ben_sig(ocn_dep(io))/int_t_sig
+                   loc_frac_ben   = int_ocn_ben_sig(io)/int_t_sig
+                   loc_sig_ben    = fun_calc_isotope_delta(loc_tot_ben,loc_frac_ben,loc_standard,.FALSE.,const_nulliso)
+                   loc_tot_sur    = int_ocn_sur_sig(ocn_dep(io))/int_t_sig
+                   loc_frac_sur   = int_ocn_sur_sig(io)/int_t_sig
+                   loc_sig_sur    = fun_calc_isotope_delta(loc_tot_sur,loc_frac_sur,loc_standard,.FALSE.,const_nulliso)
+                   call check_unit(out,__LINE__,__FILE__)
+                   OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   WRITE(unit=out,fmt='(f12.3,e20.12,4f12.3)',iostat=ios) &
+                        & loc_t,                                          &
+                        & loc_ocn_tot_M*loc_frac,                         &
+                        & loc_sig,                                        &
+                        & loc_sig_opn,                                    &
+                        & loc_sig_ben,                                    &
+                        & loc_sig_sur
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   CLOSE(unit=out,iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)
+                else
+                   call check_unit(out,__LINE__,__FILE__)
+                   OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
+                        & loc_t,                                        &
+                        & loc_ocn_tot_M*loc_frac,                       &
+                        & loc_sig
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   CLOSE(unit=out,iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)
+                end if
              end IF
           END SELECT
        END DO
     END IF
-
-    ! *** <sig_carb_sur_*> ***
-    IF (ctrl_data_save_sig_carb_sur) THEN
+    ! ---------------------------------------------------------------- !
+    ! core-top sediment composition
+    ! ---------------------------------------------------------------- !
+    ! NOTE: the call to fun_sed_coretop made in populating <loc_sed_coretop> has already made the necessary type conversions
+    !       for solid tracers as wt%, isotopes in per mill, and recovery of the carbonate 'age' value
+    IF (ctrl_save_basic_reservoirs) THEN
+       DO l=1,n_l_sed
+          is = conv_iselected_is(l)
+          loc_filename=fun_data_timeseries_filename( &
+               & dum_t,par_outdir_name,'timeseries','sed_'//TRIM(string_sed(is)),string_results_ext &
+               & )
+          SELECT CASE (sed_type(is))
+          CASE (par_sed_type_bio,par_sed_type_abio,par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
+               & par_sed_type_scavenged)
+             loc_sig_opn = int_ocnsed_sig(is)/int_t_sig
+             loc_sig_ben = int_ocnsed_deep_sig(is)/int_t_sig
+             loc_sig_shf = int_ocnsed_neri_sig(is)/int_t_sig
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             WRITE(unit=out,fmt='(f12.3,3f12.6)',iostat=ios) &
+                  & loc_t, &
+                  & loc_sig_opn, &
+                  & loc_sig_ben, &
+                  & loc_sig_shf
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          CASE (par_sed_type_age)
+             loc_sig = int_ocnsed_sig(is)/int_t_sig
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             WRITE(unit=out,fmt='(f12.3,f14.3)',iostat=ios) &
+                  & loc_t, &
+                  & loc_sig
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_sig = int_ocnsed_sig(is)/int_t_sig
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,f14.3)',iostat=ios) &
+                     & loc_t, &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+          end SELECT
+       END DO
+    END IF
+    ! ---------------------------------------------------------------- !
+    ! ocean surface carbonate chemistry
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_basic_geochemistry) THEN
        ! calculate isotopic properties of CO2(aq), HCO3-, and CO32-
-       IF (ctrl_data_save_sig_ocn_sur) THEN
-          if (ocn_select(io_DIC_13C)) then
-             call sub_calc_carb_r13C( &
-                  & int_ocn_opn_sig(io_T)/int_t_sig, &
-                  & int_ocn_opn_sig(io_DIC)/int_t_sig, &
-                  & int_ocn_opn_sig(io_DIC_13C)/int_t_sig, &
-                  & int_carb_sur_sig(:)/int_t_sig, &
-                  & loc_carbisor(:) &
-                  & )
-          end IF
-          if (ocn_select(io_DIC_14C)) then
-             call sub_calc_carb_r14C( &
-                  & int_ocn_opn_sig(io_T)/int_t_sig, &
-                  & int_ocn_opn_sig(io_DIC)/int_t_sig, &
-                  & int_ocn_opn_sig(io_DIC_14C)/int_t_sig, &
-                  & int_carb_sur_sig(:)/int_t_sig, &
-                  & loc_carbisor(:) &
-                  & )
-          end IF
+       if (ocn_select(io_DIC_13C)) then
+          call sub_calc_carb_r13C( &
+               & int_ocn_opn_sig(io_T)/int_t_sig, &
+               & int_ocn_opn_sig(io_DIC)/int_t_sig, &
+               & int_ocn_opn_sig(io_DIC_13C)/int_t_sig, &
+               & int_carb_sur_sig(:)/int_t_sig, &
+               & loc_carbisor(:) &
+               & )
        end IF
+       if (ocn_select(io_DIC_14C)) then
+          call sub_calc_carb_r14C( &
+               & int_ocn_opn_sig(io_T)/int_t_sig, &
+               & int_ocn_opn_sig(io_DIC)/int_t_sig, &
+               & int_ocn_opn_sig(io_DIC_14C)/int_t_sig, &
+               & int_carb_sur_sig(:)/int_t_sig, &
+               & loc_carbisor(:) &
+               & )
+       end IF
+    end if
+    if (ctrl_save_basic_geochemistry) then
        ! write ocean surface carbonate chemistry data
        ! NOTE: also write d13C and d14C isotopic properties of the carbonate species (CO2(aq), HCO3-, and CO32-)
        !       depending on whether either or both of these isotopic tracers have been selected
        DO ic=1,n_carb
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','carb_sur_'//TRIM(string_carb(ic)),string_results_ext &
+               & dum_t,par_outdir_name,'timeseries','carbchem_seasur_'//TRIM(string_carb(ic)),string_results_ext &
                & )
           SELECT CASE (ic)
           CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
@@ -1673,75 +1996,15 @@ CONTAINS
           end SELECT
        END DO
     end if
-
-    ! *** <sig_ocnatm_*> ***
-    ! write atmosphere tracer data
-    ! NOTE: write data both as the total inventory, and as the equivalent mean partial pressure
-    ! NOTE: simple conversion factor from atm to mol is used
-    IF (ctrl_data_save_sig_ocnatm) THEN
-       DO l=1,n_l_atm
-          ia = conv_iselected_ia(l)
-          loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','atm_'//TRIM(string_atm(ia)),string_results_ext &
-               & )
-          SELECT CASE (atm_type(ia))
-          CASE (0)
-             loc_sig = int_ocnatm_sig(ia)/int_t_sig
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             If (ia == ia_T .OR. ia == ia_q)  then
-                WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
-                     & loc_t, &
-                     & loc_sig
-             elseif (ia == ia_pcolr) then
-                WRITE(unit=out,fmt='(f12.3,e20.12,e14.6)',iostat=ios) &
-                     & loc_t, &
-                     & conv_atm_mol*loc_sig, &
-                     & loc_sig
-             end if
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          CASE (1)
-             loc_sig = int_ocnatm_sig(ia)/int_t_sig
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e20.12,e14.6)',iostat=ios) &
-                  & loc_t, &
-                  & conv_atm_mol*loc_sig, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          case (n_itype_min:n_itype_max)
-             loc_tot  = int_ocnatm_sig(atm_dep(ia))/int_t_sig
-             loc_frac = int_ocnatm_sig(ia)/int_t_sig
-             loc_standard = const_standards(atm_type(ia))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e20.12,f14.3)',iostat=ios) &
-                  & loc_t, &
-                  & conv_atm_mol*loc_frac, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          end SELECT
-       END DO
-    END IF
-
-    ! *** <sig_fexport_*> ***
-    ! write export flux data
+    ! ---------------------------------------------------------------- !
+    ! export flux
+    ! ---------------------------------------------------------------- !
     ! NOTE: write data both as mole and mass flux
-    IF (ctrl_data_save_sig_fexport) THEN
+    IF (ctrl_save_basic_biologicalpump) THEN
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','fexport_'//TRIM(string_sed(is)),string_results_ext &
+               & dum_t,par_outdir_name,'timeseries','biop_f_'//TRIM(string_sed(is)),string_results_ext &
                & )
           SELECT CASE (sed_type(is))
           CASE (par_sed_type_bio,par_sed_type_abio,par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
@@ -1774,26 +2037,32 @@ CONTAINS
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
           case (n_itype_min:n_itype_max)
-             loc_tot  = int_fexport_sig(sed_dep(is))/int_t_sig
-             loc_frac = int_fexport_sig(is)/int_t_sig
-             loc_standard = const_standards(sed_type(is))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
-                  & loc_t, &
-                  & loc_frac, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot  = int_fexport_sig(sed_dep(is))/int_t_sig
+                loc_frac = int_fexport_sig(is)/int_t_sig
+                loc_standard = const_standards(sed_type(is))
+                loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
+                     & loc_t, &
+                     & loc_frac, &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
-       ! export rain ratios
+    end if
+    ! ---------------------------------------------------------------- !
+    ! export rain ratios
+    ! ---------------------------------------------------------------- ! 
+    IF (ctrl_save_basic_biologicalpump) THEN
        if (sed_select(is_POC) .AND. sed_select(is_CaCO3)) then
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','misc_CaCO3toPOC',string_results_ext)
+               & dum_t,par_outdir_name,'timeseries','biop_r_CaCO32POC',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -1811,7 +2080,7 @@ CONTAINS
        end if
        if (sed_select(is_POC) .AND. sed_select(is_opal)) then
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','misc_opaltoPOC',string_results_ext)
+               & dum_t,par_outdir_name,'timeseries','biop_r_opal2POC',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -1829,7 +2098,7 @@ CONTAINS
        end if
        if (sed_select(is_POC) .AND. sed_select(is_POP)) then
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','misc_POPtoPOC',string_results_ext)
+               & dum_t,par_outdir_name,'timeseries','biop_r_POP2POC',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -1847,7 +2116,7 @@ CONTAINS
        end if
        if (sed_select(is_POC) .AND. sed_select(is_POFe)) then
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','misc_POFetoPOC',string_results_ext)
+               & dum_t,par_outdir_name,'timeseries','biop_r_POFe2POC',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -1865,6 +2134,15 @@ CONTAINS
        end if
     END IF
 
+
+
+
+
+
+
+
+
+    
     ! *** <int_diag_fseaair_sig_*> ***
     ! write air-sea has exchange flux data
     ! NOTE: write data both as the total flux, and as the equivalent mean flux density
@@ -2048,58 +2326,6 @@ CONTAINS
        END DO
     END IF
 
-    ! *** <sig_ocnsed_*> ***
-    ! write sediment (core-top) composition data
-    ! NOTE: the call to fun_sed_coretop made in populating <loc_sed_coretop> has already made the necessary type conversions
-    !       for solid tracers as wt%, isotopes in per mill, and recovery of the carbonate 'age' value
-    IF (ctrl_data_save_sig_ocnsed) THEN
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
-          loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','sed_'//TRIM(string_sed(is)),string_results_ext &
-               & )
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio,par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged)
-             loc_sig_opn = int_ocnsed_sig(is)/int_t_sig
-             loc_sig_ben = int_ocnsed_deep_sig(is)/int_t_sig
-             loc_sig_shf = int_ocnsed_neri_sig(is)/int_t_sig
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,3f12.6)',iostat=ios) &
-                  & loc_t, &
-                  & loc_sig_opn, &
-                  & loc_sig_ben, &
-                  & loc_sig_shf
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          CASE (n_itype_min:n_itype_max)
-             loc_sig = int_ocnsed_sig(is)/int_t_sig
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,f14.3)',iostat=ios) &
-                  & loc_t, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          CASE (par_sed_type_age)
-             loc_sig = int_ocnsed_sig(is)/int_t_sig
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,f14.3)',iostat=ios) &
-                  & loc_t, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          end SELECT
-       END DO
-    END IF
 
     ! *** <sig_misc_fsed_*> ***
     ! write estimted sediment burial flux data
