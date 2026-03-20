@@ -385,23 +385,27 @@ echo ""
 echo ">> Here we go ..."
 echo ""
 cd $BINARYPATH
+# extract number of tracers
+TRACERS=$(grep -o '$(DEFINE)GOLDSTEINNTRACS=..\>' $CONFIGPATH/$MODELID".config" | sed -e s/.*=//)
+# create array size #
+ndim="$(echo "$LONS*$LATS*$LEVS*$TRACERS" | bc -l)"
 # test for change of base-config
-if test -e 'current_config.dat' 
+if test -e 'cookie_n.config' 
 then
-    current_config=$(<'current_config.dat')
-    if [ "$current_config" != "$MODELID" ]; then
-        echo ">> Use of different base-config detected, so ... (make cleanall) ..."
+    cookie_n=$(<'cookie_n.config')
+    if [ "$cookie_n" != "$ndim" ]; then
+        echo ">> Use of different ocean array size detected, so ... (make cleanall) ..."
         echo ""
         sleep 2
         make cleanall
-        echo "$MODELID" > 'current_config.dat'
+        echo "$ndim" > 'cookie_n.config'
     fi
 else
-    echo ">> WARNING: No record of last base-config (file: current_config.dat): CONTINUING ..."
+    echo ">> WARNING: No record of last ocean array size used (file: cookie_n.config): CONTINUING ..."
     echo ""
     sleep 4
     make cleanall
-    echo "$MODELID" > 'current_config.dat'
+    echo "$ndim" > 'cookie_n.config'
 fi
 ./genie_example.job -O -f $CONFIGPATH/$CONFIGNAME
 # ---------------------------------
