@@ -163,8 +163,9 @@ MODULE biogem_lib
   real::par_bio_tau                                              ! biological production time-scale (days) (OCMIP-2)
   real::par_bio_tau_sp                                           ! biological production time-scale -- SP
   real::par_bio_tau_nsp                                          ! biological production time-scale -- NSP
+  real::par_bio_tau_nf                                           ! biological production time-scale -- Nitrogen fixers
   real::par_bio_relprod_sp                                       ! uptake rate modification factor for siliceous phytoplankton
-  NAMELIST /ini_biogem_nml/par_bio_tau,par_bio_tau_sp,par_bio_tau_nsp,par_bio_relprod_sp
+  NAMELIST /ini_biogem_nml/par_bio_tau,par_bio_tau_sp,par_bio_tau_nsp,par_bio_tau_nf,par_bio_relprod_sp
   real::par_bio_zc                                               ! biological production zone depth (m) (OCMIP-2)
   real::par_bio_I_eL                                             ! light e-folding depth (m) (OCMIP-2)
   real::par_bio_c0_I                                             ! half sat. for light (W m-2) [Doney et al., 2006]

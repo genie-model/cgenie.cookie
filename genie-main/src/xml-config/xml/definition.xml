@@ -4368,6 +4368,10 @@
 			<value datatype="real">60.0</value>
                         <description>Biological production time-scale (days) -- non-siliceous phytoplankton</description>
                     </param>
+                    <param name="par_bio_tau_nf">
+			<value datatype="real">30.0</value>
+                        <description>Biological production time-scale (days) -- nitrogen fixers</description>
+                    </param>
                     <param name="par_bio_relprod_sp">
 			<value datatype="real">0.952381</value>
                         <description>Fractional production of siliceous phytoplankton in Si/Fe-replete conditions. The default value of 0.952381 orresponds to a ratio of 20:1 for siliceous to non-siliceous phytoplanktion production (Ridgwell, 2001, PhD. Thesis)</description>

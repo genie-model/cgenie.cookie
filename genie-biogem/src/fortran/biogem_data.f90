@@ -162,6 +162,7 @@ CONTAINS
        print*,'Biological production time-scale (days) (OCMIP-2)   : ',par_bio_tau
        print*,'Biological production time-scale -- siliceous plank : ',par_bio_tau_sp
        print*,'Biological production time-scale -- non-siliceous   : ',par_bio_tau_nsp
+       print*,'Biological production time-scale -- nitrogen fixers : ',par_bio_tau_nf
        print*,'Fract. prod. of si. phytop. in Si/Fe-replete cond.  : ',par_bio_relprod_sp
        print*,'Light e-folding depth (m) (OCMIP-2)                 : ',par_bio_I_eL
        print*,'half sat. for light (W m-2) [Doney et al., 2006]    : ',par_bio_c0_I       
@@ -628,6 +629,7 @@ CONTAINS
     par_bio_tau     = conv_d_yr*par_bio_tau
     par_bio_tau_sp  = conv_d_yr*par_bio_tau_sp
     par_bio_tau_nsp = conv_d_yr*par_bio_tau_nsp
+    par_bio_tau_nf = conv_d_yr*par_bio_tau_nf
     ! adjust units of scavening rate constant (d-1 -> yr-1)
     par_scav_Fe_ks = par_scav_Fe_ks/conv_d_yr
     ! adjust units of prescribed particulates sinking rate (m d-1 -> m yr-1)
@@ -2632,7 +2634,8 @@ CONTAINS
          & 'bio_PFe',              &
          & 'bio_PFeSi',            &
          & 'bio_PFeSi_Ridgwell02', &
-         & 'bio_PNFe'              &
+         & 'bio_PNFe',             &
+         & 'bio_PN'                &
          & )
        IF (.NOT. ocn_select(io_PO4)) loc_flag = .TRUE.
        IF (.NOT. sed_select(is_POP)) loc_flag = .TRUE.
@@ -2648,10 +2651,10 @@ CONTAINS
     end select
     SELECT CASE (par_bio_prodopt)
     case (                     &
-         & '2N2T_PO4MM_NO3',   &
          & '2N2T_PN_Tdep',     &
          & '3N2T_PNFe_Tdep',   &
-         & 'bio_PNFe'          &
+         & 'bio_PNFe',         &
+         & 'bio_PN'            &
          & )
        IF (.NOT. ocn_select(io_NO3)) loc_flag = .TRUE.
        IF (.NOT. ocn_select(io_N2)) loc_flag = .TRUE.

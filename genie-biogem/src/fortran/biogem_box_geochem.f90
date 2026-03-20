@@ -72,9 +72,9 @@ CONTAINS
           CASE ('Ozaki')
              ! from: Ozaki et al. [EPSL ... ?]
              loc_NH4_oxidation = dum_dtyr*(18250.0/conv_m3_kg)*loc_NH4*loc_O2
-          CASE ('Monteiro')
+          CASE ('Naafs2019')
 	     ! Second order equation of enzyme kinetics which accounts for both O2 and NH4 limitations on nitrification
-             ! NOTE: this scheme was used in 2019 PNAS paper (but only in the svn, not git repository code version)
+             ! NOTE: this scheme was used in Naafs et al. 2019 PNAS paper (but only in the svn, not git repository code version)
              loc_potO2cap = ocn(io_O2,dum_i,dum_j,k) + bio_remin(io_O2,dum_i,dum_j,k)
              loc_NH4_oxidation = dum_dtyr*par_nitri_mu*loc_NH4*loc_potO2cap &
                   & /(par_nitri_c0_NH4*par_nitri_c0_O2 +par_nitri_c0_O2*loc_NH4 &
@@ -83,8 +83,9 @@ CONTAINS
              If (loc_NH4_oxidation > min(loc_NH4,loc_potO2cap*par_bio_red_POP_PON/(-par_bio_red_POP_PO2))) then
                 loc_NH4_oxidation = min(loc_NH4,loc_potO2cap*loc_potO2cap*par_bio_red_POP_PON/(-par_bio_red_POP_PO2))
              end if
-          CASE ('Monteiro2')
+          CASE ('Naafs2019NEW')
 	     ! Second order equation of enzyme kinetics which accounts for both O2 and NH4 limitations on nitrification
+	     ! From Naafs et al. [2019] corrected for stoichiometry (0.5*O2) and loc_O2
              loc_NH4_oxidation = dum_dtyr*par_nitri_mu*min(loc_NH4,0.5*loc_O2)* &
                   & loc_NH4*loc_O2/ &
                   & (par_nitri_c0_NH4*par_nitri_c0_O2 + par_nitri_c0_O2*loc_NH4 + par_nitri_c0_NH4*loc_O2 + loc_NH4*loc_O2)
@@ -110,9 +111,9 @@ CONTAINS
              loc_NH4_oxidation = min(loc_NH4,0.5*loc_O2)
           end select
           ! cap NH4 oxidation and O2 consumption
-          ! NOTE: omitt reaction rate limitation term for 2019 PNAS paper compatability (CASE ('Monteiro'))
+          ! NOTE: omitt reaction rate limitation term for 2019 PNAS paper compatability (CASE ('Naafs2019'))
           SELECT CASE (opt_bio_remin_oxidize_NH4toNO3)
-          CASE ('Monteiro')
+          CASE ('Naafs2019')
              ! (nothing)
           case default
              loc_NH4_oxidation = min(loc_NH4_oxidation,loc_f*loc_NH4,loc_f*0.5*loc_O2)
