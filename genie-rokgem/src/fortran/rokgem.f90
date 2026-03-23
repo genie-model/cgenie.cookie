@@ -106,8 +106,6 @@ SUBROUTINE rest_rokgem()
   CHARACTER(len=255)::loc_filename
 
   if (debug_init > 1) PRINT*,'saving netcdf record number',ncout2d_ntrec_rg
-
-print*,TRIM(par_outrstdir_name)//trim(par_ncrst_name)
   
   ! dump restart data
   loc_filename = TRIM(par_outrstdir_name)//trim(par_ncrst_name)
