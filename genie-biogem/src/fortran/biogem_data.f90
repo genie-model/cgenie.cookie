@@ -4041,7 +4041,9 @@ CONTAINS
           loc_i = loc_i - 1
        END IF
     END DO
-    if (par_data_save_sig(loc_i) < (par_data_save_sig_dt/2.0 - par_misc_t_err)) loc_i = 0
+    if (loc_i > 0) then
+       if (par_data_save_sig(loc_i) < (par_data_save_sig_dt/2.0 - par_misc_t_err)) loc_i = 0
+    end if
     ! -------------------------------------------------------- ! record number of points
     par_data_save_sig_i = loc_i
     ! -------------------------------------------------------- ! automatically populate run end if needed

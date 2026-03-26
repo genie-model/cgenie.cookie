@@ -179,7 +179,7 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! core-top sediment composition
     ! ---------------------------------------------------------------- !
-    IF (ctrl_save_basic_reservoirs) THEN
+    IF (flag_sedgem .AND. ctrl_save_basic_reservoirs) THEN
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -372,20 +372,11 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end if
     END IF
-
-
-
-
-
-
-
-
-
-
-
-    
+    ! ---------------------------------------------------------------- !
     ! air-sea gas exchange
-    IF (ctrl_data_save_sig_fairsea) THEN
+    ! ---------------------------------------------------------------- !
+    ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
+    IF (ctrl_save_basic_reservoirs) THEN
        DO l=3,n_l_atm
           ia = conv_iselected_ia(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -400,7 +391,7 @@ CONTAINS
                   & 'global '//TRIM(string_atm(ia))//' (o/oo)'
           end SELECT
           SELECT CASE (atm_type(ia))
-          CASE (0,1,n_itype_min:n_itype_max)
+          CASE (0,1)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -408,11 +399,23 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     end IF
+    ! ---------------------------------------------------------------- !
     ! ocean-atmosphere interface flux
-    IF (ctrl_data_save_sig_focnatm) THEN
+    ! ---------------------------------------------------------------- !
+    IF (ctrl_save_hidden_interfacefluxes) THEN
        DO l=3,n_l_atm
           ia = conv_iselected_ia(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -429,7 +432,7 @@ CONTAINS
                   & ' NOTE: is the atmospheric forcing flux *net* of the sea-air gas exchange flux.'
           end SELECT
           SELECT CASE (atm_type(ia))
-          CASE (0,1,n_itype_min:n_itype_max)
+          CASE (0,1)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -437,11 +440,23 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     END IF
+    ! ---------------------------------------------------------------- !
     ! ocean->sediment flux
-    IF (ctrl_data_save_sig_focnsed) THEN
+    ! ---------------------------------------------------------------- !
+    IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -462,7 +477,7 @@ CONTAINS
           SELECT CASE (sed_type(is))
           CASE (par_sed_type_bio,par_sed_type_abio, &
                & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged,par_sed_type_age,n_itype_min:n_itype_max)
+               & par_sed_type_scavenged,par_sed_type_age)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -470,11 +485,23 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
-          end SELECT
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+             end SELECT
        END DO
     END IF
+    ! ---------------------------------------------------------------- !
     ! sediment->ocean flux
-    IF (ctrl_data_save_sig_fsedocn) THEN
+    ! ---------------------------------------------------------------- !
+    IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
        DO l=1,n_l_ocn
           io = conv_iselected_io(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -489,7 +516,7 @@ CONTAINS
                   & TRIM(string_ocn(io))//' delta (o/oo)'
           end SELECT
           SELECT CASE (ocn_type(io))
-          CASE (1,n_itype_min:n_itype_max)
+          CASE (1)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -497,11 +524,24 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     END IF
-    ! estimted sediment burial flux
-    IF (ctrl_data_save_sig_fsedocn .AND. ctrl_data_save_sig_ocnsed) THEN
+    ! ---------------------------------------------------------------- !
+    ! estimted sediment burial fluxes
+    ! ---------------------------------------------------------------- !
+    ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
+    IF (flag_sedgem .AND. ctrl_save_basic_reservoirs) THEN
        ! estimated CaCO3 burial
        if (ocn_select(io_Ca) .AND. sed_select(is_CaCO3)) then
           loc_filename=fun_data_timeseries_filename( &
@@ -545,8 +585,11 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end if
     end if
-    ! estimted mineral weathering flux
-    IF (ctrl_data_save_sig_diag .AND. flag_rokgem) THEN
+    ! ---------------------------------------------------------------- !
+    ! estimted mineral weathering fluxes
+    ! ---------------------------------------------------------------- !
+    ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
+    IF (flag_rokgem .AND. ctrl_save_basic_reservoirs) THEN
        IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca) .AND. ocn_select(io_SiO2)) THEN
           ! (1) silicate weathering
           loc_filename=fun_data_timeseries_filename(loc_t, &
@@ -601,7 +644,69 @@ CONTAINS
           CLOSE(unit=out,iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
        end IF
-    end if   
+       ! (5) silicate weathering ALT
+       IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca)) THEN
+          loc_filename=fun_data_timeseries_filename(loc_t, &
+               & par_outdir_name,'timeseries_misc_exweather','Ca',string_results_ext &
+               & )
+          loc_string = '% time (yr) / excess cation compared to DIC weathering (mol 2+ yr-1) / % excess (not useful!)'
+          OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+          loc_string = '% WARNING: This is only a meaningful estimate if there is not Corg weathering!'
+          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+          CLOSE(unit=out,iostat=ios)
+       end IF       
+    end if
+    ! ---------------------------------------------------------------- !
+    ! weathering solute fluxes
+    ! ---------------------------------------------------------------- !
+    IF (flag_rokgem .AND. ctrl_save_hidden_interfacefluxes) THEN
+       DO l=1,n_l_ocn
+          io = conv_iselected_io(l)
+          loc_filename=fun_data_timeseries_filename(loc_t, &
+               & par_outdir_name,'timeseries_diag_weather',TRIM(string_ocn(io)),string_results_ext &
+               & )
+          SELECT CASE (ocn_type(io))
+          CASE (1)
+             loc_string = '% time (yr) / global '//TRIM(string_ocn(io))//' (mol yr-1)'
+          CASE (n_itype_min:n_itype_max)
+             loc_string = '% time (yr) / global '//TRIM(string_ocn(io))//' flux (mol yr-1) / global '// &
+                  & TRIM(string_ocn(io))//' (o/oo)'
+          end SELECT
+          SELECT CASE (ocn_type(io))
+          CASE (1)
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          CASE (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+          end SELECT
+       END DO
+    end if
+
+
+
+
+
+
+
+
+
+
+
+    
     ! miscellaneous
     IF (ctrl_data_save_sig_misc) THEN
        if (flag_gemlite) then
@@ -1105,42 +1210,6 @@ CONTAINS
           CLOSE(unit=out,iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
        end DO
-    end if
-    IF (ctrl_data_save_sig_diag .AND. flag_rokgem) THEN
-       DO l=1,n_l_ocn
-          io = conv_iselected_io(l)
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries_diag_weather',TRIM(string_ocn(io)),string_results_ext &
-               & )
-          SELECT CASE (ocn_type(io))
-          CASE (1)
-             loc_string = '% time (yr) / global '//TRIM(string_ocn(io))//' (mol yr-1)'
-          CASE (n_itype_min:n_itype_max)
-             loc_string = '% time (yr) / global '//TRIM(string_ocn(io))//' flux (mol yr-1) / global '// &
-                  & TRIM(string_ocn(io))//' (o/oo)'
-          end SELECT
-          SELECT CASE (ocn_type(io))
-          CASE (1,n_itype_min:n_itype_max)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          end SELECT
-       END DO
-       IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca)) THEN
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries_misc_exweather','Ca',string_results_ext &
-               & )
-          loc_string = '% time (yr) / excess cation compared to DIC weathering (mol 2+ yr-1) / % excess (not useful!)'
-          OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
-          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-          loc_string = '% WARNING: This is only a meaningful estimate if there is not Corg weathering!'
-          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-          CLOSE(unit=out,iostat=ios)
-       end IF
     end if
     ! misc diagnostics
     ! NOTE: also save diagnozed fluxes from 'normal' pCO2 flux and restoring forcing
@@ -1851,7 +1920,7 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! NOTE: the call to fun_sed_coretop made in populating <loc_sed_coretop> has already made the necessary type conversions
     !       for solid tracers as wt%, isotopes in per mill, and recovery of the carbonate 'age' value
-    IF (ctrl_save_basic_reservoirs) THEN
+    IF (flag_sedgem .AND. ctrl_save_basic_reservoirs) THEN
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -2133,21 +2202,13 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end if
     END IF
-
-
-
-
-
-
-
-
-
-    
-    ! *** <int_diag_fseaair_sig_*> ***
-    ! write air-sea has exchange flux data
+    ! ---------------------------------------------------------------- !
+    ! air-sea has exchange flux
+    ! ---------------------------------------------------------------- ! 
+    ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
     ! NOTE: write data both as the total flux, and as the equivalent mean flux density
     ! NOTE: a positive value of the array represents net ocean to atmosphere transfer
-    IF (ctrl_data_save_sig_fairsea) THEN
+    IF (ctrl_save_basic_reservoirs) THEN
        DO l=3,n_l_atm
           ia = conv_iselected_ia(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -2167,28 +2228,30 @@ CONTAINS
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
           case (n_itype_min:n_itype_max)
-             loc_tot  = int_diag_airsea_sig(atm_dep(ia))/int_t_sig
-             loc_frac = int_diag_airsea_sig(ia)/int_t_sig
-             loc_standard = const_standards(atm_type(ia))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
-                  & loc_t, &
-                  & loc_frac, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot  = int_diag_airsea_sig(atm_dep(ia))/int_t_sig
+                loc_frac = int_diag_airsea_sig(ia)/int_t_sig
+                loc_standard = const_standards(atm_type(ia))
+                loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
+                     & loc_t, &
+                     & loc_frac, &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     END IF
-
-    ! *** <sig_focnatm_*> ***
-    ! write ocean-atmopshere interface flux data
+    ! ---------------------------------------------------------------- !
+    ! ocean-atmopshere interface flux
+    ! ---------------------------------------------------------------- ! 
     ! NOTE: write data both as the total flux, and as the equivalent mean flux density
-    IF (ctrl_data_save_sig_focnatm) THEN
+    IF (ctrl_save_hidden_interfacefluxes) THEN
        DO l=3,n_l_atm
           ia = conv_iselected_ia(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -2208,29 +2271,31 @@ CONTAINS
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
           case (n_itype_min:n_itype_max)
-             loc_tot  = int_focnatm_sig(atm_dep(ia))/int_t_sig
-             loc_frac = int_focnatm_sig(ia)/int_t_sig
-             loc_standard = const_standards(atm_type(ia))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
-                  & loc_t, &
-                  & loc_frac, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot  = int_focnatm_sig(atm_dep(ia))/int_t_sig
+                loc_frac = int_focnatm_sig(ia)/int_t_sig
+                loc_standard = const_standards(atm_type(ia))
+                loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
+                     & loc_t, &
+                     & loc_frac, &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     END IF
-
-    ! *** <sig_focnsed_*> ***
-    ! write ocean-sediment flux data
+    ! ---------------------------------------------------------------- !
+    ! ocean-sediment flux
+    ! ---------------------------------------------------------------- ! 
     ! NOTE: write data both as the total flux, and as the equivalent mean flux density
     ! NOTE: the surface ocean area is used as a proxy for the ocean bottom area
-    IF (ctrl_data_save_sig_focnsed) THEN
+    IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -2266,29 +2331,31 @@ CONTAINS
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
           case (n_itype_min:n_itype_max)
-             loc_tot  = int_focnsed_sig(sed_dep(is))/int_t_sig
-             loc_frac = int_focnsed_sig(is)/int_t_sig
-             loc_standard = const_standards(sed_type(is))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
-                  & loc_t, &
-                  & loc_frac, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot  = int_focnsed_sig(sed_dep(is))/int_t_sig
+                loc_frac = int_focnsed_sig(is)/int_t_sig
+                loc_standard = const_standards(sed_type(is))
+                loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,e15.7,f14.3)',iostat=ios) &
+                     & loc_t, &
+                     & loc_frac, &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     END IF
-
-    ! *** <sig_fsedocn_*> ***
-    ! write sediment->ocean flux data
+    ! ---------------------------------------------------------------- !
+    ! sediment->ocean flux
+    ! ---------------------------------------------------------------- ! 
     ! NOTE: write data both as the total flux, and as the equivalent mean flux density
     ! NOTE: the surface ocean area is used as a proxy for the ocean bottom area
-    IF (ctrl_data_save_sig_fsedocn) THEN
+    IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
        DO l=1,n_l_ocn
           io = conv_iselected_io(l)
           loc_filename=fun_data_timeseries_filename( &
@@ -2308,30 +2375,32 @@ CONTAINS
              CLOSE(unit=out,iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
           case (n_itype_min:n_itype_max)
-             loc_tot  = int_fsedocn_sig(ocn_dep(io))/int_t_sig
-             loc_frac = int_fsedocn_sig(io)/int_t_sig
-             loc_standard = const_standards(ocn_type(io))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
-                  & loc_t, &
-                  & loc_frac, &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot  = int_fsedocn_sig(ocn_dep(io))/int_t_sig
+                loc_frac = int_fsedocn_sig(io)/int_t_sig
+                loc_standard = const_standards(ocn_type(io))
+                loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.TRUE.,const_nulliso)
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
+                     & loc_t, &
+                     & loc_frac, &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
           end SELECT
        END DO
     END IF
-
-
-    ! *** <sig_misc_fsed_*> ***
-    ! write estimted sediment burial flux data
+    ! ---------------------------------------------------------------- !
+    ! estimted sediment burial fluxes
+    ! ---------------------------------------------------------------- ! 
+    ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
     ! NOTE: write data both as the total flux, and as the equivalent mean flux density
     ! NOTE: the surface ocean area is used as a proxy for the ocean bottom area
-    IF (ctrl_data_save_sig_fsedocn .AND. ctrl_data_save_sig_ocnsed) THEN
+    IF (flag_sedgem .AND. ctrl_save_basic_reservoirs) THEN
        ! estimated CaCO3 burial
        if (ocn_select(io_Ca) .AND. sed_select(is_CaCO3)) then
           loc_filename=fun_data_timeseries_filename( &
@@ -2381,9 +2450,10 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end if          
     end if
-        
-    ! *** <sig_misc_fweather_*> ***
-    ! write estimted weathering flux data
+    ! ---------------------------------------------------------------- !
+    ! estimted weathering fluxes
+    ! ---------------------------------------------------------------- ! 
+    ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
     ! NOTE: write data only as the total flux
     ! NOTE: only valid if the Si tracer is selcted AND rg_par_weather_CaSiO3_fracSi=1.0 (whose value is not known to BIOGEM ...)
     ! NOTE: assume that Mg is only from silicates,
@@ -2393,7 +2463,7 @@ CONTAINS
     ! NOTE: for the net carbon flux, the calculation is:
     !       DIC (from CaCO3 and Corg) minus CaCO3 burial minus Corg burial
     !       so a negative net flux indicates sinks > sources (but not accounting for volcanic emissions)
-    IF (ctrl_data_save_sig_diag .AND. flag_rokgem) THEN
+    IF (flag_rokgem .AND. ctrl_save_basic_reservoirs) THEN
        IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca) .AND. ocn_select(io_SiO2)) THEN
           ! (1) silicate weathering
           loc_filename=fun_data_timeseries_filename(loc_t, &
@@ -2453,9 +2523,79 @@ CONTAINS
           WRITE(unit=out,fmt='(f12.3,e15.7)',iostat=ios) &
                & loc_t,                                  &
                & loc_tot
-          CLOSE(unit=out,iostat=ios)                
+          CLOSE(unit=out,iostat=ios)    
        end IF
+       ! (5) silicate weathering ALT
+       IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca)) THEN
+          ! NOTE: first calculate excess of cations compared to DIC
+          loc_filename=fun_data_timeseries_filename(loc_t, &
+               & par_outdir_name,'timeseries_misc_exweather','Ca',string_results_ext &
+               & )
+          loc_tot = ((int_diag_weather_sig(io_Ca)+int_diag_weather_sig(io_Mg)) - int_diag_weather_sig(io_DIC))/int_t_sig
+          if (int_diag_weather_sig(io_DIC) > const_real_nullsmall) then
+             loc_frac = 100.0*(loc_tot/(int_diag_weather_sig(io_DIC)/int_t_sig))
+          else
+             loc_frac = -999.9
+          end if
+          OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+          WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
+               & loc_t,                                  &
+               & loc_tot,                                &
+               & loc_frac
+          CLOSE(unit=out,iostat=ios)
+       end IF            
     end if
+    ! ---------------------------------------------------------------- !
+    ! weathering solute fluxes
+    ! ---------------------------------------------------------------- !
+    IF (flag_rokgem .AND. ctrl_save_hidden_interfacefluxes) THEN
+       DO l=1,n_l_ocn
+          io = conv_iselected_io(l)
+          loc_filename=fun_data_timeseries_filename(dum_t, &
+               & par_outdir_name,'timeseries_diag_weather',TRIM(string_ocn(io)),string_results_ext)
+          SELECT CASE (ocn_type(io))
+          CASE (1)
+             loc_sig = int_diag_weather_sig(io)/int_t_sig
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             WRITE(unit=out,fmt='(f12.3,e15.7)',iostat=ios) &
+                  & loc_t,                                  &
+                  & loc_sig
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          case (n_itype_min:n_itype_max)
+             IF (ctrl_save_basic_proxies) THEN
+                loc_tot      = int_diag_weather_sig(ocn_dep(io))/int_t_sig
+                loc_frac     = int_diag_weather_sig(io)/int_t_sig
+                loc_standard = const_standards(ocn_type(io))
+                loc_sig      = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
+                     & loc_t,                                        &
+                     & loc_frac,                       &
+                     & loc_sig
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+          END SELECT
+       END DO
+    end if
+
+
+
+
+
+
+
+
+
+
+
     
     ! *** <sig_misc_*> ***
     ! write miscellaneous data (if requested)
@@ -3148,59 +3288,6 @@ CONTAINS
           CLOSE(unit=out,iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
        end DO
-    end if
-    IF (ctrl_data_save_sig_diag .AND. flag_rokgem) THEN
-       DO l=1,n_l_ocn
-          io = conv_iselected_io(l)
-          loc_filename=fun_data_timeseries_filename(dum_t, &
-               & par_outdir_name,'timeseries_diag_weather',TRIM(string_ocn(io)),string_results_ext)
-          SELECT CASE (ocn_type(io))
-          CASE (1)
-             loc_sig = int_diag_weather_sig(io)/int_t_sig
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e15.7)',iostat=ios) &
-                  & loc_t,                                  &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          case (n_itype_min:n_itype_max)
-             loc_tot      = int_diag_weather_sig(ocn_dep(io))/int_t_sig
-             loc_frac     = int_diag_weather_sig(io)/int_t_sig
-             loc_standard = const_standards(ocn_type(io))
-             loc_sig      = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
-                  & loc_t,                                        &
-                  & loc_frac,                       &
-                  & loc_sig
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-          END SELECT
-       END DO
-       IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca)) THEN
-          ! NOTE: first calculate excess of cations compared to DIC
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries_misc_exweather','Ca',string_results_ext &
-               & )
-          loc_tot = ((int_diag_weather_sig(io_Ca)+int_diag_weather_sig(io_Mg)) - int_diag_weather_sig(io_DIC))/int_t_sig
-          if (int_diag_weather_sig(io_DIC) > const_real_nullsmall) then
-             loc_frac = 100.0*(loc_tot/(int_diag_weather_sig(io_DIC)/int_t_sig))
-          else
-             loc_frac = -999.9
-          end if
-          OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-          WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
-               & loc_t,                                  &
-               & loc_tot,                                &
-               & loc_frac
-          CLOSE(unit=out,iostat=ios)
-       end IF
     end if
     ! misc diagnostics
     ! NOTE: also save diagnozed fluxes from 'normal' pCO2 flux and restoring forcing
