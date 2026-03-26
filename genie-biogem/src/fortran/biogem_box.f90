@@ -1146,7 +1146,11 @@ CONTAINS
        select case (opt_bio_CaCO3toPOCrainratio)
        case ('prescribed')
           ! fixed, spatially explicit
-          bio_part_red(is_POC,is_CaCO3,dum_i,dum_j) = (1.0 - loc_bio_red_DOMtotal)*par_bio_CaCO3toPOCrainratio(dum_i,dum_j)
+          ! NOTE: added par_bio_red_POC_CaCO3 modiier so that global CaCo3 production can be scaled
+          !       the value of par_bio_red_POC_CaCO3 has been changed in the xml to 1.0 by default
+          !       and so this scaling addition should not impact existing experiment configs
+          bio_part_red(is_POC,is_CaCO3,dum_i,dum_j) = (1.0 - loc_bio_red_DOMtotal)* &
+               & par_bio_red_POC_CaCO3*par_bio_CaCO3toPOCrainratio(dum_i,dum_j)
        case ('Heinze2004')
           ! Heinze [2004] saturation dependent parameterization
           ! NOTE: par_bio_red_POC_CaCO3_CO2aqREF in (umol kg-1)
