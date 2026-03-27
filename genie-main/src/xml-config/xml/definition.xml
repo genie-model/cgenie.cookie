@@ -5583,7 +5583,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description></description>
                     </param>
                     <param name="ctrl_save_basic_geochemistry">
-			<value datatype="boolean">.false.</value>
+			<value datatype="boolean">.true.</value>
                         <description></description>
                     </param>
                     <param name="ctrl_save_basic_proxies">

@@ -1322,16 +1322,16 @@ CONTAINS
             & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
             & par_sed_type_scavenged,par_sed_type_frac)
           ! bulk tracers
-          call sub_adddef_netcdf(loc_iou,4,'biop_f_'//trim(string_sed(is)), &
+          call sub_adddef_netcdf(loc_iou,4,'biop_fsinking_'//trim(string_sed(is)), &
                & 'particulate flux (density) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-          call sub_putvar3d_g('biop_f_'//trim(string_sed(is)),loc_iou, &
+          call sub_putvar3d_g('biop_fsinking_'//trim(string_sed(is)),loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        CASE (n_itype_min:n_itype_max)
           ! isotopes
           If (ctrl_save_basic_proxies) then
-             call sub_adddef_netcdf(loc_iou,4,'biop_f_'//trim(string_sed(is)), &
+             call sub_adddef_netcdf(loc_iou,4,'biop_fsinking_'//trim(string_sed(is)), &
                   & 'particulate flux (density) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-             call sub_putvar3d_g('biop_f_'//trim(string_sed(is)),loc_iou, &
+             call sub_putvar3d_g('biop_fsinking_'//trim(string_sed(is)),loc_iou, &
                   & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           end if
        end SELECT
@@ -1438,9 +1438,9 @@ CONTAINS
             & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
             & par_sed_type_scavenged, &
             & par_sed_type_frac)
-          call sub_adddef_netcdf(loc_iou,4,'biop_ftot_'//trim(string_sed(is)), &
+          call sub_adddef_netcdf(loc_iou,4,'biop_fsinking_tot_'//trim(string_sed(is)), &
                & 'particulate flux (total) - '//trim(string_sed(is)),loc_unitsname,const_real_zero,const_real_zero)
-          call sub_putvar3d_g('biop_ftot_'//trim(string_sed(is)), loc_iou, &
+          call sub_putvar3d_g('biop_fsinking_tot_'//trim(string_sed(is)), loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        end SELECT
        !-------------------------------------------------------------- ! normalized flux
@@ -1456,9 +1456,9 @@ CONTAINS
        end do
        SELECT CASE (sed_type(is))
        CASE (par_sed_type_bio,par_sed_type_det)
-          call sub_adddef_netcdf(loc_iou,4,'biop_fnorm_'//trim(string_sed(is)), &
+          call sub_adddef_netcdf(loc_iou,4,'biop_fsinking_norm_'//trim(string_sed(is)), &
                & 'export-normalized particulate flux - '//trim(string_sed(is)),'n/a',const_real_zero,const_real_zero)
-          call sub_putvar3d_g('biop_fnorm_'//trim(string_sed(is)),loc_iou, &
+          call sub_putvar3d_g('biop_fsinking_norm_'//trim(string_sed(is)),loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        end SELECT
        !
@@ -1476,9 +1476,9 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'biop_r_CaCO3toPOC','CaCO3 to POC rain ratio', &
+       call sub_adddef_netcdf(loc_iou,4,'biop_ratio_CaCO3toPOC','CaCO3 to POC rain ratio', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar3d_g('biop_r_CaCO3toPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       call sub_putvar3d_g('biop_ratio_CaCO3toPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
     !----------------------------------------------------------------- ! opal:POC 'rain ratio'
     IF (sed_select(is_opal) .AND. sed_select(is_POC)) THEN
@@ -1493,9 +1493,9 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'biop_r_opaltoPOC','opal to POC rain ratio', &
+       call sub_adddef_netcdf(loc_iou,4,'biop_ratio_opaltoPOC','opal to POC rain ratio', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar3d_g('biop_r_opaltoPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       call sub_putvar3d_g('biop_ratio_opaltoPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
     !----------------------------------------------------------------- ! Particulate flux fractions
     IF (sed_select(is_POC_frac2)) THEN
@@ -1508,9 +1508,9 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'biop_r_frac2_POC','POC fraction #2', &
+       call sub_adddef_netcdf(loc_iou,4,'biop_frac_POC2','POC fraction #2', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar3d_g('biop_r_frac2_POC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       call sub_putvar3d_g('biop_frac_POC2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
     IF (sed_select(is_CaCO3_frac2)) THEN
        loc_unitsname = 'n/a'
@@ -1522,9 +1522,9 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'biop_r_frac2_CaCO3','CaCO3 fraction #2', &
+       call sub_adddef_netcdf(loc_iou,4,'biop_frac_CaCO32','CaCO3 fraction #2', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar3d_g('biop_r_frac2_CaCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       call sub_putvar3d_g('biop_frac_CaCO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
     IF (sed_select(is_opal_frac2)) THEN
        loc_unitsname = 'n/a'
@@ -1536,9 +1536,9 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'biop_r_frac2_opal','opal fraction #2', &
+       call sub_adddef_netcdf(loc_iou,4,'biop_frac_opal2','opal fraction #2', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar3d_g('biop_r_frac2_opal',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       call sub_putvar3d_g('biop_frac_opal2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
     ! ---------------------------------------------------------------- !
     ! PARTICULATE CONCENTRATION FIELD
@@ -1704,7 +1704,7 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'proxy_r_CdtoCa','Cd:Ca trace metal ratio (ocean)', &
+       call sub_adddef_netcdf(loc_iou,4,'proxy_ratio_CdtoCa','Cd:Ca trace metal ratio (ocean)', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar3d_g('proxy_r_CdtoCa',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
@@ -1720,7 +1720,7 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'proxy_r_CdtoPO4','Cd:PO4 trace metal ratio (ocean)', &
+       call sub_adddef_netcdf(loc_iou,4,'proxy_ratio_CdtoPO4','Cd:PO4 trace metal ratio (ocean)', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar3d_g('proxy_r_CdtoPO4',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
@@ -1736,7 +1736,7 @@ CONTAINS
              END DO
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,4,'proxy_r_PO4toCa','PO4:Ca ratio (ocean)', &
+       call sub_adddef_netcdf(loc_iou,4,'proxy_ratio_PO4toCa','PO4:Ca ratio (ocean)', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar3d_g('proxy_r_PO4toCa',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
@@ -3391,9 +3391,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_CaCO32POC','CaCO3/POC surface ocean export rain ratio', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_CaCO3toPOC','CaCO3/POC surface ocean export rain ratio', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_seasur_r_CaCO32POC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seasur_r_CaCO3toPOC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
     ! CaCO3/POC 'rain ratio' -- seafloor
@@ -3414,9 +3414,9 @@ CONTAINS
                 end IF
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_r_CaCO32POC','CaCO3/POC seafloor rain ratio', &
+          call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_r_CaCO3toPOC','CaCO3/POC seafloor rain ratio', &
                & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d('biop_seafloor_r_CaCO32POC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          call sub_putvar2d('biop_seafloor_r_CaCO3toPOC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        end if
     end if
     ! ---------------------------------------------------------------- !
@@ -3436,9 +3436,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_opal2POC','opal/POC surface ocean export rain ratio', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_opaltoPOC','opal/POC surface ocean export rain ratio', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_seasur_r_opal2POC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seasur_r_opaltoPOC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        loc_ij(:,:) = const_real_null
        DO i=1,n_i
           DO j=1,n_j
@@ -3452,9 +3452,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_r_opal2POC','opal/POC seafloor rain ratio', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_r_opaltoPOC','opal/POC seafloor rain ratio', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_seafloor_r_opal2POC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seafloor_r_opaltoPOC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
     ! C/P export cellular quotient ratio 
@@ -3473,9 +3473,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_C2P','C/P ratio of surface ocean POM export', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_CtoP','C/P ratio of surface ocean POM export', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_seasur_r_C2P',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seasur_r_CtoP',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
     ! C/Fe export cellular quotient ratio
@@ -3492,9 +3492,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_C2Fe','C/Fe ratio of surface ocean POM export', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_CtoFe','C/Fe ratio of surface ocean POM export', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_seasur_r_C2Fe',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seasur_r_CtoFe',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end IF
     ! ---------------------------------------------------------------- !
     ! nutrient availablity diagnostics
@@ -3510,9 +3510,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_SiSTAR','Si Star (using PO4 and assumed N:P)', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_SiSTAR','Si Star (using PO4 and assumed N:P)', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_SiSTAR',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seasur_r_SiSTAR',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
     ! Fe diagnostics
@@ -3522,15 +3522,15 @@ CONTAINS
        loc_unitsname = 'mg Fe m-2 yr-1'
        loc_ij(:,:) = conv_mol_mmol*par_det_Fe_frac*conv_det_mol_g* &
             & (int_phys_ocn_timeslice(ipo_rA,:,:,n_k)*int_bio_settle_timeslice(is_det,:,:,n_k))/(int_t_timeslice**2)
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_fluxden','Total aeolian iron flux density to surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fluxden','Total aeolian iron flux density to surface', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_fluxden',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fluxden',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! solubility (%)
        loc_unitsname = '%'
        loc_ij(:,:) = 100.0*int_phys_ocnatm_timeslice(ipoa_solFe,:,:)/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_sol','Aeolian iron solubility', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_sol','Aeolian iron solubility', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_sol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_sol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
     ! nutrient limitation
@@ -3552,9 +3552,9 @@ CONTAINS
              end if
           end do
        end do
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_lim_FevsPO4','occurrence of Fe (+1.0) vs. PO4 (-1.0) limitation', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_FevsPO4lim','occurrence of Fe (+1.0) vs. PO4 (-1.0) limitation', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_lim_FevsPO4',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_FevsPO4lim',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
     ! ECOGEM diagnostics
@@ -3677,10 +3677,10 @@ CONTAINS
             & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
             & par_sed_type_scavenged)
           loc_unitsname = 'mol yr-1'
-          call sub_adddef_netcdf(loc_iou,3,'biop_seasur_totf_'//trim(string_sed(is)), &
+          call sub_adddef_netcdf(loc_iou,3,'biop_seasur_ftot_'//trim(string_sed(is)), &
                & 'total biological particulate export flux - '//trim(string_sed(is)), &
                & loc_unitsname,const_real_zero,const_real_zero)
-          call sub_putvar2d('biop_seasur_totf_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+          call sub_putvar2d('biop_seasur_ftot_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
        end SELECT
     end do
     ! ---------------------------------------------------------------- !
@@ -3710,10 +3710,10 @@ CONTAINS
                & par_sed_type_scavenged)
              loc_unitsname = 'mol yr-1'
              If (ctrl_save_advanced_biologicalpump) then
-                call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_totf_'//trim(string_sed(is)), &
+                call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_ftot_'//trim(string_sed(is)), &
                      & 'total particulate rain flux to the sediments - '//trim(string_sed(is)), &
                      & loc_unitsname,const_real_zero,const_real_zero)
-                call sub_putvar2d('biop_seafloor_totf_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+                call sub_putvar2d('biop_seafloor_ftot_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
              end if
           end SELECT
        end do
@@ -3783,9 +3783,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_P2C','P/C ratio of ocean surface POM export (in units of per mil)', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_PtoC','P/C ratio of ocean surface POM export (in units of per mil)', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_seasur_r_P2C',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seasur_r_PtoC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end IF
     ! ---------------------------------------------------------------- !
     ! Fe/C export cellular quotient ratio
@@ -3802,9 +3802,9 @@ CONTAINS
              end IF
           END DO
        END DO
-       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_Fe2C','average POM export Fe/C cellular ratio', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_FetoC','average POM export Fe/C cellular ratio', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_seasur_r_Fe2C',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_seasur_r_FetoC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end IF
     ! ---------------------------------------------------------------- !
     ! Fe diagnostics
@@ -3815,47 +3815,47 @@ CONTAINS
        loc_unitsname = 'mg Fe m-2 yr-1'
        loc_ij(:,:) = conv_mol_mmol*par_det_Fe_frac*conv_det_mol_g* &
             & (int_phys_ocn_timeslice(ipo_rA,:,:,n_k)*int_bio_settle_timeslice(is_det,:,:,n_k))/(int_t_timeslice**2)
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_fFetot_g','Total aeolian iron flux density to surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fFetot_g','Total aeolian iron flux density to surface', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_fFetot_g',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fFetot_g',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! total aeolian Fe flux (moles)
        ! NOTE: based on preceeding step calculation of loc_ij(:,:)
        loc_unitsname = 'mmol Fe m-2 yr-1'
        loc_ij(:,:) = conv_Fe_g_mol*loc_ij(:,:)
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_fFetot_mol','Total aeolian iron flux density to surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fFetot_mol','Total aeolian iron flux density to surface', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_fFetot_mol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fFetot_mol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! solulablized aeolian Fe flux
        ! NOTE: based on preceeding step calculation of loc_ij(:,:)
        loc_unitsname = 'umol Fe m-2 yr-1'
        loc_ij(:,:) = conv_mol_umol*conv_mmol_mol*(int_phys_ocnatm_timeslice(ipoa_solFe,:,:)/int_t_timeslice)*loc_ij(:,:)
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_fFe_mol','Solulablized aeolian iron flux density to surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fFe_mol','Solulablized aeolian iron flux density to surface', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_fFe_mol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fFe_mol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! solulablized aeolian Fe flux (2)
        ! NOTE: based on preceeding step calculation of loc_ij(:,:)
        loc_unitsname = 'mol Fe yr-1'
        loc_ij(:,:) = conv_umol_mol*(int_phys_ocn_timeslice(ipo_A,:,:,n_k)/int_t_timeslice)*loc_ij(:,:)
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_fFe','Solulablized aeolian iron flux to surface grid points', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fFe','Solulablized aeolian iron flux to surface grid points', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_fFe',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fFe',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! particulate Fe loss
        ! NOTE: new calculation of loc_ij(:,:)
        loc_unitsname = 'umol Fe m-2 yr-1'
        loc_ij(:,:) = conv_mol_umol* &
             & int_phys_ocn_timeslice(ipo_rA,:,:,n_k)*int_bio_settle_timeslice(is_POFe,:,:,n_k)/(int_t_timeslice**2)
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_fpartFe','Particulate organic matter iron loss from surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fpartFe','Particulate organic matter iron loss from surface', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_fpartFe',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fpartFe',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! total scavenged Fe loss
        loc_unitsname = 'umol Fe m-2 yr-1'
        loc_ij(:,:) = (conv_mol_umol*int_phys_ocn_timeslice(ipo_rA,:,:,n_k)/(int_t_timeslice**2))* &
             & ( &
             &   int_bio_settle_timeslice(is_POM_Fe,:,:,n_k) &
             & )
-       call sub_adddef_netcdf(loc_iou,3,'nuts_Fe_fscavFetot','Total scavenged Fe loss from surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fscavFetot','Total scavenged Fe loss from surface', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('nuts_Fe_fscavFetot',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fscavFetot',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! total scavenged FeOOH loss
        loc_unitsname = 'umol Fe m-2 yr-1'
        loc_ij(:,:) = (conv_mol_umol*int_phys_ocn_timeslice(ipo_rA,:,:,n_k)/(int_t_timeslice**2))* &
@@ -3865,9 +3865,9 @@ CONTAINS
             &   int_bio_settle_timeslice(is_opal_FeOOH,:,:,n_k)  + &
             &   int_bio_settle_timeslice(is_det_FeOOH,:,:,n_k)     &
             & )
-       call sub_adddef_netcdf(loc_iou,3,'biop_nuts_Fe_fscavFeOOHtot','Total scavenged FeOOH loss from surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fscavFeOOHtot','Total scavenged FeOOH loss from surface', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_nuts_Fe_fscavFeOOHtot',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_fscavFeOOHtot',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
     ! Biological productivity controls
