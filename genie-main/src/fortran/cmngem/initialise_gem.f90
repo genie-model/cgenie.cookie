@@ -11,6 +11,17 @@ SUBROUTINE initialise_gem()
 
   ! *** load goin information ***
   call sub_load_goin_gem()
+  ! *** load lookup tables ***
+  if (par_adj_carbconst_option == 'Hain2015') then
+    call sub_load_gem_MyAMI_lookup_K1
+    call sub_load_gem_MyAMI_lookup_K2
+    call sub_load_gem_MyAMI_lookup_Kcal
+    call sub_load_gem_MyAMI_lookup_Karg
+    call sub_load_gem_MyAMI_lookup_Kw
+    call sub_load_gem_MyAMI_lookup_K0
+    call sub_load_gem_MyAMI_lookup_Kb
+    call sub_load_gem_MyAMI_lookup_KSO4
+  endif
 
   ! *** initialize GeM ***
   ! initialize tracer definitions
@@ -40,6 +51,8 @@ SUBROUTINE initialise_gem()
   ALLOCATE(conv_ls_lo_Fe(n_l_ocn,n_l_sed),STAT=alloc_error)
   ALLOCATE(conv_ls_lo_S(n_l_ocn,n_l_sed),STAT=alloc_error)
   ALLOCATE(conv_ls_lo_meth(n_l_ocn,n_l_sed),STAT=alloc_error)
+  ALLOCATE(conv_ls_lo_N_NH4(n_l_ocn,n_l_sed),STAT=alloc_error)
+  ALLOCATE(conv_ls_lo_N_N2(n_l_ocn,n_l_sed),STAT=alloc_error)
   ALLOCATE(conv_ls_lo_i(0:n_l_ocn,0:n_l_sed),STAT=alloc_error)
   ALLOCATE(conv_lD_lP_i(0:n_l_sed,0:n_l_ocn),STAT=alloc_error)
   ALLOCATE(conv_lP_lD_i(0:n_l_ocn,0:n_l_sed),STAT=alloc_error)
@@ -50,6 +63,8 @@ SUBROUTINE initialise_gem()
   ALLOCATE(conv_ls_lo_i_Fe(0:n_l_ocn,0:n_l_sed),STAT=alloc_error)
   ALLOCATE(conv_ls_lo_i_S(0:n_l_ocn,0:n_l_sed),STAT=alloc_error)
   ALLOCATE(conv_ls_lo_i_meth(0:n_l_ocn,0:n_l_sed),STAT=alloc_error)
+  ALLOCATE(conv_ls_lo_i_N_NH4(0:n_l_ocn,0:n_l_sed),STAT=alloc_error)
+  ALLOCATE(conv_ls_lo_i_N_N2(0:n_l_ocn,0:n_l_sed),STAT=alloc_error)
   !- --------------------------------------------------------- ! 
 
   if (ctrl_debug_init > 0) then

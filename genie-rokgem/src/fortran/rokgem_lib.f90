@@ -32,10 +32,15 @@ MODULE rokgem_lib
   REAL::start_year                                             ! Simulation start year [real]
   NAMELIST /ini_rokgem_nml/start_year
   ! ------------------- I/O DEFINITIONS ------------------------------------------------------------------------------------------ !
-  CHARACTER(len=255)::par_indir_name,par_outdir_name,par_rstdir_name,par_pindir_name
-  NAMELIST /ini_rokgem_nml/par_indir_name,par_outdir_name,par_rstdir_name,par_pindir_name
+  CHARACTER(len=255)::par_indir_name,par_outdir_name,par_pindir_name
+  NAMELIST /ini_rokgem_nml/par_indir_name,par_outdir_name,par_pindir_name
+  CHARACTER(len=255)::par_inrstdir_name                          !
+  CHARACTER(len=255)::par_outrstdir_name                         !
+  NAMELIST /ini_rokgem_nml/par_inrstdir_name,par_outrstdir_name
   CHARACTER(len=63)::par_infile_name,par_outfile_name          ! 
   NAMELIST /ini_rokgem_nml/par_infile_name,par_outfile_name
+  CHARACTER(len=127)::par_ncrst_name                             !
+  NAMELIST /ini_rokgem_nml/par_ncrst_name
   logical::opt_screen_output                                   ! output to screen
   NAMELIST /ini_rokgem_nml/opt_screen_output
   CHARACTER(len=63)::par_output_years_file_0d                  ! file containing years for 0D output to be generated 
@@ -45,6 +50,8 @@ MODULE rokgem_lib
   logical::opt_2d_netcdf_output                                ! output 2d fields to netcdf
   logical::opt_append_data                                     ! append data to output files on restart
   NAMELIST /ini_rokgem_nml/opt_2d_ascii_output,opt_2d_netcdf_output,opt_append_data
+  logical::ctrl_save_data                                      ! Save ROKGEM data?  
+  NAMELIST /ini_rokgem_nml/ctrl_save_data
   ! --- RIVER ROUTING PARAMETERS ------------------------------------------------------------------------------------------------- !
   INTEGER::routing_scheme                                      ! routing scheme to use: 1 = 'roof' routing using k1 file; 
                                                                ! 2 = intermediate using detailed map, but roof for stuff that

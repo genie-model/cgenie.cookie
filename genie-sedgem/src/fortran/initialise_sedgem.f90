@@ -93,6 +93,16 @@ SUBROUTINE initialise_sedgem( &
   call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed_diag(n_diag_sed,n_i,n_j),STAT=alloc_error)
   call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_diag_err(n_diag_sed_err,n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_av_fsed(n_sed,n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_av_fdis(n_sed,n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_av_coretop(n_sed,n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_av_diag_err(n_diag_sed_err,n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
 
   ! ---------------------------------------------------------- ! initialize allocated arrays
   IF (ctrl_misc_debug2) print*, 'initialize allocated arrays'
@@ -102,6 +112,7 @@ SUBROUTINE initialise_sedgem( &
   sedocn_fnet(:,:,:)   = 0.0   !
   sed_carb(:,:,:)      = 0.0   !
   sed_carbconst(:,:,:) = 0.0   !
+  sed_diag_err(:,:,:)  = 0.0   !
   ! ---------------------------------------------------------- ! main initialization
   IF (ctrl_misc_debug2) print*, 'main initialization'
   ! setup SedGeM grid
@@ -133,33 +144,11 @@ SUBROUTINE initialise_sedgem( &
   ! initialize sedcorenv time counters
   sed_time      = 0.0
   sed_time_save = 0.0
+  ! check averaging time interval vs. (maximum) age
+  if (par_sed_save_av_dtyr > par_misc_t_runtime) par_sed_save_av_dtyr = par_misc_t_runtime
   ! ---------------------------------------------------------- ! INITIALIZE netCDF OUTPUT
   IF (ctrl_misc_debug2) print*, 'INITIALIZE netCDF OUTPUT'
-  string_ncout2d   = TRIM(par_outdir_name)//'fields_sedgem_2d.nc'
-  IF (ctrl_timeseries_output) THEN
-     IF (ctrl_continuing.AND.ctrl_append_data) THEN
-        OPEN(unit=in,status='old',file=TRIM(par_rstdir_name)//'netcdf_record_numbers',form='formatted',action='read')
-        READ(unit=in,fmt='(i6)') ntrec_sout
-        close(unit=in)
-     ELSE
-        ntrec_sout = 0
-     ENDIF
-     print*, 'netcdf record number: ',ntrec_sout
-     print*,'par_outdir_name = par_rstdir_name:',par_outdir_name.eq.par_rstdir_name
-  ELSE
-     ntrec_sout = 0
-  ENDIF
-  ! ---------------------------------------------------------- ! INITIALIZE DATA SAVING
-  IF (ctrl_misc_debug2) print*, 'INITIALIZE DATA SAVING'
-  IF (ctrl_timeseries_output) THEN
-     ! initialize timestep counter
-     tstep_count = 0
-     tsteps_per_year = conv_yr_s/(dum_genie_timestep*kocn_loop*conv_kocn_ksedgem)
-     PRINT*,'timesteps per year                                  :',tsteps_per_year
-     ! load in years for output generation
-     CALL sub_data_output_years()
-     year = min(output_years_0d(output_counter_0d),output_years_2d(output_counter_2d))
-  ENDIF
+  string_ncout2d = TRIM(par_outdir_name)//TRIM(par_ncout2d_name)
   ! ---------------------------------------------------------- ! LOAD SEDIMENT RE-START
   IF (ctrl_misc_debug2) print*, 'LOAD SEDIMENT RE-START'
   IF (ctrl_continuing) then

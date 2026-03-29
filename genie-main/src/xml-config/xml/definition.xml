@@ -1355,37 +1355,49 @@
                         <value datatype="string">Mehrbach</value>
                         <description>carbonate dissociation constants set</description>
                     </param>
+                    <param name="par_adj_carbconst_option">
+                        <value datatype="string">TyrrellZeebe2004</value>
+                        <description>carbonate dissociation constants set</description>
+                    </param>
+                    <param name="ctrl_carbchem_pH_OLD">
+                        <value datatype="boolean">.true.</value>
+                        <description>OLD pH solution scheme?</description>
+                    </param>
                     <param name="par_carbchem_pH_tolerance">
                         <value datatype="real">0.001</value>
                         <description>pH solution tolerance</description>
                     </param>
-                    <param name="par_carbchem_pH_iterationmax">
-                        <value datatype="integer">100</value>
-                        <description>pH solution maximum number of iterations</description>
+                    <param name="par_carbchem_pH_tolerance_buffering">
+                        <value datatype="real">0.001</value>
+                        <description>pH solution tolerance for calculating buffering -- set the same as normal pH solving by default</description>
                     </param>
-                    <param name="ctrl_carbchem_pHseed_retry">
-                        <value datatype="boolean">.false.</value>
-                        <description>Attempt pH re-seed if solution fails (else exit)?</description>
+                    <param name="par_carbchem_dpH_tolerance">
+                        <value datatype="real">10.0</value>
+                        <description>relaxation factor in pH solution tolerance for re-try</description>
+                    </param>
+                    <param name="par_carbchem_pH_iterationmax">
+                        <value datatype="integer">10</value>
+                        <description>pH solution maximum number of iterations</description>
                     </param>
                     <param name="ctrl_carbchem_noH3SiO4">
                         <value datatype="boolean">.false.</value>
                         <description>Ignore H3SiO4 in the calculation of carbonate ALK?</description>
                     </param>
                     <param name="par_geochem_Tmin">
-                        <value datatype="real">0.0</value>
-                        <description>minimum T used in empirical geochem calculations [default: 0 - 30 C for the Schmidt number empirical fit - see: Wanninkhof et al. [1992]]</description>
+                        <value datatype="real">2.0</value>
+                        <description>minimum T used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_geochem_Tmax">
-                        <value datatype="real">30.0</value>
-                        <description>maximum T used in empirical geochem calculations [default: 0 - 30 C for the Schmidt number empirical fit - see: Wanninkhof et al. [1992]]</description>
+                        <value datatype="real">35.0</value>
+                        <description>maximum T used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_geochem_Smin">
                         <value datatype="real">26.0</value>
-                        <description>minimum S used in empirical geochem calculations [not (yet) used -- set as per par_carbchem_Smin]</description>
+                        <description>minimum S used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_geochem_Smax">
                         <value datatype="real">43.0</value>
-                        <description>maximum S used in empirical geochem calculations [not (yet) used -- set as per par_carbchem_Smax]</description>
+                        <description>maximum S used in empirical geochem calculations [default from Mehrbach for back-compatability]</description>
                     </param>
                     <param name="par_carbchem_Tmin">
                         <value datatype="real">2.0</value>
@@ -1430,7 +1442,7 @@
                         <description>GEM data input directory</description>
                     </param>
                     <param name="string_results_ext">
-                        <value datatype="string">.res</value>
+                        <value datatype="string">.txt</value>
                         <description>filetype for series output files for GEM modules</description>
                     </param>
                 </namelist>
@@ -1455,8 +1467,16 @@
                         <description></description>
                     </param>
                     <param name="outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>embm</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description></description>
+                    </param>
+                    <param name="inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (input) directory</description>
+                    </param>
+                    <param name="outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (output) directory</description>
                     </param>
                     <param name="igrid">
                         <value datatype="integer">0</value>
@@ -1791,6 +1811,10 @@
                     <param name="ascout">
 			<value datatype="string">y</value>
                         <description>ASCII restart output  (y/n)</description>
+                    </param>
+                    <param name="ascrst_name">
+			<value datatype="string">restart.eb</value>
+                        <description>ASCII restart name</description>
                     </param>
                     <param name="filenetin">
 			<value datatype="string">embm_restart_1999_12_30.nc</value>
@@ -2440,12 +2464,20 @@
                         <description></description>
                     </param>
                     <param name="outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>goldstein</value>
-                        <description></description>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
+                        <description>results output directory</description>
                     </param>
                     <param name="rstdir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-goldstein<sep/>data<sep/>input</value>
                         <description>restart (input) directory</description>
+                    </param>
+                    <param name="inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (input) directory</description>
+                    </param>
+                    <param name="outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (output) directory</description>
                     </param>
                     <param name="igrid">
                         <value datatype="integer">0</value>
@@ -2521,7 +2553,6 @@
                             (dimensionless). Tuned values: 1.6674 (EnKF), 1.1841 (ACCPM), 1.3005 (NSGA-II)
                         </description>
                     </param>
-
                     <paramArray name="diff" dimension="1" extent="2">
                         <description>ocean diffusivites iso/dia (or horiz/vert)</description>
                         <param name="diff(1)" index="1">
@@ -2679,7 +2710,11 @@
                     </param>
                     <param name="ascout">
 			<value datatype="string">y</value>
-                        <description>ASCII restart output  (y/n)</description>
+                        <description>ASCII restart output (y/n)</description>
+                    </param>
+                    <param name="ascrst_name">
+			<value datatype="string">restart.go</value>
+                        <description>ASCII restart name</description>
                     </param>
                     <param name="filenetin">
 			<value datatype="string"><sep/>home<sep/>joebloggs<sep/>goldstein_restart_1999_12_30.nc</value>
@@ -2770,12 +2805,20 @@
                         <description></description>
                     </param>
                     <param name="outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>goldsteinseaice</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description></description>
                     </param>
                     <param name="rstdir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-goldsteinseaice<sep/>data<sep/>input</value>
                         <description>restart (input) directory</description>
+                    </param>
+                    <param name="inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (input) directory</description>
+                    </param>
+                    <param name="outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>restart (output) directory</description>
                     </param>
                     <param name="igrid">
                         <value datatype="integer">0</value>
@@ -2857,6 +2900,10 @@
                     <param name="ascout">
 			<value datatype="string">y</value>
                         <description>ASCII restart output  (y/n)</description>
+                    </param>
+                    <param name="ascrst_name">
+			<value datatype="string">restart.gs</value>
+                        <description>ASCII restart name</description>
                     </param>
                     <param name="filenetin">
 			<value datatype="string"><sep/>home<sep/>joebloggs<sep/>goldsic_restart_1999_12_30.nc</value>
@@ -4067,9 +4114,9 @@
 			<value datatype="real">1.0</value>
                         <description>Scalar or unassigned 2D field</description>
                     </param>
-                    <param name="par_misc_kmin_pipe">
+                    <param name="par_misc_kmin_geoeng">
 			<value datatype="integer">1</value>
-                        <description>Min k for geoengineering ocean pipes!</description>
+                        <description>Min k for geoengineering!</description>
                     </param>
                     <param name="ctrl_misc_geoeng_noDIC">
 			<value datatype="boolean">.false.</value>
@@ -4552,6 +4599,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <value datatype="real">15.0</value>
                         <description>AOM bio energy quantum (kJ mol-1)</description>
                     </param>
+                    <param name="ctrl_bio_remin_AOM_OLD">
+			<value datatype="boolean">.false.</value>
+                        <description>Use old (muffin) zero [O2] threshold for AOM to proceed?</description>
+                    </param>
                     <param name="par_bio_remin_Rgas">
                         <value datatype="real">8.3144598E-03</value>
                         <description>Gas constant for thermo calculations (kJ K-1 mol-1)</description>
@@ -4761,7 +4812,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Catch mis-behaving rapidly-oxidizing species going less than 0.0?</description>
                     </param>
                     <param name="opt_bio_remin_oxidize_H2StoSO4">
-			<value datatype="string">linear</value>
+			<value datatype="string">2ndorder</value>
                         <description>H2S -> SO4 oxidation option</description>
                     </param>
                     <param name="opt_bio_remin_scavenge_H2StoPOMS">
@@ -4877,6 +4928,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_bio_remin_kH2StoSO4">
                         <value datatype="real">1.0E7</value>
                         <description>Oxidation rate constant for H2S -> SO4 :: -d[H2S]/dt = k1[H2S][O2] [6e8 M-1 yr-1; Jourabchi et al., 2005] [3e8 M-1 yr-1; Boudreau, 1996] [5.4e7 M-1 yr-1; Romaniello and Derry, 2010] [3.65E6 Ozaki and Tajika, 2011] [0.81E6 M-1 yr-1 :: ln k1 = 0.44 @ 212 uM O2 == 1.55 M-1 min-1; Zhang and Millero, 1993]</description>
+                    </param>
+                    <param name="par_bio_remin_kH2StoSO4_perM2perhr">
+                        <value datatype="real">0.625E6 </value>
+                        <description>2nd order oxidation rate constant for H2S as per van de Velde et al. [2021] -- 0.625E6 M-2 hr-1 [Zhang and Millero, 1993]-</description>
                     </param>
                     <param name="par_bio_remin_kH2StoPOMS">
                         <value datatype="real">1.0</value>
@@ -5491,12 +5546,16 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>BIOGEM data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>biogem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>BIOGEM results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-biogem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_fordir_name">
 			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-forcings</value>
@@ -5583,6 +5642,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">1.0</value>
                         <description>Integration interval (yr)</description>
                     </param>
+                    <param name="par_data_save_slice_timeinterval">
+			<value datatype="real">0.0</value>
+                        <description>Save interval if not using save point definition file (yr)</description>
+                    </param>
+                    <param name="par_data_save_slice_nmax">
+			<value datatype="real">100</value>
+                        <description>Maximum allowed number of time-slice save points</description>
+                    </param>
                     <param name="par_infile_slice_name">
 			<value datatype="string">save_timeslice.dat</value>
                         <description></description>
@@ -5654,11 +5721,19 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="ctrl_data_save_sig_diag_redox_old">
 			<value datatype="boolean">.false.</value>
-                        <description>[redox back-compatability ]</description>
+                        <description>[redox back-compatability]</description>
                     </param>
                     <param name="par_data_save_sig_dt">
 			<value datatype="real">1.0</value>
-                        <description>Integration interval (yr</description>
+                        <description>Integration interval (yr)</description>
+                    </param>
+                    <param name="par_data_save_sig_timeinterval">
+			<value datatype="real">0.0</value>
+                        <description>Save interval if not using save point definition file (yr)</description>
+                    </param>
+                    <param name="par_data_save_sig_nmax">
+			<value datatype="real">10000</value>
+                        <description>Maximum allowed number of time-series save points</description>
                     </param>
                     <param name="par_infile_sig_name">
 			<value datatype="string">save_timeseries.dat</value>
@@ -5689,6 +5764,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>Create redox/remin data for saving?</description>
                     </param>
+                    <param name="ctrl_data_save_buffering">
+			<value datatype="boolean">.false.</value>
+                        <description>Calculate various buffering metrics for saving??</description>
+                    </param>
 <!-- DATA SAVING: MISC -->
                     <param name="par_data_save_level">
 			<value datatype="integer">-1</value>
@@ -5712,8 +5791,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="opt_append_data">
 			<value datatype="boolean">.false.</value>
-                        <description>append data to output files on restart
-                                     (if the same run - i.e. if par_outdir_name = par_rstdir_name) (.FALSE./.TRUE.)</description>
+                        <description>append data to output files on restart (.FALSE./.TRUE.)</description>
                     </param>
                     <param name="par_data_save_ben_Dmin">
 			<value datatype="real">2000.0</value>
@@ -5744,7 +5822,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.bg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
                     <param name="ctrl_data_save_2d">
@@ -5754,6 +5832,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_data_save_3d">
 			<value datatype="boolean">.true.</value>
                         <description>Save 3D netCDF data?</description>
+                    </param>
+                    <param name="par_ncout2d_name">
+			<value datatype="string">fields_ocean_2d.nc</value>
+                        <description>2D netCDF output file name</description>
+                    </param>
+                    <param name="par_ncout3d_name">
+			<value datatype="string">fields_ocean_3d.nc</value>
+                        <description>3D netCDF output file name</description>
                     </param>
                     <param name="par_misc_save_i">
                         <value datatype="integer">1</value>
@@ -5774,6 +5860,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_infile_orb_pts_var_name">
 			<value datatype="string">orb_pts_var.dat</value>
                         <description></description>
+                    </param>                    
+                    <param name="ctrl_data_echo_runtime_NEW">
+			<value datatype="boolean">.true.</value>
+                        <description>NEW format runtime output?</description>
                     </param>
 <!-- TRACER AUDITING AND DEBUGGING OPTIONS -->
                     <param name="ctrl_audit">
@@ -6866,7 +6956,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="par_force_invert_ohmega">
 			<value datatype="real">0.0</value>
-                        <description>Surface ocean saturation state target</description>
+                        <description>Surface ocean saturation state target -- inversions</description>
+                    </param>
+                    <param name="par_force_restore_ohmega">
+			<value datatype="real">0.0</value>
+                        <description>Surface ocean saturation state target -- restoring</description>
                     </param>
                     <param name="par_force_invert_wtpctcaco3">
 			<value datatype="real">-99.9</value>
@@ -6899,6 +6993,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_force_ocn_age1">
 			<value datatype="boolean">.false.</value>
                         <description>Or ... automatic ocean age single-tracer tracer?</description>
+                    </param>
+                    <param name="par_force_FCaCO3">
+			<value datatype="real">1.0E15</value>
+                        <description> CaCO3 flux (for saturaton restoring) (mol yr-1)</description>
                     </param>
 <!-- TRANSPORT MATRIX  -->
 		<param name="ctrl_data_diagnose_TM">
@@ -7170,12 +7268,16 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>ATCHEM data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>atchem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>ATCHEM results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-atchem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_infile_name">
 			<value datatype="string">atchem</value>
@@ -7190,7 +7292,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.ac.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
                 </namelist>
@@ -7271,7 +7373,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
 <!-- DIAGENESIS SCHEME: SELECTION  -->
                     <param name="par_sed_diagen_CaCO3opt">
-			<value datatype="string">archer1991explicit</value>
+			<value datatype="string">none</value>
                         <description>CaCO3 diagenesis scheme</description>
                     </param>
                     <param name="par_sed_diagen_opalopt">
@@ -7335,34 +7437,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="integer">25</value>
                         <description>Taged restart CaCO3 depth in layers (n)</description>
                     </param>
+                    <param name="par_sed_diagen_kcalmod">
+			<value datatype="real">1.0</value>
+                        <description>modification of calcite k (>1.0 == reduced solubility)</description>
+                    </param>
 <!-- DIAGENESIS SCHEME: ORGANIC MATTER  -->
                     <param name="ctrl_sed_diagen_preserve_frac2">
 			<value datatype="boolean">.false.</value>
                         <description>Prevent frac2 from being remineralzied?</description>
-                    </param>
-                    <param name="par_sed_diagen_fracCpres_ox">
-			            <value datatype="real">0.0</value>
-                        <description>Fractional POC burial -- oxic conditions</description>
-                    </param>
-                    <param name="par_sed_diagen_fracCpres_anox">
-			            <value datatype="real">0.0</value>
-                        <description>Fractional POC burial -- anoxic conditions</description>
-                    </param>
-                    <param name="par_sed_diagen_fracCpres_eux">
-			            <value datatype="real">0.0</value>
-                        <description>Fractional POC burial -- euxinic conditions</description>
-                    </param>
-                    <param name="par_sed_diagen_fracC2Ppres_ox">
-			            <value datatype="real">1.0</value>
-                        <description>Fraction of P relative to C buried -- oxic</description>
-                    </param>
-                    <param name="par_sed_diagen_fracC2Ppres_anox">
-			            <value datatype="real">1.0</value>
-                        <description>Fraction of P relative to C buried -- anoxic</description>
-                    </param>
-                    <param name="par_sed_diagen_fracC2Ppres_eux">
-			            <value datatype="real">1.0</value>
-                        <description>Fraction of P relative to C buried -- euxinic</description>
                     </param>
                     <param name="par_sed_diagen_fracCpres_scale">
 			<value datatype="real">1.0</value>
@@ -7390,7 +7472,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="ctrl_sed_conv_sed_ocn_old">
 			<value datatype="boolean">.true.</value>
-                        <description>etain original (Redfield) remin transformation? </description>
+                        <description>Retain original (Redfield) remin transformation?</description>
                     </param>
                     <param name="par_sed_diagen_O2thresh">
 			<value datatype="real">20.0E-6</value>
@@ -7403,6 +7485,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_sed_diagen_SO4thresh">
 			<value datatype="real">20.0E-6</value>
                         <description>[SO4] threshold for switching redox arrays (mol kg-1) </description>
+                    </param>
+                    <param name="ctrl_sed_conv_sed_ocn_redox">
+			<value datatype="boolean">.true.</value>
+                        <description>Use BIOGEM redox-dependent remin transformation?</description>
+                    </param>
+                    <param name="ctrl_sed_conv_sedocn_bohlen2012">
+			<value datatype="boolean">.false.</value>
+                        <description>Use Bohlen 2012 denitrification remin?</description>
                     </param>
 <!-- DIAGENESIS SCHEME: HUELSE 2017  -->
                     <param name="par_sed_huelse2017_kscheme">
@@ -7474,6 +7564,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="integer">20</value>
                         <description>loop limit in 'o2org' subroutine</description>
                     </param>
+                    <param name="ctrl_sed_diagen_error_Archer_OLD">
+			<value datatype="boolean">.true.</value>
+                        <description>Use old error-catching scheme?</description>
+                    </param>
+                    <param name="ctrl_sed_diagen_error_Archer2lookup">
+			<value datatype="boolean">.false.</value>
+                        <description>Replace Archer model calc with lookup estimate?</description>
+                    </param>
 <!-- DIAGENESIS SCHEME: opal  -->
                     <param name="par_sed_opal_KSi0">
 			<value datatype="real">1.25</value>
@@ -7531,18 +7629,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_d88Sr_SrCO3recryst">
 			<value datatype="real">0.172</value>
                         <description>d88Sr of recrystalizing SrCO3 [Payton et al.]</description>
-                    </param>
-                    <param name="par_sed_Corgburial">
-			<value datatype="real">0.0</value>
-                        <description>Prescribed Corg production rate (mol cm-2 yr-1)</description>
-                    </param>
-                    <param name="par_sed_CorgburialTOT">
-			<value datatype="real">0.0</value>
-                        <description>Prescribed global Corg production rate (mol yr-1)</description>
-                    </param>
-                    <param name="par_sed_Corgburial_Dd13C">
-			<value datatype="real">-30.0</value>
-                        <description>POC d13C offset compared to the d13C of CaCO3</description>
                     </param>
 <!-- TRACE METALS -->
                     <param name="par_bio_red_CaCO3_LiCO3">
@@ -7748,18 +7834,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Mean ocean floor reference temeprature (C)</description>
                     </param>
 <!-- MISC CONTROLS  -->
-                    <param name="ctrl_sed_forcedohmega_ca">
-			<value datatype="boolean">.true.</value>
-                        <description>Ca-only adjustment for forced ocean saturation?</description>
-                    </param>
-                    <param name="par_sed_ohmegamin">
-			<value datatype="real">0.00</value>
-                        <description>forced minimum saturation (calcite ohmega) anywhere</description>
-                    </param>
-                    <param name="par_sed_ohmegamin_flux">
-			<value datatype="real">0.00</value>
-                        <description>imposed sed->ocn flux (mol Ca cm-2 per time-step) for saturation</description>
-                    </param>
                     <param name="ctrl_sed_Fdet">
                         <value datatype="boolean">.false.</value>
                         <description>Use alt detrital burial field?</description>
@@ -7800,6 +7874,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">-16.0</value>
                         <description>assumed implicit P:ALK (non zero values only really make any sense in ocean-only biogeochemical cycling)</description>
                     </param>
+                    <param name="par_sed_diag_C2O2">
+			<value datatype="real">-1.283018868</value>
+                        <description>assumed implicit C:O2 (POC oxidation O2 demand), e.g., -138/106 (C:O2 from P:O2 and C:P) + 2/106 (less P oxidation) = -136/106</description>
+                    </param>
+                    <param name="ctrl_sed_diag_balanceO2">
+                        <value datatype="boolean">.false.</value>
+                        <description>update kerogen O2 weathering consumption ratio to balance global (Corg) O2 budget?</description>
+                    </param>
 <!-- I/O: DIRECTORY DEFINITIONS  -->
                     <param name="par_pindir_name">
 			<value datatype="string"></value>
@@ -7810,12 +7892,16 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref>/sedgem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref>/results</value>
                         <description>results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref>/genie-sedgem/data/input</value>
-                        <description>restart (input) directory</description>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_infile_name">
 			<value datatype="string">sedgem</value>
@@ -7845,6 +7931,9 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_sed_mix_k.dat</value>
                         <description>Biodiffusion profile name</description>
                     </param>
+                    
+                    
+                    
                     <param name="par_output_years_file_0d">
 			<value datatype="string">sedgem_output_years_0d.dat</value>
                         <description>file containing years for 0D output to be generated (to summary file)</description>
@@ -7853,6 +7942,9 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_output_years_2d.dat</value>
                         <description>file containing years for 2D output to be generated (to netcdf/ascii)</description>
                     </param>
+                    
+                    
+                    
                     <param name="par_sed_Fdet_name">
                         <value datatype="string">hello_world</value>
                         <description>Alt detrital burial flux field file name</description>
@@ -7892,8 +7984,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="ctrl_append_data">
 			<value datatype="boolean">.false.</value>
-                        <description>append data to output files on restart
-                                     (if the same run - i.e. if sg_par_outdir_name = sg_par_rstdir_name) (.FALSE./.TRUE.)</description>
+                        <description>append data to output files on restart (.FALSE./.TRUE.)</description>
                     </param>
                     <param name="ctrl_data_save_ascii">
 			<value datatype="boolean">.false.</value>
@@ -7945,12 +8036,24 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.sg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
+                    <param name="par_ncout2d_name">
+			<value datatype="string">fields_sediments_2d.nc</value>
+                        <description>2D netCDF output file name</description>
+                    </param>
                     <param name="par_ncsedcore_name">
-			<value datatype="string">sedcore.nc</value>
+			<value datatype="string">fields_sedcores_1d.nc</value>
                         <description>netCDF sedcore file name</description>
+                    </param>
+                    <param name="par_sed_save_av_dtyr">
+			<value datatype="real">0.0</value>
+                        <description>time interval for averaging final sed data over (yr) [0.0 to disable]</description>
+                    </param>
+                    <param name="ctrl_sed_diagen_error_save">
+			<value datatype="boolean">.false.</value>
+                        <description>Save diagenesis error details?</description>
                     </param>
                 </namelist>
             </file>
@@ -7987,9 +8090,21 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>rokgem</value>
                         <description>ROKGEM results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>rokgem</value>
-                        <description>ROKGEM restart (input) directory</description>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
+                    </param>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_infile_name">
 			<value datatype="string">rokgem</value>
@@ -7998,6 +8113,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_outfile_name">
 			<value datatype="string">rokgem</value>
                         <description>output restart filename</description>
+                    </param>
+                    <param name="par_ncrst_name">
+			<value datatype="string">restart.rg</value>
+                        <description>netCDF restart file name</description>
                     </param>
                     <param name="opt_screen_output">
 			<value datatype="boolean">.FALSE.</value>
@@ -8021,8 +8140,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
                     <param name="opt_append_data">
 			<value datatype="boolean">.false.</value>
-                        <description>append data to output files on restart
-                                     (if the same run - i.e. if rg_par_outdir_name = rg_par_rstdir_name) (.FALSE./.TRUE.)</description>
+                        <description>append data to output files on restart (.FALSE./.TRUE.)</description>
+                    </param>
+	           <param name="ctrl_save_data">
+			<value datatype="boolean">.FALSE.</value>
+                        <description>Save ROKGEM data?</description>
                     </param>
 	            <!-- *** RIVER ROUTING PARAMETERS ******************************** -->
 	          <param name="routing_scheme">
@@ -9204,12 +9326,12 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     </param>
 <!-- INORGANIC MATTER EXPORT RATIOS  -->
                     <param name="par_bio_red_POC_CaCO3">
-			<value datatype="real">0.0285</value>
-                        <description>base CaCO3:POC export ratio</description>
+			<value datatype="real">1.0</value>
+                        <description>base CaCO3:POC export ratio [ORIGINAL: 0.0285]</description>
                     </param>
                     <param name="par_bio_red_POC_CaCO3_pP">
-			<value datatype="real">0.744</value>
-                        <description>exponent for modifier of CaCO3:POC export ratio</description>
+			<value datatype="real">0.0</value>
+                        <description>exponent for modifier of CaCO3:POC export ratio [ORIGINAL: 0.744]</description>
                     </param>
 <!-- ISOTOPIC FRACTIONATION -->
                     <param name="opt_d13C_DIC_Corg">
@@ -9256,12 +9378,16 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>ECOGEM data input directory</description>
                     </param>
                     <param name="par_outdir_name">
-			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>ecogem</value>
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>results</value>
                         <description>ECOGEM results output directory</description>
                     </param>
-                    <param name="par_rstdir_name">
-			<value datatype="string"><varref>RUNTIME_ROOT</varref><sep/>genie-ecogem<sep/>data<sep/>input</value>
-                        <description>restart (input) directory</description>
+                    <param name="par_inrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (input) directory</description>
+                    </param>
+                    <param name="par_outrstdir_name">
+			<value datatype="string"><varref>RUNTIME_OUTDIR</varref><sep/>restarts</value>
+                        <description>Restart (output) directory</description>
                     </param>
                     <param name="par_infile_name">
 			<value datatype="string">ecogem</value>
@@ -9276,7 +9402,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Restart in netCDF format?</description>
                     </param>
                     <param name="par_ncrst_name">
-			<value datatype="string">_restart.nc</value>
+			<value datatype="string">restart.eg.nc</value>
                         <description>netCDF restart file name</description>
                     </param>
                     <param name="par_ecogem_force_T_file">

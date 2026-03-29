@@ -39,7 +39,8 @@ CONTAINS
     ! set and report namelist data
     par_indir_name = trim(par_indir_name)//'/'
     par_outdir_name = trim(par_outdir_name)//'/'
-    par_rstdir_name = trim(par_rstdir_name)//'/'
+    par_inrstdir_name = trim(par_inrstdir_name)//'/'
+    par_outrstdir_name = trim(par_outrstdir_name)//'/'
     if ((ctrl_debug_init > 0) .OR. ctrl_debug_eco_init) then
        ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ############################################################################# !
        ! --- ECOLOGICALCONFIGURATION --------------------------------------------------------------------------------------------- !
@@ -165,7 +166,8 @@ CONTAINS
        print*,'--- I/O DIRECTORY DEFINITIONS ----------------------'
        print*,'Input dir. name                                     : ',trim(par_indir_name)
        print*,'Output dir. name                                    : ',trim(par_outdir_name)
-       print*,'Restart (input) dir. name                           : ',trim(par_rstdir_name)
+       print*,'Restart (input) dir. name                           : ',trim(par_inrstdir_name)
+       print*,'Restart (output) dir. name                          : ',trim(par_outrstdir_name)
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
        ! --- DATA SAVING: MISC --------------------------------------------------------------------------------------------------- !
@@ -210,9 +212,9 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! -------------------------------------------------------- ! set filename
     IF (ctrl_ncrst) THEN
-       loc_filename = TRIM(par_rstdir_name)//par_ncrst_name
+       loc_filename = TRIM(par_inrstdir_name)//par_ncrst_name
     else
-       loc_filename = TRIM(par_rstdir_name)//trim(par_infile_name)
+       loc_filename = TRIM(par_inrstdir_name)//trim(par_infile_name)
     endif
     ! -------------------------------------------------------- ! check file status
     call check_unit(in,__LINE__,__FILE__)
@@ -569,7 +571,7 @@ CONTAINS
     ! ****************************************************************************************
     ! Write plankton parameters to output file (opened in initialise_ecogem)
     ! parameter headers
-    WRITE(301,301,ADVANCE = "NO" ) "PFT             "
+    WRITE(301,301,ADVANCE = "NO" ) "% PFT             "
     WRITE(301,202,ADVANCE = "NO" ) "    diameter","      volume"
     WRITE(301,201,ADVANCE = "NO" ) "      vmax_C"
     if (nquota) then
@@ -594,7 +596,9 @@ CONTAINS
     WRITE(301,202,ADVANCE = "YES") "   beta_graz","   beta_mort"
     ! ****************************************************************************************
     ! parameter values
-    do n=1,2
+    ! NOTE: loop is do n=1,2 if you want the no-headerfile 302
+    !       (also remember to clsoe 302 if opened in initialise_ecogem))
+    do n=1,1
        do jp=1,npmax
           if (n.eq.1)     WRITE(300+n,301,ADVANCE = "NO" ) pft(jp)
           WRITE(300+n,102,ADVANCE = "NO" ) diameter(jp),volume(jp)
@@ -623,7 +627,7 @@ CONTAINS
     enddo
     ! close plankton parameter files
     close(301)
-    close(302)
+    !!!close(302)
 
   ! grazing matrix
   !do jpred=1,npmax

@@ -88,6 +88,22 @@ CONTAINS
              loc_NH4_oxidation = dum_dtyr*par_nitri_mu*min(loc_NH4,0.5*loc_O2)* &
                   & loc_NH4*loc_O2/ &
                   & (par_nitri_c0_NH4*par_nitri_c0_O2 + par_nitri_c0_O2*loc_NH4 + par_nitri_c0_NH4*loc_O2 + loc_NH4*loc_O2)
+          CASE ('MM')
+             ! e.g., see 'D. Bianchi et al.: A biogeochemical model of the ocean nitrogen cycle'
+             ! R = k * loc_O2/(loc_O2 + KO2) * loc_NH4/(loc_NH4 + KNH4)
+             ! RA the reaction rate (mmol N m-3 s-1)
+             ! k is the maximum (unlimited) reaction rate (umol N m-3 s-1)
+             ! NOTE: tuned values in Bianchi et al.: 
+             !       k    = 0.0167 mmol N m-3 d-1 (NOTE: no s-1 as in the text or GBS paper)
+             !       KO2  = 0.3300 mmol O2 m-3
+             !       KNH4 = 0.5091 mmol N m-3
+             ! NOTE: in GENIE units of mol kg-1 and mol kg-1 yr-1
+             !       conv_kg_m3 = (1/1027.649), conv_yr_d = 365.25
+             !       k    = 1.0E-3 * conv_kg_m3 * conv_yr_d * 0.0167 = 5.935562628874256e-06
+             !       KO2  = 1.0E-3 * conv_kg_m3 * 0.3300 = 3.211213167141699e-07
+             !       KNH4 = 1.0E-3 * conv_kg_m3 * 0.5091 = 4.954026131490421e-07
+             loc_NH4_oxidation = dum_dtyr*par_bio_remin_kNH4toNO2* &
+                  & (loc_O2/(loc_O2 + par_nitri_c0_O2)) * (loc_NH4/(loc_NH4 + par_nitri_c0_NH4))
           CASE ('NONE')
              loc_NH4_oxidation = 0.0
           case default
@@ -1748,12 +1764,25 @@ CONTAINS
           ! calculate H2S oxidation, and cap value at H2S, O2 concentration if necessary
           SELECT CASE (opt_bio_remin_oxidize_H2StoSO4)
           CASE ('linear')
+             ! muffin DEFAULT scheme ...with default constant value = 1.0E7
+             ! ... which is much faster than the 'OLD' scheme and might explain excessive H2S oxidation and ALK/carchem issues(?)
              ! NOTE: par_bio_remin_kH2StoSO4 units are (M-1 yr-1)
              loc_H2S_oxidation_const = par_bio_remin_kH2StoSO4
              loc_H2S_oxidation = dum_dtyr*loc_H2S_oxidation_const*loc_H2S*loc_O2
+          CASE ('2ndorder')
+             ! cookie DEFAULT scheme
+             ! canonical sulfide oxidation (CSO) as defined in van de Velde et al. [2021]
+             ! NOTE: units of par_bio_remin_kH2StoSO4_perM2perhr units are (M-2 yr-1)
+             !       => kCSO = 0.625E6 M-2 h-1 (Zhang and Millero, 1993)
+             !       -> 24*365.25*0.625E6 = 5.47875e+09 -- the exact same as OLD (same reference!) !!!
+             loc_H2S_oxidation_const = par_bio_remin_kH2StoSO4_perM2perhr/conv_hr_yr
+             loc_H2S_oxidation = dum_dtyr*loc_H2S_oxidation_const*loc_H2S*loc_O2**2.0
           CASE ('OLD')
              ! change units of H2S oxidation constant from mM-2 hr-1 to M-2 yr-1
              ! and convert from O2 consumption units to H2S units (i.e., divide by 2)
+             ! NOTE: the value of const_oxidation_coeff_H2S (H2S oxidation coefficient) is fixed = 1.25
+             !       and is in terms of O2 consumed not H2S oxidized (mM-2 O2 hr-1) [Zhang and Millero, 1993]
+             !        -> 0.5*24*365.25*1.25/1.0E-6 =  5.47875e+09
              loc_H2S_oxidation_const = 0.5*const_oxidation_coeff_H2S/conv_hr_yr/(conv_mmol_mol)**2.0
              loc_H2S_oxidation = dum_dtyr*loc_H2S_oxidation_const*loc_H2S*loc_O2**2.0
           case ('complete')
@@ -2035,7 +2064,7 @@ CONTAINS
     ! CH4 + 2O2 -> CO2 + 2H2O
     DO k=n_k,dum_k1,-1
        ! pull relevant tracers
-       loc_O2 = ocn(io_O2,dum_i,dum_j,k)
+       loc_O2  = ocn(io_O2,dum_i,dum_j,k)
        loc_CH4 = ocn(io_CH4,dum_i,dum_j,k)
        if ((loc_CH4 > const_real_nullsmall) .AND. (loc_O2 > const_real_nullsmall)) then
           SELECT CASE (par_bio_remin_AER_thermo)
@@ -2054,7 +2083,7 @@ CONTAINS
                   & )
              ! calculate thermodynamic drive
              loc_Ft_min = 0
-             loc_Ft = max(loc_Ft_min,1-exp((loc_dG+par_bio_remin_AER_BEQ)/(par_bio_remin_Rgas*loc_T)))
+             loc_Ft = max(loc_Ft_min,1-exp((loc_dG + par_bio_remin_AER_BEQ)/(par_bio_remin_Rgas*loc_T)))
              if (loc_Ft > 1 .OR. loc_Ft < 0) then
                 print*,' WARNING: AER thermodynamic drive out of bounds; DIC = ',ocn(io_DIC,dum_i,dum_j,k), &
                      &' ALK = ',ocn(io_ALK,dum_i,dum_j,k),' Ft = ',loc_Ft,'.'
@@ -2064,7 +2093,7 @@ CONTAINS
           END SELECT
           ! allow CH4 oxidation with O2 (units: mol CH4 kg-1)
           ! Michaelis-Menten term
-          loc_MM = loc_O2/(loc_O2+par_bio_remin_AER_Km_O2)
+          loc_MM = loc_O2/(loc_O2 + par_bio_remin_AER_Km_O2)
           ! temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
@@ -2132,7 +2161,7 @@ CONTAINS
     real::loc_SO4,loc_H2S
     real::loc_T,loc_TC,loc_kT
     real::loc_dG,loc_Ft,loc_Ft_min
-    real::loc_MM,loc_AOM
+    real::loc_MM,loc_AOM,loc_ki
     real::loc_r13C,loc_r14C,loc_r34S,loc_R_34S
     real,dimension(n_ocn,n_k)::loc_bio_remin
     real::loc_f
@@ -2154,10 +2183,10 @@ CONTAINS
     ! CH4 + SO4 --> HCO3- + HS- + H2O
     DO k=n_k,dum_k1,-1
        ! pull relevant tracers, and check for the presence of O2
-       loc_O2 = ocn(io_O2,dum_i,dum_j,k)
+       loc_O2  = ocn(io_O2,dum_i,dum_j,k)
        loc_SO4 = ocn(io_SO4,dum_i,dum_j,k)
        loc_CH4 = ocn(io_CH4,dum_i,dum_j,k)
-       if ((loc_O2 < const_real_nullsmall) .AND. (loc_SO4 > const_real_nullsmall) .AND. (loc_CH4 > const_real_nullsmall)) then
+       if ((loc_CH4 > const_real_nullsmall) .AND. (loc_SO4 > const_real_nullsmall)) then
           SELECT CASE (par_bio_remin_AOM_thermo)
           CASE('off')
              ! thermo term disabled
@@ -2167,15 +2196,19 @@ CONTAINS
              loc_H2S = ocn(io_H2S,dum_i,dum_j,k)
              loc_HCO3 = carb(ic_conc_HCO3,dum_i,dum_j,k)
              loc_T = ocn(io_T,dum_i,dum_j,k)
-             loc_dG = par_bio_remin_AOM_dG0 +                                                        &
-                  & ( par_bio_remin_Rgas *                                                        &
-                  &   loc_T *                                                                     &
-                  &   LOG( ((par_bio_remin_gammaHS*loc_H2S)*(par_bio_remin_gammaHCO3*loc_HCO3)) / &
-                  &        ((par_bio_remin_gammaSO4*loc_SO4)*(par_bio_remin_gammaCH4*loc_CH4)) )  &
-                  & )
+             if ((loc_H2S > const_real_nullsmall) .AND. (loc_HCO3 > const_real_nullsmall)) then
+                loc_dG = par_bio_remin_AOM_dG0 +                                                        &
+                     & ( par_bio_remin_Rgas *                                                        &
+                     &   loc_T *                                                                     &
+                     &   LOG( ((par_bio_remin_gammaHS*loc_H2S)*(par_bio_remin_gammaHCO3*loc_HCO3)) / &
+                     &        ((par_bio_remin_gammaSO4*loc_SO4)*(par_bio_remin_gammaCH4*loc_CH4)) )  &
+                     & )
+             else
+                loc_dG = 0.0
+             end if
              ! calculate thermodynamic drive
              loc_Ft_min = 0
-             loc_Ft = max(loc_Ft_min,1 - exp((loc_dG+par_bio_remin_AOM_BEQ)/(par_bio_remin_Rgas*loc_T)))
+             loc_Ft = max(loc_Ft_min,1 - exp((loc_dG + par_bio_remin_AOM_BEQ)/(par_bio_remin_Rgas*loc_T)))
              if (loc_Ft > 1 .OR. loc_Ft < 0) then
                 print*,' WARNING: AOM thermodynamic drive out of bounds; DIC = ',ocn(io_DIC,dum_i,dum_j,k), &
                      &' ALK = ',ocn(io_ALK,dum_i,dum_j,k),' Ft = ',loc_Ft,'.'
@@ -2183,15 +2216,34 @@ CONTAINS
           CASE default
              loc_Ft = 1.0
           END SELECT
-          ! allow CH4 oxidation coupled to SO4 reduction (units: mol CH4 kg-1)
-          ! Michaelis-Menten term
-          loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
-          ! temperature term
+          ! calculate CH4 oxidation coupled to SO4 reduction (units: mol CH4 kg-1)
+          ! (1) inhibition term (using the same parameter as for SO4 reduction during Corg remin)
+          !     NOTE: ctrl_bio_remin_AOM_OLD=.true. simulates original muffin code with (loc_O2 < const_real_nullsmall)
+          if (loc_O2 < const_real_nullsmall) then
+             loc_ki = 1.0
+          else
+             if (ctrl_bio_remin_AOM_OLD) then
+                loc_ki = 0.0
+             else
+                loc_ki = par_bio_remin_ci_O2/(par_bio_remin_ci_O2 + loc_O2)
+             end if
+          end if
+          ! (2) Michaelis-Menten term
+          !     NOTE: original published code was incorrect:
+          !           loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
+          !           although this was a bug -> enable as part of the ctrl_bio_remin_AOM_OLD option
+          !           so that the original paper results can be reporduced
+          if (ctrl_bio_remin_AOM_OLD) then
+             loc_MM = loc_SO4/(loc_SO4*par_bio_remin_AOM_Km_SO4)
+          else
+             loc_MM = loc_SO4/(loc_SO4 + par_bio_remin_AOM_Km_SO4)
+          end if
+          ! (3) temperature term
           loc_TC = ocn(io_T,dum_i,dum_j,k) - const_zeroC
           loc_kT = par_bio_kT0*exp(loc_TC/par_bio_kT_eT)
           ! rate of AOM 
           ! (first-order term for 'bloom' conditions, Michaelis-Menten kinetics, temperature, and thermodynamic control)
-          loc_AOM = par_bio_remin_AOM_kAOM*loc_CH4*loc_MM*loc_kT*loc_Ft*dum_dtyr
+          loc_AOM = par_bio_remin_AOM_kAOM*loc_CH4*loc_ki*loc_MM*loc_kT*loc_Ft*dum_dtyr
           ! but don't oxidize too much CH4!
           loc_AOM = min(loc_AOM,loc_f*loc_CH4,loc_f*loc_SO4)
           ! calculate isotopic ratios

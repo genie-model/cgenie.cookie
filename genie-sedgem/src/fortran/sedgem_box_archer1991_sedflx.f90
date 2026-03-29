@@ -18,6 +18,7 @@ MODULE sedgem_box_archer1991_sedflx
   INTEGER,PARAMETER::nzmax_co3 = 30
   INTEGER,PARAMETER::nmax      = 300
   REAL,PARAMETER,DIMENSION(nzmax)::delz = (/0.0,0.5,0.5,1.0,2.0,3.0,3.0,5.0,5.0,5.0/)
+  logical::loc_err_calc_co3,loc_err_co3ss,loc_err_gaussj
 
   
 CONTAINS
@@ -32,7 +33,7 @@ CONTAINS
 ! and the organic carbon rain.  assumes that org
 ! adjusts quickly.
 
-  function fun_archer1991_sedflx(o2bw,calpc,rainorg,co2,hco3,co3,k1,k2,calsat,db)
+  function fun_archer1991_sedflx(o2bw,calpc,rainorg,co2,hco3,co3,k1,k2,calsat,db,err)
     ! result variable
     real::fun_archer1991_sedflx
     ! dummy variables
@@ -41,6 +42,7 @@ CONTAINS
     REAL,INTENT(IN)::k1,k2
     REAL,INTENT(IN)::calsat
     REAL,INTENT(IN)::db ! sediment mixing rate, cm2/yr
+    logical,DIMENSION(n_diag_sed_err),INTENT(inout)::err
     ! local variables
     INTEGER::j,l
     REAL::difo2,rc,dissc,dissn,expb,zrct
@@ -51,6 +53,10 @@ CONTAINS
     REAL,DIMENSION(nzmax)::z,o2,orgml,calml,orggg,calgg,form,pore
     REAL,DIMENSION(nzmax,3)::carb,resp_c
 
+    ! set local eerrors to .false.
+    loc_err_calc_co3 = .false.
+    loc_err_co3ss    = .false.
+    loc_err_gaussj   = .false.
     !
     z(1) = 0.
     DO j = 2, kmax
@@ -93,6 +99,12 @@ CONTAINS
     CALL co3ss(resp_c,dissc,dissn,calsat,k1,k2,difc,form, &
       & pore,calgg,carb,ttrorg,ttrcal,ttral,ttrtc,diftc,difal)
 
+    ! set error states to be returned
+    err(idiag_err_calc_co3) = loc_err_calc_co3
+    err(idiag_err_gaussj)   = loc_err_gaussj
+    err(idiag_err_co3ss)    = loc_err_co3ss
+  
+    ! return function value
     fun_archer1991_sedflx = ttrcal
     
   END function fun_archer1991_sedflx
@@ -502,13 +514,18 @@ CONTAINS
     carb(3,3) = ( carb(1,3) + 2 * csat ) / 3
     
     DO l=1,20
-      CALL calc_co3(resp_c,dissc,dissn,csat,u1,u2,dcpls,dcmin, &
-        & pore,calgg,carb,cal_c)
-      CALL diag(ttral,difal,ttrtc,diftc,ttrcal,ttrorg,resp_c,cal_c,carb, &
-        & pore,dcmin(2,1),dcmin(2,2),dcmin(2,3))
-      IF((diftc.NE.0).AND.(difal.NE.0)) THEN
-        IF(( ABS(1 - ABS(ttrtc / diftc)) .LT. 0.03 ) .AND. ( ABS(1 - ABS(ttral / difal)) .LT. 0.03 )) EXIT
-      ENDIF
+       CALL calc_co3(resp_c,dissc,dissn,csat,u1,u2,dcpls,dcmin, &
+            & pore,calgg,carb,cal_c)
+       CALL diag(ttral,difal,ttrtc,diftc,ttrcal,ttrorg,resp_c,cal_c,carb, &
+            & pore,dcmin(2,1),dcmin(2,2),dcmin(2,3))
+       IF((diftc.NE.0).AND.(difal.NE.0)) THEN
+          IF(( ABS(1 - ABS(ttrtc / diftc)) .LT. 0.03 ) .AND. ( ABS(1 - ABS(ttral / difal)) .LT. 0.03 )) then
+             EXIT
+          elseif (l.EQ.20) then
+             loc_err_co3ss = .true.
+          end if
+       ENDIF
+
     END DO
     
   END SUBROUTINE co3ss
@@ -697,7 +714,7 @@ CONTAINS
           ! ENSURE NO NEGATIVE [CO32-] SHIT GOES DOWN
           if (carb(k,i) < -const_real_nullsmall) then
              carb(k,i) = 1.0e-6
-             error_Archer = .TRUE.
+             loc_err_calc_co3 = .true.
           end if
        END DO
     END DO
@@ -880,7 +897,7 @@ CONTAINS
               ENDIF
             ELSE IF(ipiv(k).GT.1) THEN
               ipiv(k) = 1.0
-              error_Archer = .TRUE.
+              loc_err_gaussj = .TRUE.
             ENDIF
           END DO
         ENDIF
@@ -902,7 +919,7 @@ CONTAINS
       indxc(i)=icol
       IF(a(icol,icol).EQ.0.) then
          a(icol,icol) = 1.0
-         error_Archer = .TRUE.
+         loc_err_gaussj = .TRUE.
       end IF
       pivinv=1./a(icol,icol)
       a(icol,icol)=1.

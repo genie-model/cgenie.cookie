@@ -42,11 +42,8 @@ SUBROUTINE end_sedgem( &
   loc_dtyr = loc_dts/conv_yr_s
   ! save diagnostics
   call sub_data_save_seddiag_GLOBAL(loc_dtyr,dum_sfcsumocn,dum_SLT)
-  ! save requested sediment cores as ASCII
-  if (ctrl_data_save_ascii) call sub_sedgem_save_sedcore()
   ! save final oecan-sediment interface properties
   ! NOTE: netCDF was set up to be able to save multiple time-slices, but is only being used here to save a single final slice
-  if (ctrl_data_save_ascii) call sub_data_save_seddiag_2D(loc_dtyr,dum_sfcsumocn)
   call sub_save_netcdf(const_real_zero)
   call sub_save_netcdf_sed2d(loc_dtyr,dum_sfcsumocn)
   call sub_closefile(ntrec_siou)
@@ -54,8 +51,10 @@ SUBROUTINE end_sedgem( &
   ! ------------------------------------------------------- !
   ! SAVE DATA: SEDCORES
   ! ------------------------------------------------------- !
+  ! NOTE: sedcore netCDF files are saved to /results ... but looked for in /restarts ...
+  !       => get runcookie.sh to copy any restart experiment sedcore netCDF file
   if (nv_sedcore > 0) then
-     string_ncsedcorein = TRIM(par_rstdir_name)//trim(par_ncsedcore_name)
+     string_ncsedcorein  = TRIM(par_inrstdir_name)//trim(par_ncsedcore_name)
      string_ncsedcoreout = TRIM(par_outdir_name)//trim(par_ncsedcore_name)
      ncsedcore_ntrec = 0
      call sub_data_netCDF_sedcoresave(trim(string_ncsedcorein),trim(string_ncsedcoreout),loc_yr,loc_iou)
@@ -116,6 +115,16 @@ SUBROUTINE end_sedgem( &
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_diag,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_diag_err,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_av_fsed,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_av_fdis,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_av_coretop,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__) 
+  DEALLOCATE(sed_av_diag_err,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__) 
   ! ---------------------------------------------------------- ! deallocate arrays -- lookup tables
   if (par_sed_diagen_CaCO3opt == 'ridgwell2001lookup' .OR. par_sed_diagen_CaCO3opt == 'ridgwell2001lookupvec') then
      DEALLOCATE(lookup_sed_dis_cal,STAT=dealloc_error)

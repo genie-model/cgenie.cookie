@@ -482,17 +482,17 @@ CONTAINS
     ! display dummy data and exit if requested
     IF (dum_fatal) THEN
        PRINT*,' '
-       PRINT*,'*** FATAL ERROR ***'
-       print*,' -> Originating location in code [module,subroutine]: '//dum_mod//','//dum_proc
-       PRINT*,' -> ERROR MESSAGE: '//dum_mes
+       PRINT*,'*** ERROR ***'
+       print*,' -> (reporting, originating) location in code [module/subroutine]: '//dum_mod//','//dum_proc
+       PRINT*,' -> MESSAGE: '//dum_mes
        if ((loc_n_max == 1) .AND. (dum_data(loc_n_max) <= const_real_null)) then
-          PRINT*,' -> ERROR DATA:    ','[NONE]'
+          PRINT*,' -> DATA:    ','[NONE]'
        else
           DO loc_n = 1,loc_n_max
-             PRINT*,' -> ERROR DATA:    ',dum_data(loc_n)
+             PRINT*,' -> DATA:    ',dum_data(loc_n)
           END DO
        end if
-       PRINT*,' -> ERROR ACTION:  '//dum_act
+       PRINT*,' -> ACTION:  '//dum_act
        PRINT*,' '
        PRINT*,'*********** END ************'
        PRINT*,' '
@@ -500,15 +500,15 @@ CONTAINS
     ELSE
        PRINT*,' '
        PRINT*,'*** WARNING ***'
-       print*,' -> Originating location in code [module,subroutine]: '//dum_mod//','//dum_proc
-       PRINT*,' -> ERROR MESSAGE: '//dum_mes
+       print*,' -> (reporting, originating) location in code [module/subroutine]: '//dum_mod//','//dum_proc
+       PRINT*,' -> MESSAGE: '//dum_mes
        if ((loc_n_max == 1) .AND. (dum_data(loc_n_max) <= const_real_null)) then
        else
           DO loc_n = 1,loc_n_max
-             PRINT*,' -> ERROR DATA:    ',dum_data(loc_n)
+             PRINT*,' -> DATA:    ',dum_data(loc_n)
           end do
        end if
-       PRINT*,' -> ERROR ACTION:  '//dum_act
+       PRINT*,' -> ACTION:  '//dum_act
        PRINT*,' '
     END IF
   END SUBROUTINE sub_report_error
