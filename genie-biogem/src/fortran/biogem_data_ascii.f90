@@ -542,11 +542,7 @@ CONTAINS
                & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(real(n_k)/2.0)) //'] / '// &
                & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
                & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
-       case default
-          loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
-               & 'global min opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
-               & 'global max opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
-       end select
+       end if
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -2268,24 +2264,21 @@ CONTAINS
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
           WRITE(unit=out,fmt='(f12.3,6f9.3)',iostat=ios)          &
                & loc_t,                                           &
                & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
                & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
+               & loc_opsi_scale*int_misc_opsip_min_sig/int_t_sig, &
+               & loc_opsi_scale*int_misc_opsip_max_sig/int_t_sig, &
                & loc_opsi_scale*int_misc_opsia_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
-       case default
-          WRITE(unit=out,fmt='(f12.3,4f9.3)',iostat=ios)          &
+               & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig
+       else
+          WRITE(unit=out,fmt='(f12.3,2f9.3)',iostat=ios)          &
                & loc_t,                                           &
                & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
-               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
-               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
-       end select
+               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig
+       end if
        call check_iostat(ios,__LINE__,__FILE__)
        CLOSE(unit=out,iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -4735,7 +4728,7 @@ CONTAINS
     ! dummy arguments
     REAL,INTENT(in)::dum_yr
     REAL,INTENT(in)::dum_opsi_scale
-    REAL,DIMENSION(2),INTENT(in)::dum_opsia_minmax
+    REAL,INTENT(in)::dum_opsia_max
     REAL,DIMENSION(n_atm,n_i,n_j),INTENT(in)::dum_sfcatm1
     logical,intent(in)::dum_gemlite                                     ! in GEMlite phase of cycle?
     ! local variables
@@ -4759,8 +4752,7 @@ CONTAINS
 
     ! *** echo run-time ***
     IF (opt_select(iopt_select_carbchem)) THEN
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
           ! print header (if necessary)
           ! NOTE: once printed, reset par_misc_t_echo_header to .false. so it is only printed before the first data line
           !       (unless set elsewhere to repeat the header line)
@@ -4793,7 +4785,7 @@ CONTAINS
                   & dum_yr, &
                   & loc_pCO2, &
                   & fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso), &
-                  & dum_opsi_scale*dum_opsia_minmax(2), &
+                  & dum_opsi_scale*dum_opsia_max, &
                   & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*SUM(phys_ocn(ipo_A,:,:,n_k)*phys_ocnatm(ipoa_seaice,:,:)), &
                   & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - &
                   & const_zeroC, &
@@ -4806,7 +4798,7 @@ CONTAINS
                   & dum_yr, &
                   & loc_pCO2, &
                   & fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso), &
-                  & dum_opsi_scale*dum_opsia_minmax(2), &
+                  & dum_opsi_scale*dum_opsia_max, &
                   & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*SUM(phys_ocn(ipo_A,:,:,n_k)*phys_ocnatm(ipoa_seaice,:,:)), &
                   & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - &
                   & const_zeroC, &
@@ -4815,7 +4807,7 @@ CONTAINS
                   & conv_mol_umol*SUM(phys_ocn(ipo_M,:,:,:)*ocn(io_ALK,:,:,:))/loc_ocn_tot_M
           endif
           ! ###################################################################################################################### !
-       case default
+       else
           ! print header (if necessary)
           if (par_misc_t_echo_header) then
              print*,' '
@@ -4865,10 +4857,9 @@ CONTAINS
                   & conv_mol_umol*SUM(phys_ocn(ipo_M,:,:,:)*ocn(io_ALK,:,:,:))/loc_ocn_tot_M
           endif
           ! ###################################################################################################################### !
-       end select
+       end if
     else
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+       if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
           if (par_misc_t_echo_header) then
              print*,' '
              ! ### MAKE MODIFICATIONS TO SCREEN PRINTING INFORMATION HERE ######################################################## !
@@ -4886,12 +4877,12 @@ CONTAINS
           PRINT'(A5,F11.2,3X,F9.3,F8.3,F8.3,F8.3)', &
                & ' *** ', &
                & dum_yr, &
-               & dum_opsi_scale*dum_opsia_minmax(2), &
+               & dum_opsi_scale*dum_opsia_max, &
                & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*SUM(phys_ocn(ipo_A,:,:,n_k)*phys_ocnatm(ipoa_seaice,:,:)), &
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - const_zeroC, &
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_S,:,:,n_k))/loc_ocn_tot_A
           ! ###################################################################################################################### !
-       case default
+       else
           if (par_misc_t_echo_header) then
              print*,' '
              ! ### MAKE MODIFICATIONS TO SCREEN PRINTING INFORMATION HERE ######################################################## !
@@ -4912,7 +4903,7 @@ CONTAINS
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/loc_ocn_tot_A - const_zeroC, &
                & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*ocn(io_S,:,:,n_k))/loc_ocn_tot_A
           ! ###################################################################################################################### !
-       end select
+       end if
     end if
 
   END SUBROUTINE sub_echo_runtime
