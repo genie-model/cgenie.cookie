@@ -98,6 +98,9 @@ CONTAINS
        call sub_defvar('bio_part_'//trim(string_sed(is)),loc_iou,3,loc_it_3,loc_c0,loc_c0,' ','F', &
             & string_longname_sed(is),'Particulate tracer - '//trim(string_sed(is)),' ')
     end do
+    ! -------------------------------------------------------- ! define (3D) tracer variables -- [H+]
+    call sub_defvar('carb_'//trim(string_carb(ic_H)),loc_iou,3,loc_it_3,loc_c0,loc_c0,' ','F', &
+         & string_longname_carb(ic_H),'Carbonate chemsitry - '//trim(string_carb(ic_H)),' ')
     ! -------------------------------------------------------- ! end definitions
     call sub_enddef (loc_iou)
     call sub_sync(loc_iou)
@@ -131,6 +134,11 @@ CONTAINS
        call sub_putvar3d('bio_part_'//trim(string_sed(is)),loc_iou,n_i,n_j,n_k,loc_ntrec, &
             & loc_ijk(:,:,n_k:1:-1),loc_ijk_mask(:,:,n_k:1:-1))
     end do
+    ! -------------------------------------------------------- ! write (3D) tracer variables -- [H+]
+    loc_ijk_mask(:,:,:) = phys_ocn(ipo_mask_ocn,:,:,:)
+    loc_ijk(:,:,:) = carb(ic_H,:,:,:)
+    call sub_putvar3d('carb_'//trim(string_carb(ic_H)),loc_iou,n_i,n_j,n_k,loc_ntrec, &
+         & loc_ijk(:,:,n_k:1:-1),loc_ijk_mask(:,:,n_k:1:-1))    
     ! -------------------------------------------------------- ! close file and return IOU
     call sub_closefile(loc_iou)
     dum_iou = loc_iou
@@ -210,7 +218,7 @@ CONTAINS
     loc_it(1) = loc_id_time
     call sub_defvar ('time', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'T', 'D' &
          &, 'Year', 'time', trim(loc_timunit))
-    call sub_defvar ('year', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'F','year', ' ',' ')
+    call sub_defvar ('year', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'T', 'F','year', ' ',' ')
     !-----------------------------------------------------------------------
     !       define 1d data (x, y or z)
     !-----------------------------------------------------------------------
@@ -230,19 +238,19 @@ CONTAINS
     call sub_defvar ('yu', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Y', 'D' , &
          &'latitude of the u grid', 'latitude', 'degrees_north')
     loc_it(1) = loc_id_lon_e
-    call sub_defvar ('lon_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('lon_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'X', 'D' , &
          &'longitude of t grid edges', ' ', 'degrees')
     loc_it(1) = loc_id_lat_e
-    call sub_defvar ('lat_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('lat_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Y', 'D' , &
          &'latitude of t grid edges', ' ', 'degrees')
     loc_it(1) = loc_id_zt_e
-    call sub_defvar ('zt_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('zt_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Z', 'D' , &
          &'depth of t grid edges', ' ', 'm')
     loc_it(1) = loc_id_xu_e
-    call sub_defvar ('xu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('xu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'X', 'D' , &
          &'longitude of u grid edges', ' ', 'degrees')
     loc_it(1) = loc_id_yu_e
-    call sub_defvar ('yu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('yu_edges', dum_iou, 1, loc_it(1), loc_c0, loc_c0, 'Y', 'D' , &
          &'latitude of u grid edges', ' ', 'degrees')
     SELECT CASE (dum_dd)
     CASE (2)
@@ -641,8 +649,10 @@ CONTAINS
     INTEGER::loc_iou,loc_ntrec
     real,DIMENSION(n_i,n_j)::loc_ij
     real,DIMENSION(n_i,n_j,n_k)::loc_ijk,loc_mask
+    real,DIMENSION(n_i,n_j,n_k)::loc_ijk_OC,loc_ijk_NC,loc_ijk_SC,loc_ijk_tot
     CHARACTER(len=255)::loc_name
-    CHARACTER(len=255)::loc_unitsname
+    CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
+    CHARACTER(len=31)::loc_string     !
     real::loc_tot,loc_frac,loc_standard
     real::loc_min,loc_max
     logical::loc_save
@@ -998,7 +1008,8 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','d13C of CO2(aq)','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo', &
+               & const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_CO2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           loc_ijk(:,:,:) = const_real_zero
           DO i=1,n_i
@@ -1014,7 +1025,8 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','d13C of HCO3-','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo', &
+               & const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_HCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           loc_ijk(:,:,:) = const_real_zero
           DO i=1,n_i
@@ -1030,7 +1042,8 @@ CONTAINS
                 END DO
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','d13C of CO32-','o/oo',const_real_zero,const_real_zero)
+          call sub_adddef_netcdf(loc_iou,4,'carb_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo', &
+               & const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_d13C_CO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        end if
     end If
@@ -1595,6 +1608,118 @@ CONTAINS
        end if
        !
     end If
+    !----------------------------------------------------------------
+    ! GEOCHEMICAL DIAGNOSTICS -- REMIN FRACTIONAL OXIDANTS
+    !----------------------------------------------------------------
+    If (ctrl_data_save_slice_diag_geochem .AND. ctrl_bio_remin_redox_save) then
+       loc_ijk_tot(:,:,:) = const_real_zero
+       ! -------------------------------------------------------- ! (1) oxic remineralization
+       loc_ijk(:,:,:) = const_real_zero
+       if (ocn_select(io_O2)) then
+          loc_unitsname = 'mol C kg-1 yr-1'
+          loc_shortname = 'misc_POCremin_O2'
+          loc_longname  = 'remineraliaztion of POC by O2'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_O(io_O2,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dO2'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ijk(i,j,k) = int_diag_redox_timeslice(id,i,j,k)/int_t_timeslice/conv_sed_ocn_O(io_O2,is_POC)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       loc_ijk_OC(:,:,:) = loc_ijk(:,:,:) 
+       loc_ijk_tot(:,:,:) = loc_ijk_tot(:,:,:) + loc_ijk_OC(:,:,:)
+       ! -------------------------------------------------------- ! (2) NO3 remineralization
+       loc_ijk(:,:,:) = const_real_zero
+       if (ocn_select(io_NO3)) then
+          loc_unitsname = 'mol C kg-1 yr-1'
+          loc_shortname = 'misc_POCremin_NO3'
+          loc_longname  = 'remineraliaztion of POC by NO3'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_N(io_NO3,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dNO3'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ijk(i,j,k) = int_diag_redox_timeslice(id,i,j,k)/int_t_timeslice/conv_sed_ocn_N(io_NO3,is_POC)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       loc_ijk_NC(:,:,:) = loc_ijk(:,:,:) 
+       loc_ijk_tot(:,:,:) = loc_ijk_tot(:,:,:) + loc_ijk_NC(:,:,:)
+       ! -------------------------------------------------------- ! (3) SO4 remineralization
+       loc_ijk(:,:,:) = const_real_zero
+       if (ocn_select(io_SO4)) then
+          loc_unitsname = 'mol C kg-1 yr-1'
+          loc_shortname = 'misc_POCremin_SO4'
+          loc_longname  = 'remineraliaztion of POC by SO4'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_S(io_SO4,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dSO4'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ijk(i,j,k) = int_diag_redox_timeslice(id,i,j,k)/int_t_timeslice/conv_sed_ocn_S(io_SO4,is_POC)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       loc_ijk_SC(:,:,:)  = loc_ijk(:,:,:) 
+       loc_ijk_tot(:,:,:) = loc_ijk_tot(:,:,:) + loc_ijk_SC(:,:,:)
+       ! -------------------------------------------------------- ! (4) fractions
+       if (ocn_select(io_NO3)) then
+          loc_ijk(:,:,:) = const_real_zero
+          loc_unitsname = 'n/a'
+          loc_shortname = 'misc_POCremin_fNO3'
+          loc_longname  = 'fraction of remineraliaztion of POC by NO3'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (loc_ijk_tot(i,j,k) > const_real_nullsmall) then
+                      loc_ijk(i,j,k) = loc_ijk_NC(i,j,k)/loc_ijk_tot(i,j,k)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+       if (ocn_select(io_SO4)) then
+          loc_ijk(:,:,:) = const_real_zero
+          loc_unitsname = 'n/a'
+          loc_shortname = 'misc_POCremin_fSO4'
+          loc_longname  = 'fraction of remineraliaztion of POC by SO4'
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   if (loc_ijk_tot(i,j,k) > const_real_nullsmall) then
+                      loc_ijk(i,j,k) = loc_ijk_SC(i,j,k)/loc_ijk_tot(i,j,k)
+                   end if
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+    end If
     ! ### INSERT CODE TO SAVE ADDITIONAL 3-D DATA FIELDS ######################################################################### !
     !
     ! ############################################################################################################################ !
@@ -1659,13 +1784,17 @@ CONTAINS
     !       DEFINE LOCAL VARIABLES
     !-----------------------------------------------------------------------
     integer::i,j
-    integer::io,is,ib
+    integer::io,is,ib,id
     integer::loc_k1
     integer::l,loc_m,loc_tot_m
     INTEGER::loc_iou,loc_ntrec
-    real,DIMENSION(n_i,n_j)::loc_ij,loc_mask_surf
+    real,DIMENSION(n_i,n_j)::loc_ij,loc_ij_tot,loc_mask_surf
+    real,DIMENSION(n_i,n_j)::loc_ij_OC,loc_ij_NC,loc_ij_SC
+    real,DIMENSION(n_i,n_j)::loc_ij_ON,loc_ij_NN,loc_ij_SN
+    real,DIMENSION(n_i,n_j)::loc_ij_OP,loc_ij_NP,loc_ij_SP
     real,DIMENSION(n_sed,n_i,n_j)::loc_isij
-    CHARACTER(len=255)::loc_unitsname
+    CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
+    CHARACTER(len=31)::loc_string     !
     real::loc_tot,loc_frac,loc_standard
     real::loc_tot1,loc_frac1,loc_tot2,loc_frac2
     !-----------------------------------------------------------------------
@@ -1705,30 +1834,36 @@ CONTAINS
           DO i=1,n_i
              DO j=1,n_j
                 IF (n_k >= goldstein_k1(i,j)) THEN
-                   if (int_bio_settle_timeslice(is_POP,i,j,n_k) > const_real_nullsmall) then
+                   if ((int_bio_settle_timeslice(is_POP,i,j,n_k) > const_rns) .AND. &
+                        & (int_bio_settle_timeslice(is_POC,i,j,n_k) > const_rns)) then
                       loc_ij(i,j) = int_bio_settle_timeslice(is_POC,i,j,n_k)/int_bio_settle_timeslice(is_POP,i,j,n_k)
+                   else
+                      loc_ij(i,j) = 0.0
                    end if
                 end IF
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOCtoPOP','average POM export C/P cellular ratio', &
+          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOC2POP','average POM export C/P cellular ratio', &
                & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d('misc_sur_rPOCtoPOP',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          call sub_putvar2d('misc_sur_rPOC2POP',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
           ! C/P
           loc_unitsname = 'o/oo'
           loc_ij(:,:) = const_real_null
           DO i=1,n_i
              DO j=1,n_j
                 IF (n_k >= goldstein_k1(i,j)) THEN
-                   if (int_bio_settle_timeslice(is_POC,i,j,n_k) > const_real_nullsmall) then
+                   if ((int_bio_settle_timeslice(is_POP,i,j,n_k) > const_rns) .AND. &
+                        & (int_bio_settle_timeslice(is_POC,i,j,n_k) > const_rns)) then
                       loc_ij(i,j) = 1.0E3*int_bio_settle_timeslice(is_POP,i,j,n_k)/int_bio_settle_timeslice(is_POC,i,j,n_k)
+                   else
+                      loc_ij(i,j) = const_real_null
                    end if
                 end IF
              END DO
           END DO
-          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOPtoPOC','average POM export P/C cellular ratio', &
+          call sub_adddef_netcdf(loc_iou,3,'misc_sur_rPOP2POC','average POM export P/C cellular ratio (in units of per mil)', &
                & trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d('misc_sur_rPOPtoPOC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          call sub_putvar2d('misc_sur_rPOP2POC',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        end IF
     end if
     !-----------------------------------------------------------------------
@@ -2234,6 +2369,214 @@ CONTAINS
             & trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d('proxy_ben_ICa',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
+    !----------------------------------------------------------------
+    ! WATER-COLUMN INTEGRATED REDOX TRANSFORMATION ANALYSIS
+    !----------------------------------------------------------------
+    If (ctrl_data_save_slice_diag_geochem) then
+       ! NOTE: divide by conv_sed_ocn_x(io_y,is_POz) to convert from oxidant consumed to POC remineralized
+       !       sign switch (for consumption flux) is done by dividing by conv_sed_ocn_x(io_y,is_POz)
+       ! NOTE: POM only (and hence ocean interior)
+       ! NOTE: scale int_diag_redox_timeslice by area and integration time
+       loc_ij_OC(:,:)  = const_real_zero
+       loc_ij_NC(:,:)  = const_real_zero
+       loc_ij_SC(:,:)  = const_real_zero
+       loc_ij_ON(:,:)  = const_real_zero
+       loc_ij_NN(:,:)  = const_real_zero
+       loc_ij_SN(:,:)  = const_real_zero
+       loc_ij_OP(:,:)  = const_real_zero
+       loc_ij_NP(:,:)  = const_real_zero
+       loc_ij_SP(:,:)  = const_real_zero
+       ! -------------------------------------------------------- ! (1) oxic remineralization
+       if (ocn_select(io_O2)) then
+          loc_ij_tot(:,:) = const_real_zero
+          loc_unitsname = 'mol C+N+P m-2 yr-1'
+          loc_shortname = 'misc_int_POMremin_O2'
+          loc_longname  = 'total water-column integrated remineraliaztion of POM by O2'
+          DO i=1,n_i
+             DO j=1,n_j
+                If (goldstein_k1(i,j) <= n_k) then
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_O(io_O2,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dO2'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_OC(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_POC)
+                      loc_ij_OC(i,j) = loc_ij_OC(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                   if (sed_select(is_PON) .AND. (abs(conv_sed_ocn_O(io_O2,is_PON)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_PON_dO2'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_ON(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_PON)
+                      loc_ij_ON(i,j) = loc_ij_ON(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                   if (sed_select(is_POP) .AND. (abs(conv_sed_ocn_O(io_O2,is_POP)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POP_dO2'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_OP(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_O(io_O2,is_POP)
+                      loc_ij_OP(i,j) = loc_ij_OP(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                end if
+             end DO
+          end DO
+          loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:)
+          call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
+       end if
+       ! -------------------------------------------------------- ! (2) denitrification
+       if (ocn_select(io_NO3)) then
+          loc_unitsname = 'mol C+N+P m-2 yr-1'
+          loc_shortname = 'misc_int_POMremin_NO3' 
+          loc_longname  = 'total water-column integrated remineraliaztion of POM by NO3'
+          DO i=1,n_i
+             DO j=1,n_j
+                If (goldstein_k1(i,j) <= n_k) then
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_N(io_NO3,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dNO3'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_NC(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_POC)
+                      loc_ij_NC(i,j) = loc_ij_NC(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                   if (sed_select(is_PON) .AND. (abs(conv_sed_ocn_N(io_NO3,is_PON)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_PON_dNO3'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_NN(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_PON)
+                      loc_ij_NN(i,j) = loc_ij_NN(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                   if (sed_select(is_POP) .AND. (abs(conv_sed_ocn_N(io_NO3,is_POP)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POP_dNO3'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_NP(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_N(io_NO3,is_POP)
+                      loc_ij_NP(i,j) = loc_ij_NP(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                end if
+             end DO
+          end DO
+          loc_ij_tot(:,:) = loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:)
+          call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
+       end if
+       ! -------------------------------------------------------- ! (3) sulphate reduction
+       if (ocn_select(io_SO4)) then
+          loc_unitsname = 'mol C+N+P m-2 yr-1'
+          loc_shortname = 'misc_int_POMremin_SO4' 
+          loc_longname  = 'total water-column integrated remineraliaztion of POM by SO4'  
+          loc_ij(:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                If (goldstein_k1(i,j) <= n_k) then
+                   if (sed_select(is_POC) .AND. (abs(conv_sed_ocn_S(io_SO4,is_POC)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POC_dSO4'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_SC(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_POC)
+                      loc_ij_SC(i,j) = loc_ij_SC(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                   if (sed_select(is_PON) .AND. (abs(conv_sed_ocn_S(io_SO4,is_PON)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_PON_dSO4'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_SN(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_PON)
+                      loc_ij_SN(i,j) = loc_ij_SN(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                   if (sed_select(is_POP) .AND. (abs(conv_sed_ocn_S(io_SO4,is_POP)) > const_real_nullsmall)) then
+                      loc_string = 'reminP_POP_dSO4'
+                      id = fun_find_str_i(trim(loc_string),string_diag_redox)
+                      loc_ij_SP(i,j) = sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))/conv_sed_ocn_S(io_SO4,is_POP)
+                      loc_ij_SP(i,j) = loc_ij_SP(i,j)*phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                   end if
+                end if
+             end DO
+          end DO
+          loc_ij_tot(:,:) = loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+          call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+               & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
+       end if
+       ! -------------------------------------------------------- ! (4) totals
+       loc_unitsname = 'mol C m-2 yr-1'
+       loc_shortname = 'misc_int_POCremin_ALL'
+       loc_longname  = 'total water-column integrated remineralization of POC by all oxidants'
+       loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
+       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
+       loc_unitsname = 'mol C+N+P m-2 yr-1'
+       loc_shortname = 'misc_int_POMremin_ALL'
+       loc_longname  = 'total water-column integrated remineralization of POM by all oxidants'
+       loc_ij_tot(:,:) = &
+            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij_tot(:,:),loc_mask_surf)
+       ! -------------------------------------------------------- ! (5) percentatges -- denitrification
+       loc_unitsname = '%'
+       loc_shortname = 'misc_int_POCremin_fNO3'
+       loc_longname  = '% of total water-column POC remineralized via denitrification' 
+       loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
+       loc_ij(:,:) = const_real_zero
+       DO i=1,n_i
+          DO j=1,n_j
+             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+                loc_ij(i,j) = 100.0*loc_ij_NC(i,j)/loc_ij_tot(i,j)
+             end if
+          end DO
+       end DO
+       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+!!$       loc_unitsname = '% C+N+P'
+!!$       loc_shortname = 'misc_int_remin_pctden_POM'
+!!$       loc_longname  = '% of total water-column POM remineralized via denitrification' 
+!!$       loc_ij_tot(:,:) = &
+!!$            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+!!$            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+!!$            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+!!$       loc_ij(:,:) = const_real_zero
+!!$       DO i=1,n_i
+!!$          DO j=1,n_j
+!!$             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+!!$                loc_ij(i,j) = 100.0*(loc_ij_NC(i,j)+loc_ij_NN(i,j)+loc_ij_NP(i,j))/loc_ij_tot(i,j)
+!!$             end if
+!!$          end DO
+!!$       end DO
+!!$       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+!!$            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+!!$       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       ! -------------------------------------------------------- ! (5) percentatges -- sulphate reduction
+       loc_unitsname = '%'
+       loc_shortname = 'misc_int_POCremin_fSO4'
+       loc_longname  = '% of total water-column POC remineralized via sulphate reduction' 
+       loc_ij_tot(:,:) = loc_ij_OC(:,:) + loc_ij_NC(:,:) + loc_ij_SC(:,:)
+       loc_ij(:,:) = const_real_zero
+       DO i=1,n_i
+          DO j=1,n_j
+             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+                loc_ij(i,j) = 100.0*loc_ij_SC(i,j)/loc_ij_tot(i,j)
+             end if
+          end DO
+       end DO
+       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+!!$       loc_unitsname = '% C+N+P'
+!!$       loc_shortname = 'misc_int_remin_pctsul_POM'
+!!$       loc_longname  = '% of total water-column POM remineralized via sulphate reduction' 
+!!$       loc_ij_tot(:,:) = &
+!!$            & loc_ij_OC(:,:) + loc_ij_ON(:,:) + loc_ij_OP(:,:) + &
+!!$            & loc_ij_NC(:,:) + loc_ij_NN(:,:) + loc_ij_NP(:,:) + &
+!!$            & loc_ij_SC(:,:) + loc_ij_SN(:,:) + loc_ij_SP(:,:)
+!!$       loc_ij(:,:) = const_real_zero
+!!$       DO i=1,n_i
+!!$          DO j=1,n_j
+!!$             If (loc_ij_tot(i,j) > const_real_nullsmall) then
+!!$                loc_ij(i,j) = 100.0*(loc_ij_SC(i,j)+loc_ij_SN(i,j)+loc_ij_SP(i,j))/loc_ij_tot(i,j)
+!!$             end if
+!!$          end DO
+!!$       end DO
+!!$       call sub_adddef_netcdf(loc_iou,3,''//trim(loc_shortname), &
+!!$            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
+!!$       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+    end If
     ! ### INSERT CODE TO SAVE ADDITIONAL 2-D DATA FIELDS ######################################################################### !
     !
     ! ############################################################################################################################ !
@@ -2292,7 +2635,7 @@ CONTAINS
     integer::ib,id,ip,ic
     integer::loc_k1
     integer::loc_iou,loc_ntrec
-    CHARACTER(len=255)::loc_unitsname,loc_longname
+    CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
     real,DIMENSION(n_i,n_j)::loc_ij,loc_mask_surf,loc_mask_surf_ALL
     real::loc_tot,loc_frac,loc_standard
     real::loc_d13C,loc_d14C
@@ -2498,7 +2841,7 @@ CONTAINS
     !----------------------------------------------------------------
     !       WATER-COLUMN INTEGRATED TRACER INVENTORIES
     !----------------------------------------------------------------
-    If (ctrl_data_save_slice_diag_geochem .OR. (par_data_save_level == 10)) then
+    If (ctrl_data_save_slice_diag_geochem .OR. ctrl_data_save_slice_diag_tracer .OR. (par_data_save_level == 10)) then
        loc_unitsname = 'mol m-2'
        DO l=3,n_l_ocn
           io = conv_iselected_io(l)
@@ -2717,8 +3060,8 @@ CONTAINS
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_diag_proxy) then
        IF (opt_select(iopt_select_carbchem)) THEN
-          loc_ij(:,:) = const_real_zero
           DO ic=1,n_carb
+             loc_ij(:,:) = const_real_zero
              DO i=1,n_i
                 DO j=1,n_j
                    loc_k1 = goldstein_k1(i,j)
@@ -2733,15 +3076,28 @@ CONTAINS
                 end DO
              end DO
              SELECT CASE (ic)
-             CASE (ic_ohm_cal,ic_ohm_arg)
-                loc_unitsname = ' '
+             CASE (ic_pHsws)
+                loc_unitsname = 'pH(sws)'                
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
+                loc_unitsname = 'n/a'
+             CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+                loc_unitsname = 'n/a' 
              case default
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_sur_'//trim(string_carb(ic)), &
-                  & 'surface '//trim(string_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'Ocean surface carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_sur_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           END DO
+          ! save accumulated carbchem error occurrence array
+          loc_ij(:,:) = diag_carb_errsum(:,:,n_k)
+          loc_shortname = 'carb_errsum'
+          loc_longname  = 'Ocean surface carbonate chemistry -- '//'Summed occurrence of failure of the pH calculation.'
+          loc_unitsname = 'n/a'
+          call sub_adddef_netcdf(loc_iou,3,trim(loc_shortname),trim(loc_longname), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
        end if
     end if
     !----------------------------------------------------------------
@@ -2749,8 +3105,8 @@ CONTAINS
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_diag_proxy) then
        IF (opt_select(iopt_select_carbchem)) THEN
-          loc_ij(:,:) = const_real_zero
           DO ic=1,n_carb
+             loc_ij(:,:) = const_real_zero
              DO i=1,n_i
                 DO j=1,n_j
                    loc_k1 = goldstein_k1(i,j)
@@ -2765,13 +3121,18 @@ CONTAINS
                 end DO
              end DO
              SELECT CASE (ic)
-             CASE (ic_ohm_cal,ic_ohm_arg)
-                loc_unitsname = ' '
+             CASE (ic_pHsws)
+                loc_unitsname = 'pH(sws)'                
+             CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
+                loc_unitsname = 'n/a'
+             CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+                loc_unitsname = 'n/a' 
              case default
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_ben_'//trim(string_carb(ic)), &
-                  & 'bottom-water '//trim(string_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'Benthic carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_ben_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           END DO
        end if
@@ -3157,7 +3518,7 @@ CONTAINS
        end IF
     end if
     !----------------------------------------------------------------
-    !       save overlying ocean carbonate chemistry data
+    !       save sediment-overlying ocean carbonate chemistry data
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_carb .AND. (ctrl_data_save_slice_sur .OR. ctrl_data_save_slice_ocnsed)) then
        IF (opt_select(iopt_select_carbchem)) THEN
@@ -3183,7 +3544,8 @@ CONTAINS
                 loc_unitsname = 'mol kg-1'
              end SELECT
              call sub_adddef_netcdf(loc_iou,3,'carb_ben_'//trim(string_carb(ic)), &
-                  & 'bottom-water '//trim(string_carb(ic)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'benthic carbonate chemistry properties - '//trim(string_longname_carb(ic)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('carb_ben_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_sed_mask)
           END DO
        end if
@@ -3316,7 +3678,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     INTEGER::l,i,j,k,io,is,ip,ic,icc,loc_iou,loc_ntrec
     integer::id
-    CHARACTER(len=255)::loc_unitsname
+    CHARACTER(len=255)::loc_unitsname,loc_shortname,loc_longname
     real,DIMENSION(n_i,n_j)::loc_ij
     real,DIMENSION(n_i,n_j,n_k)::loc_ijk,loc_mask,loc_sed_mask
     real::loc_ocn_mean_S
@@ -3514,7 +3876,6 @@ CONTAINS
     !       OCEAN 'PHYSICS'
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_phys_ocn) then
-       loc_ijk(:,:,:) = const_real_zero
        DO ip=1,n_phys_ocn
           loc_ijk(:,:,:) = int_phys_ocn_timeslice(ip,:,:,:)/int_t_timeslice
           call sub_adddef_netcdf(loc_iou,4,'phys_ocn_'//trim(string_phys_ocn(ip)), &
@@ -3527,21 +3888,36 @@ CONTAINS
     !       CARBONATE CHEMISTRY FIELD
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_carb) then
-       loc_ijk(:,:,:) = const_real_zero
        DO ic=1,n_carb
           loc_ijk(:,:,:) = int_carb_timeslice(ic,:,:,:)/int_t_timeslice
+          SELECT CASE (ic)
+          CASE (ic_pHsws)
+             loc_unitsname = 'pH(sws)'                
+          CASE (ic_ohm_cal,ic_ohm_arg,ic_pH_n,ic_err)
+             loc_unitsname = 'n/a'
+          CASE (ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC)
+             loc_unitsname = 'n/a' 
+          case default
+             loc_unitsname = 'mol kg-1'
+          end SELECT
           call sub_adddef_netcdf(loc_iou,4,'carb_'//trim(string_carb(ic)), &
-               & 'carbonate chemistry properties - '//trim(string_carb(ic)),' ',const_real_zero,const_real_zero)
+               & 'carbonate chemistry -- '//trim(string_longname_carb(ic)), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('carb_'//trim(string_carb(ic)),loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        END DO
+       ! save accumulated carbchem error occurrence array
+       loc_ijk(:,:,:) = diag_carb_errsum(:,:,:)
+       loc_shortname = 'carb_errsum'
+       loc_longname  = 'carbonate chemistry -- '//'Summed occurrence of failure of the pH calculation.'
+       call sub_adddef_netcdf(loc_iou,4,trim(loc_shortname),trim(loc_longname),' ',const_real_zero,const_real_zero)
+       call sub_putvar3d_g(trim(loc_shortname),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end if
     !----------------------------------------------------------------
     !       CARBONATE CHEMISTRY CONSTANTS (YAWN)
     !----------------------------------------------------------------
     If (ctrl_data_save_slice_carbconst) then
        DO icc=1,n_carbconst
-          loc_ijk(:,:,:) = const_real_zero
           loc_ijk(:,:,:) = int_carbconst_timeslice(icc,:,:,:)/int_t_timeslice
           call sub_adddef_netcdf(loc_iou,4, 'carb_const_'//trim(string_carbconst(icc)), &
                & 'carbonate chemistry dissociation constants - '//trim(string_carbconst(icc)),' ',const_real_zero,const_real_zero)
@@ -4009,595 +4385,6 @@ CONTAINS
     endif
     !-----------------------------------------------------------------------
   END SUBROUTINE sub_save_netcdf_ocn_col_extra
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! *** save run-time data ***
-  SUBROUTINE sub_save_netcdf_runtime(dum_t)
-    ! dummy arguments
-    REAL,INTENT(in)::dum_t
-    ! local variables
-    INTEGER :: l,io,ia,is,ic
-    REAL :: loc_t
-    real :: loc_opsi_scale
-    real :: loc_ocn_tot_M, loc_ocn_tot_A
-    real :: loc_sig
-    real :: loc_tot, loc_frac, loc_standard
-    real :: loc_d13C, loc_d14C
-    real :: loc_c0, loc_c1, loc_cr1e15, loc_cr1e18
-    integer        :: loc_ntrec, loc_iou, loc_id_time, loc_lid
-    character(120) :: loc_title, loc_timunit
-
-    loc_c0 = 0.
-    loc_c1 = 1.
-    loc_cr1e15 = 1.e-15
-    loc_cr1e18 = 1.e-18
-
-    ! *** set-up local constants ***
-    ! calculate local opsi conversion constant
-    loc_opsi_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6
-    ! translate internal (BioGeM) model time to user-defined timescale
-    IF (ctrl_misc_t_BP) THEN
-       loc_t = dum_t + par_misc_t_end
-    ELSE
-       loc_t = par_misc_t_end - dum_t
-    END IF
-    ! total ocean mass
-    loc_ocn_tot_M = sum(phys_ocn(ipo_M,:,:,:))
-    ! ocean surface area
-    loc_ocn_tot_A = sum(phys_ocn(ipo_A,:,:,n_k))
-
-    !-----------------------------------------------------------------------
-    !     open file and get latest record number
-    !-----------------------------------------------------------------------
-
-    call sub_opennext (string_nctsint, dum_t, 0, loc_ntrec, loc_iou)
-
-    if ( loc_ntrec .le. 1 ) then
-
-       !-----------------------------------------------------------------------
-       !       start definitions
-       !-----------------------------------------------------------------------
-       call sub_redef (loc_iou)
-
-       !-----------------------------------------------------------------------
-       !       set global attributes
-       !-----------------------------------------------------------------------
-       loc_title = 'Time Averaged Integrals'
-       write (loc_timunit,'(a,F12.2)') 'equal_month_year since 0000-01-01 00:00:00'
-       call sub_putglobal (loc_iou, string_nctsi, loc_title, string_ncrunid, loc_timunit)
-
-       !-----------------------------------------------------------------------
-       !       define dimensions
-       !-----------------------------------------------------------------------
-       call sub_defdim ('time', loc_iou, 0, loc_id_time)
-       loc_lid = loc_id_time
-
-       !-----------------------------------------------------------------------
-       !       define 1d data (t)
-       !-----------------------------------------------------------------------
-       call sub_defvar_scalar('time',loc_iou,loc_lid,loc_c0,loc_c0,'T','D','Year','time',trim(loc_timunit))
-       call sub_defvar_scalar('year',loc_iou,loc_lid,loc_c0,loc_c0,' ','F','year',' ',' ')
-       call sub_defvar_scalar('month',loc_iou,loc_lid,loc_c0,loc_c0,' ','F','month',' ',' ')
-       call sub_defvar_scalar('day',loc_iou,loc_lid,loc_c0,loc_c0,' ','F','day',' ',' ')
-       call sub_defvar_scalar('hour',loc_iou,loc_lid,loc_c0,loc_c0,' ','F','hour',' ',' ')
-       call sub_defvar_scalar('minute',loc_iou,loc_lid,loc_c0,loc_c0,' ','F','minute',' ',' ')
-       call sub_defvar_scalar('second',loc_iou,loc_lid,loc_c0,loc_c0,' ','F','second',' ',' ')
-
-       !-----------------------------------------------------------------------
-       !       end definitions
-       !-----------------------------------------------------------------------
-       call sub_enddef (loc_iou)
-       if (loc_ntrec .eq. 0) loc_ntrec = 1
-
-    endif
-    !-----------------------------------------------------------------------
-    !     write 1d data (t)
-    !-----------------------------------------------------------------------
-    call sub_putvars ('time', loc_iou, loc_ntrec, dum_t, loc_c1, loc_c0)
-
-    ! ------------------------------------------------------------------
-    !                  <sig_ocn_*>
-    ! save ocean tracer data
-    ! ------------------------------------------------------------------
-    !
-    ! NOTE: write data both as the total inventory, and as the
-    !       equivalent mean concentration
-    IF (ctrl_data_save_sig_ocn) THEN
-       DO l=1,n_l_ocn
-          io = conv_iselected_io(l)
-          SELECT CASE (ocn_type(io))
-          CASE (0,1)
-             loc_sig = int_ocn_sig(io)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_tot', &
-                  & trim(string_ocn_tlname(l))//'_tot', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_tot', loc_iou, loc_ntrec, &
-                  & loc_ocn_tot_M*loc_sig*loc_cr1e15, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_conc', &
-                  & trim(string_ocn_tlname(l))//'_conc', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          case (n_itype_min:n_itype_max)
-             loc_tot  = int_ocn_sig(ocn_dep(io))/int_t_sig
-             loc_frac = int_ocn_sig(io)/int_t_sig
-             loc_standard = const_standards(ocn_type(io))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_tot', &
-                  & trim(string_ocn_tlname(l))//'_tot', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_tot', loc_iou, loc_ntrec, &
-                  & loc_ocn_tot_M*loc_sig*loc_cr1e18, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_conc', &
-                  & trim(string_ocn_tlname(l))//'_conc', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          END SELECT
-       END DO
-    END IF
-
-    ! ------------------------------------------------------------------
-    !                  <sig_ocn_sur_*>
-    ! save ocean  surface tracer data
-    ! ------------------------------------------------------------------
-
-    IF (ctrl_data_save_sig_ocn_sur) THEN
-       DO l=1,n_l_ocn
-          io = conv_iselected_io(l)
-          SELECT CASE (ocn_type(io))
-          CASE (0,1)
-             loc_sig = int_ocn_sur_sig(io)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_ocn_sur_tot', &
-                  & trim(string_ocn_tlname(l))//'_ocn_sur_tot', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_ocn_sur_tot', loc_iou, loc_ntrec, &
-                  & SUM(phys_ocn(ipo_M,:,:,n_k))*loc_sig*loc_cr1e15, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_onc_sur_conc', &
-                  & trim(string_ocn_tlname(l))//'_onc_sur_conc', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_onc_sur_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          case (n_itype_min:n_itype_max)
-             loc_tot  = int_ocn_sur_sig(ocn_dep(io))/int_t_sig
-             loc_frac = int_ocn_sur_sig(io)/int_t_sig
-             loc_standard = const_standards(ocn_type(io))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_ocn_sur_tot', &
-                  & trim(string_ocn_tlname(l))//'_ocn_sur_tot', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_ocn_sur_tot', loc_iou, loc_ntrec, &
-                  & SUM(phys_ocn(ipo_M,:,:,n_k))*loc_sig*loc_cr1e15, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_ocn_tname(l))//'_ocn_sur_conc', &
-                  & trim(string_ocn_tlname(l))//'_ocn_sur_conc', string_ocn_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_ocn_tname(l))//'_ocn_sur_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          END SELECT
-       END DO
-    end if
-
-    ! ------------------------------------------------------------------
-    !                  <sig_carb_sur_*>
-    ! save ocean surface carbonate chemistry data
-    ! ------------------------------------------------------------------
-
-    IF (ctrl_data_save_sig_carb_sur) THEN
-       DO ic=1,n_carb
-          loc_sig = int_carb_sur_sig(ic)/int_t_sig
-          SELECT CASE (ic)
-          CASE (ic_H)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(ic))//'_carb_sur_tot', &
-                  & trim(string_sed_tlname(ic))//'_carb_sur_tot', string_sed_unit(ic), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(ic))//'_carb_sur_tot', loc_iou, loc_ntrec, &
-                  & -log10(loc_sig)*loc_cr1e15, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(ic))//'_carb_sur_conc', &
-                  & trim(string_sed_tlname(ic))//'_carb_sur_conc', string_sed_unit(ic), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(ic))//'_carb_sur_conc', loc_iou,loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          case default
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(ic))//'_carb_sur_conc', &
-                  & trim(string_sed_tlname(ic))//'_carb_sur_conc', string_sed_unit(ic), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(ic))//'_carb_sur_conc', loc_iou,loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          end SELECT
-       END DO
-    end if
-
-    ! ------------------------------------------------------------------
-    !                  <sig_ocnatm_*>
-    ! save atmosphere tracer data
-    ! ------------------------------------------------------------------
-
-    ! NOTE: write data both as the total inventory, and as the equivalent
-    !       mean partial pressure simple conversion factor from atm to mol is used
-    IF (ctrl_data_save_sig_ocnatm) THEN
-       DO l=3,n_l_atm
-          ia = conv_iselected_ia(l)
-          SELECT CASE (atm_type(ia))
-          CASE (1)
-             loc_sig = int_ocnatm_sig(ia)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_atm_tname(l))//'_ocnatm_tot', &
-                  & trim(string_atm_tlname(l))//'_ocnatm_tot', string_atm_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_atm_tname(l))//'_ocnatm_tot', loc_iou, loc_ntrec, &
-                  & conv_atm_mol*loc_sig*loc_cr1e15, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_atm_tname(l))//'_ocnatm_conc', &
-                  & trim(string_atm_tlname(l))//'_ocnatm_conc', string_atm_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_atm_tname(l))//'_ocnatm_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          case (n_itype_min:n_itype_max)
-             loc_tot  = int_ocnatm_sig(atm_dep(ia))/int_t_sig
-             loc_frac = int_ocnatm_sig(ia)/int_t_sig
-             loc_standard = const_standards(atm_type(ia))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_atm_tname(l))//'_ocnatm_tot', &
-                  & trim(string_atm_tlname(l))//'_ocnatm_tot', string_atm_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_atm_tname(l))//'_ocnatm_tot', loc_iou, loc_ntrec, &
-                  & conv_atm_mol*loc_frac, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_atm_tname(l))//'_ocnatm_conc', &
-                  & trim(string_atm_tlname(l))//'_ocnatm_conc', string_atm_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_atm_tname(l))//'_ocnatm_conc', loc_iou, &
-                  & loc_ntrec, loc_sig, loc_c1, loc_c0)
-
-          end SELECT
-       END DO
-    END IF
-
-    ! ------------------------------------------------------------------
-    !                  <sig_fexport_*>
-    ! save export flux data
-    ! ------------------------------------------------------------------
-
-    ! NOTE: write data both as mole and mass flux
-    IF (ctrl_data_save_sig_fexport) THEN
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio, &
-               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged)
-             loc_sig = int_fexport_sig(is)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fexport_tot', &
-                  & trim(string_sed_tlname(l))//'_fexport_tot', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fexport_tot', loc_iou, loc_ntrec, &
-                  & loc_sig/loc_ocn_tot_A, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fexport_conc', &
-                  & trim(string_sed_tlname(l))//'_fexport_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fexport_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          CASE (par_sed_type_age)
-             if (int_fexport_sig(sed_dep(is)) > const_real_nullsmall) then
-                loc_sig = int_fexport_sig(is)/int_t_sig
-             else
-                loc_sig = 0.0
-             endif
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fexport_conc', &
-                  & trim(string_sed_tlname(l))//'_fexport_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fexport_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          case (n_itype_min:n_itype_max)
-             loc_tot  = int_fexport_sig(sed_dep(is))/int_t_sig
-             loc_frac = int_fexport_sig(is)/int_t_sig
-             loc_standard = const_standards(sed_type(is))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fexport_tot', &
-                  & trim(string_sed_tlname(l))//'_fexport_tot', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fexport_tot', loc_iou, loc_ntrec, &
-                  & loc_frac, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fexport_conc', &
-                  & trim(string_sed_tlname(l))//'_fexport_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fexport_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          end SELECT
-       END DO
-    END IF
-
-    ! ------------------------------------------------------------------
-    !                  <sig_focnatm_*>
-    ! save ocean-atmopshere flux data
-    ! ------------------------------------------------------------------
-
-    ! NOTE: write data both as the total flux, and as the equivalent mean
-    !       flux density
-    IF (ctrl_data_save_sig_focnatm) THEN
-       DO l=3,n_l_atm
-          ia = conv_iselected_ia(l)
-          SELECT CASE (atm_type(ia))
-          CASE (1)
-             loc_sig = int_focnatm_sig(ia)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_atm_tname(l))//'_focnatm_tot', &
-                  & trim(string_atm_tlname(l))//'_focnatm_tot', string_atm_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_atm_tname(l))//'_focnatm_tot', loc_iou, loc_ntrec, &
-                  & loc_sig*loc_cr1e15/loc_ocn_tot_A, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_atm_tname(l))//'_focnatm_conc', &
-                  & trim(string_atm_tlname(l))//'_focnatm_conc', string_atm_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_atm_tname(l))//'_focnatm_conc', loc_iou, loc_ntrec, &
-                  & loc_sig*loc_cr1e15, loc_c1, loc_c0)
-          end SELECT
-       END DO
-    END IF
-
-    ! ------------------------------------------------------------------
-    !                  <sig_focnsed_*>
-    ! save ocean-sediment flux data
-    ! ------------------------------------------------------------------
-
-    ! NOTE: write data both as the total flux, and as the equivalent mean
-    !       flux density the surface ocean area is used as a proxy for the
-    !       ocean bottom area
-    IF (ctrl_data_save_sig_focnsed) THEN
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio, &
-               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged)
-             loc_sig = int_focnsed_sig(is)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_focnsed_tot', &
-                  & trim(string_sed_tlname(l))//'_focnsed_tot', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_focnsed_tot', loc_iou, loc_ntrec, &
-                  & loc_sig/loc_ocn_tot_A, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_focnsed_conc', &
-                  & trim(string_sed_tlname(l))//'_focnsed_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_focnsed_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          CASE (par_sed_type_age)
-             if (int_focnsed_sig(sed_dep(is)) > const_real_nullsmall) then
-                loc_sig = int_focnsed_sig(is)/int_t_sig
-             else
-                loc_sig = 0.0
-             end if
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_focnsed_conc', &
-                  & trim(string_sed_tlname(l))//'_focnsed_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_focnsed_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          case (n_itype_min:n_itype_max)
-             loc_tot  = int_focnsed_sig(sed_dep(is))/int_t_sig
-             loc_frac = int_focnsed_sig(is)/int_t_sig
-             loc_standard = const_standards(sed_type(is))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_focnsed_tot', &
-                  & trim(string_sed_tlname(l))//'_focnsed_tot', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_focnsed_tot', loc_iou, loc_ntrec, &
-                  & loc_frac, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_focnsed_conc', &
-                  & trim(string_sed_tlname(l))//'_focnsed_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_focnsed_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          end SELECT
-       END DO
-    end IF
-
-    ! ------------------------------------------------------------------
-    !                  <sig_fsedocn_*>
-    ! save sediment->ocean flux data
-    ! ------------------------------------------------------------------
-
-    ! NOTE: write data both as the total flux, and as the equivalent mean
-    !       flux density the surface ocean area is used as a proxy for the
-    !       ocean bottom area
-    IF (ctrl_data_save_sig_fsedocn) THEN
-       DO l=1,n_l_ocn
-          io = conv_iselected_io(l)
-          SELECT CASE (ocn_type(io))
-          CASE (1)
-             loc_sig = int_fsedocn_sig(io)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fsedocn_tot', &
-                  & trim(string_sed_tlname(l))//'_fsedocn_tot', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fsedocn_tot', loc_iou, loc_ntrec, &
-                  & loc_sig/loc_ocn_tot_A, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fsedocn_conc', &
-                  & trim(string_sed_tlname(l))//'_fsedocn_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fsedocn_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          case (n_itype_min:n_itype_max)
-             loc_tot  = int_fsedocn_sig(ocn_dep(io))/int_t_sig
-             loc_frac = int_fsedocn_sig(io)/int_t_sig
-             loc_standard = const_standards(ocn_type(io))
-             loc_sig = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fsedocn_tot', &
-                  & trim(string_sed_tlname(l))//'_fsedocn_tot', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fsedocn_tot', loc_iou, loc_ntrec, &
-                  & loc_frac, loc_c1, loc_c0)
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_fsedocn_conc', &
-                  & trim(string_sed_tlname(l))//'_fsedocn_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_fsedocn_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-
-          end SELECT
-       END DO
-    END IF
-
-    ! ------------------------------------------------------------------
-    !                  <sig_ocnsed_*>
-    ! save sediment (core-top) composition data
-    ! ------------------------------------------------------------------
-
-    ! NOTE: the data placed on the sediment composition interface array
-    !       has already had the necessary type conversions made
-    !       (i.e., isotopes in per mill, solid tracers as mass (or volume) fraction, etc)
-    IF (ctrl_data_save_sig_ocnsed) THEN
-       DO l=1,n_l_sed
-          is = conv_iselected_is(l)
-          SELECT CASE (sed_type(is))
-          CASE (par_sed_type_bio,par_sed_type_abio, &
-               & par_sed_type_POM,par_sed_type_CaCO3,par_sed_type_opal,par_sed_type_det, &
-               & par_sed_type_scavenged)
-             loc_sig = int_ocnsed_sig(is)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_ocnsed_conc', &
-                  & trim(string_sed_tlname(l))//'_ocnsed_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_ocnsed_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          CASE (par_sed_type_age,n_itype_min:n_itype_max)
-             loc_sig = int_ocnsed_sig(is)/int_t_sig
-             call sub_adddef_netcdf (loc_iou, 1, trim(string_sed_tname(l))//'_ocnsed_conc', &
-                  & trim(string_sed_tlname(l))//'_ocnsed_conc', string_sed_unit(l), loc_c1, loc_c0)
-             call sub_putvars ( trim(string_sed_tname(l))//'_ocnsed_conc', loc_iou, loc_ntrec, &
-                  & loc_sig, loc_c1, loc_c0)
-          end SELECT
-       END DO
-    END IF
-
-    ! ------------------------------------------------------------------
-    !                  <sig_misc_*>
-    ! save miscellaneous data (if requested)
-    ! ------------------------------------------------------------------
-
-    IF (ctrl_data_save_sig_misc) THEN
-
-       call sub_adddef_netcdf (loc_iou, 1, 'THC_min', 'min of thermohaline circulation', 'Sv', loc_c1, loc_c0)
-       call sub_putvars ( 'THC_min', loc_iou, loc_ntrec, &
-            & loc_opsi_scale*int_misc_opsia_min_sig/int_t_sig, loc_c1, loc_c0)
-       call sub_adddef_netcdf (loc_iou, 1, 'THC_max', 'max of thermohaline circulation', 'Sv', loc_c1, loc_c0)
-       call sub_putvars ( 'THC_max', loc_iou, loc_ntrec, &
-            & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig, loc_c1, loc_c0)
-
-       ! atmospheric CO2 D14C
-       IF (atm_select(ia_pCO2_14C)) THEN
-          loc_tot  = int_ocnatm_sig(atm_dep(ia_pCO2))/int_t_sig
-          loc_frac = int_ocnatm_sig(ia_pCO2_13C)/int_t_sig
-          loc_standard = const_standards(atm_type(ia_pCO2_13C))
-          loc_d13C = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-          loc_frac = int_ocnatm_sig(ia_pCO2_14C)/int_t_sig
-          loc_standard = const_standards(atm_type(ia_pCO2_14C))
-          loc_d14C = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-          loc_sig = fun_convert_delta14CtoD14C(loc_d13C,loc_d14C)
-          call sub_adddef_netcdf (loc_iou, 1, 'pCO2_14C_atm', 'pCO2_14C_atm', '1', loc_c1, loc_c0)
-          call sub_putvars ( 'pCO2_14C_atm', loc_iou, loc_ntrec, &
-               & loc_sig, loc_c1, loc_c0)
-       end IF
-       IF (ctrl_data_save_sig_carb_sur) THEN
-          call sub_adddef_netcdf (loc_iou, 1, 'int_carb_sur', 'int_carb_sur', '1', loc_c1, loc_c0)
-          call sub_putvars ( 'int_carb_sur', loc_iou, loc_ntrec, &
-               & -log10(int_carb_sur_sig(ic_H)/int_t_sig), loc_c1, loc_c0)
-       end IF
-    end if
-
-    call sub_closefile (loc_iou)
-
-  END SUBROUTINE sub_save_netcdf_runtime
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! WRITE RUN-TIME DIAGNOSTICS
-  SUBROUTINE sub_save_netcdf_tsi(dum_ntrec, dum_yr, dum_ocn_tot_M, dum_ocn_tot_A, &
-       & dum_ocnatm_tot_A, dum_opsi_scale, dum_opsia, dum_sfcatm1)
-    ! dummy arguments
-    REAL,    INTENT(in)::dum_yr
-    REAL,    INTENT(in)::dum_ocn_tot_M
-    REAL,    INTENT(in)::dum_ocn_tot_A
-    REAL,    INTENT(in)::dum_ocnatm_tot_A
-    REAL,    INTENT(in)::dum_opsi_scale
-    INTEGER,INTENT(OUT)::dum_ntrec
-    REAL,DIMENSION(0:n_j,0:n_k),INTENT(in)::dum_opsia
-    REAL,DIMENSION(0:n_atm,n_i,n_j),INTENT(in)::dum_sfcatm1
-    ! local variables
-    real           :: loc_tot, loc_frac, loc_standard, loc_tmp
-    logical        :: loc_defined
-    character(255) :: loc_title, loc_timunit
-    integer        :: loc_iou, loc_id_time, loc_lid
-    real           :: loc_c0, loc_c1, loc_c100
-
-    loc_c0 = 0.
-    loc_c1 = 1.
-    loc_c100 = 100.
-
-    loc_tot  = SUM(phys_ocnatm(ipoa_A,:,:)*dum_sfcatm1(ia_pCO2,:,:))/dum_ocnatm_tot_A
-    loc_frac = SUM(phys_ocnatm(ipoa_A,:,:)*dum_sfcatm1(ia_pCO2_13C,:,:))/dum_ocnatm_tot_A
-    loc_standard = const_standards(atm_type(ia_pCO2_13C))
-    if (loc_frac < const_real_nullsmall) then
-       loc_frac = fun_calc_isotope_fraction(0.0,loc_standard)*loc_tot
-    end if
-    !-----------------------------------------------------------------------
-    !     open file and get latest record number
-    !-----------------------------------------------------------------------
-    loc_defined = .true.
-    if (dum_yr .eq. 1) then
-       loc_defined = .false.
-       dum_ntrec = 0
-    end if
-    call sub_opennext (string_nctsi, dum_yr, 0, dum_ntrec, loc_iou)
-
-    if ( dum_ntrec .eq. 1 ) then
-
-       !-----------------------------------------------------------------------
-       !       start definitions
-       !-----------------------------------------------------------------------
-       call sub_redef (loc_iou)
-
-       !-----------------------------------------------------------------------
-       !       set global attributes
-       !-----------------------------------------------------------------------
-       loc_title = 'Run-time diagnostics'
-       write (loc_timunit,'(a,F12.2)') 'equal_month_year since 0000-01-01 00:00:00'
-       call sub_putglobal (loc_iou, string_nctsi, loc_title, string_ncrunid, loc_timunit)
-
-       !-----------------------------------------------------------------------
-       !       define dimensions
-       !-----------------------------------------------------------------------
-       call sub_defdim ('time', loc_iou, 0, loc_id_time)
-       loc_lid = loc_id_time
-
-       !-----------------------------------------------------------------------
-       !       define 1d data (t)
-       !-----------------------------------------------------------------------
-       call sub_defvar_scalar('time',loc_iou,loc_lid,loc_c0,loc_c0,'T','D','Year','time',trim(loc_timunit))
-       call sub_defvar_scalar('pCO2',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','Atmospheric pCO2',' ','uatm')
-       call sub_defvar_scalar('d13CO2',loc_iou,loc_lid,-loc_c100,loc_c100,' ','F','Atmospheric c13C',' ','o/oo')
-       call sub_defvar_scalar('AMO',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','Atlantic meridional overturning',' ','Sv')
-       call sub_defvar_scalar('sea_ice_cover',loc_iou,loc_lid,-loc_c1,loc_c100,' ','F','Global sea ice cover',' ','%')
-       call sub_defvar_scalar('_surT',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','surface temperature',' ','degrees C')
-       call sub_defvar_scalar('_surS',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','surface salinity',' ','PSU')
-       call sub_defvar_scalar('dic',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','Global DIC',' ','umol kg-1')
-       call sub_defvar_scalar('alk',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','Global ALK',' ','umol kg-1')
-       call sub_defvar_scalar('_surWc',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','surface saturation (calcite)',' ','n/a')
-       call sub_defvar_scalar('_surWa',loc_iou,loc_lid,loc_c0,loc_c100,' ','F','surface saturation (aragonite)',' ','n/a')
-       !-----------------------------------------------------------------------
-       !       end definitions
-       !-----------------------------------------------------------------------
-       call sub_enddef (loc_iou)
-       if (dum_ntrec .eq. 0) dum_ntrec = 1
-
-    endif
-
-    !-----------------------------------------------------------------------
-    !     write 1d data (t)
-    !-----------------------------------------------------------------------
-    call sub_putvars ('time', loc_iou, dum_ntrec, dum_yr, loc_c1, loc_c0)
-    loc_tmp = conv_mol_umol*SUM(phys_ocnatm(ipoa_A,:,:)*dum_sfcatm1(ia_pCO2,:,:))/dum_ocnatm_tot_A
-    call sub_putvars ('pCO2', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-    call sub_putvars ('d13CO2', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = dum_opsi_scale*maxval(dum_opsia(:,:))
-    call sub_putvars ('AMO', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = 100.0*(loc_c1/SUM(phys_ocn(ipo_A,:,:,n_k)))* &
-         &SUM(phys_ocn(ipo_A,:,:,n_k)*phys_ocnatm(ipoa_seaice,:,:))
-    call sub_putvars ('sea_ice_cover', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = SUM((loc_c1 - phys_ocnatm(ipoa_seaice,:,:))* &
-         &phys_ocn(ipo_A,:,:,n_k)*ocn(io_T,:,:,n_k))/dum_ocn_tot_A - const_zeroC
-    call sub_putvars ('_surT', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = SUM((loc_c1 - phys_ocnatm(ipoa_seaice,:,:))* &
-         &phys_ocn(ipo_A,:,:,n_k)*ocn(io_S,:,:,n_k))/dum_ocn_tot_A
-    call sub_putvars ('_surS', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = conv_mol_umol*SUM(phys_ocn(ipo_M,:,:,:)*ocn(io_DIC,:,:,:))/dum_ocn_tot_M
-    call sub_putvars ('DIC', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = conv_mol_umol*SUM(phys_ocn(ipo_M,:,:,:)*ocn(io_ALK,:,:,:))/dum_ocn_tot_M
-    call sub_putvars ('ALK', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = SUM((loc_c1 - phys_ocnatm(ipoa_seaice,:,:))* &
-         &phys_ocn(ipo_A,:,:,n_k)*carb(ic_ohm_cal,:,:,n_k))/dum_ocn_tot_A
-    call sub_putvars ('_surWc', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-    loc_tmp = SUM((loc_c1 - phys_ocnatm(ipoa_seaice,:,:))* &
-         &phys_ocn(ipo_A,:,:,n_k)*carb(ic_ohm_arg,:,:,n_k))/dum_ocn_tot_A
-    call sub_putvars ('_surWa', loc_iou, dum_ntrec, loc_tmp, loc_c1, loc_c0)
-
-    !-----------------------------------------------------------------------
-    !     close the file
-    !-----------------------------------------------------------------------
-    call sub_closefile (loc_iou)
-
-  END SUBROUTINE sub_save_netcdf_tsi
   ! ****************************************************************************************************************************** !
 
 

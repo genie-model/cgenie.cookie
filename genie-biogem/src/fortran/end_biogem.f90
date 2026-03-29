@@ -25,11 +25,6 @@ SUBROUTINE end_biogem( &
      PRINT*,' '
   END IF
 
-  IF (ctrl_debug_lvl2) PRINT*,'saving netcdf record numbers',ncout2d_ntrec,ncout3d_ntrec
-  OPEN(unit=out,status='replace',file=TRIM(par_outdir_name)//'netcdf_record_numbers',form='formatted',action='write')
-  WRITE(unit=out,fmt='(i6)') ncout2d_ntrec,ncout3d_ntrec                             
-  close(unit=out)
-
   ! ---------------------------------------------------------- !
   !  DEALLOCATE ARRAYS
   !- --------------------------------------------------------- !

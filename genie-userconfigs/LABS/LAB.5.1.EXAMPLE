@@ -1,0 +1,70 @@
+# **********************************************************************
+# adapted from:	cookie.C.p_worjh2.rCARB.SPIN, ch06.CO2emissions
+# base-config: 	cookie.C.p_worjh2.rCARB
+# **********************************************************************
+#
+# *** CLIMATE **********************************************************
+#
+# SPECIFY WHETHER RADIATIVE FORCING IS DERIVED FROM ATMOSPHERIC CO2	
+# NOTE: 'y' requires that CO2 is being calculated in the first place ...
+#       'n' can be used for a configuration either with or without explicitly calculated atmopsheric CO2
+# e.g., ea_36=y -> raditive forcing is set by the calculated value of atmopsheric CO2
+ea_36=y
+#
+# *** BIOLOGICAL NEW PRODUCTION ****************************************
+#
+# SPECIFY THE BIOLOGICAL EXPORT SCHEME
+# e.g., bg_par_bio_prodopt='NONE' -> no biologial export scheme (or ECOGEM will be used)
+bg_par_bio_prodopt='NONE'
+#
+# *** DATA SAVING ******************************************************
+#
+# (refer to Chapter: 'cookie model output')
+# SPECIFY THE SCOPE OF DATA SAVING
+# e.g., bg_par_data_save_level=10 -> ensure ocean acidification relevant data is saved
+bg_par_data_save_level=10
+# SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
+# e.g., bg_par_data_save_sig_timeinterval=1.0 -> save time-series data every 1.0 year
+# NOTE: set bg_par_data_save_sig_timeinterval=0.0 
+#       in order to employ a file of save years to determine when time-series data is saved
+bg_par_data_save_sig_timeinterval=1.0
+# SPECIFY THE INTERVAL AT WHICH TIME-SLICE (SPATIAL) DATA IS SAVED
+# e.g., bg_par_data_save_slice_timeinterval=10.0 -> save time-slice data every 10.0 years
+# NOTE: set bg_par_data_save_slice_timeinterval=0.0 
+#       in order to employ a file of save years to determine when time-slice data is saved
+# NOTE: additionally set bg_par_infile_slice_name='save_timeslice_NONE.dat'
+#       in order to force time-slice save at run end only
+bg_par_data_save_slice_timeinterval=10.0
+# SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
+# e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
+bg_ctrl_ncout_expid_name=.false.
+#
+# *** FORCINGS *********************************************************
+#
+# SPEFICY ANY FORCINGS OF OCEAN/ATMOSPHERE/SEDIMENTS
+# specify a flux of CO2 to atmosphere (an assign it an isotopic composition)
+bg_par_forcing_name="pyyyyz.FpCO2_Fp13CO2"
+# SCALE THE FORCING 
+# NOTE: bg_par_atm_force_scale_val_3 -> scales the CO2 flux to the atmosphere set in the forcing (biogem_force_flux_atm_pCO2_sig.dat)
+#       to make the forcing flux correspond to PgC yr-1, set: bg_par_atm_force_scale_val_3=8.3333e+013
+#       set to zero for no emissions
+# NOTE: bg_par_atm_force_scale_val_4 -> scales the carbon isotopic composition of CO2 emissions set in the forcing (biogem_force_flux_atm_pCO2_13C_sig.dat)
+#       e.g,. bg_par_atm_force_scale_val_4=-27 would be a reasonable mean fossil fuel carbon value
+# NOTE: bg_par_atm_force_scale_time_3 -> scales the time intervales specified in the forcing (biogem_force_flux_atm_pCO2_sig.dat)
+#       e.g., bg_par_atm_force_scale_time_3=10.0 would create an emissions  pulse lasting 10 rather than 1 year
+## NOTE: it is not necessary to scale bg_par_atm_force_scale_time_4 ... this is included for completeness
+bg_par_atm_force_scale_val_3=0.0
+bg_par_atm_force_scale_val_4=0.0
+bg_par_atm_force_scale_time_3=1.0
+bg_par_atm_force_scale_time_4=1.0
+#
+# *** MISC *************************************************************
+#
+# SPECIFY THAT THE 'RED' NUMERICAL TRACER IS USED TO CALCULATE OCEAN VENTILLATION AGE
+# NOTE: the 'red' numerical tracer must be selected in the base-config
+bg_ctrl_force_ocn_age1=.true.
+#
+# **********************************************************************
+# *** END **************************************************************
+# **********************************************************************
+

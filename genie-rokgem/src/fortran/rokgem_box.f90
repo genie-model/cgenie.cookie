@@ -166,6 +166,7 @@ CONTAINS
        ! each inland grid point (ocean is denoted by 0s)
        if (debug_init > 2) PRINT*, &
             & 'saving lons. and lats. of costal cells to & runoff_drainto_long.dat and runoff_drainto_latt.dat files'
+       IF (ctrl_save_data) then
        ! NOTE: from gem_util
        CALL sub_save_data_ij( &
             & TRIM(par_outdir_name)//'runoff_drainto_long.dat',n_i,n_j,REAL(dum_drainto_1(:,:,1)) &
@@ -174,6 +175,7 @@ CONTAINS
        CALL sub_save_data_ij( &
             & TRIM(par_outdir_name)//'runoff_drainto_latt.dat',n_i,n_j,REAL(dum_drainto_1(:,:,2)) &
             & )
+       end if
 
     ENDIF
 
@@ -292,8 +294,10 @@ CONTAINS
 
     ! save output to 'runoff_coast_/routing_scheme/.dat'
     if (debug_init > 2) PRINT*,'saving map of coastal drainage to runoff_coast_'//fun_conv_num_char_n(1,routing_scheme)//'.dat'
+    IF (ctrl_save_data) then
     CALL sub_save_data_ij(TRIM(par_outdir_name)//'runoff_coast_'//      &
          &  fun_conv_num_char_n(1,routing_scheme)//'.dat',n_i,n_j,dum_coast(:,:))       ! from gem_util
+    end if
 
   END SUBROUTINE sub_drainage
 
@@ -1402,65 +1406,70 @@ CONTAINS
     END DO
     ! convert from Mol/yr to Mol/sec and put it into passing array 
     dum_sfxrok(:,:,:) = loc_force_flux_weather_o_ocean(:,:,:)/conv_yr_s
+    
+    ! Output
+    ! NOTE: set no output by default
+    IF (ctrl_save_data) then
 
-    ! Output     
+       IF (tstep_count.eq.output_tsteps_0d(output_counter_0d)) THEN
 
-    IF (tstep_count.eq.output_tsteps_0d(output_counter_0d)) THEN
+          outputs = (/loc_avSLT,loc_maxSLT,loc_minSLT,loc_R*conv_yr_s,loc_maxR*conv_yr_s,loc_minR*conv_yr_s, &
+               & loc_avP,loc_maxP,loc_minP,loc_CO2,loc_maxCO2,loc_minCO2, &
+               & loc_weather_ratio_CaCO3,loc_weather_ratio_CaSiO3,adj_weather_CaCO3/1.0E12,adj_weather_CaSiO3/1.0E12, &
+               & loc_force_flux_weather_a(ia_PCO2)/1.0E12, &
+               & loc_force_flux_weather_o(io_ALK)/1.0E12,loc_force_flux_weather_o(io_DIC)/1.0E12, &
+               & loc_force_flux_weather_o(io_Ca)/1.0E12,loc_force_flux_weather_o(io_DIC_13C)/1.0E12, &
+               & sum(loc_force_flux_weather_o_land(io_ALK,:,:))/1.0E12,sum(loc_force_flux_weather_o_land(io_DIC,:,:))/1.0E12, &
+               & sum(loc_force_flux_weather_o_land(io_Ca,:,:))/1.0E12,sum(loc_force_flux_weather_o_land(io_DIC_13C,:,:))/1.0E12, &
+               & sum(loc_force_flux_weather_o_ocean(io_ALK,:,:))/1.0E12,sum(loc_force_flux_weather_o_ocean(io_DIC,:,:))/1.0E12, &
+               & sum(loc_force_flux_weather_o_ocean(io_Ca,:,:))/1.0E12,sum(loc_force_flux_weather_o_ocean(io_DIC_13C,:,:))/1.0E12/)
 
-       outputs = (/loc_avSLT,loc_maxSLT,loc_minSLT,loc_R*conv_yr_s,loc_maxR*conv_yr_s,loc_minR*conv_yr_s, &
-            & loc_avP,loc_maxP,loc_minP,loc_CO2,loc_maxCO2,loc_minCO2, &
-            & loc_weather_ratio_CaCO3,loc_weather_ratio_CaSiO3,adj_weather_CaCO3/1.0E12,adj_weather_CaSiO3/1.0E12, &
-            & loc_force_flux_weather_a(ia_PCO2)/1.0E12, &
-            & loc_force_flux_weather_o(io_ALK)/1.0E12,loc_force_flux_weather_o(io_DIC)/1.0E12, &
-            & loc_force_flux_weather_o(io_Ca)/1.0E12,loc_force_flux_weather_o(io_DIC_13C)/1.0E12, &
-            & sum(loc_force_flux_weather_o_land(io_ALK,:,:))/1.0E12,sum(loc_force_flux_weather_o_land(io_DIC,:,:))/1.0E12, &
-            & sum(loc_force_flux_weather_o_land(io_Ca,:,:))/1.0E12,sum(loc_force_flux_weather_o_land(io_DIC_13C,:,:))/1.0E12, &
-            & sum(loc_force_flux_weather_o_ocean(io_ALK,:,:))/1.0E12,sum(loc_force_flux_weather_o_ocean(io_DIC,:,:))/1.0E12, &
-            & sum(loc_force_flux_weather_o_ocean(io_Ca,:,:))/1.0E12,sum(loc_force_flux_weather_o_ocean(io_DIC_13C,:,:))/1.0E12/)
+          call sub_output_0d(n_outputs,(/12,21,25/),outputs,output_descriptions,time_series_names)
 
-       call sub_output_0d(n_outputs,(/12,21,25/),outputs,output_descriptions,time_series_names)
-
-    ENDIF
-
-    IF (tstep_count.eq.output_tsteps_2d(output_counter_2d)) THEN
-
-       IF (opt_2d_netcdf_output) THEN
-          call rokgem_netcdf(loc_SLT,loc_CO22,dum_runoff,dum_photo,dum_respveg,loc_P,&
-               & loc_force_flux_weather_a_land,loc_force_flux_weather_o_land,loc_force_flux_weather_o_ocean)
        ENDIF
 
-       IF (opt_2d_ascii_output) THEN
-          DO io=1,n_ocn
-             IF ((io.EQ.io_ALK).OR.(io.EQ.io_DIC).OR.(io.EQ.io_Ca).OR.(io.EQ.io_DIC_13C).OR.(io.EQ.io_DIC_14C)) THEN
-                CALL sub_save_data_ij( &
-                     & TRIM(par_outdir_name)//'globavg_land_'//TRIM(globtracer_names(io))//'_year_'//TRIM(year_text)//'.dat', &
-                     n_i,n_j,loc_force_flux_weather_o_land(io,:,:))                                   
-                CALL sub_save_data_ij( &
-                     & TRIM(par_outdir_name)//'globavg_ocean_'//TRIM(globtracer_names(io))//'_year_'//TRIM(year_text)//'.dat', &
-                     n_i,n_j,loc_force_flux_weather_o_ocean(io,:,:))  
-             ENDIF
-          END DO
-          CALL sub_save_data_ij(TRIM(par_outdir_name)//'globavg_atm_PCO2_year_'//TRIM(year_text)//'.dat', &
-               n_i,n_j,loc_force_flux_weather_a_land(ia_PCO2,:,:))                                   
-          CALL sub_save_data_ij(TRIM(par_outdir_name)//'temperature_year_'//TRIM(year_text)//'.dat',n_i,n_j,loc_SLT(:,:))
-          CALL sub_save_data_ij(TRIM(par_outdir_name)//'runoff_year_'//TRIM(year_text)//'.dat',n_i,n_j,dum_runoff(:,:)*conv_yr_s)
-          CALL sub_save_data_ij(TRIM(par_outdir_name)//'productivity_year_'//TRIM(year_text)//'.dat',n_i,n_j,loc_P(:,:))
-          CALL sub_save_data_ij(TRIM(par_outdir_name)//'CO2_year_'//TRIM(year_text)//'.dat',n_i,n_j,loc_CO22(:,:))
+       IF (tstep_count.eq.output_tsteps_2d(output_counter_2d)) THEN
+
+          IF (opt_2d_netcdf_output) THEN
+             call rokgem_netcdf(loc_SLT,loc_CO22,dum_runoff,dum_photo,dum_respveg,loc_P,&
+                  & loc_force_flux_weather_a_land,loc_force_flux_weather_o_land,loc_force_flux_weather_o_ocean)
+          ENDIF
+
+          IF (opt_2d_ascii_output) THEN
+             DO io=1,n_ocn
+                IF ((io.EQ.io_ALK).OR.(io.EQ.io_DIC).OR.(io.EQ.io_Ca).OR.(io.EQ.io_DIC_13C).OR.(io.EQ.io_DIC_14C)) THEN
+                   CALL sub_save_data_ij( &
+                        & TRIM(par_outdir_name)//'globavg_land_'//TRIM(globtracer_names(io))//'_year_'//TRIM(year_text)//'.dat', &
+                        n_i,n_j,loc_force_flux_weather_o_land(io,:,:))                                   
+                   CALL sub_save_data_ij( &
+                        & TRIM(par_outdir_name)//'globavg_ocean_'//TRIM(globtracer_names(io))//'_year_'//TRIM(year_text)//'.dat', &
+                        n_i,n_j,loc_force_flux_weather_o_ocean(io,:,:))  
+                ENDIF
+             END DO
+             CALL sub_save_data_ij(TRIM(par_outdir_name)//'globavg_atm_PCO2_year_'//TRIM(year_text)//'.dat', &
+                  n_i,n_j,loc_force_flux_weather_a_land(ia_PCO2,:,:))                                   
+             CALL sub_save_data_ij(TRIM(par_outdir_name)//'temperature_year_'//TRIM(year_text)//'.dat',n_i,n_j,loc_SLT(:,:))
+             CALL sub_save_data_ij(TRIM(par_outdir_name)//'runoff_year_'//TRIM(year_text)//'.dat',n_i,n_j,dum_runoff(:,:)*conv_yr_s)
+             CALL sub_save_data_ij(TRIM(par_outdir_name)//'productivity_year_'//TRIM(year_text)//'.dat',n_i,n_j,loc_P(:,:))
+             CALL sub_save_data_ij(TRIM(par_outdir_name)//'CO2_year_'//TRIM(year_text)//'.dat',n_i,n_j,loc_CO22(:,:))
+          ENDIF
+
        ENDIF
 
     ENDIF
 
     ! for outputting calibrate 2D reference files
     ! should really only do at the end to save computation, i.e. export loc_SLT
-    IF (opt_calibrate_T_2D) THEN
-       ref_T0_2D(:,:) = loc_SLT(:,:)
-    ENDIF
-    IF (opt_calibrate_R_2D) THEN
-       ref_R0_2D(:,:) = loc_runoff(:,:)*conv_yr_s
-    ENDIF
-    IF (opt_calibrate_P_2D) THEN
-       ref_P0_2D(:,:) = loc_P(:,:)
-    ENDIF
+    ! NOTE: set no output by default
+       IF (opt_calibrate_T_2D) THEN
+          ref_T0_2D(:,:) = loc_SLT(:,:)
+       ENDIF
+       IF (opt_calibrate_R_2D) THEN
+          ref_R0_2D(:,:) = loc_runoff(:,:)*conv_yr_s
+       ENDIF
+       IF (opt_calibrate_P_2D) THEN
+          ref_P0_2D(:,:) = loc_P(:,:)
+       ENDIF
 
   END SUBROUTINE sub_glob_avg_weath
 

@@ -327,10 +327,10 @@ SUBROUTINE initialise_ecogem(    &
   ! ---------------------------------------------------------- !
   ! OPEN ASCII FILES !---------------------------------------- !
   ! ---------------------------------------------------------- !
-  open(301,File=TRIM(par_outdir_name)//"/Plankton_params.txt"       ,Status="Replace",Action="Write")
-  open(302,File=TRIM(par_outdir_name)//"/Plankton_params_nohead.dat",Status="Replace",Action="Write")
-!  open(303,File=TRIM(par_outdir_name)//"/Plankton_grazing.dat"      ,Status="Replace",Action="Write")
-  open(304,File=TRIM(par_outdir_name)//"/Ecogem_properties.dat"      ,Status="Replace",Action="Write")
+  open(301,File=TRIM(par_outdir_name)//"/SUMMARY_ecogem_plankton_params.txt"       ,Status="Replace",Action="Write")
+!  open(302,File=TRIM(par_outdir_name)//"/ecogem_plankton_params_nohead.dat",Status="Replace",Action="Write")
+!  open(303,File=TRIM(par_outdir_name)//"/ecogem_plankton_grazing.dat"      ,Status="Replace",Action="Write")
+!  open(304,File=TRIM(par_outdir_name)//"/ecogem_properties.dat"      ,Status="Replace",Action="Write")
   ! make wet mask for ocean cells
   wet_mask_ij(:,:) = MERGE(1,0,goldstein_k1.le.n_k)
   do k=1,n_k
@@ -354,8 +354,8 @@ SUBROUTINE initialise_ecogem(    &
 
   ! ---------------------------------------------------------- ! INITIALIZE netCDF OUTPUT
   IF (ctrl_debug_init > 0) print*,'INITIALIZE netCDF OUTPUT'
-  string_ncout2d = TRIM(par_outdir_name)//'fields_ecogem_2d.nc'
-  string_ncout3d = TRIM(par_outdir_name)//'fields_ecogem_3d.nc'
+  string_ncout2d = TRIM(par_outdir_name)//'ecogem_fields_2d.nc'
+  string_ncout3d = TRIM(par_outdir_name)//'ecogem_fields_3d.nc'
   string_nctsint = TRIM(par_outdir_name)//'timeseries_ecogem.nc'
   string_nctsi   = TRIM(par_outdir_name)//'ts_ecogem_int.nc'
 

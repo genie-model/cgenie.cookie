@@ -106,9 +106,9 @@ SUBROUTINE rest_rokgem()
   CHARACTER(len=255)::loc_filename
 
   if (debug_init > 1) PRINT*,'saving netcdf record number',ncout2d_ntrec_rg
-
+  
   ! dump restart data
-  loc_filename = TRIM(par_outdir_name)//trim(par_outfile_name)
+  loc_filename = TRIM(par_outrstdir_name)//trim(par_ncrst_name)
   OPEN(20,status='replace',file=loc_filename,form='formatted',action='write',iostat=ios)
   !call check_iostat(ios,__LINE__,__FILE__)
   WRITE(20,fmt='(i6)') ncout2d_ntrec_rg                             
@@ -116,27 +116,27 @@ SUBROUTINE rest_rokgem()
 
   !        Conditionals commented out because no calibration is done for stage 1 spin-up 
   ! and files are needed to be written for stage 2.
-  !        IF (opt_calibrate_T_2D) THEN
-  if (debug_init > 1) PRINT*,'saving 2D temperature reference field for calibration: ',TRIM(par_ref_T0_2D)
-  OPEN(20,status='replace',file=TRIM(par_outdir_name)//'rg_par_ref_T0_2D',form='formatted',action='write',iostat=ios)
-  WRITE(20,fmt='(A100)') par_ref_T0_2D
-  CLOSE(20)
-  CALL sub_save_data_ij(TRIM(par_outdir_name)//TRIM(par_ref_T0_2D),n_i,n_j,ref_T0_2D(:,:))   
-  !        ENDIF
-  !        IF (opt_calibrate_R_2D) THEN
-  if (debug_init > 1) PRINT*,'saving 2D runoff reference field for calibration: ',TRIM(par_ref_R0_2D)
-  OPEN(20,status='replace',file=TRIM(par_outdir_name)//'rg_par_ref_R0_2D',form='formatted',action='write',iostat=ios)
-  WRITE(20,fmt='(A100)') par_ref_R0_2D
-  CLOSE(20)
-  CALL sub_save_data_ij(TRIM(par_outdir_name)//TRIM(par_ref_R0_2D),n_i,n_j,ref_R0_2D(:,:))   
-  !        ENDIF
-  !        IF (opt_calibrate_P_2D) THEN
-  if (debug_init > 1) PRINT*,'saving 2D productivity reference field for calibration: ',TRIM(par_ref_P0_2D)
-  OPEN(20,status='replace',file=TRIM(par_outdir_name)//'rg_par_ref_P0_2D',form='formatted',action='write',iostat=ios)
-  WRITE(20,fmt='(A100)') par_ref_P0_2D
-  CLOSE(20)
-  CALL sub_save_data_ij(TRIM(par_outdir_name)//TRIM(par_ref_P0_2D),n_i,n_j,ref_P0_2D(:,:))   
-  !        ENDIF
+  IF (opt_calibrate_T_2D) THEN
+     if (debug_init > 1) PRINT*,'saving 2D temperature reference field for calibration: ',TRIM(par_ref_T0_2D)
+     OPEN(20,status='replace',file=TRIM(par_outrstdir_name)//'rg_par_ref_T0_2D',form='formatted',action='write',iostat=ios)
+     WRITE(20,fmt='(A100)') par_ref_T0_2D
+     CLOSE(20)
+     CALL sub_save_data_ij(TRIM(par_outrstdir_name)//TRIM(par_ref_T0_2D),n_i,n_j,ref_T0_2D(:,:))   
+     !        ENDIF
+     !        IF (opt_calibrate_R_2D) THEN
+     if (debug_init > 1) PRINT*,'saving 2D runoff reference field for calibration: ',TRIM(par_ref_R0_2D)
+     OPEN(20,status='replace',file=TRIM(par_outrstdir_name)//'rg_par_ref_R0_2D',form='formatted',action='write',iostat=ios)
+     WRITE(20,fmt='(A100)') par_ref_R0_2D
+     CLOSE(20)
+     CALL sub_save_data_ij(TRIM(par_outrstdir_name)//TRIM(par_ref_R0_2D),n_i,n_j,ref_R0_2D(:,:))   
+     !        ENDIF
+     !        IF (opt_calibrate_P_2D) THEN
+     if (debug_init > 1) PRINT*,'saving 2D productivity reference field for calibration: ',TRIM(par_ref_P0_2D)
+     OPEN(20,status='replace',file=TRIM(par_outrstdir_name)//'rg_par_ref_P0_2D',form='formatted',action='write',iostat=ios)
+     WRITE(20,fmt='(A100)') par_ref_P0_2D
+     CLOSE(20)
+     CALL sub_save_data_ij(TRIM(par_outrstdir_name)//TRIM(par_ref_P0_2D),n_i,n_j,ref_P0_2D(:,:))   
+  ENDIF
 
 END SUBROUTINE rest_rokgem
 

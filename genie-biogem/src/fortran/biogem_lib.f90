@@ -54,8 +54,8 @@ MODULE biogem_lib
   CHARACTER(len=127)::par_misc_2D_file                                  ! filename of generic 2D field
   REAL::par_misc_2D_scale                                               ! scalar of generic 2D field
   NAMELIST /ini_biogem_nml/par_misc_2D_file,par_misc_2D_scale
-  integer::par_misc_kmin_pipe                                           ! Min k for geoengineering ocean pipes!
-  NAMELIST /ini_biogem_nml/par_misc_kmin_pipe
+  integer::par_misc_kmin_geoeng                                         ! Min k for geoengineering!
+  NAMELIST /ini_biogem_nml/par_misc_kmin_geoeng
   logical::ctrl_misc_geoeng_noDIC                                       ! exclude DIC
   NAMELIST /ini_biogem_nml/ctrl_misc_geoeng_noDIC
   logical::ctrl_ocn_rst_reset_T                                         ! Overwrite restart temperatures?
@@ -328,6 +328,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_bio_remin_AOM_dG0
   real::par_bio_remin_AOM_BEQ                                    ! AOM biological energy quantum (kJ mol-1)
   NAMELIST /ini_biogem_nml/par_bio_remin_AOM_BEQ
+  LOGICAL::ctrl_bio_remin_AOM_OLD                                ! Use old (muffin) zero [O2] threshold for AOM to proceed?
+  NAMELIST /ini_biogem_nml/ctrl_bio_remin_AOM_OLD
   real::par_bio_remin_Rgas                                       ! Gas constant for thermo calculations (kJ K-1 mol-1)
   NAMELIST /ini_biogem_nml/par_bio_remin_Rgas
   real::par_bio_remin_gammaO2                                    ! Activity coefficient for dissolved O2
@@ -379,8 +381,9 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_bio_remin_ci_O2,par_bio_remin_ci_NO3,par_bio_remin_ci_FeOOH,par_bio_remin_ci_SO4
   ! S
   real::par_bio_remin_kH2StoSO4
+  real::par_bio_remin_kH2StoSO4_perM2perhr
   real::par_bio_remin_kH2StoPOMS
-  NAMELIST /ini_biogem_nml/par_bio_remin_kH2StoSO4,par_bio_remin_kH2StoPOMS
+  NAMELIST /ini_biogem_nml/par_bio_remin_kH2StoSO4,par_bio_remin_kH2StoPOMS,par_bio_remin_kH2StoSO4_perM2perhr
   ! N
   CHARACTER(len=63)::opt_bio_remin_oxidize_NH4toNO3              ! NH4 -> NO3 oxidation option
   NAMELIST /ini_biogem_nml/opt_bio_remin_oxidize_NH4toNO3
@@ -649,11 +652,15 @@ MODULE biogem_lib
   CHARACTER(len=255)::par_pindir_name                            !
   CHARACTER(len=255)::par_indir_name                             !
   CHARACTER(len=255)::par_outdir_name                            !
-  CHARACTER(len=255)::par_rstdir_name                            !
   CHARACTER(len=255)::par_fordir_name                            !
-  NAMELIST /ini_biogem_nml/par_indir_name,par_outdir_name,par_rstdir_name,par_fordir_name,par_pindir_name
+  NAMELIST /ini_biogem_nml/par_indir_name,par_outdir_name,par_fordir_name,par_pindir_name
+  CHARACTER(len=255)::par_inrstdir_name                          !
+  CHARACTER(len=255)::par_outrstdir_name                         !
+  NAMELIST /ini_biogem_nml/par_inrstdir_name,par_outrstdir_name
   CHARACTER(len=127)::par_infile_name,par_outfile_name           !
   NAMELIST /ini_biogem_nml/par_infile_name,par_outfile_name
+  CHARACTER(len=127)::par_ncrst_name                             !
+  NAMELIST /ini_biogem_nml/par_ncrst_name
   LOGICAL::ctrl_ncout_expid_name                                 ! align netCDF filenames with experiment name?
   NAMELIST /ini_biogem_nml/ctrl_ncout_expid_name
   ! ------------------- DATA SAVING: TIME-SLICES --------------------------------------------------------------------------------- !
@@ -683,6 +690,10 @@ MODULE biogem_lib
        & ctrl_data_save_slice_sur
   real::par_data_save_slice_dt                                   ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_slice_dt
+  real::par_data_save_slice_timeinterval                         ! Save interval if not using save point definition file (yr)
+  NAMELIST /ini_biogem_nml/par_data_save_slice_timeinterval
+  integer::par_data_save_slice_nmax                              ! 'Maximum allowed number of time-slice save points
+  NAMELIST /ini_biogem_nml/par_data_save_slice_nmax
   CHARACTER(len=127)::par_infile_slice_name                      !
   NAMELIST /ini_biogem_nml/par_infile_slice_name
   integer::par_data_save_slice_n                                 ! number of timesteps in sub-inteval (e.g., monthly) saving
@@ -715,6 +726,10 @@ MODULE biogem_lib
        & ctrl_data_save_sig_diag_redox_old
   real::par_data_save_sig_dt                                     ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_sig_dt
+  real::par_data_save_sig_timeinterval                           ! Save interval if not using save point definition file (yr)
+  NAMELIST /ini_biogem_nml/par_data_save_sig_timeinterval 
+  integer::par_data_save_sig_nmax                                ! 'Maximum allowed number of time-series save points
+  NAMELIST /ini_biogem_nml/par_data_save_sig_nmax
   CHARACTER(len=127)::par_infile_sig_name                        !
   NAMELIST /ini_biogem_nml/par_infile_sig_name
   LOGICAL::ctrl_data_save_sig_autoend                            ! auto save at run end?
@@ -729,6 +744,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/ctrl_bio_preformed,ctrl_bio_preformed_CsoftPOConly
   LOGICAL::ctrl_bio_remin_redox_save                             ! Create redox/remin data for saving?
   NAMELIST /ini_biogem_nml/ctrl_bio_remin_redox_save
+  LOGICAL::ctrl_data_save_buffering                               ! Calculate various buffering metrics for saving?
+  NAMELIST /ini_biogem_nml/ctrl_data_save_buffering
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !
   integer::par_data_save_level                                   ! Degree of comprehensivity of data saving
   NAMELIST /ini_biogem_nml/par_data_save_level
@@ -750,11 +767,12 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_sig_j_N,par_sig_j_S
   LOGICAL::ctrl_ncrst                                            ! restart as netCDF format?
   NAMELIST /ini_biogem_nml/ctrl_ncrst
-  CHARACTER(len=127)::par_ncrst_name                             !
-  NAMELIST /ini_biogem_nml/par_ncrst_name
   LOGICAL::ctrl_data_save_2d                                     ! save 2D netCDF data?
   LOGICAL::ctrl_data_save_3d                                     ! save 3D netCDF data?
   NAMELIST /ini_biogem_nml/ctrl_data_save_2d,ctrl_data_save_3d
+  CHARACTER(len=127)::par_ncout2d_name                           ! 2D netCDF ocean output file name 
+  CHARACTER(len=127)::par_ncout3d_name                           ! 3D netCDF ocean output file name 
+  NAMELIST /ini_biogem_nml/par_ncout2d_name,par_ncout3d_name
   integer::par_misc_save_i
   integer::par_misc_save_j
   NAMELIST /ini_biogem_nml/par_misc_save_i,par_misc_save_j
@@ -762,6 +780,8 @@ MODULE biogem_lib
   CHARACTER(len=127)::par_infile_orb_pts_loc_name                        !
   CHARACTER(len=127)::par_infile_orb_pts_var_name                        !
   NAMELIST /ini_biogem_nml/n_orb_pts_nmax,par_infile_orb_pts_loc_name,par_infile_orb_pts_var_name
+  LOGICAL::ctrl_data_echo_runtime_NEW                             ! NEW format runtime output?
+  NAMELIST /ini_biogem_nml/ctrl_data_echo_runtime_NEW  
   ! ------------------- TRACER AUDITING AND DEBUGGING OPTIONS -------------------------------------------------------------------- !
   LOGICAL::ctrl_audit                                            ! audit tracer inventory?
   LOGICAL::ctrl_audit_fatal                                      ! halt on audit fail?
@@ -783,8 +803,9 @@ MODULE biogem_lib
   integer::par_force_point_j                                     ! 'j' coordinate of point forcing
   integer::par_force_point_k                                     ! 'k' coordinate of point forcing
   NAMELIST /ini_biogem_nml/par_force_point_i,par_force_point_j,par_force_point_k
-  REAL::par_force_invert_ohmega                                  ! surface ocean saturation state target
-  NAMELIST /ini_biogem_nml/par_force_invert_ohmega
+  REAL::par_force_invert_ohmega                                  ! surface ocean saturation target -- inversion
+  REAL::par_force_restore_ohmega                                 ! surface ocean saturation target -- restoring
+  NAMELIST /ini_biogem_nml/par_force_invert_ohmega,par_force_restore_ohmega
   REAL::par_force_invert_wtpctcaco3                              ! Sediment wt% CaCO3 target
   NAMELIST /ini_biogem_nml/par_force_invert_wtpctcaco3
   logical::ctrl_force_invert_noneg                              ! prevent negative inversion fluxes (i.e. no removal)
@@ -800,6 +821,8 @@ MODULE biogem_lib
   logical::ctrl_force_ocn_age                                   ! automatic ocean age tracer
   logical::ctrl_force_ocn_age1                                  ! Or ... automatic ocean age single-tracer tracer?
   NAMELIST /ini_biogem_nml/ctrl_force_ocn_age,ctrl_force_ocn_age1
+  REAL::par_force_FCaCO3                                        ! CaCO3 flux (for saturaton restoring) (mol yr-1)
+  NAMELIST /ini_biogem_nml/par_force_FCaCO3
   ! ---------------- TRANSPORT MATRIX---------------------------!
   LOGICAL::ctrl_data_diagnose_TM !                              ! diagnose matrix in run?
   NAMELIST /ini_biogem_nml/ctrl_data_diagnose_TM
@@ -840,10 +863,11 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_opt_force                          = 08 ! forcings
   INTEGER,PARAMETER::n_opt_data                           = 30 ! data (I/O)
   INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
-  INTEGER,PARAMETER::n_diag_bio                           = 23 !
+  INTEGER,PARAMETER::n_diag_bio                           = 24 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
   INTEGER,PARAMETER::n_diag_precip                        = 09 ! 
-  INTEGER,PARAMETER::n_diag_react                         = 11 !! YK modified 12.28.2020 (overwriting _DEV_tracers where n_diag_react = 09; 03.19.2021)
+  INTEGER,PARAMETER::n_diag_react                         = 11 ! YK modified 12.28.2020
+  !                                                              (overwriting _DEV_tracers where n_diag_react = 09; 03.19.2021)
   INTEGER,PARAMETER::n_diag_iron                          = 09 ! As in _DEV_tracers (03.19.2021)
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
@@ -946,6 +970,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_bio_fspPOC                    = 21    !
   INTEGER,PARAMETER::idiag_bio_DOMlifetime               = 22    !
   INTEGER,PARAMETER::idiag_bio_frac_Fe2                  = 23    !
+  INTEGER,PARAMETER::idiag_bio_dNO3                      = 24    !
   ! diagnostics - OLD
   INTEGER,PARAMETER::idiag_geochem_old_ammox_dNO3        = 01    !
   INTEGER,PARAMETER::idiag_geochem_old_ammox_dNH4        = 02    !
@@ -1079,7 +1104,8 @@ MODULE biogem_lib
        & 'opaltoPOC_sp  ', &
        & 'fspPOC        ', &
        & 'DOMlifetime   ', &
-       & 'frac_Fe2      ' /)
+       & 'frac_Fe2      ', &
+       & 'dNO3          ' /)
   ! diagnostics - geochemistry -- OLD
   CHARACTER(len=14),DIMENSION(n_diag_geochem_old),PARAMETER::string_diag_geochem_old = (/ &
        & 'dNO3_NH4_oxid ', &
@@ -1293,6 +1319,7 @@ MODULE biogem_lib
   REAL,DIMENSION(n_carbalk,n_i,n_j,n_k)::carbalk                 !
   REAL,DIMENSION(n_carbisor,n_i,n_j,n_k)::carbisor               ! carbonate (carbon) isotopic properties array
   REAL,DIMENSION(3,n_i,n_j,n_k)::carb_TSn                        !
+  REAL,DIMENSION(n_i,n_j,n_k)::carb_Hrst                         ! restart [H+]
   ! diagnostics
   REAL,DIMENSION(n_diag_bio,n_i,n_j)::diag_bio                   ! biology diagnostics
   REAL,DIMENSION(n_diag_geochem_old,n_i,n_j,n_k)::diag_geochem_old ! geochemistry diagnostics -- OLD
@@ -1309,6 +1336,10 @@ MODULE biogem_lib
   real,DIMENSION(:,:,:,:),ALLOCATABLE::diag_redox                ! redox diagnostics
   REAL,DIMENSION(n_sed,n_i,n_j)::diag_ecogem_part                !
   REAL,DIMENSION(n_ocn,n_i,n_j)::diag_ecogem_remin               !
+  ! MISC
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_errsum                  ! total sum of accumulated occurrence of falures to solve pH 
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_pH                 ! change in the sum of occurrences of falure to solve pH 
+  REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_it                 ! change in the sum of occurrences of excessive pH iterations
 
   ! *** integrated (time-averaged) time-series storage scalars and vectors ***
   !
@@ -1326,15 +1357,17 @@ MODULE biogem_lib
   REAL,DIMENSION(n_ocn)::int_ocn_sur_sig                         !
   REAL,DIMENSION(n_ocn)::int_ocn_opn_sig                         !
   REAL,DIMENSION(n_ocn)::int_ocn_ben_sig                         !
+  REAL,DIMENSION(n_ocn)::int_ocn_shf_sig                         !
   REAL,DIMENSION(n_carb)::int_carb_sur_sig                       !
   REAL,DIMENSION(n_carb)::int_carb_opn_sig                       !
   REAL,DIMENSION(n_carb)::int_carb_ben_sig                       !
+  REAL,DIMENSION(n_carb)::int_carb_shf_sig                       !
   REAL::int_misc_age_sig                                         !
-  real::int_misc_age_sur_sig,int_misc_age_ben_sig                !
+  real::int_misc_age_sur_sig,int_misc_age_ben_sig,int_misc_age_shf_sig
   REAL::int_misc_seaice_sig                                      !
   real::int_misc_seaice_sig_th,int_misc_seaice_sig_vol           !
   real::int_misc_opsi_min_sig,int_misc_opsi_max_sig              !
-  real::int_misc_opsip_min_sig,int_misc_opsip_max_sig            !
+  real::int_misc_opsid_min_sig,int_misc_opsid_max_sig            !
   real::int_misc_opsia_min_sig,int_misc_opsia_max_sig            !
   real::int_misc_SLT_sig                                         !
   real::int_misc_det_Fe_tot_sig,int_misc_det_Fe_dis_sig          !
@@ -1362,6 +1395,14 @@ MODULE biogem_lib
   real,DIMENSION(:,:,:,:),ALLOCATABLE::int_misc_3D_sig           !
   ! redox
   real,DIMENSION(:),ALLOCATABLE::int_diag_redox_sig              ! redox diagnostics time-series
+  ! deep ocean vs. shallow sediments
+  REAL,DIMENSION(n_sed)::int_ocnsed_deep_sig                     !
+  REAL,DIMENSION(n_sed)::int_ocnsed_neri_sig                     !
+  REAL,DIMENSION(n_sed)::int_focnsed_deep_sig                    !
+  REAL,DIMENSION(n_sed)::int_focnsed_neri_sig                    !
+  REAL,DIMENSION(n_ocn)::int_fsedocn_deep_sig                    !
+  REAL,DIMENSION(n_ocn)::int_fsedocn_neri_sig                    !
+  
   ! ### ADD ADDITIONAL TIME-SERIES ARRAY DEFINITIONS HERE ######################################################################## !
   
   ! ############################################################################################################################## !

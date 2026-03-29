@@ -487,12 +487,12 @@ c ======================================================================
 
 c     t = istep*dt(kmax) + t0
       
-c "Healthcheck" and model rate of change
-c ----------------------------------------------------------------------
+c     "Healthcheck" and model rate of change
+c     ----------------------------------------------------------------------
       if(mod(istep,npstp).eq.0)then
          if (debug_loop) print*,'step ',istep 
          if (debug_loop) 
-     & print*,'psi on islands ',(psibc(isl),isl=1,isles)
+     &        print*,'psi on islands ',(psibc(isl),isl=1,isles)
          if (debug_loop) call diag
          if(mod(istep,npstp).eq.0)then
             do k=1,kmax
@@ -505,7 +505,7 @@ c ----------------------------------------------------------------------
                enddo
             enddo
          else if(mod(istep,npstp).eq.1.and.istep.gt.1)then
-c        open(7,file='../results/tmp.1')
+c     open(7,file='../results/tmp.1')
             rms = 0.
             do j=1,jmax
                do i=1,imax
@@ -530,98 +530,104 @@ c+DJL 31/8/2004
       endif
 c-DJL 31/8/2004
 
+c     ======================================================================
+c     RESTART CODE >>>
+c     ======================================================================
       if(mod(istep,iwstp).eq.0)then
-
          ext=conv(mod(iw,10))
-c write GOLDSTEIN restart file
-c AY (03/12/03)
-
-c+DJL 31/8/2004
-        if (lascout) then
-         if (debug_loop) 
-     + print*,'Writing GOLDSTEIN restart file at time',istep,
-     + '(koverall',koverall,')'
-         call check_unit(12,__LINE__,__FILE__)
-         open(12,file=outdir_name(1:lenout)//lout//'.'//ext,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         rewind 12
-         call outm(12)
-         close(12,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-        endif
-c-DJL 31/8/2004
-
-c Oscillating streamfunction
-c ----------------------------------------------------------------------
-         if(.not.flat)then
-c AY (03/12/03)
-c           open(2,file='../results/'//lout//'.psi.'//ext)
-            if (debug_loop) 
-     & print*,'Writing GOLDSTEIN oscillating streamfunction ',
-     +          'file at time',istep
-            open(2,file=outdir_name(1:lenout)//lout//
-     1           '.psi.'//ext,iostat=ios)
+c     write GOLDSTEIN restart file
+c     AY (03/12/03)
+c     +DJL 31/8/2004
+         if (lascout) then
+            if (debug_loop)
+     +           print*,'Writing GOLDSTEIN restart file at time',istep,
+     +           '(koverall',koverall,')'
+            call check_unit(12,__LINE__,__FILE__)
+c     open(12,file=rstdir_name(1:lenrst)//lout//'.'//ext,iostat=ios)
+            open(12,file=outrstdir_name(1:lenoutrst)//ascrst_name,
+     &           iostat=ios)
             call check_iostat(ios,__LINE__,__FILE__)
-            do j=0,jmax
-               do i=0,imax
-                  if (debug_loop) write(2,*,iostat=ios)psi(i,j)
-                  call check_iostat(ios,__LINE__,__FILE__)
-               enddo
-            enddo   
-            close(2,iostat=ios)
+            rewind 12
+            call outm(12)
+            close(12,iostat=ios)
             call check_iostat(ios,__LINE__,__FILE__)
          endif
+c     -DJL 31/8/2004
          iw = iw + 1
          if (debug_loop) print*
       endif
+c     ======================================================================
+c     <<< RESTART CODE
+c     ======================================================================
 
-c Time-series outputs (T, S, THC, FW flux)
-c ----------------------------------------------------------------------
-c AY (17/03/04) : format statements for time-series files of average 
-c                 T & S and overturning streamfunctions 
+c     Oscillating streamfunction
+c     ----------------------------------------------------------------------
+      if(mod(istep,iwstp).eq.0)then
+         if(.not.flat)then
+            if (debug_loop) then
+               print*,'Writing GOLDSTEIN oscillating streamfunction ',
+     +              'file at time',istep
+               open(2,file=outdir_name(1:lenout)//lout//
+     1              '.psi.'//ext,iostat=ios)
+               call check_iostat(ios,__LINE__,__FILE__)
+               do j=0,jmax
+                  do i=0,imax
+                     if (debug_loop) write(2,*,iostat=ios)psi(i,j)
+                     call check_iostat(ios,__LINE__,__FILE__)
+                  enddo
+               enddo   
+               close(2,iostat=ios)
+               call check_iostat(ios,__LINE__,__FILE__)
+            endif
+         endif
+      endif
+
+c     Time-series outputs (T, S, THC, FW flux)
+c     ----------------------------------------------------------------------
+c     AY (17/03/04) : format statements for time-series files of average 
+c     T & S and overturning streamfunctions 
  100  format(5e14.6,2i5)
  110  format(11e14.6)
  120  format(11e14.6)
 
       if(mod(istep,itstp).eq.0)then
-c AY (05/05/04) : temporary "time" variable (until we sort it out at the
-c                 genie.F level)
-         time = real(real(istep)/real(nyear))
-c AY (08/12/03) : files opened so that data can be appended to the end
-c                 of them (need f90 compilation for this)
-         if (debug_loop) 
-     & print*,'Writing GOLDSTEIN time-series files at time',istep
-         call check_unit(4,__LINE__,__FILE__)
-         open(4,file=outdir_name(1:lenout)//lout//'.'//'t',
-     1        status='old',position='append',iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         open(14,file=outdir_name(1:lenout)//lout//'.'//'s',
-     1        status='old',position='append',iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         open(40,file=outdir_name(1:lenout)//lout//'.'//'opsit',
-     1        status='old',position='append',iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         call diag2(sums,avn,avs)
-         if (debug_loop) 
-     1 write(4,110,iostat=ios)time,(sums(i),i=1,8),avn,avs
-         call check_iostat(ios,__LINE__,__FILE__)
-         if (debug_loop) 
-     1 write(14,110,iostat=ios)time,(sums(i),i=9,16),avn,avs
-         call check_iostat(ios,__LINE__,__FILE__)
-         call diagopsi(ominp,omaxp,omina,omaxa,opsi,opsia,opsip,iposa)
-c AY (04/03/04) : OPSISC factor scales streamfunctions into Sv
-c AY (05/05/04) : location of Atlantic max overturning now recorded
-         if (debug_loop) 
-     1 write(40,100,iostat=ios)time,ominp*opsisc,omaxp*opsisc,
+c     AY (05/05/04) : temporary "time" variable (until we sort it out at the
+c     genie.F level)
+         if (debug_loop) then
+            time = real(real(istep)/real(nyear))
+c     AY (08/12/03) : files opened so that data can be appended to the end
+c     of them (need f90 compilation for this)
+            print*,'Writing GOLDSTEIN time-series files at time',istep
+            call check_unit(4,__LINE__,__FILE__)
+            open(4,file=outdir_name(1:lenout)//lout//'.'//'t',
+     1           status='old',position='append',iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            open(14,file=outdir_name(1:lenout)//lout//'.'//'s',
+     1           status='old',position='append',iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            open(40,file=outdir_name(1:lenout)//lout//'.'//'opsit',
+     1           status='old',position='append',iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            call diag2(sums,avn,avs)
+            write(4,110,iostat=ios)time,(sums(i),i=1,8),avn,avs
+            call check_iostat(ios,__LINE__,__FILE__)
+            write(14,110,iostat=ios)time,(sums(i),i=9,16),avn,avs
+            call check_iostat(ios,__LINE__,__FILE__)
+            call diagopsi
+     &           (ominp,omaxp,omina,omaxa,opsi,opsia,opsip,iposa)
+c     AY (04/03/04) : OPSISC factor scales streamfunctions into Sv
+c     AY (05/05/04) : location of Atlantic max overturning now recordedwrite(40,100,iostat=ios)time,ominp*opsisc,omaxp*opsisc,
+            write(40,100,iostat=ios)time,ominp*opsisc,omaxp*opsisc,
      2        omina*opsisc,omaxa*opsisc,iposa(1),iposa(2)
-         call check_iostat(ios,__LINE__,__FILE__)
-         close(4,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         close(14,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         close(40,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-         if (debug_loop) print*
+            call check_iostat(ios,__LINE__,__FILE__)
+            close(4,iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            close(14,iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            close(40,iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+            print*
+         endif
       endif
 
 c AY (29/11/04) : adding in FW (and heat) flux (global, Atlantic, Pac)
@@ -666,71 +672,68 @@ c              Southern basin cells
             endif
          enddo
       enddo
-c
+c     
       if(mod(istep,itstp).eq.0)then
-c
-c Open flux file
-         call check_unit(41,__LINE__,__FILE__)
-         open(41,file=outdir_name(1:lenout)//lout//'.'//'flux',
-     1        status='old',position='append',iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-c
-c Create real version of itstp
-         r_itstp = real(itstp)
-c
-c Write out regional areas (m2) if this is the first timestep
-         if(istep.eq.itstp) then
-            if (debug_loop) write(41,120,iostat=ios) 0.0,
-     :           t_area(1)/r_itstp, t_area(2)/r_itstp,
-     :           t_area(3)/r_itstp, t_area(4)/r_itstp,
-     :           t_area(5)/r_itstp,
-     :           t_area(1)/r_itstp, t_area(2)/r_itstp,
-     :           t_area(3)/r_itstp, t_area(4)/r_itstp,
-     :           t_area(5)/r_itstp
+         if (debug_loop) then
+c     Open flux file
+            call check_unit(41,__LINE__,__FILE__)
+            open(41,file=outdir_name(1:lenout)//lout//'.'//'flux',
+     1           status='old',position='append',iostat=ios)
             call check_iostat(ios,__LINE__,__FILE__)
+c     Create real version of itstp
+            r_itstp = real(itstp)
+c     Write out regional areas (m2) if this is the first timestep
+            if(istep.eq.itstp) then
+               if (debug_loop) write(41,120,iostat=ios) 0.0,
+     :              t_area(1)/r_itstp, t_area(2)/r_itstp,
+     :              t_area(3)/r_itstp, t_area(4)/r_itstp,
+     :              t_area(5)/r_itstp,
+     :              t_area(1)/r_itstp, t_area(2)/r_itstp,
+     :              t_area(3)/r_itstp, t_area(4)/r_itstp,
+     :              t_area(5)/r_itstp
+               call check_iostat(ios,__LINE__,__FILE__)
+            endif
+c     Write out freshwater and heat fluxes
+            if (debug_loop) write(41,120,iostat=ios) time, 
+     :           fw_flx(1)/(1.e6*r_itstp), fw_flx(2)/(1.e6*r_itstp),
+     :           fw_flx(3)/(1.e6*r_itstp), fw_flx(4)/(1.e6*r_itstp),
+     :           fw_flx(5)/(1.e6*r_itstp),
+     :           fx_flx(1)/(1.e15*r_itstp), fx_flx(2)/(1.e15*r_itstp), 
+     :           fx_flx(3)/(1.e15*r_itstp), fx_flx(4)/(1.e15*r_itstp), 
+     :           fx_flx(5)/(1.e15*r_itstp)
+            call check_iostat(ios,__LINE__,__FILE__)
+c     Average heat flux (W/m2)
+c     :        fx_flx(1)/t_area(1), fx_flx(2)/t_area(2), 
+c     :        fx_flx(3)/t_area(3), fx_flx(4)/t_area(4),
+c     :        fx_flx(5)/t_area(5)
+            close(41,iostat=ios)
+            call check_iostat(ios,__LINE__,__FILE__)
+c     Empty averaging arrays
+            do l=1,5
+               fw_flx(l) = 0.
+               fx_flx(l) = 0.
+               t_area(l) = 0.
+            enddo
+c     
          endif
-c
-c Write out freshwater and heat fluxes
-         if (debug_loop) write(41,120,iostat=ios) time, 
-     :        fw_flx(1)/(1.e6*r_itstp), fw_flx(2)/(1.e6*r_itstp),
-     :        fw_flx(3)/(1.e6*r_itstp), fw_flx(4)/(1.e6*r_itstp),
-     :        fw_flx(5)/(1.e6*r_itstp),
-     :        fx_flx(1)/(1.e15*r_itstp), fx_flx(2)/(1.e15*r_itstp), 
-     :        fx_flx(3)/(1.e15*r_itstp), fx_flx(4)/(1.e15*r_itstp), 
-     :        fx_flx(5)/(1.e15*r_itstp)
-         call check_iostat(ios,__LINE__,__FILE__)
-c Average heat flux (W/m2)
-c    :        fx_flx(1)/t_area(1), fx_flx(2)/t_area(2), 
-c    :        fx_flx(3)/t_area(3), fx_flx(4)/t_area(4),
-c    :        fx_flx(5)/t_area(5)
-         close(41,iostat=ios)
-         call check_iostat(ios,__LINE__,__FILE__)
-c
-c Empty averaging arrays
-         do l=1,5
-            fw_flx(l) = 0.
-            fx_flx(l) = 0.
-            t_area(l) = 0.
-         enddo
-c
       endif
 
-c Averaging of model state
-c ----------------------------------------------------------------------
+c     Averaging of model state
+c     ----------------------------------------------------------------------
       if (dosc) then
-c average the last nyear steps in every ianav steps (if ianav>nyear)
+c     average the last nyear steps in every ianav steps (if ianav>nyear)
 
-      itv = mod(istep+nyear-1,ianav)
-      if(itv.lt.nyear)then
-         ext=conv(mod(iav,10))
-         if(istep.ge.nyear.and.itv.eq.nyear-1)then
-            iout = 1
-         else
-            iout = 0
+         itv = mod(istep+nyear-1,ianav)
+         if(itv.lt.nyear)then
+            ext=conv(mod(iav,10))
+            if(istep.ge.nyear.and.itv.eq.nyear-1)then
+               iout = 1
+            else
+               iout = 0
+            endif
+            if (debug_loop) 
+     :           call diagosc(istep,iout,ext,fx0flux,fwflux,wstress)
          endif
-         if (debug_loop) 
-     :      call diagosc(istep, iout, ext, fx0flux, fwflux, wstress)
-      endif
       endif
 
 c Defunct model output (instantaneous version of averaging above)

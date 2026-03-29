@@ -161,16 +161,18 @@ c AY (08/12/03) : reinstated flux scaling parameters
 c variables formerly in main program
 
       integer nsteps, npstp, iwstp, itstp, iw, ianav, istep0
-      integer lenin, lenout, iav
+      integer lenin, lenout, lenrst, iav, leninrst, lenoutrst
 
       common /ocngint/nsteps, npstp, iwstp, itstp, iw, ianav, istep0
-     1     , lenin, lenout, iav
+     1     , lenin, lenout, lenrst, iav, leninrst, lenoutrst
 
 c AY (01/12/03) : input and output directory locations
 
       character lout*3,indir_name*200,outdir_name*200
+      character inrstdir_name*200,outrstdir_name*200,ascrst_name*10
 
-      common /ocngchar/lout,indir_name,outdir_name
+      common /ocngchar/lout,indir_name,outdir_name,
+     &     inrstdir_name,outrstdir_name,ascrst_name
 
 c AY (02/02/04) : names of data files for error calculation
       character tdatafile*128, sdatafile*128, tdata_varname*25,

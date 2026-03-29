@@ -202,6 +202,7 @@ subroutine ecogem(          &
   !       -> in order to track how carbonate chemsitry changes in response to the ecosystem,
   !          DIC (and d13C of DIC) (if not also ALK) need to be updated in the loc_ocn array
   !          (and then these routines moved into the nsub time-stepping loop)
+  ! NOTE: log ECOGEM errors but not that ECOGEM does not currently report thsi output
   do i=1,n_i
      do j=1,n_j
         if (isocean(i,j).eq.1) then
@@ -216,6 +217,9 @@ subroutine ecogem(          &
                  call sub_adj_carbconst(        &
                       & loc_ocn(io_Ca  ,i,j,k), &
                       & loc_ocn(io_Mg  ,i,j,k), &
+                      & loc_ocn(io_S,i,j,k), &
+                      & loc_ocn(io_T,i,j,k),&
+                      & layermid              , &
                       & eco_carbconst(:,i,j,k)  &
                       & )
               end if
@@ -225,6 +229,9 @@ subroutine ecogem(          &
               IF (.NOT. ocn_select(io_SO4)) loc_ocn(io_SO4,i,j,n_k) = fun_calc_SO4tot(loc_ocn(io_S,i,j,n_k))
               IF (.NOT. ocn_select(io_F))   loc_ocn(io_F,i,j,n_k)   = fun_calc_Ftot(loc_ocn(io_S,i,j,n_k))
               call sub_calc_carb(           &
+                   & 'ecogem.f90/ecogem',   &
+                   & .true.,                &
+                   & par_carbchem_pH_tolerance, &
                    & loc_ocn(io_DIC ,i,j,k), &
                    & loc_ocn(io_ALK ,i,j,k), &
                    & loc_ocn(io_Ca  ,i,j,k), &
@@ -988,7 +995,7 @@ SUBROUTINE ecogem_save_rst(dum_genie_clock)
      ! ------------------------------------------------------- !
      ! SAVE RESTART DATA: NETCDF FORMAT
      ! ------------------------------------------------------- !
-     string_ncrst = TRIM(par_outdir_name)//trim(par_ncrst_name)
+     string_ncrst = TRIM(par_outrstdir_name)//trim(par_ncrst_name)
      ncrst_ntrec = 0
      call sub_data_netCDF_ncrstsave(trim(string_ncrst),loc_yr,loc_iou)
   else

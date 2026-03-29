@@ -208,8 +208,8 @@ c this flag indicates if external wind forcing from 'genie-wind' module is activ
       logical flag_wind
 
 c declare a namelist to store EMBM's initialisation vars
-      NAMELIST /ini_embm_nml/indir_name,outdir_name
-      NAMELIST /ini_embm_nml/rstdir_name
+      NAMELIST /ini_embm_nml/indir_name,outdir_name,rstdir_name
+      NAMELIST /ini_embm_nml/inrstdir_name,outrstdir_name,ascrst_name
       NAMELIST /ini_embm_nml/igrid,world
       NAMELIST /ini_embm_nml/xu_wstress,yu_wstress,xv_wstress
       NAMELIST /ini_embm_nml/yv_wstress,u_wspeed,v_wspeed
@@ -382,6 +382,26 @@ c        This 'if' checks for a terminal slash symbol
          rstdir_name(lenrst:lenrst+1) = '/'
       end if
       if (debug_init) print*,'Restart dir. name ',rstdir_name(1:lenrst)
+
+c     Input restart directory name
+      leninrst = lnsig1(inrstdir_name)
+      if (inrstdir_name(leninrst:leninrst).ne.'/') then
+c        This 'if' checks for a terminal slash symbol
+         leninrst = leninrst + 1
+         inrstdir_name(leninrst:leninrst+1) = '/'
+      end if
+      if (debug_init)
+     & print*,'Input restart dir. name ',inrstdir_name(1:leninrst)
+
+c     Output restart directory name
+      lenoutrst = lnsig1(outrstdir_name)
+      if (outrstdir_name(lenoutrst:lenoutrst).ne.'/') then
+c        This 'if' checks for a terminal slash symbol
+         lenoutrst = lenoutrst + 1
+         outrstdir_name(lenoutrst:lenoutrst+1) = '/'
+      end if
+      if (debug_init)
+     & print*,'Output restart dir. name ',outrstdir_name(1:lenoutrst)
 
 crma (15/09/05) : read in grid type
 crma (0 = const dsinlat; 1 = const dlat; 2 = IGCM)
@@ -1819,30 +1839,34 @@ c ----------------------------------------
      & 'Force EMBM from ATCHEM atmostpheric tracer cons?'
       if (debug_init) print*,atchem_radfor
 
-c Is this a new or continuing run?
+c     ======================================================================
+c     RESTART CODE >>>
+c     ======================================================================
+c     Is this a new or continuing run?
       if(ans.eq.'n'.or.ans.eq.'N')then
          if (debug_init) print*,
-     & 'this is a new run, initial conditions already set up'
-c        But set up initial default time and date....
+     &        'this is a new run, initial conditions already set up'
+c     But set up initial default time and date....
          iyear_rest=2000
          imonth_rest=1
          ioffset_rest=0
-c AY (15/09/04) : why is this 2.0?  Is this some default time-step?
-c        day_rest=2.0
+c     AY (15/09/04) : why is this 2.0?  Is this some default time-step?
+c     day_rest=2.0
          day_rest=yearlen / (nyear*ndta)
          if (debug_init) print*,'day_rest = ',day_rest
       else
-c        This is a continuing run, read in end state filename
+c     This is a continuing run, read in end state filename
          if (debug_init) print*,'input file extension for input (a6)'
          if (debug_init) print*,lin
 
-c AY (04/12/03)
+c     AY (04/12/03)
          if (debug_init) print*,'Reading EMBM restart file'
          if(lnetin) then
             call inm_netcdf_embm
          else
             call check_unit(1,__LINE__,__FILE__)
-            open(1,file=rstdir_name(1:lenrst)//lin,iostat=ios)
+c            open(1,file=rstdir_name(1:lenrst)//lin,iostat=ios)
+            open(1,file=inrstdir_name(1:leninrst)//ascrst_name,iostat=ios)
             call check_iostat(ios,__LINE__,__FILE__)
             call inm_embm(1)
             close(1,iostat=ios)
@@ -1852,13 +1876,13 @@ c     But set up initial default time and date....
             iyear_rest=2000
             imonth_rest=1
             ioffset_rest=0
-c AY (15/09/04) : why is this 2.0?  Is this some default time-step?
-c           day_rest=2.0
+c     AY (15/09/04) : why is this 2.0?  Is this some default time-step?
+c     day_rest=2.0
             day_rest=yearlen / (nyear*ndta)
             if (debug_init) print*,'day_rest = ',day_rest
          endif
 
-c EMBM atm
+c     EMBM atm
          do j=1,jmax
             do i=1,imax
                tq1(1,i,j) = tq(1,i,j)
@@ -1866,6 +1890,9 @@ c EMBM atm
             enddo
          enddo
       endif
+c     ======================================================================
+c     <<< RESTART CODE
+c     ======================================================================
 
 c ======================================================================
 c Open output files
@@ -1876,43 +1903,36 @@ c                 put into them throughout model runs (time series)
 
 c 110  format(4e14.6,2i5,1e14.6,2i5)
 
-c Average, etc. values of surface air temperature
-      call check_unit(41,__LINE__,__FILE__)
-      open(41,file=outdir_name(1:lenout)//lout//'.'//'airt',
-     &     iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-      write(41,*) '% EMBM atmosphere model, air temperature'
-      write(41,'(4a15,a10,a15,a10)') '% time        ','N hem air temp',
-     +     'S hem air temp','Max air temp',' Location','Min air temp',
-     +     ' Location'
-      write(41,'(4a15,2a5,a15,2a5)') '%             ','degrees C',
-     +     'degrees C','degrees C','i','j','degrees C','i','j'
-      close(41,iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
+c     Average, etc. values of surface air temperature
+      if (debug_loop) then
+         call check_unit(41,__LINE__,__FILE__)
+         open(41,file=outdir_name(1:lenout)//lout//'.'//'airt',
+     &        iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+         write(41,*) '% EMBM atmosphere model, air temperature'
+         write(41,'(4a15,a10,a15,a10)') '% time        ','N hem air temp',
+     +'S hem air temp','Max air temp',' Location','Min air temp',
+     +' Location'
+         write(41,'(4a15,2a5,a15,2a5)') '%             ','degrees C',
+     +        'degrees C','degrees C','i','j','degrees C','i','j'
+         close(41,iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+      endif
 
-c Average, etc. values of surface specific humidity
-      call check_unit(42,__LINE__,__FILE__)
-      open(42,file=outdir_name(1:lenout)//lout//'.'//'q',
-     &     iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-      write(42,*) '% EMBM atmosphere model, specific humidity'
-      write(42,'(4a15,a10,a15,a10)') '% time        ','N hem spec hum',
-     +     'S hem spec hum','Max spec hum',' Location','Min spec hum',
-     +     ' Location'
-      write(42,'(4a15,2a5,a15,2a5)') '%             ','g / kg','g / kg',
-     +     'g / kg','i','j','g / kg','i','j'
-      close(42,iostat=ios)
-      call check_iostat(ios,__LINE__,__FILE__)
-
-      if (dosc) then
-c Seasonal averages
-c
-c AY (30/04/04) : don't need to call this here anymore
-c
-c At present only N. hemisphere air temperature is output
-c     open(50,file=outdir_name(1:lenout)//lout//'.osc')
-c     write(50,'(a26)') '%time      N. hemisphere air temp'
-c     close(50)
+c     Average, etc. values of surface specific humidity
+      if (debug_loop) then
+         call check_unit(42,__LINE__,__FILE__)
+         open(42,file=outdir_name(1:lenout)//lout//'.'//'q',
+     &        iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+         write(42,*) '% EMBM atmosphere model, specific humidity'
+         write(42,'(4a15,a10,a15,a10)') '% time        ','N hem spec hum',
+     +'S hem spec hum','Max spec hum',' Location','Min spec hum',
+     +' Location'
+         write(42,'(4a15,2a5,a15,2a5)') '%             ','g / kg','g / kg',
+     +'g / kg','i','j','g / kg','i','j'
+         close(42,iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
       endif
 
 c AY (06/01/04) : count variable for output file numbers
