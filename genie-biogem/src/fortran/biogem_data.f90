@@ -1928,8 +1928,8 @@ CONTAINS
     int_misc_seaice_sig_vol = 0.0
     int_misc_opsi_min_sig   = 0.0
     int_misc_opsi_max_sig   = 0.0
-    int_misc_opsip_min_sig  = 0.0
-    int_misc_opsip_max_sig  = 0.0
+    int_misc_opsid_min_sig  = 0.0
+    int_misc_opsid_max_sig  = 0.0
     int_misc_opsia_min_sig  = 0.0
     int_misc_opsia_max_sig  = 0.0
     int_misc_SLT_sig        = 0.0
@@ -4882,99 +4882,6 @@ CONTAINS
     ! END
     ! -------------------------------------------------------- !
   END SUBROUTINE sub_data_init_lookup_4D_Fe
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! DATA CALCULATING ROUTINES
-  ! ****************************************************************************************************************************** !
-
-  
-  ! ****************************************************************************************************************************** !
-  ! GOLDSTEIn overturning streamfunction calculation
-  SUBROUTINE sub_calc_psi(dum_u,dum_opsi,dum_opsia,dum_opsip,dum_zpsi)
-    ! -------------------------------------------------------- !
-    ! DUMMY ARGUMENTS
-    ! -------------------------------------------------------- !
-    REAL,INTENT(in),DIMENSION(3,n_i,n_j,n_k)::dum_u
-    REAL,INTENT(out),DIMENSION(0:n_j,0:n_k)::dum_opsi,dum_opsia,dum_opsip,dum_zpsi
-    ! -------------------------------------------------------- !
-    ! DEFINE LOCAL VARIABLES
-    ! -------------------------------------------------------- !
-    INTEGER::i,j,k
-    REAL,DIMENSION(n_j,n_k)::loc_ou,loc_zu
-    REAL,DIMENSION(0:n_j,0:n_k)::loc_opsi,loc_opsia,loc_opsip,loc_zpsi
-    ! -------------------------------------------------------- !
-    ! INITIALIZE VARIABLES
-    ! -------------------------------------------------------- !
-    loc_opsi(:,:)  = 0.0
-    loc_opsia(:,:) = 0.0
-    loc_opsip(:,:) = 0.0
-    loc_zpsi(:,:)  = 0.0
-    ! -------------------------------------------------------- !
-    ! CALCULATE STREAMFUNCTION -- GLOBAL
-    ! -------------------------------------------------------- !
-    ! Calculate global meridional overturning streamfunction opsi (on C grid only)
-    loc_ou(:,:) = 0.0
-    DO j=1,n_j-1
-       DO k=1,n_k-1
-          loc_ou(j,k) = 0.0
-          DO i=1,n_i
-             loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
-          END DO
-          loc_opsi(j,k) = loc_opsi(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-       END DO
-    END DO
-    ! -------------------------------------------------------- !
-    ! CALCULATE STREAMFUNCTION -- BASIN
-    ! -------------------------------------------------------- !
-    if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
-       ! Pacific overturning streamfunction
-       loc_ou(:,:) = 0.0
-       DO j=goldstein_jsf+1,n_j-1
-          DO k=1,n_k-1
-             loc_ou(j,k) = 0.0
-             DO i=goldstein_ips(j),goldstein_ipf(j)
-                loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
-             ENDDO
-             loc_opsip(j,k) = loc_opsip(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          ENDDO
-       ENDDO
-       ! Atlantic overturning streamfunction
-       loc_ou(:,:) = 0.0
-       DO j=goldstein_jsf+1,n_j-1
-          DO k=1,n_k-1
-             loc_ou(j,k) = 0.0
-             DO i=goldstein_ias(j),goldstein_iaf(j)
-                loc_ou(j,k) = loc_ou(j,k) + goldstein_cv(j)*dum_u(2,i,j,k)*goldstein_dphi
-             ENDDO
-             loc_opsia(j,k) = loc_opsia(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
-          ENDDO
-       ENDDO
-    end if
-    ! -------------------------------------------------------- !
-    ! CALCULATE STREAMFUNCTION -- PSI
-    ! -------------------------------------------------------- !
-    loc_zu(:,:) = 0.0
-    DO i=1,n_i-1
-       DO k=1,n_k-1
-          DO j=1,n_j
-             loc_zu(i,k) = loc_zu(i,k) + dum_u(1,i,j,k)/goldstein_c(j)*goldstein_ds
-          ENDDO
-          loc_zpsi(i,k) = loc_zpsi(i,k-1) - goldstein_dz(k)*loc_zu(i,k)
-       ENDDO
-    ENDDO
-    ! -------------------------------------------------------- !
-    ! SET OUT DUMMY ARRAY DATA
-    ! -------------------------------------------------------- !
-    dum_opsi(1:n_j,1:n_k)  = loc_opsi(1:n_j,1:n_k)
-    dum_opsia(1:n_j,1:n_k) = loc_opsia(1:n_j,1:n_k)
-    dum_opsip(1:n_j,1:n_k) = loc_opsip(1:n_j,1:n_k)
-    dum_zpsi(1:n_j,1:n_k)  = loc_zpsi(1:n_j,1:n_k)
-    ! -------------------------------------------------------- !
-    ! END
-    ! -------------------------------------------------------- !
-  END SUBROUTINE sub_calc_psi
   ! ****************************************************************************************************************************** !
 
 
