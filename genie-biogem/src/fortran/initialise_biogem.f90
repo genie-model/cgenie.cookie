@@ -270,7 +270,7 @@ SUBROUTINE initialise_biogem(                       &
   call sub_data_update_tracerrelationships
   ! data save meta config
   IF (ctrl_debug_lvl2) print*, 'set basic data save config'
-  call sub_adj_par_save()
+!!$  call sub_adj_par_save()
   call sub_filter_data_save()  
   ! set meta-options and verify self-consistency of chosen parameters
   IF (ctrl_debug_lvl2) print*, 'verify self-consistency of chosen parameters'

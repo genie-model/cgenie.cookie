@@ -701,30 +701,6 @@ MODULE biogem_lib
        & ctrl_save_hidden_redox,ctrl_save_hidden_extra,ctrl_save_hidden_fossilfuelco2, &
        & ctrl_save_hidden_ALL
   ! ------------------- DATA SAVING: TIME-SLICES --------------------------------------------------------------------------------- !
-  LOGICAL::ctrl_data_save_slice_ocnatm                           ! time-slice data save: Atmospheric (interface) composition (2D)?
-  LOGICAL::ctrl_data_save_slice_ocn                              ! time-slice data save: Ocean composition (3D)?
-  LOGICAL::ctrl_data_save_slice_ocnsed                           ! time-slice data save: Sediment (interface) composition (2D)?
-  LOGICAL::ctrl_data_save_slice_fairsea                          ! time-slice data save: Air-sea gas exchange (2D)?
-  LOGICAL::ctrl_data_save_slice_focnatm                          ! time-slice data save: Ocean-atmosphere flux (2D)?
-  LOGICAL::ctrl_data_save_slice_focnsed                          ! time-slice data save: Ocean-sediment flux (2D)?
-  LOGICAL::ctrl_data_save_slice_fsedocn                          ! time-slice data save: Sediment-ocean flux (2D)?
-  LOGICAL::ctrl_data_save_slice_bio                              ! time-slice data save: Biological fluxes (3D)?
-  LOGICAL::ctrl_data_save_slice_carb                             ! time-slice data save: Aqueous carbonate system properties (3D)?
-  LOGICAL::ctrl_data_save_slice_carbconst                        ! time-slice data save: Aqueous carbonate system constants (3D)?
-  LOGICAL::ctrl_data_save_slice_phys_atm                         ! time-slice data save: Atmospheric physical properties (2D)?
-  LOGICAL::ctrl_data_save_slice_phys_ocn                         ! time-slice data save: Ocean physical properties (3D)?
-  LOGICAL::ctrl_data_save_slice_misc                             ! time-slice data save: Miscellaneous properties (-)?
-  LOGICAL::ctrl_data_save_slice_diag                             ! time-slice data save: biogeochemical diagnostics?
-  LOGICAL::ctrl_data_save_slice_diag_redox_old                   ! redox back-compatability
-  LOGICAL::ctrl_data_save_slice_sur                              ! time-slice data save: surface properties
-  NAMELIST /ini_biogem_nml/ &
-       & ctrl_data_save_slice_ocnatm,ctrl_data_save_slice_ocn,ctrl_data_save_slice_ocnsed, &
-       & ctrl_data_save_slice_fairsea, &
-       & ctrl_data_save_slice_focnatm,ctrl_data_save_slice_focnsed,ctrl_data_save_slice_fsedocn, &
-       & ctrl_data_save_slice_bio,ctrl_data_save_slice_carb,ctrl_data_save_slice_carbconst, &
-       & ctrl_data_save_slice_phys_atm,ctrl_data_save_slice_phys_ocn,ctrl_data_save_slice_misc,ctrl_data_save_slice_diag, &
-       & ctrl_data_save_slice_diag_redox_old, &
-       & ctrl_data_save_slice_sur
   real::par_data_save_slice_dt                                   ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_slice_dt
   real::par_data_save_slice_timeinterval                         ! Save interval if not using save point definition file (yr)
@@ -737,30 +713,9 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_data_save_slice_n
   LOGICAL::ctrl_data_save_slice_autoend                          ! auto save at run end?
   NAMELIST /ini_biogem_nml/ctrl_data_save_slice_autoend
-  LOGICAL::ctrl_data_save_slice_cdrmip                           ! save cdrmip data (only)?
-  NAMELIST /ini_biogem_nml/ctrl_data_save_slice_cdrmip
   LOGICAL::ctrl_data_save_slice_carb_update                      ! Update carbonate chemistry for saving?
   NAMELIST /ini_biogem_nml/ctrl_data_save_slice_carb_update
   ! ------------------- DATA SAVING: TIME-SERIES --------------------------------------------------------------------------------- !
-  LOGICAL::ctrl_data_save_sig_ocnatm                             ! time-series data save: Atmospheric (interface) composition?
-  LOGICAL::ctrl_data_save_sig_ocn                                ! time-series data save: Oceanic composition?
-  LOGICAL::ctrl_data_save_sig_fexport                            ! time-series data save: Export flux?
-  LOGICAL::ctrl_data_save_sig_fairsea                            ! time-series data save: Air-sea gas exchange?
-  LOGICAL::ctrl_data_save_sig_ocnsed                             ! time-series data save: Sediment (interface) composition?
-  LOGICAL::ctrl_data_save_sig_focnatm                            ! time-series data save: Ocean->atmosphere flux?
-  LOGICAL::ctrl_data_save_sig_focnsed                            ! time-series data save: Ocean->sediment flux?
-  LOGICAL::ctrl_data_save_sig_fsedocn                            ! time-series data save: Sediment->ocean flux?
-  LOGICAL::ctrl_data_save_sig_ocn_sur                            ! time-series data save: Ocean surface tracers?
-  LOGICAL::ctrl_data_save_sig_carb_sur                           ! time-series data save: Ocean surface carbonate chemistry?
-  LOGICAL::ctrl_data_save_sig_misc                               ! time-series data save: Miscellaneous properties?
-  LOGICAL::ctrl_data_save_sig_diag                               ! time-series data save: biogeochemical diagnostics?
-  LOGICAL::ctrl_data_save_sig_diag_redox_old                     ! redox back-compatability
-  NAMELIST /ini_biogem_nml/ &
-       & ctrl_data_save_sig_ocnatm,ctrl_data_save_sig_ocn,ctrl_data_save_sig_fexport,ctrl_data_save_sig_ocnsed, &
-       & ctrl_data_save_sig_fairsea, &
-       & ctrl_data_save_sig_focnatm,ctrl_data_save_sig_focnsed,ctrl_data_save_sig_fsedocn, &
-       & ctrl_data_save_sig_ocn_sur,ctrl_data_save_sig_carb_sur,ctrl_data_save_sig_misc,ctrl_data_save_sig_diag, &
-       & ctrl_data_save_sig_diag_redox_old
   real::par_data_save_sig_dt                                     ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_sig_dt
   real::par_data_save_sig_timeinterval                           ! Save interval if not using save point definition file (yr)
@@ -786,9 +741,8 @@ MODULE biogem_lib
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !
   integer::par_data_save_level                                   ! Degree of comprehensivity of data saving
   NAMELIST /ini_biogem_nml/par_data_save_level
-  LOGICAL::ctrl_data_save_derived                                ! save 'derived' data (e.g., salinity-normalized ocean tracers)?
   LOGICAL::ctrl_data_save_GLOBAL                                 ! save global diagnostics (at time-slice intervals)?
-  NAMELIST /ini_biogem_nml/ctrl_data_save_derived,ctrl_data_save_GLOBAL
+  NAMELIST /ini_biogem_nml/ctrl_data_save_GLOBAL
   LOGICAL::ctrl_data_save_slice_ascii                            ! Save time-slice data in ASCII format?
   LOGICAL::ctrl_data_save_sig_ascii                              ! Save time-series data in ASCII format?
   NAMELIST /ini_biogem_nml/ctrl_data_save_slice_ascii,ctrl_data_save_sig_ascii
