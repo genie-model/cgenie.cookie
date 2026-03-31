@@ -2,7 +2,7 @@
 
 define EBGOGS_ACTIONS
 $(MAKE) cleanall;
-echo "10368" > 'cookie.current_grid_size.txt'
+echo "0" > 'cookie.current_grid_size.txt'
 ./genie.job \
 -t -k \
 -f $(CONFIG_DIR)/eb_go_gs_test.xml \
@@ -26,8 +26,8 @@ echo "10368" > 'cookie.current_grid_size.txt'
 endef
 
 define BIOGEM_ACTIONS
-###$(MAKE) cleanall;
-echo "10368" > 'cookie.current_grid_size.txt'
+$(MAKE) cleanall;
+echo "0" > 'cookie.current_grid_size.txt'
 ./genie.job \
 -t -k \
 -f $(CONFIG_DIR)/eb_go_gs_ac_bg_test.xml \

@@ -338,7 +338,7 @@ ifeq ($(F77),gfortran)
     FFLAGS += -O2
     FFLAGS += -O3 
     FFLAGS += -funroll-loops 
-    #FFLAGS += -fno-automatic
+    FFLAGS += -fno-automatic
     FFLAGS += -frecursive
     ifneq ($(MACHINE),OSX_M)
       # NOTE: -msse is an Intel flag
