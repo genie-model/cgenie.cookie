@@ -171,6 +171,10 @@ SUBROUTINE sedgem(          &
                    & sed_carbconst(:,i,j)      &
                    & )
            end if
+           ! modify calcite k to create different CaCO3 solubilities in calculating CaCO3 preservation
+           ! values >1.0 will lead to a higher saturation value of [CO32-] and hence more undersaturaton and less oversaturation
+           ! NOTE: default == 1.0 (and unmodified kcal)
+           sed_carbconst(icc_kcal,i,j) = par_sed_diagen_kcalmod*sed_carbconst(icc_kcal,i,j)
            call sub_calc_carb(                &
                 & 'sedgem.f90/sedgem',        &
                 & .true.,                     &

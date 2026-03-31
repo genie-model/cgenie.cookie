@@ -1821,8 +1821,9 @@ CONTAINS
        conv_ls_lo_N_NH4(:,:) =  fun_conv_sedocn2lslo(conv_sed_ocn_N_NH4(:,:))
     end if
     ! -------------------------------------------------------- ! indexing array (all possible)
-    ! NOTE: fun_recalc_tracerrelationships_i works on the full (ocn,sed) tracer matrix (and hence loc_conv_sed_ocn)
-    conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:)))
+    ! NOTE: fun_recalc_tracerrelationships_i works on the full (ocn,sed) tracer matrix (and hence conv_sed_ocn_i)
+!!$    conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:)))
+    conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(conv_sed_ocn_i(:,:))
     ! -------------------------------------------------------- ! POM -> DOM
     conv_lP_lD(:,:)   =  fun_conv_sedocn2lslo(conv_POM_DOM(:,:))
     conv_lP_lD_i(:,:) =  fun_conv_sedocn2lslo_i(conv_POM_DOM_i(:,:))
@@ -2591,7 +2592,7 @@ CONTAINS
     CHARACTER(len=255)::loc_string
     CHARACTER(len=255)::loc_string1,loc_string2
     integer::l,io,ia,is
-
+    
     ! *** set-up ***
     ! initialize variables
     loc_flag = .FALSE.
@@ -4994,147 +4995,6 @@ CONTAINS
 
 
   ! ****************************************************************************************************************************** !
-  ! DATA SAVING ROUTINES - GOLDSTEIn
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! SAVE GRID DATA
-  SUBROUTINE sub_data_save_topography()
-    ! local variables
-    CHARACTER(len=255)::loc_filename
-    ! (i,j) topography (max height in m)
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_topography'//TRIM(string_data_ext)
-    CALL sub_save_data_ij(loc_filename,n_i,n_j,-maxval(phys_ocn(ipo_mask_ocn,:,:,:)*phys_ocn(ipo_Dbot,:,:,:),3))
-    ! grid point centre
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lat_mid'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,phys_ocn(ipo_lat,:,:,:))
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lon_mid'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,phys_ocn(ipo_lon,:,:,:))
-    ! grid point limits
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lat_n'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,phys_ocn(ipo_latn,:,:,:))
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lat_s'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,phys_ocn(ipo_latn,:,:,:) - phys_ocn(ipo_dlat,:,:,:))
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lon_e'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,phys_ocn(ipo_lone,:,:,:))
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lon_w'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,phys_ocn(ipo_lone,:,:,:) - phys_ocn(ipo_dlon,:,:,:))
-    ! layer height (m)
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lay_top'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,-phys_ocn(ipo_Dtop,:,:,:))
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lay_bot'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,-phys_ocn(ipo_Dbot,:,:,:))
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_lay_mid'//TRIM(string_data_ext)
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,-phys_ocn(ipo_Dmid,:,:,:))
-  END SUBROUTINE sub_data_save_topography
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! SAVE STREAMFUNCTION DATA
-  SUBROUTINE sub_data_save_goldstein_opsi()
-    USE genie_util, ONLY:check_unit,check_iostat
-    ! local variables
-    INTEGER::j,k,ios
-    REAL::loc_scale
-    REAL,DIMENSION(n_k+1)::loc_grid_dz
-    CHARACTER(len=255)::loc_filename
-    ! initialize local variables
-    loc_grid_dz(:) = 0.0
-    loc_scale = goldstein_dsc*goldstein_usc*const_rEarth*1.0E-6
-    !
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_opsi_lat'//TRIM(string_data_ext)
-    call check_unit(out,__LINE__,__FILE__)
-    OPEN(out,file=loc_filename,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    DO k=n_k,0,-1
-       WRITE(unit=out,fmt='(999e14.6)',iostat=ios) ((180.0/const_pi) * ASIN(goldstein_sv(j)),j=0,n_j)
-       call check_iostat(ios,__LINE__,__FILE__)
-    ENDDO
-    CLOSE(out,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    !
-    loc_grid_dz(1:n_k) = goldstein_dz(:)
-    loc_filename = TRIM(par_outdir_name)//TRIM(par_outfile_name)//'_grid_opsi_depth'//TRIM(string_data_ext)
-    call check_unit(out,__LINE__,__FILE__)
-    OPEN(out,file=loc_filename,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    DO k=n_k,0,-1
-       WRITE(unit=out,fmt='(999e14.6)',iostat=ios) (SUM(-goldstein_dsc * loc_grid_dz(k+1:n_k+1)),j=0,n_j)
-       call check_iostat(ios,__LINE__,__FILE__)
-    ENDDO
-    CLOSE(out,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    !
-    loc_filename= &
-         & fun_data_timeslice_filename( &
-         & par_outdir_name,trim(par_outfile_name)//'_slice','misc_goldstein_opsi',string_results_ext)
-    call check_unit(out,__LINE__,__FILE__)
-    OPEN(out,file=loc_filename,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    DO k=n_k,0,-1
-       WRITE(unit=out,fmt='(999e14.6)',iostat=ios) (loc_scale*int_opsi_timeslice(j,k)/int_t_timeslice,j=0,n_j)
-       call check_iostat(ios,__LINE__,__FILE__)
-    ENDDO
-    CLOSE(out,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    loc_filename= &
-         & fun_data_timeslice_filename( &
-         & par_outdir_name,trim(par_outfile_name)//'_slice','misc_goldstein_opsia',string_results_ext)
-    call check_unit(out,__LINE__,__FILE__)
-    OPEN(out,file=loc_filename,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    DO k=n_k,0,-1
-       WRITE(unit=out,fmt='(999e14.6)',iostat=ios) (loc_scale*int_opsia_timeslice(j,k)/int_t_timeslice,j=0,n_j)
-       call check_iostat(ios,__LINE__,__FILE__)
-    ENDDO
-    CLOSE(out,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    loc_filename= &
-         & fun_data_timeslice_filename( &
-         & par_outdir_name,trim(par_outfile_name)//'_slice','misc_goldstein_opsip',string_results_ext)
-    call check_unit(out,__LINE__,__FILE__)
-    OPEN(out,file=loc_filename,iostat=ios)
-    call check_iostat(ios,__LINE__,__FILE__)
-    DO k=n_k,0,-1
-       WRITE(unit=out,fmt='(999e14.6)',iostat=ios) (loc_scale*int_opsip_timeslice(j,k)/int_t_timeslice,j=0,n_j)
-       call check_iostat(ios,__LINE__,__FILE__)
-    ENDDO
-    CLOSE(out)
-
-  END SUBROUTINE sub_data_save_goldstein_opsi
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
-  ! SAVE VELOCITY FIELD DATA
-  SUBROUTINE sub_data_save_goldstein_u()
-    ! local variables
-    CHARACTER(len=255)::loc_filename
-    real,DIMENSION(n_i,n_j,n_k)::loc_ijk
-    ! save data
-    ! NOTE: scale to give velocity components in units of (m s-1);
-    !       for the horizontal velocity components, the scale factor is usc (= 0.05) [Edwards and Shepherd, 2002]
-    !       for the vertical velocity component, the overall scale factor is usc*dsc/rsc
-    !       (= 0.05*4000.0/6.36e6) [Edwards and Shepherd, 2002]
-    loc_filename= fun_data_timeslice_filename( &
-         & par_outdir_name,trim(par_outfile_name)//'_slice','misc_goldstein_u_1',string_results_ext)
-    loc_ijk(:,:,:) = goldstein_usc*int_u_timeslice(1,:,:,:)/int_t_timeslice
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,loc_ijk(:,:,:))
-    loc_filename= fun_data_timeslice_filename( &
-         & par_outdir_name,trim(par_outfile_name)//'_slice','misc_goldstein_u_2',string_results_ext)
-    loc_ijk(:,:,:) = goldstein_usc*int_u_timeslice(2,:,:,:)/int_t_timeslice
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,loc_ijk(:,:,:))
-    loc_filename= fun_data_timeslice_filename( &
-         & par_outdir_name,trim(par_outfile_name)//'_slice','misc_goldstein_u_3',string_results_ext)
-    loc_ijk(:,:,:) = (goldstein_usc*goldstein_dsc/const_rEarth)*int_u_timeslice(3,:,:,:)/int_t_timeslice
-    CALL sub_save_data_ijk(loc_filename,n_i,n_j,n_k,loc_ijk(:,:,:))
-  END SUBROUTINE sub_data_save_goldstein_u
-  ! ****************************************************************************************************************************** !
-
-
-  ! ****************************************************************************************************************************** !
   ! MISCELLANEOUS ROUTINES
   ! ****************************************************************************************************************************** !
 
@@ -5145,6 +5005,8 @@ CONTAINS
     ! local variables
     INTEGER::l,io
     REAL::loc_ocn_rM,loc_ocn_R
+    ! initialize
+    loc_ocn_R = 0.0
     ! calculate local constants
     loc_ocn_rM = 1.0/SUM(phys_ocn(ipo_M,:,:,:))
     DO l=3,n_l_ocn

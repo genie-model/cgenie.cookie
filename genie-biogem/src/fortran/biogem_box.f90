@@ -731,7 +731,7 @@ CONTAINS
        ! ### temp code ########################################################################################################### !
        loc_kI = loc_intI/(loc_intI + par_bio_c0_I)
     case default
-       loc_kI = 0.0
+       loc_kI = 1.0
     end select
     diag_bio(idiag_bio_kI,dum_i,dum_j) = dum_dt*loc_kI
     ! ############################################################################################################################ !
@@ -755,7 +755,7 @@ CONTAINS
          & )
        loc_kT = (loc_TC + 2.0)/(loc_TC + 10.0)
     case default
-       loc_kT = 0.0
+       loc_kT = 1.0
     end SELECT
     diag_bio(idiag_bio_kT,dum_i,dum_j) = dum_dt*loc_kT
 
@@ -1146,7 +1146,11 @@ CONTAINS
        select case (opt_bio_CaCO3toPOCrainratio)
        case ('prescribed')
           ! fixed, spatially explicit
-          bio_part_red(is_POC,is_CaCO3,dum_i,dum_j) = (1.0 - loc_bio_red_DOMtotal)*par_bio_CaCO3toPOCrainratio(dum_i,dum_j)
+          ! NOTE: added par_bio_red_POC_CaCO3 modiier so that global CaCo3 production can be scaled
+          !       the value of par_bio_red_POC_CaCO3 has been changed in the xml to 1.0 by default
+          !       and so this scaling addition should not impact existing experiment configs
+          bio_part_red(is_POC,is_CaCO3,dum_i,dum_j) = (1.0 - loc_bio_red_DOMtotal)* &
+               & par_bio_red_POC_CaCO3*par_bio_CaCO3toPOCrainratio(dum_i,dum_j)
        case ('Heinze2004')
           ! Heinze [2004] saturation dependent parameterization
           ! NOTE: par_bio_red_POC_CaCO3_CO2aqREF in (umol kg-1)
@@ -2066,7 +2070,8 @@ CONTAINS
     ! added *2 for nitrogen fixation diagnostic to calculate rate in molN/kg/yr (rather than molN2/kg/yr) - Fanny (July 2010)
     ! removed this ... added new simpler output which includes the x 2.0 - Andy (Jan 2025)
     ! ############################################################################################################################ !
-    diag_bio(idiag_bio_dPO4,dum_i,dum_j) = loc_dPO4
+    diag_bio(idiag_bio_dPO4,dum_i,dum_j)    = loc_dPO4
+    diag_bio(idiag_bio_dNO3,dum_i,dum_j)    = loc_bio_uptake(io_NO3,n_k)
     diag_bio(idiag_bio_DOMfrac,dum_i,dum_j) = dum_dt*loc_bio_red_DOMfrac
     SELECT CASE (par_bio_prodopt)
     CASE ( &
@@ -2078,7 +2083,6 @@ CONTAINS
        diag_bio(idiag_bio_frac_Fe2,dum_i,dum_j)   = dum_dt*loc_frac_Fe2
        diag_bio(idiag_bio_dPO4_1,dum_i,dum_j)     = loc_dPO4_1
        diag_bio(idiag_bio_dPO4_2,dum_i,dum_j)     = loc_dPO4_2
-       diag_bio(idiag_bio_dNO3,dum_i,dum_j)       = loc_bio_uptake(io_NO3,n_k)
        diag_bio(idiag_bio_N2fixation,dum_i,dum_j) = loc_bio_uptake(io_N2,n_k)
        diag_bio(idiag_bio_NH4assim,dum_i,dum_j)   = loc_bio_uptake(io_NH4,n_k)
        diag_bio(idiag_bio_knut,dum_i,dum_j)       = dum_dt*min(loc_kPO4,loc_kN,loc_kFe)

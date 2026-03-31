@@ -4421,11 +4421,12 @@ CONTAINS
     where(abs(loc_tmp_jk) < const_real_nullsmall)
        loc_mask_opsi = const_real_zero
     endwhere
-    call sub_adddef_netcdf_moc(loc_iou,'climate_opsi','Global streamfunction','Sv',const_real_zero,const_real_zero)
-    call sub_putvar2d('climate_opsi',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask_opsi)
-    ! Atlantic & Pacific -- modern topos only
-    select case (fname_topo)
-    case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+    call sub_adddef_netcdf_moc(loc_iou,'phys_opsi','Global streamfunction','Sv',const_real_zero,const_real_zero)
+    call sub_putvar2d('phys_opsi',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask)
+    ! Atlantic & Pacific -- only for worlds with a basin mask provided
+    ! NOTE: goldstein_jsf is set > 0 if a mask exists and is read in, in initialize_goldstein.f
+    !       and goldstein_jsf == 1 if there are no Atl or Pac basins defined
+    if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
        ! Atlantic
        loc_tmp_jk(:,:) = loc_scale*int_opsia_timeslice(:,:)/int_t_timeslice
        loc_tmp_jk(:,n_k:0:-1) = loc_tmp_jk(:,0:n_k:1)
@@ -4442,18 +4443,20 @@ CONTAINS
        where(abs(loc_tmp_jk) < const_real_nullsmall)
           loc_mask_opsi = const_real_zero
        endwhere
-       call sub_adddef_netcdf_moc(loc_iou,'climate_opsip','Pacific streamfunction','Sv',const_real_zero,const_real_zero)
-       call sub_putvar2d('climate_opsip',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask_opsi)
-    end select
-    ! ---------------------------------------------------------------- !
-    ! PSI
-    ! ---------------------------------------------------------------- !
-    loc_tmp_ij(:,:)   = int_psi_timeslice(1:n_i,0:n_j)/int_t_timeslice
-    loc_mask_psi(:,:) = const_real_one
-    call sub_adddef_netcdf_psi(loc_iou,'climate_psi','Barotropic streamfunction','Sv',const_real_zero,const_real_zero)
-    call sub_putvar2d('climate_psi',loc_iou,n_i,n_j+1,loc_ntrec,loc_tmp_ij,loc_mask_sur)
-    ! ---------------------------------------------------------------- !
-  END SUBROUTINE sub_2d_save_hidden_climate
+       call sub_adddef_netcdf_moc(loc_iou,'phys_opsip','Pacific streamfunction','Sv',const_real_zero,const_real_zero)
+       call sub_putvar2d('phys_opsip',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask)
+    else
+!!$       print*,goldstein_jsf,' (no mask)'
+    end if
+    !-----------------------------------------------------------------------
+    !       WRITE PSI
+    !-----------------------------------------------------------------------
+    loc_tmp_ij(:,:)    = int_psi_timeslice(1:n_i,0:n_j)/int_t_timeslice
+    loc_mask_surf(:,:) = const_real_one
+    call sub_adddef_netcdf_psi(loc_iou,'phys_psi','Barotropic streamfunction','Sv',const_real_zero,const_real_zero)
+    call sub_putvar2d('phys_psi',loc_iou,n_i,n_j+1,loc_ntrec,loc_tmp_ij,loc_mask_surf)
+    !-----------------------------------------------------------------------
+  END SUBROUTINE sub_save_netcdf_goldstein_opsi
   ! ****************************************************************************************************************************** !
 
   

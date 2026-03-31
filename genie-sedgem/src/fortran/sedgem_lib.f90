@@ -79,6 +79,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/ctrl_sed_dyerestart
   integer::par_sed_dyerestart_n                                  ! 
   NAMELIST /ini_sedgem_nml/par_sed_dyerestart_n
+  REAL::par_sed_diagen_kcalmod                                   ! modification of calcite k (>1.0 == reduced solubility)
+  NAMELIST /ini_sedgem_nml/par_sed_diagen_kcalmod
   ! ------------------- DIAGENESIS SCHEME: ORGANIC MATTER ------------------------------------------------------------------------ !
   LOGICAL::ctrl_sed_diagen_preserve_frac2                        ! Prevent frac2 from being remineralzied?
   NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_preserve_frac2

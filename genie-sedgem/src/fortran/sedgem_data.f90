@@ -93,6 +93,7 @@ CONTAINS
        print*,'CaCO3 blue tracer tag fraction                      : ',par_sed_CaCO3_fblue
        print*,'Tag restart CaCO3?                                  : ',ctrl_sed_dyerestart
        print*,'Taged restart CaCO3 depth in layers (n)             : ',par_sed_dyerestart_n
+       print*,'modification of calcite k (>1.0 == reduced sol)     : ',par_sed_diagen_kcalmod
        ! --- DIAGENESIS SCHEME: ORGANIC MATTER ----------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: ORGANIC MATTER --------------'
        print*,'Prevent frac2 from being remineralzied?             : ',ctrl_sed_diagen_preserve_frac2
@@ -266,6 +267,7 @@ CONTAINS
     ! revise diagenesis options
     if (ctrl_sed_Fcaco3) par_sed_diagen_CaCO3opt = 'ALL'
     if (ctrl_sed_Fopal) par_sed_diagen_opalopt   = 'ALL'
+    if (ctrl_sed_conv_sedocn_bohlen2012) ctrl_sed_conv_sed_ocn_redox = .true.
 
   END SUBROUTINE sub_load_goin_sedgem
   ! ****************************************************************************************************************************** !
