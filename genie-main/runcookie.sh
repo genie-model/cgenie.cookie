@@ -390,22 +390,22 @@ TRACERS=$(grep -o '$(DEFINE)GOLDSTEINNTRACS=..\>' $CONFIGPATH/$MODELID".config" 
 # create array size #
 ndim="$(echo "$LONS*$LATS*$LEVS*$TRACERS" | bc -l)"
 # test for change of base-config
-if test -e 'cookie_n.config' 
+if test -e 'cookie.current_grid_size.txt' 
 then
-    cookie_n=$(<'cookie_n.config')
+    cookie_n=$(<'cookie.current_grid_size.txt')
     if [ "$cookie_n" != "$ndim" ]; then
         echo ">> Use of different ocean array size detected, so ... (make cleanall) ..."
         echo ""
         sleep 2
         make cleanall
-        echo "$ndim" > 'cookie_n.config'
+        echo "$ndim" > 'cookie.current_grid_size.txt'
     fi
 else
-    echo ">> WARNING: No record of last ocean array size used (file: cookie_n.config): CONTINUING ..."
+    echo ">> WARNING: No record of last ocean array size used (file: cookie.current_grid_size.txt): CONTINUING ..."
     echo ""
     sleep 4
     make cleanall
-    echo "$ndim" > 'cookie_n.config'
+    echo "$ndim" > 'cookie.current_grid_size.txt'
 fi
 ./genie_example.job -O -f $CONFIGPATH/$CONFIGNAME
 # ---------------------------------
