@@ -5573,71 +5573,88 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>Align netCDF filenames with experiment name?</description>
                     </param>
+<!-- DATA SAVING: SIMPLIFIED SCHEME -->
+                    <param name="ctrl_save_basic_reservoirs">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_biologicalpump">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_geochemistry">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_proxies">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_basic_ALL">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_reservoirs">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_biologicalpump">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_geochemistry">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_proxies">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_advanced_ALL">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_grid">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_climate">
+			<value datatype="boolean">.true.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_seafloor">
+			<value datatype="boolean">.false.</value>
+                        <description>save seafloor as well as seasurface data?</description>
+                    </param>
+                    <param name="ctrl_save_hidden_interfacefluxes">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_redox">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_inversion">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_preformedtracers">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_fossilfuelco2">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_extra">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
+                    <param name="ctrl_save_hidden_ALL">
+			<value datatype="boolean">.false.</value>
+                        <description></description>
+                    </param>
 <!-- DATA SAVING: TIME-SLICES  -->
-                    <param name="ctrl_data_save_slice_ocnatm">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Atmospheric (interface) composition (2D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_ocn">
-			<value datatype="boolean">.true.</value>
-                        <description>time-slice data save: Ocean composition (3D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_ocnsed">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Sediment (interface) composition (2D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_fairsea">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Air-sea gas exchange (2D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_focnatm">
-			<value datatype="boolean">.true.</value>
-                        <description>time-slice data save: Ocean-atmosphere flux (2D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_focnsed">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Ocean-sediment flux (2D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_fsedocn">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Sediment-ocean flux (2D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_bio">
-			<value datatype="boolean">.true.</value>
-                        <description>time-slice data save: Biological fluxes (3D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_carb">
-			<value datatype="boolean">.true.</value>
-                        <description>time-slice data save: Aqueous carbonate system properties (3D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_carbconst">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Aqueous carbonate system constants (3D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_phys_atm">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Atmospheric physical properties (2D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_phys_ocn">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: Ocean physical properties (3D)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_misc">
-			<value datatype="boolean">.true.</value>
-                        <description>time-slice data save: Miscellaneous properties (-)?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_diag">
-			<value datatype="boolean">.false.</value>
-                        <description>time-slice data save: biogeochemical diagnostics?</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_diag_redox_old">
-			<value datatype="boolean">.false.</value>
-                        <description>[redox back-compatability ]</description>
-                    </param>
-                    <param name="ctrl_data_save_slice_sur">
-			<value datatype="boolean">.false.</value>
-                        <description>Surface fields?</description>
-                    </param>
                     <param name="par_data_save_slice_dt">
 			<value datatype="real">1.0</value>
                         <description>Integration interval (yr)</description>
@@ -5662,67 +5679,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.true.</value>
                         <description>Auto save at run end?</description>
                     </param>
-                    <param name="ctrl_data_save_slice_cdrmip">
-			<value datatype="boolean">.false.</value>
-                        <description>Save cdrmip data (only)?</description>
-                    </param>
                     <param name="ctrl_data_save_slice_carb_update">
 			<value datatype="boolean">.true.</value>
                         <description>Update carbonate chemistry for saving?</description>
                     </param>
 <!-- DATA SAVING: TIME-SERIES -->
-                    <param name="ctrl_data_save_sig_ocnatm">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Atmospheric (interface) composition?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_ocn">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Oceanic composition?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_fexport">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Export flux?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_fairsea">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Air-sea gas exchange?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_ocnsed">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Sediment (interface) composition?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_focnatm">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Ocean->atmosphere flux?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_focnsed">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Ocean->sediment flux?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_fsedocn">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Sediment->ocean flux?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_ocn_sur">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Ocean surface tracers?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_carb_sur">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Ocean surface carbonate chemistry?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_misc">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: Miscellaneous properties?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_diag">
-			<value datatype="boolean">.true.</value>
-                        <description>time-series data save: biogeochemical diagnostics?</description>
-                    </param>
-                    <param name="ctrl_data_save_sig_diag_redox_old">
-			<value datatype="boolean">.false.</value>
-                        <description>[redox back-compatability]</description>
-                    </param>
                     <param name="par_data_save_sig_dt">
 			<value datatype="real">1.0</value>
                         <description>Integration interval (yr)</description>
@@ -5772,10 +5733,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_data_save_level">
 			<value datatype="integer">-1</value>
                         <description>Degree of comprehensivity of data saving</description>
-                    </param>
-                    <param name="ctrl_data_save_derived">
-			<value datatype="boolean">.false.</value>
-                        <description>save 'derived' data (e.g., salinity-normalized ocean tracers)?</description>
                     </param>
                     <param name="ctrl_data_save_GLOBAL">
 			<value datatype="boolean">.true.</value>

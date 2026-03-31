@@ -663,31 +663,44 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_ncrst_name
   LOGICAL::ctrl_ncout_expid_name                                 ! align netCDF filenames with experiment name?
   NAMELIST /ini_biogem_nml/ctrl_ncout_expid_name
+  ! ------------------- SIMPLE DATA SAVING SCHEME -------------------------------------------------------------------------------- !
+  ! basic data saving
+  ! catagories of basic/fundamental data saving designed as default teaching options
+  LOGICAL::ctrl_save_basic_reservoirs                            ! atm, ocn (surface and benthic), sed tracer fields
+  LOGICAL::ctrl_save_basic_biologicalpump                        ! export, 3D flux field
+  LOGICAL::ctrl_save_basic_geochemistry                          ! basic carb chem, O2/NO3/SO4 remin summary [requires redox saving]
+  LOGICAL::ctrl_save_basic_proxies                               ! trace-metal ratios, tracer isotopic properties (if selected)
+  LOGICAL::ctrl_save_basic_ALL                                   ! 
+  NAMELIST /ini_biogem_nml/ctrl_save_basic_reservoirs,ctrl_save_basic_biologicalpump, &
+       & ctrl_save_basic_geochemistry, ctrl_save_basic_proxies, &
+       & ctrl_save_basic_ALL
+  ! advanced data saving
+  ! catagories of more advannced data saving for R&D
+  LOGICAL::ctrl_save_advanced_reservoirs                         ! inventories
+  LOGICAL::ctrl_save_advanced_biologicalpump                     ! controls on export, fluxes in other units
+  LOGICAL::ctrl_save_advanced_geochemistry                       ! diagnostics, constants, reactions, remineralization pathways
+  LOGICAL::ctrl_save_advanced_proxies                            ! forward-proxy models
+  LOGICAL::ctrl_save_advanced_ALL                                ! 
+  NAMELIST /ini_biogem_nml/ctrl_save_advanced_reservoirs,ctrl_save_advanced_biologicalpump, &
+       & ctrl_save_advanced_geochemistry, ctrl_save_advanced_proxies,&
+       & ctrl_save_advanced_ALL
+  ! hidden data saving options
+  ! options that are default 'on' but can be turned off, rarely used diagnostic fields, and fields used for teaching
+  LOGICAL::ctrl_save_hidden_grid                                 ! (automatically save essential model grid info)
+  LOGICAL::ctrl_save_hidden_climate                              ! (automatically save climate data --  velocity fields, OPSI/PSI)
+  LOGICAL::ctrl_save_hidden_seafloor                             ! save seafloor as well as seasurface data?
+  LOGICAL::ctrl_save_hidden_interfacefluxes                      ! ocn-atm, ocn-sed, weathering
+  LOGICAL::ctrl_save_hidden_inversion                            ! inversion fluxes
+  LOGICAL::ctrl_save_hidden_preformedtracers                     ! (automatically save preformed tracers if selected)
+  LOGICAL::ctrl_save_hidden_redox                                ! save redox diagnostics?  
+  LOGICAL::ctrl_save_hidden_fossilfuelco2                        ! CO2 column inventory, CO2 fluxes
+  LOGICAL::ctrl_save_hidden_extra                                ! extra e.g., 2D tracer column inventories, S-normalized
+  LOGICAL::ctrl_save_hidden_ALL                                  ! 
+  NAMELIST /ini_biogem_nml/ctrl_save_hidden_grid,ctrl_save_hidden_climate,ctrl_save_hidden_seafloor, &
+       & ctrl_save_hidden_interfacefluxes,ctrl_save_hidden_inversion,ctrl_save_hidden_preformedtracers, &
+       & ctrl_save_hidden_redox,ctrl_save_hidden_extra,ctrl_save_hidden_fossilfuelco2, &
+       & ctrl_save_hidden_ALL
   ! ------------------- DATA SAVING: TIME-SLICES --------------------------------------------------------------------------------- !
-  LOGICAL::ctrl_data_save_slice_ocnatm                           ! time-slice data save: Atmospheric (interface) composition (2D)?
-  LOGICAL::ctrl_data_save_slice_ocn                              ! time-slice data save: Ocean composition (3D)?
-  LOGICAL::ctrl_data_save_slice_ocnsed                           ! time-slice data save: Sediment (interface) composition (2D)?
-  LOGICAL::ctrl_data_save_slice_fairsea                          ! time-slice data save: Air-sea gas exchange (2D)?
-  LOGICAL::ctrl_data_save_slice_focnatm                          ! time-slice data save: Ocean-atmosphere flux (2D)?
-  LOGICAL::ctrl_data_save_slice_focnsed                          ! time-slice data save: Ocean-sediment flux (2D)?
-  LOGICAL::ctrl_data_save_slice_fsedocn                          ! time-slice data save: Sediment-ocean flux (2D)?
-  LOGICAL::ctrl_data_save_slice_bio                              ! time-slice data save: Biological fluxes (3D)?
-  LOGICAL::ctrl_data_save_slice_carb                             ! time-slice data save: Aqueous carbonate system properties (3D)?
-  LOGICAL::ctrl_data_save_slice_carbconst                        ! time-slice data save: Aqueous carbonate system constants (3D)?
-  LOGICAL::ctrl_data_save_slice_phys_atm                         ! time-slice data save: Atmospheric physical properties (2D)?
-  LOGICAL::ctrl_data_save_slice_phys_ocn                         ! time-slice data save: Ocean physical properties (3D)?
-  LOGICAL::ctrl_data_save_slice_misc                             ! time-slice data save: Miscellaneous properties (-)?
-  LOGICAL::ctrl_data_save_slice_diag                             ! time-slice data save: biogeochemical diagnostics?
-  LOGICAL::ctrl_data_save_slice_diag_redox_old                   ! redox back-compatability
-  LOGICAL::ctrl_data_save_slice_sur                              ! time-slice data save: surface properties
-  NAMELIST /ini_biogem_nml/ &
-       & ctrl_data_save_slice_ocnatm,ctrl_data_save_slice_ocn,ctrl_data_save_slice_ocnsed, &
-       & ctrl_data_save_slice_fairsea, &
-       & ctrl_data_save_slice_focnatm,ctrl_data_save_slice_focnsed,ctrl_data_save_slice_fsedocn, &
-       & ctrl_data_save_slice_bio,ctrl_data_save_slice_carb,ctrl_data_save_slice_carbconst, &
-       & ctrl_data_save_slice_phys_atm,ctrl_data_save_slice_phys_ocn,ctrl_data_save_slice_misc,ctrl_data_save_slice_diag, &
-       & ctrl_data_save_slice_diag_redox_old, &
-       & ctrl_data_save_slice_sur
   real::par_data_save_slice_dt                                   ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_slice_dt
   real::par_data_save_slice_timeinterval                         ! Save interval if not using save point definition file (yr)
@@ -700,30 +713,9 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_data_save_slice_n
   LOGICAL::ctrl_data_save_slice_autoend                          ! auto save at run end?
   NAMELIST /ini_biogem_nml/ctrl_data_save_slice_autoend
-  LOGICAL::ctrl_data_save_slice_cdrmip                           ! save cdrmip data (only)?
-  NAMELIST /ini_biogem_nml/ctrl_data_save_slice_cdrmip
   LOGICAL::ctrl_data_save_slice_carb_update                      ! Update carbonate chemistry for saving?
   NAMELIST /ini_biogem_nml/ctrl_data_save_slice_carb_update
   ! ------------------- DATA SAVING: TIME-SERIES --------------------------------------------------------------------------------- !
-  LOGICAL::ctrl_data_save_sig_ocnatm                             ! time-series data save: Atmospheric (interface) composition?
-  LOGICAL::ctrl_data_save_sig_ocn                                ! time-series data save: Oceanic composition?
-  LOGICAL::ctrl_data_save_sig_fexport                            ! time-series data save: Export flux?
-  LOGICAL::ctrl_data_save_sig_fairsea                            ! time-series data save: Air-sea gas exchange?
-  LOGICAL::ctrl_data_save_sig_ocnsed                             ! time-series data save: Sediment (interface) composition?
-  LOGICAL::ctrl_data_save_sig_focnatm                            ! time-series data save: Ocean->atmosphere flux?
-  LOGICAL::ctrl_data_save_sig_focnsed                            ! time-series data save: Ocean->sediment flux?
-  LOGICAL::ctrl_data_save_sig_fsedocn                            ! time-series data save: Sediment->ocean flux?
-  LOGICAL::ctrl_data_save_sig_ocn_sur                            ! time-series data save: Ocean surface tracers?
-  LOGICAL::ctrl_data_save_sig_carb_sur                           ! time-series data save: Ocean surface carbonate chemistry?
-  LOGICAL::ctrl_data_save_sig_misc                               ! time-series data save: Miscellaneous properties?
-  LOGICAL::ctrl_data_save_sig_diag                               ! time-series data save: biogeochemical diagnostics?
-  LOGICAL::ctrl_data_save_sig_diag_redox_old                     ! redox back-compatability
-  NAMELIST /ini_biogem_nml/ &
-       & ctrl_data_save_sig_ocnatm,ctrl_data_save_sig_ocn,ctrl_data_save_sig_fexport,ctrl_data_save_sig_ocnsed, &
-       & ctrl_data_save_sig_fairsea, &
-       & ctrl_data_save_sig_focnatm,ctrl_data_save_sig_focnsed,ctrl_data_save_sig_fsedocn, &
-       & ctrl_data_save_sig_ocn_sur,ctrl_data_save_sig_carb_sur,ctrl_data_save_sig_misc,ctrl_data_save_sig_diag, &
-       & ctrl_data_save_sig_diag_redox_old
   real::par_data_save_sig_dt                                     ! Integration interval (yr)
   NAMELIST /ini_biogem_nml/par_data_save_sig_dt
   real::par_data_save_sig_timeinterval                           ! Save interval if not using save point definition file (yr)
@@ -749,9 +741,8 @@ MODULE biogem_lib
   ! ------------------- DATA SAVING: MISC ---------------------------------------------------------------------------------------- !
   integer::par_data_save_level                                   ! Degree of comprehensivity of data saving
   NAMELIST /ini_biogem_nml/par_data_save_level
-  LOGICAL::ctrl_data_save_derived                                ! save 'derived' data (e.g., salinity-normalized ocean tracers)?
   LOGICAL::ctrl_data_save_GLOBAL                                 ! save global diagnostics (at time-slice intervals)?
-  NAMELIST /ini_biogem_nml/ctrl_data_save_derived,ctrl_data_save_GLOBAL
+  NAMELIST /ini_biogem_nml/ctrl_data_save_GLOBAL
   LOGICAL::ctrl_data_save_slice_ascii                            ! Save time-slice data in ASCII format?
   LOGICAL::ctrl_data_save_sig_ascii                              ! Save time-series data in ASCII format?
   NAMELIST /ini_biogem_nml/ctrl_data_save_slice_ascii,ctrl_data_save_sig_ascii
@@ -844,7 +835,7 @@ MODULE biogem_lib
   ! ****************************************************************************************************************************** !
 
   ! ****************************************************************************************************************************** !
-  ! MODEL CONFIGURATION CONSTANTS - ARRAY DIMENSIONS
+  ! DEFINE ARRAY DIMENSIONS
   ! ****************************************************************************************************************************** !
 
   ! *** array dimensions ***
@@ -862,19 +853,19 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_opt_bio                            = 06 ! biogeochemical cycling
   INTEGER,PARAMETER::n_opt_force                          = 08 ! forcings
   INTEGER,PARAMETER::n_opt_data                           = 30 ! data (I/O)
-  INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
+!!$  INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
+  ! diagnostics arrays dimensions
   INTEGER,PARAMETER::n_diag_bio                           = 24 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
   INTEGER,PARAMETER::n_diag_precip                        = 09 ! 
-  INTEGER,PARAMETER::n_diag_react                         = 11 ! YK modified 12.28.2020
-  !                                                              (overwriting _DEV_tracers where n_diag_react = 09; 03.19.2021)
+  INTEGER,PARAMETER::n_diag_react                         = 11 ! 
   INTEGER,PARAMETER::n_diag_iron                          = 09 ! As in _DEV_tracers (03.19.2021)
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
-
+  INTEGER::n_diag_redox_aq                                =  0 !
 
   ! ****************************************************************************************************************************** !
-  ! MODEL CONFIGURATION CONSTANTS - ARRAY INDICES NAMES
+  ! DEFINE ARRAY INDICES
   ! ****************************************************************************************************************************** !
 
   ! *** array index values ***
@@ -940,12 +931,12 @@ MODULE biogem_lib
   ! options - save
   INTEGER,PARAMETER::iopt_data_save_timeslice_fnint       = 23   ! construct time slice filename with integer year only?
   INTEGER,PARAMETER::iopt_data_save_config                = 24   ! save copies of biogem config files?
-  ! tracer selection combination options
-  INTEGER,PARAMETER::iopt_select_carbchem                 = 01   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_CO2               = 02   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_O2                = 03   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_N2                = 04   !
-  INTEGER,PARAMETER::iopt_select_ocnatm_HC                = 05   !
+!!$  ! tracer selection combination options
+!!$  INTEGER,PARAMETER::iopt_select_carbchem                 = 01   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_CO2               = 02   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_O2                = 03   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_N2                = 04   !
+!!$  INTEGER,PARAMETER::iopt_select_ocnatm_HC                = 05   !
   ! diagnostics - biology
   INTEGER,PARAMETER::idiag_bio_dPO4                      = 01    !
   INTEGER,PARAMETER::idiag_bio_dPO4_1                    = 02    !
@@ -989,7 +980,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_precip_FeCO3_dFe              = 04    !
   INTEGER,PARAMETER::idiag_precip_FeCO3_dDIC             = 05    !
   INTEGER,PARAMETER::idiag_precip_FeOOH_dFe              = 06    !
-  INTEGER,PARAMETER::idiag_precip_Fe3SiO4_dFe            = 07    !
+  INTEGER,PARAMETER::idiag_precip_Fe3Si2O4_dFe           = 07    !
   INTEGER,PARAMETER::idiag_precip_Fe3PO42_dFe            = 08    !
   INTEGER,PARAMETER::idiag_precip_Fe3PO42_dPO4           = 09    !
   ! diagnostics - geochemistry -- iron speciation
@@ -1024,6 +1015,10 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_misc_2D_FALK                  = 07    !
   INTEGER,PARAMETER::idiag_misc_2D_FCa                   = 08    !
   INTEGER,PARAMETER::idiag_misc_2D_FCa_44Ca              = 09    !
+
+  ! ****************************************************************************************************************************** !
+  ! DEFINE ARRAY INDICES NAMES
+  ! ****************************************************************************************************************************** !
 
   ! *** array index names ***
   ! ocean 'physics'
@@ -1126,7 +1121,7 @@ MODULE biogem_lib
        & 'precip_FeCO3_dFe    ', &
        & 'precip_FeCO3_dDIC   ', &
        & 'precip_FeOOH_dFe    ', &
-       & 'precip_Fe3SiO4_dFe  ', &
+       & 'precip_Fe3Si2O4_dFe ', &
        & 'precip_Fe3PO42_dFe  ', &
        & 'precip_Fe3PO42_dPO4 ' /)
   ! diagnostics - geochemistry -- Fe speciation
@@ -1205,7 +1200,6 @@ MODULE biogem_lib
   ! (iii) a very large value will place no restrictions on air-sea gas exchange
   real,parameter::par_airsea_r_dflux_deqm_max = 1.00
 
-
   ! ****************************************************************************************************************************** !
   ! GLOBAL VARIABLE AND RUN-TIME SET PARAMETER ARRAYS
   ! ****************************************************************************************************************************** !
@@ -1230,8 +1224,8 @@ MODULE biogem_lib
   integer::ncout2d_iou                                           ! io for netcdf datasets
   integer::ncout3d_iou                                           ! io for netcdf datasets
   integer::ncout3dsig_iou                                        ! io for netcdf datasets
-  integer::ncrst_ntrec                                         ! count for netcdf datasets
-  integer::ncrst_iou                                           ! io for netcdf restart
+  integer::ncrst_ntrec                                           ! count for netcdf datasets
+  integer::ncrst_iou                                             ! io for netcdf restart
 
   ! *** Miscellanenous run-time control options ***
   LOGICAL,DIMENSION(n_opt_misc)::opt_misc                        !
@@ -1341,8 +1335,14 @@ MODULE biogem_lib
   REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_pH                 ! change in the sum of occurrences of falure to solve pH 
   REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_it                 ! change in the sum of occurrences of excessive pH iterations
 
-  ! *** integrated (time-averaged) time-series storage scalars and vectors ***
-  !
+  ! ---------------------------------------------------------- !
+  ! reaction selection
+  ! ---------------------------------------------------------- !
+  logical,dimension(n_diag_precip)::ctrl_save_n_diag_precip
+  logical,dimension(n_diag_react)::ctrl_save_n_diag_react
+  ! ---------------------------------------------------------- !
+  ! integrated (time-averaged) time-series storage scalars and vectors
+  ! ---------------------------------------------------------- !
   REAL::int_misc_gemlite_sig                                     !
   REAL::int_ocn_tot_M_sig                                        !
   REAL::int_ocn_tot_M_sur_sig                                    !
@@ -1459,7 +1459,7 @@ MODULE biogem_lib
   LOGICAL,DIMENSION(n_opt_bio)::opt_bio                           !
   LOGICAL,DIMENSION(n_opt_force)::opt_force = .FALSE.             !
   LOGICAL,DIMENSION(n_opt_data)::opt_data                         !
-  LOGICAL,DIMENSION(n_opt_select)::opt_select                     !
+!!$  LOGICAL,DIMENSION(n_opt_select)::opt_select                     !
   ! integrated time series arrays
   REAL,DIMENSION(n_data_max)::par_data_save_sig                   !
   REAL,DIMENSION(n_data_max)::par_data_save_timeslice             !

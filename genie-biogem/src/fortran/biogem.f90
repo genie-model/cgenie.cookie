@@ -179,6 +179,7 @@ subroutine biogem(        &
      DO l=3,n_l_atm
         ia = conv_iselected_ia(l)
         IF (force_restore_atm_select(ia)) THEN
+           IF (ctrl_debug_lvl1) print*,ia
            loc_force_restore_atm_tmod(ia) = 1.0 - EXP(-loc_dtyr/force_restore_atm_tconst(ia))
         END IF
      END DO
@@ -186,10 +187,12 @@ subroutine biogem(        &
      DO l=1,n_l_ocn
         io = conv_iselected_io(l)
         IF (force_restore_ocn_select(io)) THEN
+           IF (ctrl_debug_lvl1) print*,io
            loc_force_restore_ocn_tmod(io) = 1.0 - EXP(-loc_dtyr/force_restore_ocn_tconst(io))
         END IF
      END DO
 
+     IF (ctrl_debug_lvl1) print*, '*** UPDATE DERIVED FORCING DATA ***'
      ! *** UPDATE DERIVED FORCING DATA ***
      loc_n_k_tot               = 0
      loc_k_tot_icefree         = 0.0
@@ -417,6 +420,8 @@ subroutine biogem(        &
      ! ****************************************************************************************************************************
      ! ****************************************************************************************************************************
 
+     IF (ctrl_debug_lvl1) print*,'*** ORIGINAL CODE FRAGMENT  ***'
+              
      ! *** ORIGINAL CODE FRAGMENT *************************************************************************************************
      DO i=1,n_i
         DO j=1,n_j
@@ -426,18 +431,15 @@ subroutine biogem(        &
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** AGE TRACERS ***'
               ! *** AGE TRACERS ***
-              ! NOTE: red has unit concentraton input to the surface per year
               ! NOTE: ctrl_force_ocn_age1 enables a single tracer -- as a 'preformed' age
+              !      (now replaced with just ctrl_force_ocn_age)
               ! force surface value
               if (ctrl_force_ocn_age) then
-                 bio_remin(io_colr,i,j,n_k) = bio_remin(io_colr,i,j,n_k) + (1.0 - ocn(io_colr,i,j,n_k))
-                 bio_remin(io_colb,i,j,n_k) = bio_remin(io_colb,i,j,n_k) + (loc_t*1.0 - ocn(io_colb,i,j,n_k))
-              elseif (ctrl_force_ocn_age1) then
                  bio_remin(io_colr,i,j,n_k) = bio_remin(io_colr,i,j,n_k) + (0.0 - ocn(io_colr,i,j,n_k))
               end if
               ! age ocean interior
               ! NOTE: exclude surface layer
-              if (ctrl_force_ocn_age1) then
+              if (ctrl_force_ocn_age) then
                  DO k=loc_k1,n_k-1
                     bio_remin(io_colr,i,j,k) = bio_remin(io_colr,i,j,k) + loc_dtyr
                  END DO
@@ -820,7 +822,7 @@ subroutine biogem(        &
 
               IF (ctrl_debug_lvl1 .AND. loc_debug_ij) print*, &
                    & '*** UPDATE CARBONATE CHEMSITRY ***'
-              IF (opt_select(iopt_select_carbchem)) THEN
+              if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
                  ! set local k loop limit
                  if (ctrl_carbchemupdate_full) then
                     loc_k = loc_k1
@@ -1880,7 +1882,7 @@ subroutine biogem(        &
                     end IF
                  end select
               END IF
-              IF (opt_select(iopt_select_carbchem)) THEN
+              if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
                  ! record air-sea gas exchange coefficient for posterity
                  if ((1.0 - phys_ocnatm(ipoa_seaice,i,j)) > const_real_nullsmall) then
                     phys_ocnatm(ipoa_KCO2,i,j) = conv_umol_mol*phys_ocn(ipo_rA,i,j,n_k)* &
@@ -3408,41 +3410,39 @@ SUBROUTINE diag_biogem_timeslice( &
         int_t_timeslice_count = int_t_timeslice_count + 1
 
         if_save3: if (dum_save) then
-
+           
            ! reconstruct local interface fluxes
-           IF (opt_select(iopt_select_carbchem) .AND. ctrl_data_save_slice_carb_update) THEN
-              DO i=1,n_i
-                 DO j=1,n_j
-                    loc_k1 = goldstein_k1(i,j)
-                    IF (n_k >= loc_k1) THEN
-                       ! [wet grid points]
-                       ! ocn->atm
-                       ! NOTE: convert units from (mol m-2 s-1) to (mol yr-1)
-                       DO l=3,n_l_atm
-                          ia = conv_iselected_ia(l)
-                          locij_focnatm(ia,i,j) = conv_yr_s*phys_ocnatm(ipoa_A,i,j)*dum_sfxatm1(ia,i,j)
-                       end do
-                       ! ocn->sed
-                       ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
-                       DO l=1,n_l_sed
-                          is = conv_iselected_is(l)
-                          locij_focnsed(is,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxsed1(is,i,j)
-                       end DO
-                       ! sed->ocn
-                       ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
-                       DO l=3,n_l_ocn
-                          io = conv_iselected_io(l)
-                          locij_fsedocn(io,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxocn1(io,i,j)
-                       end do
-                    end if
-                 end do
+           DO i=1,n_i
+              DO j=1,n_j
+                 loc_k1 = goldstein_k1(i,j)
+                 IF (n_k >= loc_k1) THEN
+                    ! [wet grid points]
+                    ! ocn->atm
+                    ! NOTE: convert units from (mol m-2 s-1) to (mol yr-1)
+                    DO l=3,n_l_atm
+                       ia = conv_iselected_ia(l)
+                       locij_focnatm(ia,i,j) = conv_yr_s*phys_ocnatm(ipoa_A,i,j)*dum_sfxatm1(ia,i,j)
+                    end do
+                    ! ocn->sed
+                    ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
+                    DO l=1,n_l_sed
+                       is = conv_iselected_is(l)
+                       locij_focnsed(is,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxsed1(is,i,j)
+                    end DO
+                    ! sed->ocn
+                    ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
+                    DO l=3,n_l_ocn
+                       io = conv_iselected_io(l)
+                       locij_fsedocn(io,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxocn1(io,i,j)
+                    end do
+                 end if
               end do
-           end if    
+           end do
 
            ! update whole-ocean carbonate equilibrium
            ! NOTE: update seperate arrays from those used in the time-stepping
            !       to avoid time-slice saving impacting on evolving ocean pH
-           IF (opt_select(iopt_select_carbchem) .AND. ctrl_data_save_slice_carb_update) THEN
+           if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
               DO i=1,n_i
                  DO j=1,n_j
                     loc_k1 = goldstein_k1(i,j)
@@ -3557,7 +3557,7 @@ SUBROUTINE diag_biogem_timeslice( &
                           end if
                        end do
                        ! re-calculate -- surface-ocean properties only!
-                       IF (ctrl_data_save_buffering .AND. (.NOT. ctrl_carbchem_pH_OLD)) THEN
+                       IF (ctrl_save_advanced_geochemistry .AND. (.NOT. ctrl_carbchem_pH_OLD)) THEN
                           ! surface-only properties -- estimate Revelle (and 'sensitivity') factor
                           loc_carb(ic_RF0,i,j,n_k)  = fun_calc_carb_RF0( &
                                & par_carbchem_pH_tolerance_buffering,  &
@@ -3857,7 +3857,7 @@ SUBROUTINE diag_biogem_timeslice( &
               end if
               ! save global diagnostics
               If (ctrl_data_save_GLOBAL) call sub_data_save_global_av()
-              If (ctrl_data_save_GLOBAL .AND. ctrl_data_save_derived) call sub_data_save_global_snap(loc_t,dum_sfcatm1(:,:,:))
+              If (ctrl_data_save_GLOBAL .AND. ctrl_save_hidden_extra) call sub_data_save_global_snap(loc_t,dum_sfcatm1(:,:,:))
               ! save orbits data
               if ((n_orb_pts_nloc > 0) .and. (n_orb_pts > 0)) then
                  WRITE(unit=6,fmt='(A57,f12.3)') &
@@ -4131,27 +4131,13 @@ SUBROUTINE diag_biogem_timeseries( &
            int_ocn_tot_M_sur_sig = int_ocn_tot_M_sur_sig + loc_dtyr*SUM(phys_ocn(ipo_M,:,:,n_k))
            int_ocn_tot_V_sig     = int_ocn_tot_M_sig     + loc_dtyr*SUM(phys_ocn(ipo_V,:,:,:))
            ! main time-series
-           IF (ctrl_data_save_sig_ocn) THEN
+           if (ctrl_save_hidden_climate .OR. ctrl_save_basic_reservoirs) then
               DO l=1,n_l_ocn
                  io = conv_iselected_io(l)
                  int_ocn_sig(io) = int_ocn_sig(io) + &
                       & loc_dtyr*SUM(phys_ocn(ipo_M,:,:,:)*ocn(io,:,:,:))*loc_ocn_rtot_M
               END DO
               IF (ctrl_force_ocn_age) THEN
-                 DO i=1,n_i
-                    DO j=1,n_j
-                       loc_k1 = goldstein_k1(i,j)
-                       IF (n_k >= loc_k1) THEN
-                          DO k=loc_k1,n_k
-                             if (ocn(io_colr,i,j,k) > const_real_nullsmall) then
-                                int_misc_age_sig = int_misc_age_sig + &
-                                     & loc_dtyr*loc_ocn_rtot_M*phys_ocn(ipo_M,i,j,k)*ocn(io_colb,i,j,k)/ocn(io_colr,i,j,k)
-                             end if
-                          end DO
-                       end IF
-                    end DO
-                 end DO
-              elseIF (ctrl_force_ocn_age1) THEN
                  DO i=1,n_i
                     DO j=1,n_j
                        loc_k1 = goldstein_k1(i,j)
@@ -4165,14 +4151,14 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_ocnatm .OR. ctrl_data_echo_runtime_NEW) THEN
+           if (ctrl_save_hidden_climate .OR. ctrl_save_basic_reservoirs) then
               DO l=1,n_l_atm
                  ia = conv_iselected_ia(l)
                  int_ocnatm_sig(ia) = int_ocnatm_sig(ia) + &
                       & loc_dtyr*SUM(phys_ocnatm(ipoa_A,:,:)*dum_sfcatm1(ia,:,:))*loc_ocnatm_rtot_A
               END DO
            end if
-           IF (ctrl_data_save_sig_fexport .OR. ctrl_data_echo_runtime_NEW) THEN
+           IF (ctrl_save_basic_biologicalpump) THEN
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  int_fexport_sig(is) = int_fexport_sig(is) + &
@@ -4180,28 +4166,28 @@ SUBROUTINE diag_biogem_timeseries( &
                  int_fracdom_sig(is) = int_fracdom_sig(is) + loc_dtyr*int_fracdom(is)
               END DO
            end if
-           IF (ctrl_data_save_sig_focnatm) THEN
+           IF (ctrl_save_hidden_interfacefluxes) THEN
               DO l=3,n_l_atm
                  ia = conv_iselected_ia(l)
                  int_focnatm_sig(ia) = int_focnatm_sig(ia) + &
                       & loc_dtyr*SUM(locij_focnatm(ia,:,:))
               END DO
            end if
-           IF (ctrl_data_save_sig_focnsed) THEN
+           IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  int_focnsed_sig(is) = int_focnsed_sig(is) + &
                       & SUM(locij_focnsed(is,:,:))
               END DO
            end if
-           IF (ctrl_data_save_sig_fsedocn) THEN
+           IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
               DO l=1,n_l_ocn
                  io = conv_iselected_io(l)
                  int_fsedocn_sig(io) = int_fsedocn_sig(io) + loc_dts*&
                       & SUM(phys_ocn(ipo_A,:,:,n_k)*dum_sfxocn1(io,:,:))
               END DO
            end if
-           IF (ctrl_data_save_sig_ocn_sur .OR. ctrl_data_echo_runtime_NEW) THEN
+           IF (ctrl_save_hidden_climate .OR. ctrl_save_basic_reservoirs) THEN
               DO l=1,n_l_ocn
                  io = conv_iselected_io(l)
                  int_ocn_sur_sig(io) = int_ocn_sur_sig(io) + loc_dtyr*&
@@ -4214,18 +4200,6 @@ SUBROUTINE diag_biogem_timeseries( &
                     DO j=1,n_j
                        loc_k1 = goldstein_k1(i,j)
                        IF (n_k >= loc_k1) THEN
-                          if (ocn(io_colr,i,j,n_k) > const_real_nullsmall) then
-                             int_misc_age_sur_sig = int_misc_age_sur_sig + &
-                                  & loc_dtyr*loc_ocn_rtot_A*phys_ocn(ipo_A,i,j,n_k)*ocn(io_colb,i,j,n_k)/ocn(io_colr,i,j,n_k)
-                          end if
-                       end IF
-                    end DO
-                 end DO
-              elseIF (ctrl_force_ocn_age1) THEN
-                 DO i=1,n_i
-                    DO j=1,n_j
-                       loc_k1 = goldstein_k1(i,j)
-                       IF (n_k >= loc_k1) THEN
                           int_misc_age_sur_sig = int_misc_age_sur_sig + &
                                & loc_dtyr*loc_ocn_rtot_A*phys_ocn(ipo_A,i,j,n_k)*ocn(io_colr,i,j,n_k)
                        end IF
@@ -4233,7 +4207,7 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_carb_sur .OR. ctrl_data_echo_runtime_NEW) THEN
+           IF (ctrl_save_basic_geochemistry) THEN
               DO ic=1,n_carb
                  int_carb_sur_sig(ic) = int_carb_sur_sig(ic) + loc_dtyr*&
                       & SUM(phys_ocn(ipo_A,:,:,n_k)*carb(ic,:,:,n_k))*loc_ocn_rtot_A
@@ -4241,7 +4215,7 @@ SUBROUTINE diag_biogem_timeseries( &
                       & SUM((1.0 - phys_ocnatm(ipoa_seaice,:,:))*phys_ocn(ipo_A,:,:,n_k)*carb(ic,:,:,n_k))*loc_opn_rtot_A
               END DO
            end if
-           IF (ctrl_data_save_sig_ocn_sur) THEN
+           IF (ctrl_save_hidden_climate .OR. ctrl_save_basic_reservoirs) THEN
               DO l=1,n_l_ocn
                  io = conv_iselected_io(l)
                  int_ocn_ben_sig(io) = int_ocn_ben_sig(io) + loc_dtyr*loc_ocnsed_rtot_A_ben*&
@@ -4250,22 +4224,6 @@ SUBROUTINE diag_biogem_timeseries( &
                       & SUM(locij_mask_shf(:,:)*phys_ocn(ipo_A,:,:,n_k)*locij_ocn_shf(io,:,:))
               END DO
               IF (ctrl_force_ocn_age) THEN
-                 DO i=1,n_i
-                    DO j=1,n_j
-                       loc_k1 = goldstein_k1(i,j)
-                       IF (n_k >= loc_k1) THEN
-                          if (locij_ocn_ben(io_colr,i,j) > const_real_nullsmall) then
-                             int_misc_age_ben_sig = int_misc_age_ben_sig + loc_dtyr*loc_ocnsed_rtot_A_ben*locij_mask_ben(i,j)*&
-                                  & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_ben(io_colb,i,j)/locij_ocn_ben(io_colr,i,j)
-                          end if
-                          if (locij_ocn_shf(io_colr,i,j) > const_real_nullsmall) then
-                             int_misc_age_shf_sig = int_misc_age_shf_sig + loc_dtyr*loc_ocnsed_rtot_A_shf*locij_mask_shf(i,j)*&
-                                  & phys_ocn(ipo_A,i,j,n_k)*locij_ocn_shf(io_colb,i,j)/locij_ocn_shf(io_colr,i,j)
-                          end if
-                       end IF
-                    end DO
-                 end DO
-              elseIF (ctrl_force_ocn_age1) THEN
                  DO i=1,n_i
                     DO j=1,n_j
                        loc_k1 = goldstein_k1(i,j)
@@ -4279,7 +4237,7 @@ SUBROUTINE diag_biogem_timeseries( &
                  end DO
               END if
            end if
-           IF (ctrl_data_save_sig_misc .OR. ctrl_data_echo_runtime_NEW) THEN
+           IF (ctrl_save_hidden_climate) THEN
               ! record GEMlite phase
               if (dum_gemlite) int_misc_gemlite_sig = int_misc_gemlite_sig + loc_dtyr
               ! sea-ice
@@ -4357,7 +4315,7 @@ SUBROUTINE diag_biogem_timeseries( &
            ! NOTE: isotopic properties are already as per mil (rather than isotopic weight percent)
            ! NOTE: deep == ben
            !       neri == shf
-           IF (ctrl_data_save_sig_ocnsed) THEN
+           IF (flag_sedgem .AND. ctrl_save_basic_reservoirs) THEN
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  SELECT CASE (sed_type(is))
@@ -4426,7 +4384,7 @@ SUBROUTINE diag_biogem_timeseries( &
            ! NOTE: diag_bio variables have already been converted into yr-1
            loc_tot_A  = sum(phys_ocn(ipo_A,:,:,n_k))
            loc_tot_EP = SUM(bio_settle(is_POC,:,:,n_k))
-           IF (ctrl_data_save_sig_diag .OR. ctrl_data_save_sig_diag_geochem) THEN
+           IF (ctrl_save_basic_biologicalpump) THEN
               DO ib=1,n_diag_bio
                  int_diag_bio_sig(ib) = int_diag_bio_sig(ib) + &
                       & SUM(phys_ocn(ipo_A,:,:,n_k)*diag_bio(ib,:,:))/loc_tot_A
@@ -4507,7 +4465,7 @@ SUBROUTINE diag_biogem_timeseries( &
      if (dum_save) then
         ! special 'cases' here -- i.e. integrated fluxes that need to be updated every year
         ! misc - 2D diagnostics
-        IF (ctrl_data_save_inversion) THEN
+        IF (ctrl_save_hidden_inversion) THEN
            do i2D = 1,n_diag_misc_2D
               int_diag_misc_2D_sig(i2D) = int_diag_misc_2D_sig(i2D) + loc_dtyr*SUM(diag_misc_2D(i2D,:,:))
            end do

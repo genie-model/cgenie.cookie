@@ -466,47 +466,39 @@ CONTAINS
        print*,'Filename for restart input                          : ',trim(par_infile_name)
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
        print*,'netCDF restart file name                            : ',trim(par_ncrst_name)
+       ! --- DATA SAVING: SIMPLIFIED SCHEME -------------------------------------------------------------------------------------- !
+       print*,'--- DATA SAVING: SIMPLIFIED SCHEME -----------------'
+       print*,'save atm, ocn, sed tracer fields?                   : ',ctrl_save_basic_reservoirs
+       print*,'save 2D export, 3D flux field?                      : ',ctrl_save_basic_biologicalpump
+       print*,'savebasic carb chem, O2/NO3/SO4 remin summary?      : ',ctrl_save_basic_geochemistry
+       print*,'save trace-metal ratios?                            : ',ctrl_save_basic_proxies
+       print*,'                                                    : ',ctrl_save_basic_ALL
+       print*,'save inventories?                                   : ',ctrl_save_advanced_reservoirs
+       print*,'save controls on export, fluxes in other units?     : ',ctrl_save_advanced_biologicalpump
+       print*,'save diagnostics, constants, remin, reactions?      : ',ctrl_save_advanced_geochemistry
+       print*,'save tracer isotopic properties (if selected)?      : ',ctrl_save_advanced_proxies
+       print*,'                                                    : ',ctrl_save_advanced_ALL
+       print*,'save basic model grid info?                         : ',ctrl_save_hidden_grid
+       print*,'save velocity fields, OPSI/PSI?                     : ',ctrl_save_hidden_climate
+       print*,'save seafloor as well as seasurface data?           : ',ctrl_save_hidden_seafloor
+       print*,'save forcing fluxes?                                : ',ctrl_save_hidden_interfacefluxes
+       print*,'save preformed tracers if selected?                 : ',ctrl_save_hidden_preformedtracers
+       print*,'save redox diagnostics?                             : ',ctrl_save_hidden_redox
+       print*,'save inversion fluxes?                              : ',ctrl_save_hidden_inversion
+       print*,'save genie manual required output?                  : ',ctrl_save_hidden_fossilfuelco2
+       print*,'save additional output?                             : ',ctrl_save_hidden_extra
+       print*,'                                                    : ',ctrl_save_hidden_ALL
        ! --- DATA SAVING: TIME-SLICES -------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: TIME-SLICES ----------------'
-       print*,'Atmospheric (interface) composition (2D)?           : ',ctrl_data_save_slice_ocnatm
-       print*,'Ocean composition (3D)?                             : ',ctrl_data_save_slice_ocn
-       print*,'Sediment (interface) composition (2D)?              : ',ctrl_data_save_slice_ocnsed
-       print*,'Export flux?                                        : ',ctrl_data_save_sig_fexport
-       print*,'Air-sea gas exchange flux (2D)?                     : ',ctrl_data_save_slice_fairsea
-       print*,'Ocean-sediment flux (2D)?                           : ',ctrl_data_save_slice_focnsed
-       print*,'Sediment-ocean flux (2D)?                           : ',ctrl_data_save_slice_fsedocn
-       print*,'Biological fluxes (3D)?                             : ',ctrl_data_save_slice_bio
-       print*,'Aqueous carbonate system properties (3D)?           : ',ctrl_data_save_slice_carb
-       print*,'Aqueous carbonate system constants (3D)?            : ',ctrl_data_save_slice_carbconst
-       print*,'Atmospheric physical properties (2D)?               : ',ctrl_data_save_slice_phys_atm
-       print*,'Ocean physical properties (3D)?                     : ',ctrl_data_save_slice_phys_ocn
-       print*,'Miscellaneous properties (-)?                       : ',ctrl_data_save_slice_misc
-       print*,'Biogeochemical diagnostics (3D)?                    : ',ctrl_data_save_slice_diag
-       print*,'redox back-compatability                            : ',ctrl_data_save_slice_diag_redox_old
-       print*,'Surface fields?                                     : ',ctrl_data_save_slice_sur
        print*,'Integration interval (yr)                           : ',par_data_save_slice_dt
        print*,'Save interval (yr)                                  : ',par_data_save_slice_timeinterval
        print*,'Maximum allowed number of time-slice save points    : ',par_data_save_slice_nmax
        print*,'Filename for time-slice definition input            : ',trim(par_infile_slice_name)
        print*,'Number of timesteps in sub-inteval saving           : ',par_data_save_slice_n
        print*,'Auto save at run end?                               : ',ctrl_data_save_slice_autoend
-       print*,'Save cdrmip data (only)?                            : ',ctrl_data_save_slice_cdrmip
        print*,'Update carbonate chemistry for saving?              : ',ctrl_data_save_slice_carb_update
        ! --- DATA SAVING: TIME-SERIES -------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: TIME-SERIES ----------------'
-       print*,'Atmospheric (interface) composition?                : ',ctrl_data_save_sig_ocnatm
-       print*,'Oceanic composition?                                : ',ctrl_data_save_sig_ocn
-       print*,'Export flux?                                        : ',ctrl_data_save_sig_fexport
-       print*,'Air-sea gas exchange flux ?                         : ',ctrl_data_save_sig_fairsea
-       print*,'Sediment (interface) composition?                   : ',ctrl_data_save_sig_ocnsed
-       print*,'Ocean->atmosphere flux?                             : ',ctrl_data_save_sig_focnatm
-       print*,'Ocean->sediment flux?                               : ',ctrl_data_save_sig_focnsed
-       print*,'Sediment->ocean flux/                               : ',ctrl_data_save_sig_fsedocn
-       print*,'Ocean surface tracers?                              : ',ctrl_data_save_sig_ocn_sur
-       print*,'Ocean surface carbonate chemistry?                  : ',ctrl_data_save_sig_carb_sur
-       print*,'Miscellaneous properties?                           : ',ctrl_data_save_sig_misc
-       print*,'Biogeochemical diagnostics?                         : ',ctrl_data_save_sig_diag
-       print*,'redox back-compatability                            : ',ctrl_data_save_sig_diag_redox_old
        print*,'Integration interval (yr)                           : ',par_data_save_sig_dt
        print*,'Maximum allowed number of time-series save points   : ',par_data_save_sig_nmax
        print*,'Save interval (yr)                                  : ',par_data_save_sig_timeinterval 
@@ -523,7 +515,6 @@ CONTAINS
        ! --- DATA SAVING: MISC --------------------------------------------------------------------------------------------------- !
        print*,'--- BIOGEM DATA SAVING: MISC -----------------------'
        print*,'Degree of comprehensivity of data saving            : ',par_data_save_level
-       print*,'Save derived data (e.g., S-normalized tracers)?     : ',ctrl_data_save_derived
        print*,'Save global diagnostics (at time-slice intervals)?  : ',ctrl_data_save_GLOBAL
        print*,'Save time-slice data in ASCII format?               : ',ctrl_data_save_slice_ascii
        print*,'Save time-series data in ASCII format?              : ',ctrl_data_save_sig_ascii
@@ -621,6 +612,8 @@ CONTAINS
     end if
     ! flexible C:P
     if (par_bio_red_PC_flex > 0) opt_bio_red_PC_flex = par_bio_red_PC_flex
+    ! age tracer (making ctrl_force_ocn_age now the only parameter used in the code)
+    if (ctrl_force_ocn_age1) ctrl_force_ocn_age = .true.
     ! -------------------------------------------------------- !
     ! adjust units
     ! -------------------------------------------------------- !
@@ -1201,6 +1194,8 @@ CONTAINS
           loc_string(n) = 'redox_Fe3toFe2_dALK'
        end if
     end if
+    ! -------------------------------------------------------- ! record aqueous reaction subtotal
+    n_diag_redox_aq = n
     ! -------------------------------------------------------- ! (2) solid -> dissolved
     !                                                                NOTE: repeat loop to add dissolved redox transformations
     !                                                                      (as if a 2nd set of particulates)
@@ -2601,10 +2596,6 @@ CONTAINS
     ! *** set-up ***
     ! initialize variables
     loc_flag = .FALSE.
-    opt_select(:) = .FALSE.
-    ! set derived tracer selection options
-    opt_select(iopt_select_carbchem)   = ocn_select(io_DIC) .AND. ocn_select(io_ALK)
-    opt_select(iopt_select_ocnatm_CO2) = opt_select(iopt_select_carbchem) .AND. atm_select(ia_pCO2)
 
     ! *** parameter consistency check - biological productivity ***
     ! first ... check for ECOGEM selction
@@ -3129,23 +3120,23 @@ CONTAINS
                      & (/const_real_null/),.true. &
                      & )
              end If
-             do loc_i=1,loc_tot_i
-                io = conv_sed_ocn_i(loc_i,is)
-                if (abs(conv_sed_ocn(io,is)) > const_real_nullsmall) then
-                   if (.NOT. ocn_select(io)) then
-                      loc_string1 = string_ocn(io)
-                      loc_string2 = string_sed(is)
-                      CALL sub_report_error( &
-                           & 'biogem_data','sub_check_par', &
-                           & 'Particulate tracer '//TRIM(loc_string2)// &
-                           & ' does not have *all possible* corresponding ocean tracers selected, e.g. '//TRIM(loc_string1)// &
-                           & ' (BUT may not need them, esp. if involving the Fe sytem ...)', &
-                           & 'CONTINUING', &
-                           & (/const_real_null/),.false. &
-                           & )
-                   end if
-                end if
-             end do
+!!$             do loc_i=1,loc_tot_i
+!!$                io = conv_sed_ocn_i(loc_i,is)
+!!$                if (abs(conv_sed_ocn(io,is)) > const_real_nullsmall) then
+!!$                   if (.NOT. ocn_select(io)) then
+!!$                      loc_string1 = string_ocn(io)
+!!$                      loc_string2 = string_sed(is)
+!!$                      CALL sub_report_error( &
+!!$                           & 'biogem_data','sub_check_par', &
+!!$                           & 'Particulate tracer '//TRIM(loc_string2)// &
+!!$                           & ' does not have *all possible* corresponding ocean tracers selected, e.g. '//TRIM(loc_string1)// &
+!!$                           & ' (BUT may not need them, esp. if involving the Fe sytem ...)', &
+!!$                           & 'CONTINUING', &
+!!$                           & (/const_real_null/),.false. &
+!!$                           & )
+!!$                   end if
+!!$                end if
+!!$             end do
           end SELECT
        end DO
     end if
@@ -3160,37 +3151,6 @@ CONTAINS
             & (/const_real_null/),.true. &
             & )
     end if
-
-    ! *** parameter consistency check - data save options ***
-    IF (.NOT. opt_select(iopt_select_carbchem)) THEN
-       IF (ctrl_data_save_sig_carb_sur) THEN
-          CALL sub_report_error( &
-               & 'biogem_data','sub_check_par', &
-               & 'You do not have sufficent ocean tracers selected for a marine carbon cycle', &
-               & '[ctrl_data_save_sig_carb_sur] HAS BEEN DE-SELECTED; CONTINUING', &
-               & (/const_real_null/),.false. &
-               & )
-          ctrl_data_save_sig_carb_sur = .FALSE.
-       end if
-       If (ctrl_data_save_slice_carb) then
-          CALL sub_report_error( &
-               & 'biogem_data','sub_check_par', &
-               & 'You do not have sufficent ocean tracers selected for a marine carbon cycle', &
-               & '[ctrl_data_save_slice_carb] HAS BEEN DE-SELECTED; CONTINUING', &
-               & (/const_real_null/),.false. &
-               & )
-          ctrl_data_save_slice_carb = .FALSE.
-       end if
-       If (ctrl_data_save_slice_carbconst) then
-          CALL sub_report_error( &
-               & 'biogem_data','sub_check_par', &
-               & 'You do not have sufficent ocean tracers selected for a marine carbon cycle', &
-               & '[ctrl_data_save_slice_carbconst] HAS BEEN DE-SELECTED; CONTINUING', &
-               & (/const_real_null/),.false. &
-               & )
-          ctrl_data_save_slice_carbconst = .FALSE.
-       end IF
-    end IF
 
     ! *** transport matrix paramater consistency checks ***
     if(ctrl_data_diagnose_TM)THEN
@@ -3274,290 +3234,119 @@ CONTAINS
 
 
   ! ****************************************************************************************************************************** !
-  ! DATA SAVE META CONFIG
-  SUBROUTINE sub_adj_par_save()
-
-    ! initialize save options to false
-    ! NOTE: the value of ctrl_data_save_sig_diag_redox_old is set independently (and not set to false here)
-    ! NOTE: the value of ctrl_bio_remin_redox_save is set independently (and not set to false here)
-    select case (par_data_save_level)
-    case (0:99)
-       ctrl_data_save_slice_ocnatm = .false.
-       ctrl_data_save_slice_ocn = .false.
-       ctrl_data_save_slice_ocnsed = .false.
-       ctrl_data_save_slice_fairsea = .false.
-       ctrl_data_save_slice_focnatm = .false.
-       ctrl_data_save_slice_focnsed = .false.
-       ctrl_data_save_slice_fsedocn = .false.
-       ctrl_data_save_slice_bio = .false.
-       ctrl_data_save_slice_carb = .false.
-       ctrl_data_save_slice_carbconst = .false.
-       ctrl_data_save_slice_phys_atm = .false.
-       ctrl_data_save_slice_phys_ocn = .false.
-       ctrl_data_save_slice_misc = .false.
-       ctrl_data_save_slice_diag_bio = .false.
-       ctrl_data_save_slice_diag_geochem = .false.
-       ctrl_data_save_slice_diag_proxy = .false.
-       ctrl_data_save_slice_diag_tracer = .false.
-       ctrl_data_save_sig_ocnatm = .false.
-       ctrl_data_save_sig_ocn = .false.
-       ctrl_data_save_sig_ocnsed = .false.
-       ctrl_data_save_sig_fairsea = .false.
-       ctrl_data_save_sig_focnatm = .false.
-       ctrl_data_save_sig_focnsed = .false.
-       ctrl_data_save_sig_fsedocn = .false.
-       ctrl_data_save_sig_fexport = .false.
-       ctrl_data_save_sig_ocn_sur = .false.
-       ctrl_data_save_sig_carb_sur = .false.
-       ctrl_data_save_sig_misc = .false.
-       ctrl_data_save_sig_diag = .false.
-       ctrl_data_save_sig_diag_bio = .false.
-       ctrl_data_save_sig_diag_geochem = .false.
-       ctrl_data_save_derived = .false.
-       ctrl_data_save_GLOBAL = .false.
-    case default
-       ! set new *non namelist* defined sub-options (to broadly retain back-compatability)
-       ctrl_data_save_slice_diag_bio     = ctrl_data_save_slice_diag
-       ctrl_data_save_slice_diag_geochem = ctrl_data_save_slice_diag
-       ctrl_data_save_slice_diag_proxy   = ctrl_data_save_slice_diag
-       ctrl_data_save_slice_diag_tracer  = ctrl_data_save_slice_diag
-       ctrl_data_save_sig_diag_bio       = ctrl_data_save_sig_diag
-       ctrl_data_save_sig_diag_geochem   = ctrl_data_save_sig_diag
-    end select
-
-    ! meta meta options
-    if (ctrl_data_save_slice_cdrmip) par_data_save_level = 0
-
-    ! no longer used! [REMOVE]
-    ctrl_data_save_slice_diag = .false.
-
-    ! set BASIC options
-    select case (par_data_save_level)
-    case (2:99)
-       ctrl_data_save_slice_ocn    = .true.
-       ctrl_data_save_slice_ocnatm = .true.
-       ctrl_data_save_slice_misc   = .true.
-       ctrl_data_save_slice_sur    = .true.
-       ctrl_data_save_sig_ocn      = .true.
-       ctrl_data_save_sig_ocnatm   = .true.
-       ctrl_data_save_sig_misc     = .true.
-       ctrl_data_save_sig_ocn_sur  = .true.
-       ctrl_data_save_GLOBAL       = .true.
-       If (flag_sedgem) then
-          ctrl_data_save_slice_ocnsed  = .true.
-          ctrl_data_save_slice_focnsed = .true.
-          ctrl_data_save_slice_fsedocn = .true.
-          ctrl_data_save_sig_ocnsed    = .true.
-          ctrl_data_save_sig_focnsed   = .true.
-          ctrl_data_save_sig_fsedocn   = .true.
-       end if
-    case default
-       ! NOTHING
-    end select
-
-    select case (par_data_save_level)
-    case (0)
-       ! save NOTHING
-    case (1)
-       ! only (full) physics
-       ctrl_data_save_slice_phys_atm = .true.
-       ctrl_data_save_slice_phys_ocn = .true.
-    case (2)
-       ! BASIC (biogeochem + BASIC physics)
-    case (3)
-       ! BASIC + biology diagnostics
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-    case (4)
-       ! BASIC + geochem diagnostics
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_geochem = .true.
-    case (5)
-       ! BASIC + biology + geochem diagnostics
-       ctrl_data_save_slice_focnatm = .true.
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-       ctrl_data_save_sig_diag_geochem = .true.
-    case (6)
-       ! BASIC + tracer + proxy diagnostics
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_proxy = .true.
-       ctrl_data_save_slice_diag_tracer = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-    case (7)
-       ! BASIC + biology + tracer + proxy diagnostics
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_slice_diag_proxy = .true.
-       ctrl_data_save_slice_diag_tracer = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-    case (8)
-       ! BASIC + biology + tracer + proxy + geochem diagnostics
-       ctrl_data_save_slice_focnatm = .true.
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_slice_diag_proxy = .true.
-       ctrl_data_save_slice_diag_tracer = .true.
-       ctrl_data_save_slice_focnsed = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-       ctrl_data_save_sig_diag_geochem = .true.
-       ctrl_data_save_derived = .true.
-    case (9)
-       ! BASIC + full physics
-       ctrl_data_save_slice_phys_atm = .true.
-       ctrl_data_save_slice_phys_ocn = .true.
-    case (10)
-       ! OCEAN ACIDIFICATION & FOSSIL FUEL GAMES
-       ctrl_data_save_buffering = .true.
-       ctrl_data_save_slice_focnatm = .true.
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_carbconst = .true.
-!!$       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_diag = .true.
-!!$       ctrl_data_save_sig_diag_geochem = .true.
-    case (11)
-       ! BASIC + biology + tracer + proxy
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_slice_diag_proxy = .true.
-       ctrl_data_save_slice_diag_tracer = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-    case (12)
-       ! BASIC + tracer + full physics
-       ctrl_data_save_slice_phys_atm = .true.
-       ctrl_data_save_slice_phys_ocn = .true.
-       ctrl_data_save_slice_diag_tracer = .true.
-    case (14)
-       ! BASIC + FULL (inc. redox) geochem diagnostics
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_geochem = .true.
-       ctrl_bio_remin_redox_save=.true.
-    case (15)
-       ! BASIC + biology + FULL (inc. redox) geochem diagnostics
-       ctrl_data_save_slice_focnatm = .true.
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-       ctrl_data_save_sig_diag_geochem = .true.
-       ctrl_bio_remin_redox_save=.true.
-    case (16)
-       ! BASIC + biology + tracer + proxy diagnostics + FULL (inc. redox) geochem
-       ctrl_data_save_slice_focnatm = .true.
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_slice_diag_proxy = .true.
-       ctrl_data_save_slice_diag_tracer = .true.
-       ctrl_data_save_slice_focnsed = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-       ctrl_data_save_sig_diag_geochem = .true.
-       ctrl_data_save_derived = .true.
-       ctrl_bio_remin_redox_save=.true.
-    case (99)
-       ! EVERYTHING
-       ctrl_data_save_slice_ocnatm = .true.
-       ctrl_data_save_slice_ocn = .true.
-       ctrl_data_save_slice_focnatm = .true.
-       ctrl_data_save_slice_fairsea = .true.
-       ctrl_data_save_slice_bio = .true.
-       ctrl_data_save_slice_carb = .true.
-       ctrl_data_save_slice_carbconst = .true.
-       ctrl_data_save_slice_phys_atm = .true.
-       ctrl_data_save_slice_phys_ocn = .true.
-       ctrl_data_save_slice_misc = .true.
-       ctrl_data_save_slice_diag_bio = .true.
-       ctrl_data_save_slice_diag_geochem = .true.
-       ctrl_data_save_slice_diag_proxy = .true.
-       ctrl_data_save_slice_diag_tracer = .true.
-       ctrl_data_save_slice_focnsed = .true.
-       ctrl_data_save_sig_ocnatm = .true.
-       ctrl_data_save_sig_ocn = .true.
-       ctrl_data_save_sig_fexport = .true.
-       ctrl_data_save_sig_focnsed = .true.
-       ctrl_data_save_sig_fairsea = .true.
-       ctrl_data_save_sig_focnatm = .true.
-       ctrl_data_save_sig_ocn_sur = .true.
-       ctrl_data_save_sig_carb_sur = .true.
-       ctrl_data_save_sig_misc = .true.
-       ctrl_data_save_sig_diag = .true.
-       ctrl_data_save_sig_diag_bio = .true.
-       ctrl_data_save_sig_diag_geochem = .true.
-       ctrl_data_save_derived = .true.
-       ctrl_bio_remin_redox_save=.true.
-       ctrl_data_save_GLOBAL = .true.
-    case default
-       ! [leave user-specified settings]
-    end select
-
+  ! DATA SAVE OPTION FILTERING
+  SUBROUTINE sub_filter_data_save()    
+    ! ---------------------------------------------------------- !
+    ! INITIALIZE ITEMIZED SAVING
+    ! ---------------------------------------------------------- !
+    ! ---------------------------------------------------------- ! reactions
+    ctrl_save_n_diag_precip = .false.
+    if (sed_select(is_FeS2)) then
+       ctrl_save_n_diag_precip(idiag_precip_FeS2_dFe) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_FeS2_dH2S) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_FeS2_dSO4) = .true.
+    end if
+    if (sed_select(is_FeCO3)) then
+       ctrl_save_n_diag_precip(idiag_precip_FeCO3_dFe) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_FeCO3_dDIC) = .true.
+    end if
+    if (sed_select(is_FeOOH)) then
+       ctrl_save_n_diag_precip(idiag_precip_FeOOH_dFe) = .true.
+    end if
+    if (sed_select(is_Fe3Si2O4)) then
+       ctrl_save_n_diag_precip(idiag_precip_Fe3Si2O4_dFe) = .true.
+    end if
+    if (sed_select(is_Fe3PO42)) then
+       ctrl_save_n_diag_precip(idiag_precip_Fe3PO42_dFe) = .true.
+       ctrl_save_n_diag_precip(idiag_precip_Fe3PO42_dPO4) = .true.
+    end if
+    ctrl_save_n_diag_react = .false.
+    if (sed_select(is_POM_S)) then
+       ctrl_save_n_diag_react(idiag_react_POMS_dH2S) = .true.
+    end if
+    if (sed_select(is_FeOOH)) then
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dFe2) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dH2S) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dSO4) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dALK) = .true.
+       ctrl_save_n_diag_react(idiag_react_FeOOH_dPO4) = .true.
+    end if
+    if (sed_select(is_POM_FeOOH)) then
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dFe2) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dH2S) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dSO4) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dALK) = .true.
+       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dPO4) = .true.
+    end if
+    ! IMPOSE META SELECTIONS
+    ! ---------------------------------------------------------- !
+    if (ctrl_save_basic_ALL) then
+       ctrl_save_basic_reservoirs     = .true.
+       ctrl_save_basic_geochemistry   = .true.
+       ctrl_save_basic_biologicalpump = .true.
+       ctrl_save_basic_proxies        = .true.
+    end if
+    if (ctrl_save_advanced_ALL) then
+       ctrl_save_advanced_reservoirs     = .true.
+       ctrl_save_advanced_geochemistry   = .true.
+       ctrl_save_advanced_biologicalpump = .true.
+       ctrl_save_advanced_proxies        = .true.
+    end if
+    if (ctrl_save_hidden_ALL) then
+       ctrl_save_hidden_grid = .true.
+       ctrl_save_hidden_climate = .true.
+       ctrl_save_hidden_seafloor = .true.
+       ctrl_save_hidden_interfacefluxes = .true.
+       ctrl_save_hidden_inversion = .true.
+       ctrl_save_hidden_preformedtracers = .true.
+       ctrl_save_hidden_redox = .true.
+       ctrl_save_hidden_extra = .true.
+       ctrl_save_hidden_fossilfuelco2 = .true.
+    end if
+    ! ---------------------------------------------------------- !
+    ! FILTER BASIC DATA SAVING OPTIONS
+    ! ---------------------------------------------------------- !
+    ! filter (to .false.) basic options depending on if the necessary tracers, biological scheme etc. are not selected
+    ! ---------------------------------------------------------- ! grid info saving
+    ! save grid etc. info
+    ! ctrl_save_basic_modelgrid = .true. [DEFAULT]
+    ! ---------------------------------------------------------- ! climate data
+    ! save climate-related data (e.g., atm T,Q, circulation, sea-ice, etc.)
+    ! ctrl_save_hidden_climate = .true. [DEFAULT]
+    ! ---------------------------------------------------------- ! seafloor data
+    ! save seafloor data at the same time as seasurface
+    ! ctrl_save_hidden_seafloor = .true. [DEFAULT]
+    ! ---------------------------------------------------------- ! tracers
+    ! save basic atm, ocn, sed tracers
+    ! ctrl_save_basic_reservoirs = .true. [DEFAULT]
+    IF (n_l_ocn < 3) then
+       ctrl_save_basic_reservoirs    = .false.
+       ctrl_save_advanced_reservoirs = .false.
+    end if
+    ! ---------------------------------------------------------- ! 'biology'
+    ! NOTE: do not save export production data if a biological option is not selected *and* ECOGEM is not selected
+    ! ctrl_data_save_bioexport = .true. [DEFAULT]
+    if ( (par_bio_prodopt == 'NONE') .AND. (.NOT. flag_ecogem) ) then
+       ctrl_save_basic_biologicalpump    = .false.
+       ctrl_save_advanced_biologicalpump = .false.
+    end if
+    ! ---------------------------------------------------------- ! preformed tracers
+    ! always save preformed tracers if they are selected
+    ! ctrl_save_hidden_preformedtracers = .true. [DEFAULT]
+    IF (.NOT. ctrl_bio_preformed) then
+       ctrl_save_hidden_preformedtracers = .false.
+    end if
+    ! ---------------------------------------------------------- ! redox
+    ! select redox saving if advanced geochemsitry is selected
+    IF (ctrl_save_advanced_geochemistry) then
+       ctrl_save_hidden_redox = .true.
+    end if
+    ! if redox saving is selected, set legacy redox saving parameter to true
+    IF (ctrl_save_hidden_redox) then
+       ctrl_bio_remin_redox_save = .true.
+    end if
+    ! ---------------------------------------------------------- ! inversions
     ! detrmine whether to save inversion diagnostics
-    ctrl_data_save_inversion = .false.
     IF ( &
          & (force_restore_atm_select(ia_pCO2) .AND. (force_flux_atm_select(ia_pCO2) .OR. force_flux_ocn_select(io_DIC))) &
          & .OR. &
@@ -3575,19 +3364,337 @@ CONTAINS
          & .OR. &
          & (force_restore_ocn_select(io_Ca_44Ca) .AND. force_flux_ocn_select(io_Ca_44Ca)) &
          & ) THEN
-       ctrl_data_save_inversion = .true.
+       ctrl_save_hidden_inversion = .true.
+    else
+       ctrl_save_hidden_inversion = .false.
     end IF
-
-    ! determine if no biology at all
-    If ((par_bio_prodopt == 'NONE') .AND. (.NOT. flag_ecogem)) then
-       ctrl_data_save_slice_bio      = .false.
-       ctrl_data_save_slice_diag_bio = .false.
-       ctrl_data_save_sig_fexport    = .false.
-       ctrl_data_save_sig_diag_bio   = .false.
-    end if
-
-  END SUBROUTINE sub_adj_par_save
+    ! ---------------------------------------------------------- !
+    ! MAKE BASIC <-> ADVANCED CONSISTENT
+    ! ---------------------------------------------------------- !
+    if (ctrl_save_advanced_reservoirs) ctrl_save_basic_reservoirs = .true.
+    if (ctrl_save_advanced_geochemistry) ctrl_save_basic_geochemistry = .true.
+    if (ctrl_save_advanced_biologicalpump) ctrl_save_basic_biologicalpump = .true.
+    if (ctrl_save_advanced_proxies) ctrl_save_basic_proxies = .true.
+    ! ---------------------------------------------------------- !
+    ! END
+    ! ---------------------------------------------------------- !
+  END SUBROUTINE sub_filter_data_save
   ! ****************************************************************************************************************************** !
+  
+
+!!$  ! ****************************************************************************************************************************** !
+!!$  ! DATA SAVE META CONFIG
+!!$  SUBROUTINE sub_adj_par_save()
+!!$
+!!$    ! initialize save options to false
+!!$    ! NOTE: the value of ctrl_data_save_sig_diag_redox_old is set independently (and not set to false here)
+!!$    ! NOTE: the value of ctrl_bio_remin_redox_save is set independently (and not set to false here)
+!!$    select case (par_data_save_level)
+!!$    case (0:99)
+!!$       ctrl_data_save_slice_ocnatm = .false.
+!!$       ctrl_data_save_slice_ocn = .false.
+!!$       ctrl_data_save_slice_ocnsed = .false.
+!!$       ctrl_data_save_slice_fairsea = .false.
+!!$       ctrl_data_save_slice_focnatm = .false.
+!!$       ctrl_data_save_slice_focnsed = .false.
+!!$       ctrl_data_save_slice_fsedocn = .false.
+!!$       ctrl_data_save_slice_bio = .false.
+!!$       ctrl_data_save_slice_carb = .false.
+!!$       ctrl_data_save_slice_carbconst = .false.
+!!$       ctrl_data_save_slice_phys_atm = .false.
+!!$       ctrl_data_save_slice_phys_ocn = .false.
+!!$       ctrl_data_save_slice_misc = .false.
+!!$       ctrl_data_save_slice_diag_bio = .false.
+!!$       ctrl_data_save_slice_diag_geochem = .false.
+!!$       ctrl_data_save_slice_diag_proxy = .false.
+!!$       ctrl_data_save_slice_diag_tracer = .false.
+!!$       ctrl_data_save_sig_ocnatm = .false.
+!!$       ctrl_data_save_sig_ocn = .false.
+!!$       ctrl_data_save_sig_ocnsed = .false.
+!!$       ctrl_data_save_sig_fairsea = .false.
+!!$       ctrl_data_save_sig_focnatm = .false.
+!!$       ctrl_data_save_sig_focnsed = .false.
+!!$       ctrl_data_save_sig_fsedocn = .false.
+!!$       ctrl_data_save_sig_fexport = .false.
+!!$       ctrl_data_save_sig_ocn_sur = .false.
+!!$       ctrl_data_save_sig_carb_sur = .false.
+!!$       ctrl_data_save_sig_misc = .false.
+!!$       ctrl_data_save_sig_diag = .false.
+!!$       ctrl_data_save_sig_diag_bio = .false.
+!!$       ctrl_data_save_sig_diag_geochem = .false.
+!!$       ctrl_data_save_derived = .false.
+!!$       ctrl_data_save_GLOBAL = .false.
+!!$    case default
+!!$       ! set new *non namelist* defined sub-options (to broadly retain back-compatability)
+!!$       ctrl_data_save_slice_diag_bio     = ctrl_data_save_slice_diag
+!!$       ctrl_data_save_slice_diag_geochem = ctrl_data_save_slice_diag
+!!$       ctrl_data_save_slice_diag_proxy   = ctrl_data_save_slice_diag
+!!$       ctrl_data_save_slice_diag_tracer  = ctrl_data_save_slice_diag
+!!$       ctrl_data_save_sig_diag_bio       = ctrl_data_save_sig_diag
+!!$       ctrl_data_save_sig_diag_geochem   = ctrl_data_save_sig_diag
+!!$    end select
+!!$
+!!$    ! meta meta options
+!!$    if (ctrl_data_save_slice_cdrmip) par_data_save_level = 0
+!!$
+!!$    ! no longer used! [REMOVE]
+!!$    ctrl_data_save_slice_diag = .false.
+!!$
+!!$    ! set BASIC options
+!!$    select case (par_data_save_level)
+!!$    case (2:99)
+!!$       ctrl_data_save_slice_ocn    = .true.
+!!$       ctrl_data_save_slice_ocnatm = .true.
+!!$       ctrl_data_save_slice_misc   = .true.
+!!$       ctrl_data_save_slice_sur    = .true.
+!!$       ctrl_data_save_sig_ocn      = .true.
+!!$       ctrl_data_save_sig_ocnatm   = .true.
+!!$       ctrl_data_save_sig_misc     = .true.
+!!$       ctrl_data_save_sig_ocn_sur  = .true.
+!!$       ctrl_data_save_GLOBAL       = .true.
+!!$       If (flag_sedgem) then
+!!$          ctrl_data_save_slice_ocnsed  = .true.
+!!$          ctrl_data_save_slice_focnsed = .true.
+!!$          ctrl_data_save_slice_fsedocn = .true.
+!!$          ctrl_data_save_sig_ocnsed    = .true.
+!!$          ctrl_data_save_sig_focnsed   = .true.
+!!$          ctrl_data_save_sig_fsedocn   = .true.
+!!$       end if
+!!$    case default
+!!$       ! NOTHING
+!!$    end select
+!!$
+!!$    select case (par_data_save_level)
+!!$    case (0)
+!!$       ! save NOTHING
+!!$    case (1)
+!!$       ! only (full) physics
+!!$       ctrl_data_save_slice_phys_atm = .true.
+!!$       ctrl_data_save_slice_phys_ocn = .true.
+!!$    case (2)
+!!$       ! BASIC (biogeochem + BASIC physics)
+!!$    case (3)
+!!$       ! BASIC + biology diagnostics
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$    case (4)
+!!$       ! BASIC + geochem diagnostics
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_geochem = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_geochem = .true.
+!!$    case (5)
+!!$       ! BASIC + biology + geochem diagnostics
+!!$       ctrl_data_save_slice_focnatm = .true.
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_slice_diag_geochem = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$       ctrl_data_save_sig_diag_geochem = .true.
+!!$    case (6)
+!!$       ! BASIC + tracer + proxy diagnostics
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_proxy = .true.
+!!$       ctrl_data_save_slice_diag_tracer = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$    case (7)
+!!$       ! BASIC + biology + tracer + proxy diagnostics
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_slice_diag_proxy = .true.
+!!$       ctrl_data_save_slice_diag_tracer = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$    case (8)
+!!$       ! BASIC + biology + tracer + proxy + geochem diagnostics
+!!$       ctrl_data_save_slice_focnatm = .true.
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_slice_diag_geochem = .true.
+!!$       ctrl_data_save_slice_diag_proxy = .true.
+!!$       ctrl_data_save_slice_diag_tracer = .true.
+!!$       ctrl_data_save_slice_focnsed = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$       ctrl_data_save_sig_diag_geochem = .true.
+!!$       ctrl_data_save_derived = .true.
+!!$    case (9)
+!!$       ! BASIC + full physics
+!!$       ctrl_data_save_slice_phys_atm = .true.
+!!$       ctrl_data_save_slice_phys_ocn = .true.
+!!$    case (10)
+!!$       ! OCEAN ACIDIFICATION & FOSSIL FUEL GAMES
+!!$       ctrl_data_save_buffering = .true.
+!!$       ctrl_data_save_slice_focnatm = .true.
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_carbconst = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$    case (11)
+!!$       ! BASIC + biology + tracer + proxy
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_slice_diag_proxy = .true.
+!!$       ctrl_data_save_slice_diag_tracer = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$    case (12)
+!!$       ! BASIC + tracer + full physics
+!!$       ctrl_data_save_slice_phys_atm = .true.
+!!$       ctrl_data_save_slice_phys_ocn = .true.
+!!$       ctrl_data_save_slice_diag_tracer = .true.
+!!$    case (14)
+!!$       ! BASIC + FULL (inc. redox) geochem diagnostics
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_geochem = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_geochem = .true.
+!!$       ctrl_bio_remin_redox_save=.true.
+!!$    case (15)
+!!$       ! BASIC + biology + FULL (inc. redox) geochem diagnostics
+!!$       ctrl_data_save_slice_focnatm = .true.
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_slice_diag_geochem = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$       ctrl_data_save_sig_diag_geochem = .true.
+!!$       ctrl_bio_remin_redox_save=.true.
+!!$    case (16)
+!!$       ! BASIC + biology + tracer + proxy diagnostics + FULL (inc. redox) geochem
+!!$       ctrl_data_save_slice_focnatm = .true.
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_slice_diag_geochem = .true.
+!!$       ctrl_data_save_slice_diag_proxy = .true.
+!!$       ctrl_data_save_slice_diag_tracer = .true.
+!!$       ctrl_data_save_slice_focnsed = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$       ctrl_data_save_sig_diag_geochem = .true.
+!!$       ctrl_data_save_derived = .true.
+!!$       ctrl_bio_remin_redox_save=.true.
+!!$    case (99)
+!!$       ! EVERYTHING
+!!$       ctrl_data_save_slice_ocnatm = .true.
+!!$       ctrl_data_save_slice_ocn = .true.
+!!$       ctrl_data_save_slice_focnatm = .true.
+!!$       ctrl_data_save_slice_fairsea = .true.
+!!$       ctrl_data_save_slice_bio = .true.
+!!$       ctrl_data_save_slice_carb = .true.
+!!$       ctrl_data_save_slice_carbconst = .true.
+!!$       ctrl_data_save_slice_phys_atm = .true.
+!!$       ctrl_data_save_slice_phys_ocn = .true.
+!!$       ctrl_data_save_slice_misc = .true.
+!!$       ctrl_data_save_slice_diag_bio = .true.
+!!$       ctrl_data_save_slice_diag_geochem = .true.
+!!$       ctrl_data_save_slice_diag_proxy = .true.
+!!$       ctrl_data_save_slice_diag_tracer = .true.
+!!$       ctrl_data_save_slice_focnsed = .true.
+!!$       ctrl_data_save_sig_ocnatm = .true.
+!!$       ctrl_data_save_sig_ocn = .true.
+!!$       ctrl_data_save_sig_fexport = .true.
+!!$       ctrl_data_save_sig_focnsed = .true.
+!!$       ctrl_data_save_sig_fairsea = .true.
+!!$       ctrl_data_save_sig_focnatm = .true.
+!!$       ctrl_data_save_sig_ocn_sur = .true.
+!!$       ctrl_data_save_sig_carb_sur = .true.
+!!$       ctrl_data_save_sig_misc = .true.
+!!$       ctrl_data_save_sig_diag = .true.
+!!$       ctrl_data_save_sig_diag_bio = .true.
+!!$       ctrl_data_save_sig_diag_geochem = .true.
+!!$       ctrl_data_save_derived = .true.
+!!$       ctrl_bio_remin_redox_save=.true.
+!!$       ctrl_data_save_GLOBAL = .true.
+!!$    case default
+!!$       ! [leave user-specified settings]
+!!$    end select
+!!$
+!!$    ! detrmine whether to save inversion diagnostics
+!!$    ctrl_data_save_inversion = .false.
+!!$    IF ( &
+!!$         & (force_restore_atm_select(ia_pCO2) .AND. (force_flux_atm_select(ia_pCO2) .OR. force_flux_ocn_select(io_DIC))) &
+!!$         & .OR. &
+!!$         & (force_restore_ocn_select(io_colr) .AND. (force_flux_atm_select(ia_pCO2) .OR. force_flux_ocn_select(io_DIC))) &
+!!$         & .OR. &
+!!$         & (force_restore_atm_select(ia_pCO2_13C) .AND. force_flux_atm_select(ia_pCO2_13C)) &
+!!$         & .OR. &
+!!$         & (force_restore_ocn_select(io_DIC_13C) .AND. force_flux_atm_select(ia_pCO2_13C)) &
+!!$         & .OR. &
+!!$         & (force_restore_ocn_select(io_DOM_C_13C) .AND. force_flux_atm_select(ia_pCO2_13C)) &
+!!$         & .OR. &
+!!$         & (force_restore_ocn_select(io_DIC_13C) .AND. force_flux_ocn_select(io_DIC_13C)) &
+!!$         & .OR. &
+!!$         & (force_restore_ocn_select(io_ALK) .AND. force_flux_ocn_select(io_ALK)) &
+!!$         & .OR. &
+!!$         & (force_restore_ocn_select(io_Ca_44Ca) .AND. force_flux_ocn_select(io_Ca_44Ca)) &
+!!$         & ) THEN
+!!$       ctrl_data_save_inversion = .true.
+!!$    end IF
+!!$
+!!$    ! determine if no biology at all
+!!$    If ((par_bio_prodopt == 'NONE') .AND. (.NOT. flag_ecogem)) then
+!!$       ctrl_data_save_slice_bio      = .false.
+!!$       ctrl_data_save_slice_diag_bio = .false.
+!!$       ctrl_data_save_sig_fexport    = .false.
+!!$       ctrl_data_save_sig_diag_bio   = .false.
+!!$    end if
+!!$
+!!$  END SUBROUTINE sub_adj_par_save
+!!$  ! ****************************************************************************************************************************** !
 
 
   ! ****************************************************************************************************************************** !
@@ -3628,7 +3735,7 @@ CONTAINS
                      & carbconst(:,i,j,k) &
                      & )
              END if
-             IF (opt_select(iopt_select_carbchem)) then
+             if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
                 ! estimate Ca and borate concentrations (if not selected and therefore explicitly treated)
                 IF (.NOT. ocn_select(io_Ca))  ocn(io_Ca,i,j,k)  = fun_calc_Ca(ocn(io_S,i,j,k))
                 IF (.NOT. ocn_select(io_B))   ocn(io_B,i,j,k)   = fun_calc_Btot(ocn(io_S,i,j,k))
@@ -3816,7 +3923,9 @@ CONTAINS
           loc_i = loc_i - 1
        END IF
     END DO
-    if (par_data_save_sig(loc_i) < (par_data_save_sig_dt/2.0 - par_misc_t_err)) loc_i = 0
+    if (loc_i > 0) then
+       if (par_data_save_sig(loc_i) < (par_data_save_sig_dt/2.0 - par_misc_t_err)) loc_i = 0
+    end if
     ! -------------------------------------------------------- ! record number of points
     par_data_save_sig_i = loc_i
     ! -------------------------------------------------------- ! automatically populate run end if needed

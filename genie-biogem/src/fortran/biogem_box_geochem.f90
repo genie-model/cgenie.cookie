@@ -1712,7 +1712,7 @@ CONTAINS
     ! DIAGNOSTICS
     ! -------------------------------------------------------- !
     ! -------------------------------------------------------- ! record geochem diagnostics (mol kg-1)
-    diag_precip(idiag_precip_Fe3SiO4_dFe,dum_i,dum_j,:) = loc_bio_uptake(io_Fe2,:)
+    diag_precip(idiag_precip_Fe3Si2O4_dFe,dum_i,dum_j,:) = loc_bio_uptake(io_Fe2,:)
     ! -------------------------------------------------------- !
     ! END
     ! -------------------------------------------------------- !
