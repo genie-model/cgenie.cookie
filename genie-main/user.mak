@@ -83,9 +83,7 @@ else ifeq ($(FNETCDF),eevee)
   NETCDF_DIR=/share/apps/netcdf
 else
   ### DEFAULT ###
-  #NETCDF_DIR=/usr/local
-  ### BluePebble ###
-  NETCDF_DIR=/software/local/libraries/cgenie-deps
+  NETCDF_DIR=/usr/local
   ### Mac (example) ###
   #NETCDF_DIR=/usr/local/Cellar/netcdf/4.9.2_1
 endif
