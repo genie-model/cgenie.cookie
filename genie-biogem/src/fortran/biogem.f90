@@ -2112,9 +2112,8 @@ subroutine biogem(        &
               ! NOTE: if 'allow particulate flux to sediments' option in biogem_config is not selected,
               !       the value of the particulate flux to sediments local array <locij_focnsed> is zero
               ! NOTE: particulate fractions (type par_sed_type_frac) have already been scaled by the time-step in biogem_box
-              !       and hence will already correctly integrate over a year
               ! NOTE: in the ocn->sed flux coupling, assumed units of (mol m-2 s-1) are converted to (mol m-2) and summed
-              !       => convert here to pretend s-1 units (which is cancelled out in the call to cpl_flux_ocnsed)
+              !       => convert frac2 to pretend s-1 units (which is cancelled out in the call to cpl_flux_ocnsed)
               !       also add dummy conversion conv_m2_cm2 -- this is undone in sedgem (conv_cm2_m2*dum_sfxsumsed(:,i,j))
               ! replace loc_k1 with virtual grid layer (if virtual grid world selected)
               ! NOTE: RESTORE this setting at the end of the loop
@@ -2127,8 +2126,8 @@ subroutine biogem(        &
                  locij_focnsed(is,i,j) = bio_settle(is,i,j,loc_k1)
                  SELECT CASE (sed_type(is))
                  CASE (par_sed_type_frac)
-                    !!!dum_sfxsed1(is,i,j) = conv_m2_cm2*locij_focnsed(is,i,j)*loc_rdts
-                    dum_sfxsed1(is,i,j) = locij_focnsed(is,i,j)
+                    ! NB: dummy units conversion -- see NOTES above
+                    dum_sfxsed1(is,i,j) = conv_m2_cm2*locij_focnsed(is,i,j)*loc_rdts
                  case default
                     dum_sfxsed1(is,i,j) = phys_ocn(ipo_rA,i,j,loc_k1)*locij_focnsed(is,i,j)*loc_rdts
                  end SELECT
@@ -3464,11 +3463,12 @@ SUBROUTINE diag_biogem_timeslice( &
                     ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
                     !       EXCEPT ... for frac2 ... which in dum_sfxsed1 is already scaled by loc_dtyr
                     !       (becasue it inherits the time-step fraction year scaling from bio_settle in biogem_bbox)
+                    !       BUT, we need to undo the dummy conv_m2_cm2/loc_dts units change applied when dum_sfxsed1 is written to
                     DO l=1,n_l_sed
                        is = conv_iselected_is(l)
                        SELECT CASE (sed_type(is))
                        CASE (par_sed_type_frac)
-                          locij_focnsed(is,i,j) = dum_sfxsed1(is,i,j)
+                          locij_focnsed(is,i,j) = loc_dts*dum_sfxsed1(is,i,j)/conv_m2_cm2
                        case default
                           locij_focnsed(is,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxsed1(is,i,j)
                        end SELECT
@@ -4120,9 +4120,17 @@ SUBROUTINE diag_biogem_timeseries( &
                     end do
                     ! ocn->sed
                     ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
+                    !       EXCEPT ... for frac2 ... which in dum_sfxsed1 is already scaled by loc_dtyr
+                    !       (becasue it inherits the time-step fraction year scaling from bio_settle in biogem_bbox)
+                    !       BUT, we need to undo the dummy conv_m2_cm2/loc_dts units change applied when dum_sfxsed1 is written to
                     DO l=1,n_l_sed
                        is = conv_iselected_is(l)
-                       locij_focnsed(is,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxsed1(is,i,j)
+                       SELECT CASE (sed_type(is))
+                       CASE (par_sed_type_frac)
+                          locij_focnsed(is,i,j) = loc_dts*dum_sfxsed1(is,i,j)/conv_m2_cm2
+                       case default
+                          locij_focnsed(is,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxsed1(is,i,j)
+                       end SELECT
                     end DO
                     ! sed->ocn
                     ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
@@ -4300,8 +4308,8 @@ SUBROUTINE diag_biogem_timeseries( &
               CALL sub_calc_psi( &
                    & phys_ocn(ipo_gu:ipo_gw,:,:,:),loc_opsi,loc_opsia,loc_opsip,loc_zpsi,loc_opsia_minmax,loc_opsip_minmax &
                    & )
-              int_misc_opsi_min_sig  = int_misc_opsi_min_sig + loc_dtyr*minval(loc_opsi(:,:))
-              int_misc_opsi_max_sig  = int_misc_opsi_max_sig + loc_dtyr*maxval(loc_opsi(:,:))
+              int_misc_opsi_min_sig  = int_misc_opsi_min_sig  + loc_dtyr*minval(loc_opsi(:,:))
+              int_misc_opsi_max_sig  = int_misc_opsi_max_sig  + loc_dtyr*maxval(loc_opsi(:,:))
               int_misc_opsid_min_sig = int_misc_opsid_min_sig + loc_dtyr*minval(loc_opsi(:,0:loc_opsi_maxk))
               int_misc_opsid_max_sig = int_misc_opsid_max_sig + loc_dtyr*maxval(loc_opsi(:,0:loc_opsi_maxk))
               int_misc_opsia_min_sig = int_misc_opsia_min_sig + loc_dtyr*loc_opsia_minmax(1)
