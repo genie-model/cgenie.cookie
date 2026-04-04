@@ -175,6 +175,9 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/par_bio_kT_dT
   real::par_bio_POC_CaCO3_target                                 ! target potential global mean CaCO3:POC export rain ratio
   NAMELIST /ini_biogem_nml/par_bio_POC_CaCO3_target
+  real::par_bio_rainratio_sur_target                             ! global mean seasurface CaCO3:POC rain ratio tuning target
+  real::par_bio_rainratio_ben_target                             ! global mean seafloor CaCO3:POC rain ratio tuning target
+  NAMELIST /ini_biogem_nml/par_bio_rainratio_sur_target,par_bio_rainratio_ben_target  
   ! ------------------- ORGANIC MATTER EXPORT RATIOS ----------------------------------------------------------------------------- !
   real::par_bio_red_POP_PON                                             ! N/P organic matter Redfield ratio
   real::par_bio_red_POP_POC                                             ! C/P organic matter Redfield ratio

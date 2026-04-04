@@ -202,6 +202,8 @@ CONTAINS
        print*,'Ridgwell [2001] -- opal:POC offset, FeT (mol kg-1)  : ',par_part_red_opal_FeToff
        print*,'opal:POC rain ratio option ID string                : ',opt_bio_red_SitoC
        print*,'target potential global mean CaCO3:POC rain ratio   : ',par_bio_POC_CaCO3_target
+       print*,'global mean seasurface CaCO3:POC rain ratio target  : ',par_bio_rainratio_sur_target
+       print*,'global mean seafloor CaCO3:POC rain ratio target    : ',par_bio_rainratio_ben_target
        ! --- REMINERALIZATION ---------------------------------------------------------------------------------------------------- !
        print*,'--- REMINERALIZATION -------------------------------'
        print*,'Fraction of POM remin concverted to RDOM            : ',par_bio_remin_RDOMfrac

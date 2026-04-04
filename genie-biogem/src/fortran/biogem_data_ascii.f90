@@ -4297,95 +4297,102 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end SELECT
     END DO
+    ! ---------------------------------------------------------------- !
+    ! SURFACE EXPORT & SEDIMENT DEPOSITION (RAIN) FLUX SUMMARY
+    ! ---------------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '------------------------------'
     Write(unit=out,fmt=*) 'SURFACE EXPORT & SEDIMENT DEPOSITION (RAIN) FLUX SUMMARY'
-    Write(unit=out,fmt=*) ' '
-    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
-         & ' Total POC export   : ', &
-         & SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
-         & ' mol yr-1 = ', &
-         & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
-         & ' PgC yr-1'
-    call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
-         & ' Total CaCO3 export : ', &
-         & SUM(int_bio_settle_timeslice(is_CaCO3,:,:,n_k))/int_t_timeslice, &
-         & ' mol yr-1 = ', &
-         & 1.0E-12*conv_CaCO3_mol_kgC*SUM(int_bio_settle_timeslice(is_CaCO3,:,:,n_k))/int_t_timeslice, &
-         & ' PgC yr-1'
-    call check_iostat(ios,__LINE__,__FILE__)
-    Write(unit=out,fmt=*) ' '
-    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
-         & ' Total POC rain     : ', &
-         & SUM(int_focnsed_timeslice(is_POC,:,:))/int_t_timeslice, &
-         & ' mol yr-1 = ', &
-         & 1.0E-12*conv_C_mol_kg*SUM(int_focnsed_timeslice(is_POC,:,:))/int_t_timeslice, &
-         & ' PgC yr-1'
-    call check_iostat(ios,__LINE__,__FILE__)
-    write(unit=out,fmt='(A22,e15.7,A12,f7.3,A9)',iostat=ios) &
-         & ' Total CaCO3 rain   : ', &
-         & SUM(int_focnsed_timeslice(is_CaCO3,:,:))/int_t_timeslice, &
-         & ' mol yr-1 = ', &
-         & 1.0E-12*conv_CaCO3_mol_kgC*SUM(int_focnsed_timeslice(is_CaCO3,:,:))/int_t_timeslice, &
-         & ' PgC yr-1'
-    Write(unit=out,fmt=*) ' '
+    ! ---------------------------------------------------------------- ! POC, CaCO3 export and rain
+    if (sed_select(is_POC) .AND. sed_select(is_CaCO3)) then
+       Write(unit=out,fmt=*) ' '
+       write(unit=out,fmt='(A32,e15.7,A12,f7.3,A9)',iostat=ios) &
+            & ' Total POC export             : ', &
+            & SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
+            & ' mol yr-1 = ', &
+            & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
+            & ' PgC yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       write(unit=out,fmt='(A32,e15.7,A12,f7.3,A9)',iostat=ios) &
+            & ' Total CaCO3 export           : ', &
+            & SUM(int_bio_settle_timeslice(is_CaCO3,:,:,n_k))/int_t_timeslice, &
+            & ' mol yr-1 = ', &
+            & 1.0E-12*conv_CaCO3_mol_kgC*SUM(int_bio_settle_timeslice(is_CaCO3,:,:,n_k))/int_t_timeslice, &
+            & ' PgC yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       Write(unit=out,fmt=*) ' '
+       write(unit=out,fmt='(A32,e15.7,A12,f7.3,A9)',iostat=ios) &
+            & ' Total POC seafloor rain      : ', &
+            & SUM(int_focnsed_timeslice(is_POC,:,:))/int_t_timeslice, &
+            & ' mol yr-1 = ', &
+            & 1.0E-12*conv_C_mol_kg*SUM(int_focnsed_timeslice(is_POC,:,:))/int_t_timeslice, &
+            & ' PgC yr-1'
+       call check_iostat(ios,__LINE__,__FILE__)
+       write(unit=out,fmt='(A32,e15.7,A12,f7.3,A9)',iostat=ios) &
+            & ' Total CaCO3 seafloor rain    : ', &
+            & SUM(int_focnsed_timeslice(is_CaCO3,:,:))/int_t_timeslice, &
+            & ' mol yr-1 = ', &
+            & 1.0E-12*conv_CaCO3_mol_kgC*SUM(int_focnsed_timeslice(is_CaCO3,:,:))/int_t_timeslice, &
+            & ' PgC yr-1'
+    end if
+    ! ---------------------------------------------------------------- ! CaCO3/POC export and rain
+    if (sed_select(is_POC) .AND. sed_select(is_CaCO3)) then
+       Write(unit=out,fmt=*) ' '
+       loc_tot = SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))
+       IF (loc_tot > const_real_nullsmall) THEN
+          write(unit=out,fmt='(A32,f7.3)',iostat=ios) &
+               & ' Mean export CaCO3/POC        : ',            &
+               & SUM(int_bio_settle_timeslice(is_CaCO3,:,:,n_k))/loc_tot
+       end if
+       loc_tot = SUM(int_focnsed_timeslice(is_POC,:,:))
+       IF (loc_tot > const_real_nullsmall) THEN
+          write(unit=out,fmt='(A32,f7.3)',iostat=ios) &
+               & ' Mean seafloor rain CaCO3/POC : ',          &
+               & SUM(int_focnsed_timeslice(is_CaCO3,:,:))/loc_tot
+       end if
+    end if
+    ! ---------------------------------------------------------------- ! frac2
+    ! NOTE: weight frac with the POC flux
+    if (sed_select(is_POC)) then
+       Write(unit=out,fmt=*) ' '
+       loc_tot = SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))
+       IF (loc_tot > const_real_nullsmall) THEN
+          write(unit=out,fmt='(A32,f7.3)',iostat=ios) &
+               & ' Mean export POC frac2        : ',            &
+               & SUM(int_bio_settle_timeslice(is_POC_frac2,:,:,n_k)*int_bio_settle_timeslice(is_POC,:,:,n_k))/loc_tot
+       end if
+       loc_tot = SUM(int_focnsed_timeslice(is_POC,:,:))
+       IF (loc_tot > const_real_nullsmall) THEN
+          write(unit=out,fmt='(A32,f7.3)',iostat=ios) &
+               & ' Mean seafloor rain POC frac2 : ',          &
+               & SUM(int_focnsed_timeslice(is_POC_frac2,:,:)*int_focnsed_timeslice(is_POC,:,:))/loc_tot
+       end if
+    end if
+    ! ---------------------------------------------------------------- ! C/P export and rain
     IF (sed_select(is_POP)) THEN
+       Write(unit=out,fmt=*) ' '
        loc_tot = SUM(int_bio_settle_timeslice(is_POP,:,:,n_k))
        IF (loc_tot > const_real_nullsmall) THEN
-          write(unit=out,fmt='(A22,f7.3)',iostat=ios) &
-               & ' Export C/P         : ',            &
+          write(unit=out,fmt='(A32,f7.3)',iostat=ios) &
+               & ' Mean export POM C/P          : ',            &
                & SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/loc_tot
-       else
-          write(unit=out,fmt='(A22,A3)',iostat=ios) &
-               & ' Export C/P         : ',          &
-               & 'NaN'
        end if
        loc_tot = SUM(int_focnsed_timeslice(is_POP,:,:))
        IF (loc_tot > const_real_nullsmall) THEN
-          write(unit=out,fmt='(A22,f7.3)',iostat=ios) &
-               & ' Sediment rain C/P  : ',          &
+          write(unit=out,fmt='(A32,f7.3)',iostat=ios) &
+               & ' Mena seafloor rain POM C/P   : ',          &
                & SUM(int_focnsed_timeslice(is_POC,:,:))/loc_tot
-       else
-          write(unit=out,fmt='(A22,A3)',iostat=ios) &
-               & ' Sediment rain C/P  : ',          &
-               & 'NaN'
        end if
     end if
-    if (int_diag_bio_sig(idiag_bio_dPO4) < const_real_nullsmall) then
-       int_diag_bio_sig(idiag_bio_dPO4) = const_real_nullsmall
-    end if
-    select case (par_bio_prodopt)
-    CASE (                        &
-         & 'bio_PFeSi',           &
-         & 'bio_PFeSi_Ridgwell02' &
-         & )
-       Write(unit=out,fmt=*) ' '
-       write(unit=out,fmt='(A22,e15.7,A12,f7.3,A13)',iostat=ios) &
-            & ' Total opal export  : ', &
-            & SUM(int_bio_settle_timeslice(is_opal,:,:,n_k))/int_t_timeslice, &
-            & ' mol yr-1 = ', &
-            & 1.0E-12*SUM(int_bio_settle_timeslice(is_opal,:,:,n_k))/int_t_timeslice, &
-            & ' Tmol Si yr-1'
-       write(unit=out,fmt='(A22,f7.3,A13)',iostat=ios) &
-            & ' -> sp POC export   : ', &
-            & (int_diag_bio_sig(idiag_bio_dPO4_1)/int_diag_bio_sig(idiag_bio_dPO4))* &
-            & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
-            & ' PgC yr-1'
-       write(unit=out,fmt='(A22,f7.3,A13)',iostat=ios) &
-            & ' -> nsp POC export  : ', &
-            & (int_diag_bio_sig(idiag_bio_dPO4_2)/int_diag_bio_sig(idiag_bio_dPO4))* &
-            & 1.0E-12*conv_C_mol_kg*SUM(int_bio_settle_timeslice(is_POC,:,:,n_k))/int_t_timeslice, &
-            & ' PgC yr-1'
-    end select
-    
+    ! ---------------------------------------------------------------- !
     ! END
+    ! ---------------------------------------------------------------- !
     Write(unit=out,fmt=*) ' '
     Write(unit=out,fmt=*) '=========================='
     ! *** save data - CLOSE FILE ***
     call check_iostat(ios,__LINE__,__FILE__)
     CLOSE(unit=out)
-
+    ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_data_save_global_av
   ! ****************************************************************************************************************************** !
   

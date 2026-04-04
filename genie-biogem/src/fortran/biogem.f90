@@ -75,6 +75,7 @@ subroutine biogem(        &
   real::loc_force_actual_d44Ca,loc_force_actual_CaCO3
   real::loc_r18O
   real::loc_remin,loc_rainratio
+  real::loc_rainratio_sur_POC,loc_rainratio_ben_POC,loc_rainratio_sur_CaCO3,loc_rainratio_ben_CaCO3
   real::loc_M
   real,dimension(1:n_l_ocn)::loc_vocn                            !
   real,dimension(n_l_ocn,n_l_sed)::loc_conv_ls_lo                !
@@ -205,6 +206,10 @@ subroutine biogem(        &
      loc_force_actual          = 0.0
      loc_force_actual_d13C     = 0.0
      loc_force_actual_d44Ca    = 0.0
+     loc_rainratio_sur_POC     = 0.0
+     loc_rainratio_sur_CaCO3   = 0.0
+     loc_rainratio_ben_POC     = 0.0
+     loc_rainratio_ben_CaCO3   = 0.0
      loc_rainratio             = 0.0
      !
      DO i=1,n_i
@@ -262,6 +267,18 @@ subroutine biogem(        &
                     loc_fsedsettle_tot(io) = loc_fsedsettle_tot(io) + conv_sed_ocn(io,is)*bio_settle(is,i,j,loc_k1)
                  end do
               end do
+              ! rain ratios
+              if (sed_select(is_POC) .AND. sed_select(is_CaCO3)) then
+                 loc_rainratio_sur_POC   = loc_rainratio_sur_POC   + bio_settle(is_POC,i,j,n_k)
+                 loc_rainratio_sur_CaCO3 = loc_rainratio_sur_CaCO3 + bio_settle(is_CaCO3,i,j,n_k)
+                 loc_rainratio_ben_POC   = loc_rainratio_ben_POC   + bio_settle(is_POC,i,j,loc_k1)
+                 loc_rainratio_ben_CaCO3 = loc_rainratio_ben_CaCO3 + bio_settle(is_CaCO3,i,j,loc_k1)
+
+!!$                 print*,i,j
+!!$print*,bio_settle(is_POC,i,j,:)
+!!$print*,bio_settle(is_CaCO3,i,j,:)
+                 
+              end if
               ! set current mean ocean surface carbonate chemsitry
               ! NOTE: the 'red' tracer is used to set a time history of ocean surface pH
               !       the 'blue' tracer is used to set a time history of saturation state
@@ -408,14 +425,33 @@ subroutine biogem(        &
      ! re-scale CaCO3:POC rain ratio
      ! NOTE: test for the tuning parameter par_bio_CaCO32POC being set (non-zero)
      ! NOTE: remember that loc_rainratio has assued unit scaling (i.e. par_bio_red_POC_CaCO3 = 1)
-     if ( par_bio_POC_CaCO3_target > const_real_nullsmall ) then
-        if ( loc_rainratio > const_real_nullsmall ) then
+     if (par_bio_POC_CaCO3_target > const_real_nullsmall) then
+        if (loc_rainratio > const_real_nullsmall) then
            par_bio_red_POC_CaCO3 = par_bio_POC_CaCO3_target/loc_rainratio
         else
            par_bio_red_POC_CaCO3 = 0.0
         end if
      end if
-     
+     ! re-scale surface and seafloor CaCO3:POC rain ratios
+     ! NOTE: the value of par_bio_remin_POC_frac2 cannot be corrected in a single iteration
+     !       becasue it is not the sole determinant of benthic PIC/POC
+     if (par_bio_rainratio_sur_target > const_real_nullsmall) then
+        if ((loc_rainratio_sur_POC > const_real_nullsmall) .AND. (loc_rainratio_sur_CaCO3 > const_real_nullsmall)) then
+           loc_rainratio = loc_rainratio_sur_CaCO3/loc_rainratio_sur_POC
+           par_bio_red_POC_CaCO3 = par_bio_red_POC_CaCO3*par_bio_rainratio_sur_target/loc_rainratio
+        else
+           ! do not adjust the value of par_bio_red_POC_CaCO3
+        end if
+     end if
+     if (par_bio_rainratio_ben_target > const_real_nullsmall) then
+        if ((loc_rainratio_ben_POC > const_real_nullsmall) .AND. (loc_rainratio_ben_CaCO3 > const_real_nullsmall)) then
+           loc_rainratio = loc_rainratio_ben_CaCO3/loc_rainratio_ben_POC
+           par_bio_remin_POC_frac2 = par_bio_remin_POC_frac2*loc_rainratio/par_bio_rainratio_ben_target
+        else
+           ! do not adjust the value of par_bio_remin_POC_frac2
+        end if
+     end if
+                 
      ! ****************************************************************************************************************************
      ! ****************************************************************************************************************************
      ! ****************************************************************************************************************************
@@ -2074,10 +2110,10 @@ subroutine biogem(        &
               ! (3) set ocn->sed flux
               ! NOTE: convert units from (mol per timestep) to (mol m-2 s-1)
               ! NOTE: if 'allow particulate flux to sediments' option in biogem_config is not selected,
-              !       the value of the particulate flux to sediments local array <locij_ocnsed> is zero
-              ! NOTE: for particulate fractions (type par_sed_type_frac) -- scale by time such that the fraction is preserved
-              !       when passed through the ocean->sediment interface
-              !       in the ocn->sed flux coupling, assumed units of (mol m-2 s-1) are converted to (mol m-2) and summed
+              !       the value of the particulate flux to sediments local array <locij_focnsed> is zero
+              ! NOTE: particulate fractions (type par_sed_type_frac) have already been scaled by the time-step in biogem_box
+              !       and hence will already correctly integrate over a year
+              ! NOTE: in the ocn->sed flux coupling, assumed units of (mol m-2 s-1) are converted to (mol m-2) and summed
               !       => convert here to pretend s-1 units (which is cancelled out in the call to cpl_flux_ocnsed)
               !       also add dummy conversion conv_m2_cm2 -- this is undone in sedgem (conv_cm2_m2*dum_sfxsumsed(:,i,j))
               ! replace loc_k1 with virtual grid layer (if virtual grid world selected)
@@ -2091,7 +2127,8 @@ subroutine biogem(        &
                  locij_focnsed(is,i,j) = bio_settle(is,i,j,loc_k1)
                  SELECT CASE (sed_type(is))
                  CASE (par_sed_type_frac)
-                    dum_sfxsed1(is,i,j) = conv_m2_cm2*locij_focnsed(is,i,j)*loc_rdts
+                    !!!dum_sfxsed1(is,i,j) = conv_m2_cm2*locij_focnsed(is,i,j)*loc_rdts
+                    dum_sfxsed1(is,i,j) = locij_focnsed(is,i,j)
                  case default
                     dum_sfxsed1(is,i,j) = phys_ocn(ipo_rA,i,j,loc_k1)*locij_focnsed(is,i,j)*loc_rdts
                  end SELECT
@@ -3425,9 +3462,16 @@ SUBROUTINE diag_biogem_timeslice( &
                     end do
                     ! ocn->sed
                     ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)
+                    !       EXCEPT ... for frac2 ... which in dum_sfxsed1 is already scaled by loc_dtyr
+                    !       (becasue it inherits the time-step fraction year scaling from bio_settle in biogem_bbox)
                     DO l=1,n_l_sed
                        is = conv_iselected_is(l)
-                       locij_focnsed(is,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxsed1(is,i,j)
+                       SELECT CASE (sed_type(is))
+                       CASE (par_sed_type_frac)
+                          locij_focnsed(is,i,j) = dum_sfxsed1(is,i,j)
+                       case default
+                          locij_focnsed(is,i,j) = loc_dts*phys_ocn(ipo_A,i,j,loc_k1)*dum_sfxsed1(is,i,j)
+                       end SELECT
                     end DO
                     ! sed->ocn
                     ! NOTE: convert units from (mol m-2 s-1) to (mol per timestep)

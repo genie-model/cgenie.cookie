@@ -4007,6 +4007,52 @@ CONTAINS
        end SELECT
     end do
     ! ---------------------------------------------------------------- !
+    ! particulate flux fractions -- seasurface
+    ! ---------------------------------------------------------------- !
+       loc_unitsname = 'n/a'
+       IF (sed_select(is_POC_frac2)) THEN
+          loc_ij(:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                loc_k1 = goldstein_k1(i,j)
+                IF (n_k >= loc_k1) THEN
+                   loc_ij(i,j) = int_bio_settle_timeslice(is_POC_frac2,i,j,n_k)
+                END if
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_POCfrac2', &
+               & 'export POC fraction #2',trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d('biop_seasur_r_POCfrac2',loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+       end IF
+       IF (sed_select(is_CaCO3_frac2)) THEN
+          loc_ij(:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                loc_k1 = goldstein_k1(i,j)
+                IF (n_k >= loc_k1) THEN
+                   loc_ij(i,j) = int_bio_settle_timeslice(is_CaCO3_frac2,i,j,n_k)
+                END if
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_CaCO3frac2', &
+               & 'export CaCO3 fraction #2',trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d('biop_seasur_r_CaCO3frac2',loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+       end IF
+       IF (sed_select(is_opal_frac2)) THEN
+          loc_ij(:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                loc_k1 = goldstein_k1(i,j)
+                IF (n_k >= loc_k1) THEN
+                   loc_ij(i,j) = int_bio_settle_timeslice(is_opal_frac2,i,j,n_k)
+                END if
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,3,'biop_seasur_r_opalfrac2', &
+               & 'export opal fraction #2',trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d('biop_seasur_r_opalfrac2',loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+       end IF
+    ! ---------------------------------------------------------------- !
     ! PARTICULATE FLUXES -- seafloor -- total flux
     ! ---------------------------------------------------------------- !
     ! NOTE: bio_settle is in units of mol per time interval
@@ -4052,7 +4098,7 @@ CONTAINS
              DO j=1,n_j
                 loc_k1 = goldstein_k1(i,j)
                 IF (n_k >= loc_k1) THEN
-                   loc_ij(i,j) = int_bio_settle_timeslice(is_POC_frac2,i,j,loc_k1)/real(int_t_timeslice_count)
+                   loc_ij(i,j) = int_bio_settle_timeslice(is_POC_frac2,i,j,loc_k1)
                 END if
              END DO
           END DO
@@ -4066,7 +4112,7 @@ CONTAINS
              DO j=1,n_j
                 loc_k1 = goldstein_k1(i,j)
                 IF (n_k >= loc_k1) THEN
-                   loc_ij(i,j) = int_bio_settle_timeslice(is_CaCO3_frac2,i,j,loc_k1)/real(int_t_timeslice_count)
+                   loc_ij(i,j) = int_bio_settle_timeslice(is_CaCO3_frac2,i,j,loc_k1)
                 END if
              END DO
           END DO
@@ -4080,7 +4126,7 @@ CONTAINS
              DO j=1,n_j
                 loc_k1 = goldstein_k1(i,j)
                 IF (n_k >= loc_k1) THEN
-                   loc_ij(i,j) = int_bio_settle_timeslice(is_opal_frac2,i,j,loc_k1)/real(int_t_timeslice_count)
+                   loc_ij(i,j) = int_bio_settle_timeslice(is_opal_frac2,i,j,loc_k1)
                 END if
              END DO
           END DO
