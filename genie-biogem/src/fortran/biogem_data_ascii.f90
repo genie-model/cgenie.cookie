@@ -4449,6 +4449,28 @@ CONTAINS
                & 'NaN'
        end if
     end if
+    IF (sed_select(is_POP) .AND. sed_select(is_PON)) THEN
+       loc_tot = SUM(int_bio_settle_timeslice(is_POP,:,:,n_k))
+       IF (loc_tot > const_real_nullsmall) THEN
+          write(unit=out,fmt='(A22,f7.3)',iostat=ios) &
+               & ' Export N/P         : ',            &
+               & SUM(int_bio_settle_timeslice(is_PON,:,:,n_k))/loc_tot
+       else
+          write(unit=out,fmt='(A22,A3)',iostat=ios) &
+               & ' Export N/P         : ',          &
+               & 'NaN'
+       end if
+       loc_tot = SUM(int_focnsed_timeslice(is_POP,:,:))
+       IF (loc_tot > const_real_nullsmall) THEN
+          write(unit=out,fmt='(A22,f7.3)',iostat=ios) &
+               & ' Sediment rain N/P  : ',          &
+               & SUM(int_focnsed_timeslice(is_PON,:,:))/loc_tot
+       else
+          write(unit=out,fmt='(A22,A3)',iostat=ios) &
+               & ' Sediment rain N/P  : ',          &
+               & 'NaN'
+       end if
+    end if
     if (int_diag_bio_sig(idiag_bio_dPO4) < const_real_nullsmall) then
        int_diag_bio_sig(idiag_bio_dPO4) = const_real_nullsmall
     end if

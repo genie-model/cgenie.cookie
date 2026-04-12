@@ -303,9 +303,15 @@ CONTAINS
     real::loc_O2,loc_NO3,loc_FeOOH,loc_SO4
     real::loc_kO2,loc_kNO3,loc_kFeOOH,loc_kSO4,loc_kmeth
     real::loc_kiO2,loc_kiNO3,loc_kiFeOOH,loc_kiSO4
+    real::loc_r15N,loc_r56Fe,loc_r34S
+    real::loc_alpha,loc_R
+    real::loc_ls_lo_epsilon_NO3,loc_ls_lo_epsilon_SO4,loc_ls_lo_epsilon_FeOOH
     real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo 
     ! ---------------------------------------------------------- ! initialize local variables
     loc_k = 0.0
+    loc_ls_lo_epsilon_NO3   = 0.0
+    loc_ls_lo_epsilon_SO4   = 0.0
+    loc_ls_lo_epsilon_FeOOH = 0.0
     ! ---------------------------------------------------------- !
     ! CREATE REMIN ARRAY
     ! ---------------------------------------------------------- !
@@ -495,6 +501,62 @@ CONTAINS
        end if
     else
        loc_conv_ls_lo(:,:) = 0.0
+    end if
+    ! ---------------------------------------------------------- !
+    ! CORRECT FOR ISOTOPES (in oxidants -- NO3, SO4, FeOOH)
+    ! ---------------------------------------------------------- !
+    ! NOTE: use fractionation factors: loc_ls_lo_epsilon_NO3, loc_ls_lo_epsilon_SO4, loc_ls_lo_epsilon_FeOOH
+    !       for now these are local and zero ... but this need not be the case (and could be propegated from BIOGEM)
+    !       (we could employ an array to store fractionation factor for all ocean tracers ... or define an oxidants-only array) 
+    ! NOTE: for NO3, possible products fomr NO3 reduction are NO2, N2O, N2, NH4 (hence the 4 logical queries)
+    ! test for N isotopes selected
+    ! NOTE: value of loc_NO3 already determined
+    if (ocn_select(io_NO3) .AND. ocn_select(io_NO3_15N)) then
+       if (loc_NO3 > const_real_nullsmall) then
+          loc_r15N  = dum_ocn(io2l(io_NO3_15N))/loc_NO3
+       else
+          loc_r15N  = 0.0
+       end if
+       loc_alpha = 1.0 + loc_ls_lo_epsilon_NO3/1000.0
+       loc_R     = loc_r15N/(1.0 - loc_r15N)
+       loc_conv_ls_lo(io2l(io_NO3_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_NO3),:)
+       if (ocn_select(io_NO2) .AND. ocn_select(io_NO2_15N)) then
+          loc_conv_ls_lo(io2l(io_NO2_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_NO2),:)
+       elseif (ocn_select(io_N2O) .AND. ocn_select(io_N2O_15N)) then
+          loc_conv_ls_lo(io2l(io_N2O_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_N2O),:)
+       elseif (ocn_select(io_N2) .AND. ocn_select(io_N2_15N)) then
+          loc_conv_ls_lo(io2l(io_N2_15N),:)  = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_N2),:)
+       elseif (ocn_select(io_NH4) .AND. ocn_select(io_NH4_15N)) then
+          loc_conv_ls_lo(io2l(io_NH4_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_NH4),:)
+       else
+          ! [DEFAULT, oxic remin relationship]
+       endif
+    end if
+    ! test for S isotopes selected
+    ! NOTE: value of loc_SO4 already determined
+    if (ocn_select(io_SO4_34S) .AND. ocn_select(io_H2S_34S)) then
+       if (loc_SO4 > const_real_nullsmall) then
+          loc_r34S  = dum_ocn(io2l(io_SO4_34S)) / loc_SO4
+       else
+          loc_r34S  = 0.0
+       end if
+       loc_alpha = 1.0 + loc_ls_lo_epsilon_SO4/1000.0
+       loc_R     = loc_r34S/(1.0 - loc_r34S)
+       loc_conv_ls_lo(io2l(io_SO4_34S),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_SO4),:)
+       loc_conv_ls_lo(io2l(io_H2S_34S),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_H2S),:)
+    end if
+    ! test for Fe isotopes selected
+    ! NOTE: value of loc_FeOOH already determined
+    if (ocn_select(io_FeOOH_56Fe) .AND. ocn_select(io_Fe2_56Fe)) then
+       if (loc_FeOOH > const_real_nullsmall) then
+          loc_r56Fe  = dum_ocn(io2l(io_FeOOH_56Fe)) / loc_FeOOH
+       else
+          loc_r56Fe  = 0.0
+       end if
+       loc_alpha = 1.0 + loc_ls_lo_epsilon_FeOOH/1000.0
+       loc_R     = loc_r56Fe/(1.0 - loc_r56Fe)
+       loc_conv_ls_lo(io2l(io_FeOOH_56Fe),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_FeOOH_56Fe),:)
+       loc_conv_ls_lo(io2l(io_Fe2_56Fe),:)   = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo(io2l(io_Fe2_56Fe),:)
     end if
     ! -------------------------------------------------------- !
     ! RETURN RESULT

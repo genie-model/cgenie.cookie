@@ -118,28 +118,18 @@ CONTAINS
           case default
              loc_NH4_oxidation = min(loc_NH4_oxidation,loc_f*loc_NH4,loc_f*0.5*loc_O2)
           end select
-          ! isotopic fractionation
-          ! NOTE: currently, becasue the reaction has already been limited by factor loc_f,
-          !       Rayleigh fractionation will *ALWAYS* occur
-          ! calculate isotopic ratio (loc_NH4 is already tested for being > 0)
-          loc_r15N = ocn(io_NH4_15N,dum_i,dum_j,k)/loc_NH4
-          if (loc_NH4_oxidation > loc_NH4) then
-             ! complete NH4 oxidation (no N fractionation)
-             loc_bio_remin(io_NH4,k) = -loc_NH4
-             loc_bio_remin(io_NO3,k) = loc_NH4
-             loc_bio_remin(io_O2,k)  = -2.0*loc_NH4
-             loc_bio_remin(io_ALK,k) = loc_bio_remin(io_NH4,k) - loc_bio_remin(io_NO3,k)
-             loc_bio_remin(io_NH4_15N,k) = -loc_r15N*loc_NH4
-             loc_bio_remin(io_NO3_15N,k) = loc_r15N*loc_NH4
-          else
-             ! partial NH4 oxidation (=> N isotope Rayleigh fractionation)
-             loc_bio_remin(io_NH4,k) = -loc_NH4_oxidation
-             loc_bio_remin(io_NO3,k) = loc_NH4_oxidation
-             loc_bio_remin(io_O2,k)  = -2.0*loc_NH4_oxidation
-             loc_bio_remin(io_ALK,k) = loc_bio_remin(io_NH4,k) - loc_bio_remin(io_NO3,k)
+          ! bulk tracer conversion
+          loc_bio_remin(io_NH4,k) = -loc_NH4_oxidation
+          loc_bio_remin(io_NO3,k) = loc_NH4_oxidation
+          loc_bio_remin(io_O2,k)  = -2.0*loc_NH4_oxidation
+          loc_bio_remin(io_ALK,k) = loc_bio_remin(io_NH4,k) - loc_bio_remin(io_NO3,k)
+          ! calculate isotopic fractionation
+          ! NOTE: we already know that loc_NH4 is non-zero
+          if (ocn_select(io_NH4_15N) .AND. ocn_select(io_NO3_15N)) then
+             loc_r15N = ocn(io_NH4_15N,dum_i,dum_j,k)/loc_NH4
              ! ### INSERT ALTERNATIVE CODE FOR NON-ZERO N FRACTIONATION ########################################################## !
-             loc_bio_remin(io_NH4_15N,k) = -loc_r15N*loc_NH4_oxidation
-             loc_bio_remin(io_NO3_15N,k) = loc_r15N*loc_NH4_oxidation
+             loc_bio_remin(io_NH4_15N,k) = loc_r15N*loc_bio_remin(io_NH4,k)
+             loc_bio_remin(io_NO3_15N,k) = loc_r15N*loc_bio_remin(io_NO3,k)
              ! ################################################################################################################### !
           end if
        end if
@@ -155,9 +145,6 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DIAGNOSTICS
     ! -------------------------------------------------------- !
-    ! -------------------------------------------------------- ! record diagnostics (mol kg-1) OLD
-    diag_geochem_old(idiag_geochem_old_ammox_dNH4,dum_i,dum_j,:) = loc_bio_remin(io_NH4,:)
-    diag_geochem_old(idiag_geochem_old_ammox_dNO3,dum_i,dum_j,:) = loc_bio_remin(io_NO3,:)
     ! -------------------------------------------------------- ! record diagnostics (mol kg-1)
     id = fun_find_str_i('redox_NH4toNO3_dNH4',string_diag_redox)
     diag_redox(id,dum_i,dum_j,:) = loc_bio_remin(io_NH4,:)
