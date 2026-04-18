@@ -1910,11 +1910,7 @@ CONTAINS
        ! NOTE: PON has already been adjusted (above) to account for Nfixer N/P: 
        !       bio_part(is,dum_i,dum_j,n_k) = loc_bio_NP*loc_dPO4_1 + par_bio_NPdiaz*loc_dPO4_2
        ! NOTE: assumed stiochometry: 2NO3- + 2H+ <-> (5/2)O2 + N2 + H2O
-       if (loc_dPO4 > const_real_nullsmall) then
-          loc_dNO3 = (loc_dPO4_2/loc_dPO4)*loc_bio_uptake(io_NO3,n_k)
-       else
-          loc_dNO3 = 0.0
-       end if
+       loc_dNO3 = par_bio_NPdiaz*loc_dPO4_2
        loc_bio_uptake(io_N2,n_k)  = 0.5*par_bio_NPdiaz*loc_dPO4_2
        loc_bio_uptake(io_O2,n_k)  = loc_bio_uptake(io_O2,n_k)  + (5.0/2.0)*0.5*loc_dNO3
        loc_bio_uptake(io_ALK,n_k) = loc_bio_uptake(io_ALK,n_k) + loc_dNO3

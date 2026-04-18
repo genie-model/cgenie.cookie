@@ -4128,7 +4128,7 @@ CONTAINS
                & ' mol yr-1'
           Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                & '                                            : ',          &
-               & 14.0*2.0*1.0E-12*loc_tot,  &
+               & 14.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 NO3       '
        end if
        if (ocn_select(io_NH4)) then
