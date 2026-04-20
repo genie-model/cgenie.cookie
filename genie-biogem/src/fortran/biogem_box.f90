@@ -1702,10 +1702,8 @@ CONTAINS
        if (sed_dep(is) == is_PON) then
           SELECT CASE (par_bio_prodopt)
           CASE ( &
-               & '2N2T_PN_Tdep',   &
-               & '3N2T_PNFe_Tdep', &
-               & 'bio_PN',         &
-               & 'bio_PNFe'        &
+               & '2N2T_PN_Tdep',  &
+               & '3N2T_PNFe_Tdep' &
                & )
              bio_part(is,dum_i,dum_j,n_k) = loc_bio_NP*loc_dPO4_1 + par_bio_NPdiaz*loc_dPO4_2
           END select
@@ -1716,8 +1714,7 @@ CONTAINS
        if (sed_dep(is) == is_POFe) then
           SELECT CASE (par_bio_prodopt)
           CASE ( &
-               &'3N2T_PNFe_Tdep', &
-               & 'bio_PNFe'       &
+               &'3N2T_PNFe_Tdep' &
                & )
              bio_part(is,dum_i,dum_j,n_k) = &
                   & bio_part_red(is_POC,is_POFe,dum_i,dum_j)*bio_part_red(is_POP,is_POC,dum_i,dum_j)*loc_dPO4_1 &
@@ -1905,41 +1902,34 @@ CONTAINS
          & )
        ! -------------------------------------------------------- ! adjustment due to N2 uptake
        ! adjust default biological tracer uptake stoichiometry due to N2 fixation and replacing implicit NO3 consumption
-       ! NOTE: this revised correction is based on phosphorous currency and the fraction of P uptake by Nfixers
-       !       (loc_dPO4_2/loc_dPO4)
-       ! NOTE: PON has already been adjusted (above) to account for Nfixer N/P: 
-       !       bio_part(is,dum_i,dum_j,n_k) = loc_bio_NP*loc_dPO4_1 + par_bio_NPdiaz*loc_dPO4_2
+       ! NOTE: this revised correction is based on P currency and the fraction of P uptake by Nfixers (loc_dPO4_2/loc_dPO4)
+       !       loc_dNO3 == 'over-correction' (NO3 removed which should not have been)
+       !       loc_dN2  == 'under-correction' (N2 not removed but should be)       
+       ! NOTE: PON has NOT now already been adjusted (above) to account for Nfixer N/P
        ! NOTE: assumed stiochometry: 2NO3- + 2H+ <-> (5/2)O2 + N2 + H2O
-       loc_dNO3 = par_bio_NPdiaz*loc_dPO4_2
-       loc_bio_uptake(io_N2,n_k)  = 0.5*par_bio_NPdiaz*loc_dPO4_2
-       loc_bio_uptake(io_O2,n_k)  = loc_bio_uptake(io_O2,n_k)  + (5.0/2.0)*0.5*loc_dNO3
+       loc_dNO3 = loc_bio_NP*loc_dPO4_2
+       loc_dN2  = 0.5*par_bio_NPdiaz*loc_dPO4_2
+       loc_bio_uptake(io_N2,n_k)  = loc_dN2
+       loc_bio_uptake(io_O2,n_k)  = loc_bio_uptake(io_O2,n_k)  + (5.0/2.0)*loc_dNO3
        loc_bio_uptake(io_ALK,n_k) = loc_bio_uptake(io_ALK,n_k) + loc_dNO3
        loc_bio_uptake(io_NO3,n_k) = loc_bio_uptake(io_NO3,n_k) - loc_dNO3
+       bio_part(is_PON,dum_i,dum_j,n_k) = bio_part(is_PON,dum_i,dum_j,n_k) - loc_dNO3 + 2.0*loc_dN2
        ! -------------------------------------------------------- ! adjustment due to NH4 uptake
        ! adjust default biological tracer uptake stoichiometry due to NH4 consumption (replacing some NO3 consumption)
        ! NOTE: assumed stiochometry: NO3- + H2O + 2H+ <-> 2O2 + NH4+
-       ! ALT SCHEME: revised preferential NH4-update scheme is a riff on MM limitation kinetics
+       ! NOTE: revised preferential NH4-update scheme is a riff on MM limitation kinetics
+       ! NOTE: bio_part(is_PON,dum_i,dum_j,n_k) does not change, but the solutes do
        if ( (loc_bio_uptake(io_NO3,n_k) > const_real_nullsmall) .AND. (ocn(io_NH4,dum_i,dum_j,n_k) > const_real_nullsmall) ) then
           loc_frac = ocn(io_NH4,dum_i,dum_j,n_k)/(ocn(io_NH4,dum_i,dum_j,n_k) + loc_bio_uptake(io_NO3,n_k))
           loc_bio_uptake(io_NH4,n_k) = loc_frac*loc_bio_uptake(io_NO3,n_k)
        else
           loc_bio_uptake(io_NH4,n_k) = 0.0
        end if
-!!$       ! ORIGINAL SCHEME:
-!!$       ! if NO3 dominates, then limit NH4 uptake
-!!$       ! if NH4 dominates, assume that in the uptake calculation, only a fraction of available N is going to be taken up
-!!$       if (ocn(io_NO3,dum_i,dum_j,n_k) > ocn(io_NH4,dum_i,dum_j,n_k)) then
-!!$          loc_bio_uptake(io_NH4,n_k) = &
-!!$               & min(loc_bio_uptake(io_NO3,n_k),0.5*ocn(io_NH4,dum_i,dum_j,n_k))
-!!$       else
-!!$          loc_bio_uptake(io_NH4,n_k) = &
-!!$               & min(loc_bio_uptake(io_NO3,n_k),ocn(io_NH4,dum_i,dum_j,n_k))
-!!$       end if
        loc_bio_uptake(io_O2,n_k)  = loc_bio_uptake(io_O2,n_k)  + 2.0*loc_bio_uptake(io_NH4,n_k)
        loc_bio_uptake(io_ALK,n_k) = loc_bio_uptake(io_ALK,n_k) + 2.0*loc_bio_uptake(io_NH4,n_k)
        loc_bio_uptake(io_NO3,n_k) = loc_bio_uptake(io_NO3,n_k) - 1.0*loc_bio_uptake(io_NH4,n_k)
        ! -------------------------------------------------------- ! isotopes
-       ! NOTE: add each update fraction to 15N particulate tracer
+       ! NOTE: zero bio_part(is_PON_15N,dum_i,dum_j,n_k) and then add each update fraction to 15N particulate tracer
        if (sed_select(is_PON_15N)) then
           ! initialize 15N variables
           bio_part(is_PON_15N,dum_i,dum_j,n_k) = 0.0

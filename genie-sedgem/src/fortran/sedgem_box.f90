@@ -97,8 +97,11 @@ CONTAINS
     REAL,DIMENSION(n_ocn)::loc_exe_ocn                         ! flux of dissolved solutes to be exchanged with ocean
     logical::loc_flag_stackgrow,loc_flag_stackshrink           ! growing or shrinking of stack occurs (by a 1 cm layer)
     real,DIMENSION(n_diag_sed_err)::loc_err
+    real::loc_R,loc_alpha,loc_r15N
+    real::loc_ls_lo_epsilon_NO3
     ! -------------------------------------------------------- ! local (redox-dependent) sed -> ocn conversion array
     real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo
+    real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo_N_N2,loc_conv_ls_lo_N_NH4
     ! -------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
     real,dimension(1:n_l_ocn)::loc_lslo_fnet
     ! -------------------------------------------------------- !
@@ -125,6 +128,8 @@ CONTAINS
     loc_flag_stackshrink = .FALSE.
     ! initialize errors
     loc_err(:) = 0.0
+    ! d15N
+    loc_ls_lo_epsilon_NO3 = 0.0
     ! -------------------------------------------------------- !
     ! (B) SET BIOTURBATION INTENSITY AND PROFILE
     ! -------------------------------------------------------- !
@@ -831,6 +836,23 @@ CONTAINS
     !         NOTE: *** when NO3 becomes depleted, there is no sulphate-reduction, and NO3 will continue to be removed ***
     ! test for empirical sed denitrification (Bohlen 2012) request
     if (ctrl_sed_conv_sedocn_bohlen2012 .AND. ocn_select(io_NO3) .AND. ocn_select(io_NH4)) then
+       ! copy local transformation arrays
+       loc_conv_ls_lo_N_N2  = conv_ls_lo_N_N2
+       loc_conv_ls_lo_N_NH4 = conv_ls_lo_N_NH4
+       ! set local d15N
+       if (sed_select(is_PON_15N)) then
+          if (dum_sfcsumocn(io_NO3) > const_real_nullsmall) then
+             loc_r15N  = dum_sfcsumocn(io_NO3_15N)/dum_sfcsumocn(io_NO3)
+          else
+             loc_r15N  = 0.0
+          end if
+          loc_alpha = 1.0 + loc_ls_lo_epsilon_NO3/1000.0
+          loc_R     = loc_r15N/(1.0 - loc_r15N)
+          loc_conv_ls_lo_N_N2(io2l(io_NO3_15N),:)  = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_N2(io2l(io_NO3),:)
+          loc_conv_ls_lo_N_N2(io2l(io_N2_15N),:)   = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_N2(io2l(io_N2),:)
+          loc_conv_ls_lo_N_NH4(io2l(io_NO3_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_NH4(io2l(io_NO3),:)
+          loc_conv_ls_lo_N_NH4(io2l(io_NH4_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_NH4(io2l(io_NH4),:)
+       end if
        ! convert POC flux units (1000.0*10000.0 == convert mol cm-2 -> mmol m-2)
        ! NOTE: sed_fdis has already been converted from cm3 cm-2 to mol cm-2
        loc_RRPOC = (1000.0*10000.0/conv_yr_d)*sed_fdis(is_POC,dum_i,dum_j)
@@ -838,8 +860,8 @@ CONTAINS
        loc_LNO3  = loc_RRPOC * ( 0.083 + 0.21 * 0.98**( conv_mol_umol*(dum_sfcsumocn(io_O2) - dum_sfcsumocn(io_NO3)) ) )
        ! calculate maximum potential GENIE NO3 consumption (mmol N m-2 d-1)
        loc_fNO3 = &
-            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_PON))*sed_fdis(is_PON,dum_i,dum_j) + &
-            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_POC))*sed_fdis(is_POC,dum_i,dum_j)
+            & (1000.0*10000.0/conv_yr_d)*2.0*loc_conv_ls_lo_N_N2(io2l(io_N2),is2l(is_PON))*sed_fdis(is_PON,dum_i,dum_j) + &
+            & (1000.0*10000.0/conv_yr_d)*2.0*loc_conv_ls_lo_N_N2(io2l(io_N2),is2l(is_POC))*sed_fdis(is_POC,dum_i,dum_j)
        ! test for whether the empirical NO3 consumption flux exceeds what is possible
        if (loc_LNO3 >= loc_fNO3) then
           ! situation #1
@@ -848,9 +870,9 @@ CONTAINS
           !   and hence cap NO3 consumption cap
           ! modify according to seafloor depth
           if (dum_D <= 1000.0) then
-             loc_conv_ls_lo(:,:) = 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:)
+             loc_conv_ls_lo(:,:) = 0.73*loc_conv_ls_lo_N_N2(:,:) + 0.27*loc_conv_ls_lo_N_NH4(:,:)
           else
-             loc_conv_ls_lo(:,:) = conv_ls_lo_N_N2(:,:)
+             loc_conv_ls_lo(:,:) = loc_conv_ls_lo_N_N2(:,:)
           end if
        else
           ! situation #2
@@ -861,10 +883,10 @@ CONTAINS
           ! modify according to seafloor depth
           if (dum_D <= 1000.0) then
              loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
-                  & (1.0 - loc_sed_remin_fracN)*( 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:) )
+                  & (1.0 - loc_sed_remin_fracN)*( 0.73*loc_conv_ls_lo_N_N2(:,:) + 0.27*loc_conv_ls_lo_N_NH4(:,:) )
           else
              loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
-                  & (1.0 - loc_sed_remin_fracN)*conv_ls_lo_N_N2(:,:)
+                  & (1.0 - loc_sed_remin_fracN)*loc_conv_ls_lo_N_N2(:,:)
           end if
        end if
     else
@@ -1409,8 +1431,11 @@ CONTAINS
     REAL,DIMENSION(n_sed)::loc_dis_sed                         ! remineralized top layer material
     REAL,DIMENSION(n_sed)::loc_exe_sed                         ! top layer material to be exchanged with stack
     REAL,DIMENSION(n_ocn)::loc_exe_ocn                         ! flux of dissolved solutes to be exchanged with ocean
+    real::loc_R,loc_alpha,loc_r15N
+    real::loc_ls_lo_epsilon_NO3
     ! -------------------------------------------------------- ! local (redox-dependent) sed -> ocn conversion array
     real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo
+    real,dimension(1:n_l_ocn,1:n_l_sed)::loc_conv_ls_lo_N_N2,loc_conv_ls_lo_N_NH4
     ! -------------------------------------------------------- ! local sed-ocn interface dissolved tracer exchange arrray
     real,dimension(1:n_l_ocn)::loc_lslo_fnet
     ! -------------------------------------------------------- !
@@ -1431,6 +1456,8 @@ CONTAINS
     loc_conv_ls_lo(:,:) = 0.0
     ! initialize local sed-ocn interface dissolved tracer exchange arrray
     loc_lslo_fnet(:) = 0.0
+    ! d15N
+    loc_ls_lo_epsilon_NO3 = 0.0
 
     ! *** CALCULATE SEDIMENT RAIN FLUX ********************************************************************************************
     !     calculate new sedimenting material to be added to the sediment top layer
@@ -1974,6 +2001,23 @@ CONTAINS
     ! -------------------------------------------------------- ! Bohlen 2012 sed denitrification scheme
     ! test for empirical sed denitrification (Bohlen 2012) request
     if (ctrl_sed_conv_sedocn_bohlen2012 .AND. ocn_select(io_NO3) .AND. ocn_select(io_NH4)) then
+       ! copy local transformation arrays
+       loc_conv_ls_lo_N_N2  = conv_ls_lo_N_N2
+       loc_conv_ls_lo_N_NH4 = conv_ls_lo_N_NH4
+       ! set local d15N
+       if (sed_select(is_PON_15N)) then
+          if (dum_sfcsumocn(io_NO3) > const_real_nullsmall) then
+             loc_r15N  = dum_sfcsumocn(io_NO3_15N)/dum_sfcsumocn(io_NO3)
+          else
+             loc_r15N  = 0.0
+          end if
+          loc_alpha = 1.0 + loc_ls_lo_epsilon_NO3/1000.0
+          loc_R     = loc_r15N/(1.0 - loc_r15N)
+          loc_conv_ls_lo_N_N2(io2l(io_NO3_15N),:)  = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_N2(io2l(io_NO3),:)
+          loc_conv_ls_lo_N_N2(io2l(io_N2_15N),:)   = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_N2(io2l(io_N2),:)
+          loc_conv_ls_lo_N_NH4(io2l(io_NO3_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_NH4(io2l(io_NO3),:)
+          loc_conv_ls_lo_N_NH4(io2l(io_NH4_15N),:) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)*loc_conv_ls_lo_N_NH4(io2l(io_NH4),:)
+       end if
        ! convert POC flux units (1000.0*10000.0 == convert mol cm-2 -> mmol m-2)
        ! NOTE: sed_fdis has already been converted from cm3 cm-2 to mol cm-2
        loc_RRPOC = (1000.0*10000.0/conv_yr_d)*sed_fdis(is_POC,dum_i,dum_j)
@@ -1981,8 +2025,8 @@ CONTAINS
        loc_LNO3  = loc_RRPOC * ( 0.083 + 0.21 * 0.98**( conv_mol_umol*(dum_sfcsumocn(io_O2) - dum_sfcsumocn(io_NO3)) ) )
        ! calculate maximum potential GENIE NO3 consumption (mmol N m-2 d-1)
        loc_fNO3 = &
-            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_PON))*sed_fdis(is_PON,dum_i,dum_j) + &
-            & (1000.0*10000.0/conv_yr_d)*2.0*conv_ls_lo_N_N2(io2l(io_N2),is2l(is_POC))*sed_fdis(is_POC,dum_i,dum_j)
+            & (1000.0*10000.0/conv_yr_d)*2.0*loc_conv_ls_lo_N_N2(io2l(io_N2),is2l(is_PON))*sed_fdis(is_PON,dum_i,dum_j) + &
+            & (1000.0*10000.0/conv_yr_d)*2.0*loc_conv_ls_lo_N_N2(io2l(io_N2),is2l(is_POC))*sed_fdis(is_POC,dum_i,dum_j)
        ! test for whether the empirical NO3 consumption flux exceeds what is possible
        if (loc_LNO3 >= loc_fNO3) then
           ! situation #1
@@ -1991,9 +2035,9 @@ CONTAINS
           !   and hence cap NO3 consumption cap
           ! modify according to seafloor depth
           if (dum_D <= 1000.0) then
-             loc_conv_ls_lo(:,:) = 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:)
+             loc_conv_ls_lo(:,:) = 0.73*loc_conv_ls_lo_N_N2(:,:) + 0.27*loc_conv_ls_lo_N_NH4(:,:)
           else
-             loc_conv_ls_lo(:,:) = conv_ls_lo_N_N2(:,:)
+             loc_conv_ls_lo(:,:) = loc_conv_ls_lo_N_N2(:,:)
           end if
        else
           ! situation #2
@@ -2004,10 +2048,10 @@ CONTAINS
           ! modify according to seafloor depth
           if (dum_D <= 1000.0) then
              loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
-                  & (1.0 - loc_sed_remin_fracN)*( 0.73*conv_ls_lo_N_N2(:,:) + 0.27*conv_ls_lo_N_NH4(:,:) )
+                  & (1.0 - loc_sed_remin_fracN)*( 0.73*loc_conv_ls_lo_N_N2(:,:) + 0.27*loc_conv_ls_lo_N_NH4(:,:) )
           else
              loc_conv_ls_lo(:,:) = loc_sed_remin_fracN*dum_conv_ls_lo(:,:) + &
-                  & (1.0 - loc_sed_remin_fracN)*conv_ls_lo_N_N2(:,:)
+                  & (1.0 - loc_sed_remin_fracN)*loc_conv_ls_lo_N_N2(:,:)
           end if
        end if
     else
