@@ -57,7 +57,7 @@ bg_ctrl_ncout_expid_name=.false.
 #
 # SPECIFY THAT THE 'RED' NUMERICAL TRACER IS USED TO CALCULATE OCEAN VENTILLATION AGE
 # NOTE: the 'red' numerical tracer must be selected in the base-config
-bg_ctrl_force_ocn_age1=.true.
+bg_ctrl_force_ocn_age=.true.
 #
 # **********************************************************************
 # *** END **************************************************************
