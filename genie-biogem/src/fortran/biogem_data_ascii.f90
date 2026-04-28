@@ -806,14 +806,12 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end IF
        ! (5) silicate weathering ALT
-       IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca)) THEN
+       IF (ocn_select(io_Ca)) THEN
           loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries_geo_fweather_Caex','Ca',string_results_ext &
+               & par_outdir_name,'timeseries','geo_fweather_Ca',string_results_ext &
                & )
-          loc_string = '% time (yr) / excess cation compared to DIC weathering (mol 2+ yr-1) / % excess (not useful!)'
+          loc_string = '% time (yr) / total cation (Ca+Mg) weathering flux (mol 2+ yr-1)'
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
-          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-          loc_string = '% WARNING: This is only a meaningful estimate if there is not Corg weathering!'
           write(unit=out,fmt=*,iostat=ios) trim(loc_string)
           CLOSE(unit=out,iostat=ios)
        end IF       
@@ -1435,71 +1433,6 @@ CONTAINS
     ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_init_data_save_runtime
   ! ****************************************************************************************************************************** !
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
 
   
   ! ****************************************************************************************************************************** !
@@ -2581,22 +2514,15 @@ CONTAINS
           CLOSE(unit=out,iostat=ios)    
        end IF
        ! (5) silicate weathering ALT
-       IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca)) THEN
-          ! NOTE: first calculate excess of cations compared to DIC
+       IF (ocn_select(io_Ca)) THEN
           loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries_geo_fweather_Caex','Ca',string_results_ext &
+               & par_outdir_name,'timeseries','geo_fweather_Ca',string_results_ext &
                & )
-          loc_tot = ((int_diag_weather_sig(io_Ca)+int_diag_weather_sig(io_Mg)) - int_diag_weather_sig(io_DIC))/int_t_sig
-          if (int_diag_weather_sig(io_DIC) > const_real_nullsmall) then
-             loc_frac = 100.0*(loc_tot/(int_diag_weather_sig(io_DIC)/int_t_sig))
-          else
-             loc_frac = -999.9
-          end if
+          loc_tot = (int_diag_weather_sig(io_Ca)+int_diag_weather_sig(io_Mg))/int_t_sig
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-          WRITE(unit=out,fmt='(f12.3,e15.7,f12.3)',iostat=ios) &
+          WRITE(unit=out,fmt='(f12.3,e15.7)',iostat=ios) &
                & loc_t,                                  &
-               & loc_tot,                                &
-               & loc_frac
+               & loc_tot
           CLOSE(unit=out,iostat=ios)
        end IF            
     end if
