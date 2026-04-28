@@ -1,6 +1,6 @@
 # **********************************************************************
-# copied from: 	cookie.C.p_worjh2.r.SPIN
-# base-config: 	cookie.C.p_worbe2.r
+# adapted from: muffin.C.p_worjh2.r.SPIN
+# base-config: 	cookie.C.p_worjh2.r
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
@@ -47,7 +47,7 @@ bg_par_data_save_sig_timeinterval=1.0
 #       in order to employ a file of save years to determine when time-slice data is saved
 # NOTE: additionally set bg_par_infile_slice_name='save_timeslice_NONE.dat'
 #       fin order to force time-slice save at run end only
-bg_par_data_save_slice_timeinterval=0.0
+bg_par_data_save_slice_timeinterval=10.0
 bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
 # e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
@@ -62,3 +62,4 @@ bg_ctrl_force_ocn_age=.true.
 # **********************************************************************
 # *** END **************************************************************
 # **********************************************************************
+
