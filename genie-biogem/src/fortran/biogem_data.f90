@@ -617,6 +617,7 @@ CONTAINS
     ! age tracer -- making ctrl_force_ocn_age now the only parameter used in the code 
     ! but using the value of ctrl_force_ocn_age1 for back-compatability
     if (ctrl_force_ocn_age1) ctrl_force_ocn_age = .true.
+    if (ctrl_force_ocn_age) ctrl_bio_preformed = .true.    
     ! -------------------------------------------------------- !
     ! adjust units
     ! -------------------------------------------------------- !
