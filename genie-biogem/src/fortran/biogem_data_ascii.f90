@@ -145,7 +145,7 @@ CONTAINS
        ! ---------------------------------------------------------------- ! age tracers
        IF (ctrl_force_ocn_age) THEN
           loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','climate_idealized_ventilation_age',string_results_ext)
+               & par_outdir_name,'timeseries','climate_ventilation_age',string_results_ext)
              loc_string = '% time (yr) / mean global idealized ventilation age (yr) / '// &
                   & 'surface ventilation age (yr) / benthic '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
           call check_unit(out,__LINE__,__FILE__)
@@ -1663,7 +1663,7 @@ CONTAINS
        ! ---------------------------------------------------------------- ! age tracers
        IF (ctrl_force_ocn_age) THEN
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','climate_idealized_ventilation_age',string_results_ext)
+               & dum_t,par_outdir_name,'timeseries','climate_ventilation_age',string_results_ext)
           loc_sig     = int_misc_age_sig
           loc_sig_sur = int_misc_age_sur_sig
           loc_sig_ben = int_misc_age_ben_sig
