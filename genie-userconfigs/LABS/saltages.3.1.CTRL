@@ -72,7 +72,7 @@ bg_ctrl_force_ocn_age=.true.
 #ea_radfor_scl_co2=2.88
 #bg_par_ocn_force_scale_val_2=0.3
 #
-# (3) 15.0 Ma -- CAS CLOSED (1120 ppm CO2)
+# (3) 15.0 Ma -- CAS OPEN (1120 ppm CO2)
 #ea_radfor_scl_co2=4.03
 #bg_par_ocn_force_scale_val_2=0.1
 #
