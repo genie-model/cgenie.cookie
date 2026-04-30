@@ -73,8 +73,12 @@ CONTAINS
        ! ------------------------------------------------------------- ! seaice
        loc_filename=fun_data_timeseries_filename( &
             & loc_t,par_outdir_name,'timeseries','climate_seaice',string_results_ext)
-       loc_string = '% time (yr) / global sea-ice area (m2) / mean sea-ice cover (%) / '// &
-            & 'global sea-ice volume (m3) / mean sea-ice thickness (m)'
+       if (ctrl_save_hidden_extra) then
+          loc_string = '% time (yr) / global sea-ice area (m2) / mean sea-ice cover (%) / '// &
+               & 'global sea-ice volume (m3) / mean sea-ice thickness (m)'
+       else
+          loc_string = '% time (yr) / global mean sea-ice cover (%)'
+       end if
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -143,11 +147,17 @@ CONTAINS
        CLOSE(unit=out,iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
        ! ---------------------------------------------------------------- ! age tracers
-       IF (ctrl_force_ocn_age .OR. ctrl_force_ocn_age1) THEN
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','climate_idealized_age',string_results_ext)
+       IF (ctrl_force_ocn_age) THEN
+          if (ctrl_save_hidden_extra) then
+             loc_filename=fun_data_timeseries_filename(loc_t, &
+                  & par_outdir_name,'timeseries','climate_idealized_age',string_results_ext)
              loc_string = '% time (yr) / mean global idealized ventilation age (yr) / '// &
-                  & 'surface ventilation age (yr) / benthic '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
+                  & 'surface ventilation age (yr) / seafloor '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
+          else
+             loc_filename=fun_data_timeseries_filename(loc_t, &
+                  & par_outdir_name,'timeseries','climate_idealized_age',string_results_ext)
+             loc_string = '% time (yr) / mean global idealized seafloor '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
+          end if
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -160,6 +170,7 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! ATMOSPHERE TRACERS
     ! ---------------------------------------------------------------- !
+    ! NOTE: hide (as 'extra' output) atmospheric temp and humidity becasue they are already saved as 'climate' variables
     IF (ctrl_save_basic_reservoirs) THEN
        DO l=1,n_l_atm
           ia = conv_iselected_ia(l)
@@ -178,7 +189,17 @@ CONTAINS
              loc_string = '% time (yr) / global '//TRIM(string_atm(ia))//' (mol) / global ' //TRIM(string_atm(ia))//' (o/oo)'
           end SELECT
           SELECT CASE (atm_type(ia))
-          CASE (0,1)
+          CASE (0)
+             if (ctrl_save_hidden_extra) then
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                write(unit=out,fmt=*,iostat=ios) trim(loc_string)
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+             end if
+          CASE (1)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -1521,12 +1542,18 @@ CONTAINS
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
-       WRITE(unit=out,fmt='(f12.3,e12.4,f9.3,e12.4,f9.3)',iostat=ios) &
-            & loc_t, &
-            & (int_misc_seaice_sig/int_t_sig), &
-            & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*int_misc_seaice_sig/int_t_sig, &
-            & (int_misc_seaice_sig_vol/int_t_sig), &
-            & (int_misc_seaice_sig_th/int_t_sig)
+       if (ctrl_save_hidden_extra) then
+          WRITE(unit=out,fmt='(f12.3,e12.4,f9.3,e12.4,f9.3)',iostat=ios) &
+               & loc_t, &
+               & (int_misc_seaice_sig/int_t_sig), &
+               & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*int_misc_seaice_sig/int_t_sig, &
+               & (int_misc_seaice_sig_vol/int_t_sig), &
+               & (int_misc_seaice_sig_th/int_t_sig)
+       else
+          WRITE(unit=out,fmt='(f12.3,f9.3)',iostat=ios) &
+               & loc_t, &
+               & 100.0*(1.0/SUM(phys_ocn(ipo_A,:,:,n_k)))*int_misc_seaice_sig/int_t_sig
+       end if
        call check_iostat(ios,__LINE__,__FILE__)
        CLOSE(unit=out,iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -1594,7 +1621,7 @@ CONTAINS
        CLOSE(unit=out,iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
        ! ---------------------------------------------------------------- ! age tracers
-       IF (ctrl_force_ocn_age .OR. ctrl_force_ocn_age1) THEN
+       IF (ctrl_force_ocn_age) THEN
           loc_filename=fun_data_timeseries_filename( &
                & dum_t,par_outdir_name,'timeseries','climate_idealized_age',string_results_ext)
           if (ctrl_force_ocn_age) then
@@ -1612,11 +1639,17 @@ CONTAINS
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
-          WRITE(unit=out,fmt='(f12.3,3f12.3)',iostat=ios) &
-               & loc_t,                                  &
-               & loc_sig,                                &
-               & loc_sig_sur,                            &
-               & loc_sig_ben
+          if (ctrl_save_hidden_extra) then
+             WRITE(unit=out,fmt='(f12.3,3f12.3)',iostat=ios) &
+                  & loc_t,                                   &
+                  & loc_sig,                                 &
+                  & loc_sig_sur,                             &
+                  & loc_sig_ben
+          else
+             WRITE(unit=out,fmt='(f12.3,f12.3)',iostat=ios) &
+                  & loc_t,                                   &
+                  & loc_sig_ben
+          end if
           call check_iostat(ios,__LINE__,__FILE__)
           CLOSE(unit=out,iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -1627,6 +1660,7 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! NOTE: write data both as the total inventory, and as the equivalent mean partial pressure
     ! NOTE: simple conversion factor from atm to mol is used
+    ! NOTE: hide (as 'extra' output) atmospheric temp and humidity becasue they are already saved as 'climate' variables
     IF (ctrl_save_basic_reservoirs) THEN
        DO l=1,n_l_atm
           ia = conv_iselected_ia(l)
@@ -1635,23 +1669,25 @@ CONTAINS
                & )
           SELECT CASE (atm_type(ia))
           CASE (0)
-             loc_sig = int_ocnatm_sig(ia)/int_t_sig
-             call check_unit(out,__LINE__,__FILE__)
-             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
-             If (ia == ia_T .OR. ia == ia_q)  then
-                WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
-                     & loc_t, &
-                     & loc_sig
-             elseif (ia == ia_pcolr) then
-                WRITE(unit=out,fmt='(f12.3,e20.12,e14.6)',iostat=ios) &
-                     & loc_t, &
-                     & conv_atm_mol*loc_sig, &
-                     & loc_sig
+             if (ctrl_save_hidden_extra) then
+                loc_sig = int_ocnatm_sig(ia)/int_t_sig
+                call check_unit(out,__LINE__,__FILE__)
+                OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
+                If (ia == ia_T .OR. ia == ia_q)  then
+                   WRITE(unit=out,fmt='(f12.3,f12.6)',iostat=ios) &
+                        & loc_t, &
+                        & loc_sig
+                elseif (ia == ia_pcolr) then
+                   WRITE(unit=out,fmt='(f12.3,e20.12,e14.6)',iostat=ios) &
+                        & loc_t, &
+                        & conv_atm_mol*loc_sig, &
+                        & loc_sig
+                end if
+                call check_iostat(ios,__LINE__,__FILE__)
+                CLOSE(unit=out,iostat=ios)
+                call check_iostat(ios,__LINE__,__FILE__)
              end if
-             call check_iostat(ios,__LINE__,__FILE__)
-             CLOSE(unit=out,iostat=ios)
-             call check_iostat(ios,__LINE__,__FILE__)
           CASE (1)
              loc_sig = int_ocnatm_sig(ia)/int_t_sig
              call check_unit(out,__LINE__,__FILE__)

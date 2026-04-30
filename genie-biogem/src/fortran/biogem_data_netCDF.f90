@@ -2692,9 +2692,17 @@ CONTAINS
              call sub_putvar2d('ocn_seasur_'//trim(string_ocn(io)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_sur)
        CASE (1)
           ! bulk tracers
+          if (io == io_colr) then
+             if (ctrl_save_hidden_extra) then
+                call sub_adddef_netcdf(loc_iou, 3, 'ocn_seasur_'//trim(string_ocn(io)), &
+                     & 'surface-water '//trim(string_ocn(io)), trim(loc_unitsname),const_real_zero,const_real_zero)
+                call sub_putvar2d('ocn_seasur_'//trim(string_ocn(io)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_sur)
+             end if
+          else
              call sub_adddef_netcdf(loc_iou, 3, 'ocn_seasur_'//trim(string_ocn(io)), &
                   & 'surface-water '//trim(string_ocn(io)), trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d('ocn_seasur_'//trim(string_ocn(io)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_sur)
+          end if
        CASE (n_itype_min:n_itype_max)
           ! isotopes
           If (ctrl_save_basic_proxies) then
