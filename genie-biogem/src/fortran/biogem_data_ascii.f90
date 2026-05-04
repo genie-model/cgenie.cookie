@@ -148,14 +148,12 @@ CONTAINS
        call check_iostat(ios,__LINE__,__FILE__)
        ! ---------------------------------------------------------------- ! age tracers
        IF (ctrl_force_ocn_age) THEN
+          loc_filename=fun_data_timeseries_filename(loc_t, &
+               & par_outdir_name,'timeseries','climate_ventilation_age',string_results_ext)
           if (ctrl_save_hidden_extra) then
-             loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','climate_idealized_age',string_results_ext)
              loc_string = '% time (yr) / mean global idealized ventilation age (yr) / '// &
                   & 'surface ventilation age (yr) / seafloor '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
           else
-             loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','climate_idealized_age',string_results_ext)
              loc_string = '% time (yr) / mean global idealized seafloor '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
           end if
           call check_unit(out,__LINE__,__FILE__)
