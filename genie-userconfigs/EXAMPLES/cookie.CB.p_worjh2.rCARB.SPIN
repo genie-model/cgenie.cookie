@@ -68,6 +68,28 @@ bg_par_atm_force_scale_val_4=-6.5
 # NOTE: the 'red' numerical tracer must be selected in the base-config
 bg_ctrl_force_ocn_age=.true.
 #
+# *** CARBONATE CHEMISTRY SETTINGS *************************************
+#
+# pH solution criteria (REVISED)
+gm_ctrl_carbchem_pH_OLD=.FALSE.
+# pH solution tolerance (pH units) (DEFAULT)
+gm_par_carbchem_pH_tolerance=0.001
+# pH solution tolerance for calculating buffering (DEFAULT)
+gm_par_carbchem_pH_tolerance_buffering=0.0001
+# factor relaxation in pH solution tolerance for re-try (DEFAULT)
+gm_par_carbchem_dpH_tolerance=10.0
+# pH solution maximum number of iterations (DEFAULT)
+gm_par_carbchem_pH_iterationmax=10
+# basic carb constant set (DEFAULT)
+gm_par_carbconstset_name='Mehrbach'
+# apply MyAmi Mg/Ca correction
+gm_par_adj_carbconst_option='Hain2015'
+# carbchem constant T and S range -- Hain2015
+gm_par_carbchem_Tmin = -2.0
+gm_par_carbchem_Tmax = 50.0
+gm_par_carbchem_Smin = 30.0
+gm_par_carbchem_Smax = 45.0
+#
 # **********************************************************************
 # *** END **************************************************************
 # **********************************************************************
