@@ -1,10 +1,14 @@
 # **********************************************************************
-# adapted from: muffin.C.p_worjh2.r.SPIN
-# base-config: 	cookie.C.p_worjh2.rb
+# copied from: 	LAB_1.SPIN
+# base-config: 	cookie.C.p_woreq1.NONE
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
 #
+# SPECIFY SOLAR CONSTANT (Wm-2)
+# NOTE: default value is 1368.0
+# e.g., ma_genie_solar_constant=1285.92 -> solar constant reduced by 5.6% for late Neoproterozoic
+ma_genie_solar_constant=1285.92
 # SPECIFY WHETHER RADIATIVE FORCING IS DERIVED FROM ATMOSPHERIC CO2	
 # NOTE: 'y' requires that CO2 is being calculated in the first place ...
 #       'n' can be used for a configuration either with or without explicitly calculated atmopsheric CO2
@@ -13,8 +17,8 @@ ea_36=n
 # SPECIFY RADIATIVE FORCING TO BE APPLIED
 # NOTE: the value of ea_radfor_scl_co2 represents a multiplier of CO2 relative to 278 ppm 
 #       and radiative forcing is derived from this
-# e.g., ea_radfor_scl_co2=1.0 -> radiative forcing equivalent to changing from x1 to x1 preindustrial CO2 (no change!)
-ea_radfor_scl_co2=1.0
+# e.g., ea_radfor_scl_co2=20.0 -> radiative forcing equivalent to changing from x1 to x20 CO2
+ea_radfor_scl_co2=20.0
 #
 # *** BIOLOGICAL NEW PRODUCTION ****************************************
 #
@@ -24,10 +28,18 @@ bg_par_bio_prodopt='NONE'
 #
 # *** DATA SAVING ***************************************************
 #
-# (refer to Chapter: 'cookie model output')
-# SPECIFY THE SCOPE OF DATA SAVING
-# e.g., bg_par_data_save_level=2 -> selects basic model output
-bg_par_data_save_level=2
+# SPECIFY WHAT TO SAVE!
+# NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!
+#		(1)	all 'false' will leave you with the basic (hidden option!) defaults: bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
+#		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
+#		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
+#       (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
+#		(5) turning off a 'basic' option will also turn off the corresponding advanced option
+#		(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
+bg_ctrl_save_basic_reservoirs=.false.
+bg_ctrl_save_basic_geochemistry=.false.
+bg_ctrl_save_basic_biologicalpump=.false.
+bg_ctrl_save_basic_proxies=.false.
 # SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
 # e.g., bg_par_data_save_sig_timeinterval=10.0 -> save time-series data every 10.0 years
 # NOTE: set bg_par_data_save_sig_timeinterval=0.0 
@@ -47,21 +59,15 @@ bg_ctrl_ncout_expid_name=.false.
 #
 # *** FORCINGS *********************************************************
 #
-# SPEFICY ANY FORCINGS OF OCEAN/ATMOSPHERE/SEDIMENTS
-# e.g., bg_par_forcing_name="pyyyyz.Fblue" -> apply a numerical dye ('blue' color tracer) to trace ocean circulation
-# NOTE: the flux of dye (the value of bg_par_ocn_force_scale_val_49) is set to ZERO by default
-#       and will need to be changed in order to see anything happen ...
-bg_par_forcing_name="pyyyyz.Fblue"
-bg_par_force_point_i=22
-bg_par_force_point_j=33
-bg_par_force_point_k=8
-bg_par_ocn_force_scale_val_49=0.0
+# SPECIFY A UNIFORM GEOTHERMAL HEAT FLUX (W m-2) AT THE SEA-FLOOR
+# NOTE: default value is zero
+bg_par_Fgeothermal=100.0E-3
 #
 # *** MISC *************************************************************
 #
 # SPECIFY THAT THE 'RED' NUMERICAL TRACER IS USED TO CALCULATE OCEAN VENTILLATION AGE
 # NOTE: the 'red' numerical tracer must be selected in the base-config
-bg_ctrl_force_ocn_age1=.true.
+bg_ctrl_force_ocn_age=.true.
 #
 # **********************************************************************
 # *** END **************************************************************
