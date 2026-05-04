@@ -26,12 +26,20 @@ ea_radfor_scl_co2=20.0
 # e.g., bg_par_bio_prodopt='NONE' -> no biologial export scheme (or ECOGEM will be used)
 bg_par_bio_prodopt='NONE'
 #
-# *** DATA SAVING ******************************************************
+# *** DATA SAVING ***************************************************
 #
-# (refer to Chapter: 'cookie model output')
-# SPECIFY THE SCOPE OF DATA SAVING
-# e.g., bg_par_data_save_level=2 -> selects basic model output
-bg_par_data_save_level=2
+# SPECIFY WHAT TO SAVE!
+# NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!
+#		(1)	all 'false' will leave you with the basic (hidden option!) defaults: bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
+#		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
+#		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
+#       (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
+#		(5) turning off a 'basic' option will also turn off the corresponding advanced option
+#		(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
+bg_ctrl_save_basic_reservoirs=.false.
+bg_ctrl_save_basic_geochemistry=.false.
+bg_ctrl_save_basic_biologicalpump=.false.
+bg_ctrl_save_basic_proxies=.false.
 # SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
 # e.g., bg_par_data_save_sig_timeinterval=10.0 -> save time-series data every 10.0 years
 # NOTE: set bg_par_data_save_sig_timeinterval=0.0 
@@ -57,6 +65,9 @@ bg_par_Fgeothermal=100.0E-3
 #
 # *** MISC *************************************************************
 #
+# SPECIFY THAT THE 'RED' NUMERICAL TRACER IS USED TO CALCULATE OCEAN VENTILLATION AGE
+# NOTE: the 'red' numerical tracer must be selected in the base-config
+bg_ctrl_force_ocn_age=.true.
 #
 # **********************************************************************
 # *** END **************************************************************

@@ -1623,19 +1623,10 @@ CONTAINS
        ! ---------------------------------------------------------------- ! age tracers
        IF (ctrl_force_ocn_age) THEN
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','climate_idealized_age',string_results_ext)
-          if (ctrl_force_ocn_age) then
-             loc_sig = int_misc_age_sig - dum_t
-          elseif (ctrl_force_ocn_age1) then
-             loc_sig = int_misc_age_sig
-          end if
-          if (ctrl_force_ocn_age) then
-             loc_sig_sur = int_misc_age_sur_sig - dum_t
-             loc_sig_ben = int_misc_age_ben_sig - dum_t
-          elseif (ctrl_force_ocn_age1) then
-             loc_sig_sur = int_misc_age_sur_sig
-             loc_sig_ben = int_misc_age_ben_sig
-          end if
+               & dum_t,par_outdir_name,'timeseries','climate_ventilation_age',string_results_ext)
+          loc_sig     = int_misc_age_sig
+          loc_sig_sur = int_misc_age_sur_sig
+          loc_sig_ben = int_misc_age_ben_sig
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)

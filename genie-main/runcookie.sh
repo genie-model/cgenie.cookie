@@ -385,8 +385,9 @@ echo ""
 echo ">> Here we go ..."
 echo ""
 cd $BINARYPATH
-# extract number of tracers
-TRACERS=$(grep -o '$(DEFINE)GOLDSTEINNTRACS=..\>' $CONFIGPATH/$MODELID".config" | sed -e s/.*=//)
+# extract number of tracers -- generalized by Gemini
+#TRACERS=$(grep -o '$(DEFINE)GOLDSTEINNTRACS=..\>' $CONFIGPATH/$MODELID".config" | sed -e s/.*=//)
+TRACERS=$(grep -v '^[[:space:]]*#' $CONFIGPATH/$MODELID".config" | grep -o '$(DEFINE)GOLDSTEINNTRACS=[0-9]\+' | sed -e 's/.*=//' | tr -d '\r' | head -n 1)
 # create array size #
 ndim="$(echo "$LONS*$LATS*$LEVS*$TRACERS" | bc -l)"
 # test for change of base-config

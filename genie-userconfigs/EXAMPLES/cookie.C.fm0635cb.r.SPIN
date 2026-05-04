@@ -1,10 +1,14 @@
 # **********************************************************************
-# copied from: 	cookie.C.p_worjh2.r.SPIN
-# base-config: 	cookie.C.p_worbe2.r
+# copied from: 	muffin.C.fm0635cb.NONE.SPIN
+# base-config: 	cookie.C.fm0635cb.r
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
 #
+# SPECIFY SOLAR CONSTANT (Wm-2)
+# NOTE: default value is 1368.0
+# e.g., ma_genie_solar_constant=1285.92 -> solar constant reduced by 5.6% for late Neoproterozoic
+ma_genie_solar_constant=1285.92
 # SPECIFY WHETHER RADIATIVE FORCING IS DERIVED FROM ATMOSPHERIC CO2	
 # NOTE: 'y' requires that CO2 is being calculated in the first place ...
 #       'n' can be used for a configuration either with or without explicitly calculated atmopsheric CO2
@@ -13,8 +17,8 @@ ea_36=n
 # SPECIFY RADIATIVE FORCING TO BE APPLIED
 # NOTE: the value of ea_radfor_scl_co2 represents a multiplier of CO2 relative to 278 ppm 
 #       and radiative forcing is derived from this
-# e.g., ea_radfor_scl_co2=1.0 -> radiative forcing equivalent to changing from x1 to x1 preindustrial CO2 (no change!)
-ea_radfor_scl_co2=1.0
+# e.g., ea_radfor_scl_co2=20.0 -> radiative forcing equivalent to changing from x1 to x20 CO2
+ea_radfor_scl_co2=20.0
 #
 # *** BIOLOGICAL NEW PRODUCTION ****************************************
 #
@@ -52,6 +56,12 @@ bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
 # e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
 bg_ctrl_ncout_expid_name=.false.
+#
+# *** FORCINGS *********************************************************
+#
+# SPECIFY A UNIFORM GEOTHERMAL HEAT FLUX (W m-2) AT THE SEA-FLOOR
+# NOTE: default value is zero
+bg_par_Fgeothermal=100.0E-3
 #
 # *** MISC *************************************************************
 #

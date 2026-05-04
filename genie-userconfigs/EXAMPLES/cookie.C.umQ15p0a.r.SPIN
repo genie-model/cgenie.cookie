@@ -1,6 +1,6 @@
 # **********************************************************************
-# copied from: 	cookie.C.p_worjh2.r.SPIN
-# base-config: 	cookie.C.p_worbe2.r
+# adapted from: muffin.C.p_worjh2.r.SPIN
+# base-config: 	cookie.C.p_worjh2.r
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
@@ -11,10 +11,7 @@
 # e.g., ea_36=n -> raditive forcing is set by the value of ea_radfor_scl_co2
 ea_36=n
 # SPECIFY RADIATIVE FORCING TO BE APPLIED
-# NOTE: the value of ea_radfor_scl_co2 represents a multiplier of CO2 relative to 278 ppm 
-#       and radiative forcing is derived from this
-# e.g., ea_radfor_scl_co2=1.0 -> radiative forcing equivalent to changing from x1 to x1 preindustrial CO2 (no change!)
-ea_radfor_scl_co2=1.0
+# NOTE: the value of ea_radfor_scl_co2 is set below under PALEO CONFIGURATION SETTINGS
 #
 # *** BIOLOGICAL NEW PRODUCTION ****************************************
 #
@@ -53,11 +50,23 @@ bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
 bg_ctrl_ncout_expid_name=.false.
 #
+# *** FORCINGS *********************************************************
+#
+# SPEFICY ANY FORCINGS OF OCEAN/ATMOSPHERE/SEDIMENTS
+# N Atlantic salinity (only) forcing of Crichton et al. (2021)
+bg_par_forcing_name="Q_xxxxxx.Fsal_SUR"
+#
 # *** MISC *************************************************************
 #
 # SPECIFY THAT THE 'RED' NUMERICAL TRACER IS USED TO CALCULATE OCEAN VENTILLATION AGE
 # NOTE: the 'red' numerical tracer must be selected in the base-config
 bg_ctrl_force_ocn_age=.true.
+#
+# *** PALEO CONFIGURATION SETTINGS *************************************
+#
+# 15.0 Ma -- CAS CLOSED (1120 ppm CO2)
+ea_radfor_scl_co2=4.03
+bg_par_ocn_force_scale_val_2=0.1
 #
 # **********************************************************************
 # *** END **************************************************************

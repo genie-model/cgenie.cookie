@@ -614,8 +614,11 @@ CONTAINS
     end if
     ! flexible C:P
     if (par_bio_red_PC_flex > 0) opt_bio_red_PC_flex = par_bio_red_PC_flex
-    ! age tracer (making ctrl_force_ocn_age now the only parameter used in the code)
+    ! age tracer -- making ctrl_force_ocn_age now the only parameter used in the code 
+    ! but using the value of ctrl_force_ocn_age1 for back-compatability
     if (ctrl_force_ocn_age1) ctrl_force_ocn_age = .true.
+    if (ctrl_force_ocn_age)  ctrl_bio_preformed = .true.
+    if (ctrl_force_ocn_age)  ctrl_save_hidden_preformedtracers = .true.
     ! -------------------------------------------------------- !
     ! adjust units
     ! -------------------------------------------------------- !
@@ -811,10 +814,6 @@ CONTAINS
        end do
        if (ctrl_ocn_rst_reset_T) then
           ocn(io_T,:,:,:) = ocn_init(io_T)
-       end if
-       ! NOTE: no adjustment needed for single tracer age (ctrl_force_ocn_age1)
-       if (ctrl_force_ocn_age) then
-          ocn(io_colb,:,:,:) = ocn(io_colb,:,:,:) + par_misc_t_runtime*ocn(io_colr,:,:,:)
        end if
        ! force all tracers (e.g. in response to an ocean volume change)
        ! NOTE: including salinity but excluding temperature => start l-index at 2
@@ -2777,31 +2776,11 @@ CONTAINS
        end if
     end if
     ! check color tracers
-    if ( ctrl_force_ocn_age .AND. (.NOT.(ocn_select(io_colr) .AND. ocn_select(io_colb))) ) then
-       CALL sub_report_error( &
-            & 'biogem_data','sub_check_par', &
-            & 'Parameter: ctrl_force_ocn_age is selected (true), but the necessary red and blue ocean tracers are not.'// &
-            & 'The automatic age tracer option is hence deselected.', &
-            & 'CONTINUING', &
-            & (/const_real_null/),.FALSE. &
-            & )
-       ctrl_force_ocn_age = .false.
-    end if
-    if ( ctrl_force_ocn_age1 .AND. (.NOT. ocn_select(io_colr)) ) then
+    if ( ctrl_force_ocn_age .AND. (.NOT. ocn_select(io_colr)) ) then
        CALL sub_report_error( &
             & 'biogem_data','sub_check_par', &
             & 'Parameter: ctrl_force_ocn_age1 is selected (true), but the necessary red ocean tracer is not.'// &
             & 'The automatic age tracer option is hence deselected.', &
-            & 'CONTINUING', &
-            & (/const_real_null/),.FALSE. &
-            & )
-       ctrl_force_ocn_age1 = .false.
-    end if
-    if ( ctrl_force_ocn_age .AND. ctrl_force_ocn_age1 ) then
-       CALL sub_report_error( &
-            & 'biogem_data','sub_check_par', &
-            & 'You cannot select BOTH ctrl_force_ocn_age AND ctrl_force_ocn_age1.'// &
-            & 'The dual-tracer age tracer option (ctrl_force_ocn_age) will hence be deselected.', &
             & 'CONTINUING', &
             & (/const_real_null/),.FALSE. &
             & )

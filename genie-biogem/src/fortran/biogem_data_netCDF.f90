@@ -4422,7 +4422,7 @@ CONTAINS
        DO ip=1,n_phys_ocnatm
           loc_ij(:,:) = int_phys_ocnatm_timeslice(ip,:,:)/int_t_timeslice
           call sub_adddef_netcdf(loc_iou,3,'2Dgrid_'//trim(string_phys_ocnatm(ip)), &
-               & 'atmosphere physics and grid - '//trim(string_phys_ocnatm(ip)),' ',const_real_zero,const_real_zero)
+               & 'grid - '//trim(string_phys_ocnatm(ip)),' ',const_real_zero,const_real_zero)
           call sub_putvar2d('2Dgrid_'//trim(string_phys_ocnatm(ip)),loc_iou, &
                & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf_ALL)
        END DO
@@ -4433,7 +4433,7 @@ CONTAINS
           CASE (ipoa_A) 
              loc_ij(:,:) = int_phys_ocnatm_timeslice(ip,:,:)/int_t_timeslice
              call sub_adddef_netcdf(loc_iou,3,'2Dgrid_'//trim(string_phys_ocnatm(ip)), &
-                  & 'atmosphere grid - '//trim(string_phys_ocnatm(ip)),' ',const_real_zero,const_real_zero)
+                  & 'grid - '//trim(string_phys_ocnatm(ip)),' ',const_real_zero,const_real_zero)
              call sub_putvar2d('2Dgrid_'//trim(string_phys_ocnatm(ip)),loc_iou, &
                   & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf_ALL)
           end SELECT
@@ -4624,8 +4624,8 @@ CONTAINS
        where(abs(loc_tmp_jk) < const_real_nullsmall)
           loc_mask_opsi = const_real_zero
        endwhere
-       call sub_adddef_netcdf_moc(loc_iou,'phys_opsip','Pacific streamfunction','Sv',const_real_zero,const_real_zero)
-       call sub_putvar2d('phys_opsip',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask_opsi)
+       call sub_adddef_netcdf_moc(loc_iou,'climate_opsip','Pacific streamfunction','Sv',const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_opsip',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask_opsi)
     else
 !!$       print*,goldstein_jsf,' (no mask)'
     end if
