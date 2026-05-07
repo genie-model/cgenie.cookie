@@ -150,7 +150,7 @@ CONTAINS
        IF (ctrl_force_ocn_age) THEN
           loc_filename=fun_data_timeseries_filename(loc_t, &
                & par_outdir_name,'timeseries','climate_ventilation_age',string_results_ext)
-          if (ctrl_save_hidden_extra) then
+          if (ctrl_save_hidden_extractrl_save_hidden_preformedtracers) then
              loc_string = '% time (yr) / mean global idealized ventilation age (yr) / '// &
                   & 'surface ventilation age (yr) / seafloor '//TRIM(loc_string_Dmin)//' ventilation age (yr) '
           else
