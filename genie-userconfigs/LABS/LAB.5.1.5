@@ -19,22 +19,26 @@ bg_par_bio_prodopt='NONE'
 #
 # *** DATA SAVING ******************************************************
 #
-# (refer to Chapter: 'cookie model output')
-# SPECIFY THE SCOPE OF DATA SAVING
-# e.g., bg_par_data_save_level=10 -> ensure ocean acidification relevant data is saved
-bg_par_data_save_level=10
+# SPECIFY WHAT TO SAVE!
+# NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!
+#		(1)	all 'false' will leave you with the basic (hidden option!) defaults: bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
+#		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
+#		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
+#               (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
+#		(5) turning off a 'basic' option will also turn off the corresponding advanced option
+#		(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
+bg_ctrl_save_basic_reservoirs=.TRUE.
+bg_ctrl_save_basic_geochemistry=.TRUE.
+bg_ctrl_save_basic_biologicalpump=.false.
+bg_ctrl_save_basic_proxies=.false.
 # SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
-# e.g., bg_par_data_save_sig_timeinterval=1.0 -> save time-series data every 1.0 year
-# NOTE: set bg_par_data_save_sig_timeinterval=0.0 
-#       in order to employ a file of save years to determine when time-series data is saved
-bg_par_data_save_sig_timeinterval=1.0
+# here, rather than specify regular save intervals,
+# the file 'save_timeseries_historicalfuture.dat' is loaded which sets the years for which time-series data is saved
+bg_par_infile_sig_name='save_timeseries_historicalfuture.dat'
 # SPECIFY THE INTERVAL AT WHICH TIME-SLICE (SPATIAL) DATA IS SAVED
-# e.g., bg_par_data_save_slice_timeinterval=10.0 -> save time-slice data every 10.0 years
-# NOTE: set bg_par_data_save_slice_timeinterval=0.0 
-#       in order to employ a file of save years to determine when time-slice data is saved
-# NOTE: additionally set bg_par_infile_slice_name='save_timeslice_NONE.dat'
-#       in order to force time-slice save at run end only
-bg_par_data_save_slice_timeinterval=10.0
+# here, rather than specify regular save intervals,
+# the file 'save_timeslice_historicalfuture.dat' is loaded which sets the years for which time-slice (netCDF) data is saved
+bg_par_infile_slice_name='save_timeslice_historicalfuture.dat'
 # SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
 # e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
 bg_ctrl_ncout_expid_name=.false.
@@ -52,17 +56,20 @@ bg_par_forcing_name="pyyyyz.FpCO2_Fp13CO2"
 #       e.g,. bg_par_atm_force_scale_val_4=-27 would be a reasonable mean fossil fuel carbon value
 # NOTE: bg_par_atm_force_scale_time_3 -> scales the time intervales specified in the forcing (biogem_force_flux_atm_pCO2_sig.dat)
 #       e.g., bg_par_atm_force_scale_time_3=10.0 would create an emissions  pulse lasting 10 rather than 1 year
-## NOTE: it is not necessary to scale bg_par_atm_force_scale_time_4 ... this is included for completeness
 bg_par_atm_force_scale_val_3=8.3333e+013
-bg_par_atm_force_scale_val_4=-27.0
 bg_par_atm_force_scale_time_3=1.0
+# (ignore the following for now)
+bg_par_atm_force_scale_val_4=-27.0
 bg_par_atm_force_scale_time_4=1.0
 #
 # *** MISC *************************************************************
 #
 # SPECIFY THAT THE 'RED' NUMERICAL TRACER IS USED TO CALCULATE OCEAN VENTILLATION AGE
 # NOTE: the 'red' numerical tracer must be selected in the base-config
-bg_ctrl_force_ocn_age1=.true.
+bg_ctrl_force_ocn_age=.true.
+# CHANGE THE START YEAR
+# (by default a model experiment starts at year zero)
+bg_par_misc_t_start=2010.0
 #
 # **********************************************************************
 # *** END **************************************************************
