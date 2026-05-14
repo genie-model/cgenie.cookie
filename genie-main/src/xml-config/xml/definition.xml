@@ -5672,7 +5672,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Save interval if not using save point definition file (yr)</description>
                     </param>
                     <param name="par_data_save_slice_nmax">
-			<value datatype="real">100</value>
+			<value datatype="real">10</value>
                         <description>Maximum allowed number of time-slice save points</description>
                     </param>
                     <param name="par_infile_slice_name">
