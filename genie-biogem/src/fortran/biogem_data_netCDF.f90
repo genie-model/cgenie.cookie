@@ -2080,6 +2080,15 @@ CONTAINS
        end SELECT
     END DO
     ! ---------------------------------------------------------------- !
+    ! COLOR AGE TRACER
+    ! ---------------------------------------------------------------- !
+    if ( ctrl_force_ocn_age .AND. ocn_select(io_colr) ) then
+       loc_unitsname = 'yrs'
+       loc_ijk(:,:,:) = int_ocn_timeslice(io_colr,:,:,:)/int_t_timeslice
+       call sub_adddef_netcdf(loc_iou,4,'climate_age','idealized ventilation age','(yrs)',const_real_zero,const_real_zero)
+       call sub_putvar3d_g('climate_age',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+    end if
+    ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_3d_save_hidden_climate
   ! ****************************************************************************************************************************** !
   
@@ -2106,15 +2115,6 @@ CONTAINS
     loc_ij(:,:)     = 0.0
     loc_ijk(:,:,:)  = 0.0
     loc_mask(:,:,:) = phys_ocn(ipo_mask_ocn,:,:,:)
-    ! ---------------------------------------------------------------- !
-    ! COLOR AGE TRACER
-    ! ---------------------------------------------------------------- !
-    if ( ctrl_force_ocn_age .AND. ocn_select(io_colr) ) then
-       loc_unitsname = 'yrs'
-       loc_ijk(:,:,:) = int_ocn_timeslice(io_colr,:,:,:)/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,4,'diag_age','color tracer; ventilation age','(yrs)',const_real_zero,const_real_zero)
-       call sub_putvar3d_g('diag_age',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-    end if
     ! ---------------------------------------------------------------- !
     ! Preformed nutrients and things
     ! ---------------------------------------------------------------- !
