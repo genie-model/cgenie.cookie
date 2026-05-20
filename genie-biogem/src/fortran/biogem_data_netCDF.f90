@@ -2802,7 +2802,7 @@ CONTAINS
              ! isotopes
              If (ctrl_save_basic_proxies) then
                 call sub_adddef_netcdf(loc_iou,3,'sed_seafloor_'//trim(string_sed(is)), &
-                     & 'sediment core-top '//trim(string_sed(is)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                     & 'sediment core-top '//trim(string_sed(is)),trim(loc_unitsname),sed_mima(l,1),sed_mima(l,2))
                 call sub_putvar2d('sed_seafloor_'//trim(string_sed(is)),loc_iou,n_i,n_j, &
                      & loc_ntrec,int_sfcsed1_timeslice(is,:,:)/int_t_timeslice,loc_mask_sed)
              end if
@@ -3240,7 +3240,7 @@ CONTAINS
           If (ctrl_save_basic_proxies) then
              call sub_adddef_netcdf(loc_iou,3,'biop_seasur_f_'//trim(string_sed(is)), &
                   & 'particulate biological export mean isotopic composition - '//trim(string_sed(is)), &
-                  & loc_unitsname,const_real_zero,const_real_zero)
+                  & loc_unitsname,sed_mima(l,1),sed_mima(l,2))
              call sub_putvar2d('biop_seasur_f_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           end if
        end SELECT
@@ -3283,7 +3283,7 @@ CONTAINS
              If (ctrl_save_basic_proxies) then
                 call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_f_'//trim(string_sed(is)), &
                      & 'particulate sediment rain mean isotopic composition - '//trim(string_sed(is)), &
-                     & loc_unitsname,const_real_zero,const_real_zero)
+                     & loc_unitsname,sed_mima(l,1),sed_mima(l,2))
                 call sub_putvar2d('biop_seafloor_f_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
              end if
           end SELECT

@@ -88,11 +88,11 @@ echo ">> Checking parameters ..."
 #
 # NOTE: deal with ".config" being accidently included in the run command
 #
-if test -e $CONFIGPATH/$MODELID
-then
+CONFIGEXT=${MODELID: -7}
+if [[ "$CONFIGEXT" == ".config" ]]; then
     echo "   #0 Removing .config from base configuration name (before adding it back again later ...): "
     echo $MODELID
-    MODELID=${MODELID::-7}
+    MODELID=${MODELID:: -7}
 fi
 if test -e $CONFIGPATH/$MODELID".config"
 then

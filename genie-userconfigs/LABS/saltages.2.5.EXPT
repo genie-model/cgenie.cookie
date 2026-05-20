@@ -57,11 +57,12 @@ bg_ctrl_ncout_expid_name=.false.
 #
 # apply salinity anomoly to the North Atlantic surface ocean
 bg_par_forcing_name="p_worxx2.Fsal_SUR_NAtl"
-# scale the salinity forcing 
+# scale the salinity forcing
+# NOTE: units of bg_par_ocn_force_scale_val_2 are Sv
 # NOTE: make the value NEGATIVE to represent freshwater (rather than salinity) addition
-# NOTE: setting the scaling parameter bg_par_ocn_force_scale_val_2=1.1E18 is equivalent to 1Sv of SALT flux (a very large flux large!)
-#       (bg_par_ocn_force_scale_val_2=-1.1E18 would be 1 Sv of freshwater)
+# NOTE: bg_par_ocn_force_scale_time_2 is the duration of the salinity forcing in years
 bg_par_ocn_force_scale_val_2=0.0
+bg_par_ocn_force_scale_time_2=1.0
 #
 # *** MISC *************************************************************
 #

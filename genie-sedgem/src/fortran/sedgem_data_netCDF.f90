@@ -728,6 +728,7 @@ CONTAINS
        ! ----------------------------------------------------- ! (f) calculate isotopic values in 'per mil' units
        ! NOTE: filter the result to remove the 'null' value when a delta cannot be calculated
        !       because this will screw up writing in the ASCII format later
+       ! NOTE: keep const_real_null, so min/max scale limts can be written inot the netCDF
        DO l=1,n_l_sed
           is = conv_iselected_is(l)
           SELECT CASE (sed_type(is))
@@ -738,7 +739,8 @@ CONTAINS
                 loc_standard = const_standards(sed_type(is))
                 loc_delta = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
                 If (loc_delta == const_real_null) then
-                   loc_vsedcore(m)%lay(l,o) = const_real_zero
+!!$                   loc_vsedcore(m)%lay(l,o) = const_real_zero
+                   loc_vsedcore(m)%lay(l,o) = const_real_null
                 else
                    loc_vsedcore(m)%lay(l,o) = loc_delta
                 end If
@@ -926,7 +928,7 @@ CONTAINS
     DO l=1,n_l_sed
        is = conv_iselected_is(l)
        call sub_defvar('sed_'//trim(string_sed(is)),loc_iou,2, &
-            & loc_it_2,loc_c0,loc_c0,' ','F', &
+            & loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
             & string_longname_sed(is),'Sediment tracer - '//trim(string_sed(is)),' ')
     end do
     ! -------------------------------------------------------- ! end definitions
