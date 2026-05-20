@@ -1795,7 +1795,9 @@ CONTAINS
     !       e.g. NO3 uptake into PON ...
     !       (the 'compact equivalent' also includes this)
     !       effectively, the bug-fix of the original code (see note below) introduced its own bug ...
-    if (ocn_select(io_O2))    loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn)
+    ! NOTE: if no electron acceptors are selected ... ensure solid<->aqueous transformations can still occur,
+    !       e.g., CaCO3 precip ... (so remove the original ocn_select(io_O2) requirement)
+    loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn)
     if (ocn_select(io_O2))    loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn_O)
     if (ocn_select(io_NO3))   loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn_N)
     if (ocn_select(io_FeOOH)) loc_conv_sed_ocn(:,:) = loc_conv_sed_ocn(:,:) + abs(conv_sed_ocn_Fe)
@@ -1811,7 +1813,7 @@ CONTAINS
     ! CREATE COMPACT TRACER INDEX FORMAT ARRAY EQUIVALENTS
     ! -------------------------------------------------------- !
     ! -------------------------------------------------------- ! sed -> ocn
-    if (ocn_select(io_O2))    conv_ls_lo(:,:)      =  fun_conv_sedocn2lslo(conv_sed_ocn(:,:))
+    conv_ls_lo(:,:)      =  fun_conv_sedocn2lslo(conv_sed_ocn(:,:))
     if (ocn_select(io_O2))    conv_ls_lo_O(:,:)    =  fun_conv_sedocn2lslo(conv_sed_ocn_O(:,:))
     if (ocn_select(io_NO3))   conv_ls_lo_N(:,:)    =  fun_conv_sedocn2lslo(conv_sed_ocn_N(:,:))
     if (ocn_select(io_FeOOH)) conv_ls_lo_Fe(:,:)   =  fun_conv_sedocn2lslo(conv_sed_ocn_Fe(:,:))
@@ -2646,7 +2648,7 @@ CONTAINS
          & 'bio_PNFe'          &
          & )
        IF (.NOT. ocn_select(io_NO3)) loc_flag = .TRUE.
-       IF (.NOT. ocn_select(io_N2)) loc_flag = .TRUE.
+       IF (.NOT. ocn_select(io_N2))  loc_flag = .TRUE.
        IF (.NOT. ocn_select(io_NH4)) loc_flag = .TRUE.
        IF (.NOT. sed_select(is_PON)) loc_flag = .TRUE.
     end select
@@ -2657,11 +2659,11 @@ CONTAINS
          & 'bio_PNFe'         &
          & )
        if (.NOT. (ocn_select(io_TDFe) .AND. ocn_select(io_TL)) ) then
-          IF (.NOT. ocn_select(io_Fe)) loc_flag = .TRUE.
+          IF (.NOT. ocn_select(io_Fe))  loc_flag = .TRUE.
           IF (.NOT. ocn_select(io_FeL)) loc_flag = .TRUE.
-          IF (.NOT. ocn_select(io_L)) loc_flag = .TRUE.
+          IF (.NOT. ocn_select(io_L))  loc_flag = .TRUE.
        end if
-       IF (.NOT. sed_select(is_POFe)) loc_flag = .TRUE.
+       IF (.NOT. sed_select(is_POFe))   loc_flag = .TRUE.
        IF (.NOT. sed_select(is_POM_Fe)) loc_flag = .TRUE.
     end select
     if (loc_flag) then
@@ -3026,13 +3028,13 @@ CONTAINS
           end if
        end if
     end do
-    IF (sed_select(is_CaCO3) .AND. (.NOT. sed_select(is_POC))) THEN
-       CALL sub_report_error( &
-            & 'biogem_data','sub_check_par','The POC tracer must be selected with CaCO3 ', &
-            & 'STOPPING', &
-            & (/const_real_null/),.true. &
-            & )
-    ENDIF
+!!$    IF (sed_select(is_CaCO3) .AND. (.NOT. sed_select(is_POC))) THEN
+!!$       CALL sub_report_error( &
+!!$            & 'biogem_data','sub_check_par','The POC tracer must be selected with CaCO3 ', &
+!!$            & 'STOPPING', &
+!!$            & (/const_real_null/),.true. &
+!!$            & )
+!!$    ENDIF
     If (sed_select(is_CaCO3_age) .AND. (.NOT. sed_select(is_CaCO3))) then
        CALL sub_report_error( &
             & 'biogem_data','sub_check_par', &
@@ -3307,7 +3309,7 @@ CONTAINS
     ! ---------------------------------------------------------- ! 'biology'
     ! NOTE: do not save export production data if a biological option is not selected *and* ECOGEM is not selected
     ! ctrl_data_save_bioexport = .true. [DEFAULT]
-    if ( (par_bio_prodopt == 'NONE') .AND. (.NOT. flag_ecogem) ) then
+    if ( (par_bio_prodopt == 'NONE') .AND. (.NOT. ctrl_bio_CaCO3precip) .AND. (.NOT. flag_ecogem) ) then
        ctrl_save_basic_biologicalpump    = .false.
        ctrl_save_advanced_biologicalpump = .false.
     end if
@@ -3989,7 +3991,9 @@ CONTAINS
           loc_i = loc_i - 1
        END IF
     END DO
-    if (par_data_save_timeslice(loc_i) < (par_data_save_slice_dt/2.0 - par_misc_t_err)) loc_i = 0
+    if (loc_i > 0) then
+       if (par_data_save_timeslice(loc_i) < (par_data_save_slice_dt/2.0 - par_misc_t_err)) loc_i = 0
+    end if
     ! -------------------------------------------------------- ! record number of points
     par_data_save_timeslice_i = loc_i
     ! -------------------------------------------------------- ! automatically populate run end if needed

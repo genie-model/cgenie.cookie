@@ -2271,6 +2271,9 @@ CONTAINS
 
     ! *** CALCULATE CaCO3 PRECIPITATION ***
     DO k=n_k,loc_kmax,-1
+
+!!!print*,ctrl_bio_CaCO3precip_sur,loc_kmax,k
+       
        ! re-calculate carbonate dissociation constants
        CALL sub_calc_carbconst(                 &
             & phys_ocn(ipo_Dmid,dum_i,dum_j,k), &
@@ -2319,9 +2322,17 @@ CONTAINS
        else
           loc_ohm = carb(ic_ohm_arg,dum_i,dum_j,k)
        end if
+       ! make precipitation!
+       ! NOTE: the units of loc_bio_part will be mol kg-1 yr-1
+       !       e.g., if par_bio_CaCO3precip_exp=0.0 then
+       !             par_bio_CaCO3precip_sf will be mol CaCO3 kg-1 yr-1 where-ever loc_ohm > par_bio_CaCO3precip_abioticohm_min
+       !       e.g., par_bio_CaCO3precip_sf=10.0E-6 would remove 10 uM DIC, Ca per year from the ocean surface
        if (loc_ohm > par_bio_CaCO3precip_abioticohm_min) then
           loc_bio_part(is_CaCO3,k) = &
                & dum_dt*par_bio_CaCO3precip_sf*(par_bio_CaCO3precip_abioticohm_min - 1.0)**par_bio_CaCO3precip_exp
+
+          !!!print*,loc_ohm,par_bio_CaCO3precip_abioticohm_min,loc_bio_part(is_CaCO3,k)
+          
        else
           loc_bio_part(is_CaCO3,k) = 0.0
        end if
@@ -2400,7 +2411,7 @@ CONTAINS
     end do
 
     ! *** SET MODIFICATION OF PARTICULATE CONCENTRATIONS ***
-    DO l=3,n_l_sed
+    DO l=1,n_l_sed
        is = conv_iselected_is(l)
        bio_part(is,dum_i,dum_j,:) = bio_part(is,dum_i,dum_j,:) + loc_bio_part(is,:)
     end DO
