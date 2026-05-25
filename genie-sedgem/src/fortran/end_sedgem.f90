@@ -95,6 +95,8 @@ SUBROUTINE end_sedgem( &
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_save_mask,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_save_n,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_fsed_OLD,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_fdis_OLD,STAT=dealloc_error)

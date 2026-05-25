@@ -482,11 +482,11 @@ CONTAINS
        ! write 2D grid data
        SELECT CASE (dum_dd)
        CASE (2)
-          call sub_putvar2dI ('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d_int('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
                & goldstein_k1(:,:))
-          call sub_putvar2d ('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
                & loc_data(:,:), phys_ocn(ipo_mask_ocn,:,:,n_k))
 !!$          call sub_putvar2d ('axes_area', loc_iou, n_i, n_j, loc_ntrec, &
 !!$               & phys_ocnatm(ipoa_A,:,:), loc_mask_ALL)
@@ -494,11 +494,11 @@ CONTAINS
        ! write 3D grid data
        SELECT CASE (dum_dd)
        CASE (3,4)
-          call sub_putvar2dI ('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d_int('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
                & goldstein_k1(:,:))
-          call sub_putvar2d ('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
                & loc_data(:,:), phys_ocn(ipo_mask_ocn,:,:,n_k))
           call sub_putvar3d('3Dgrid_mask_seafloor',loc_iou,n_i,n_j,n_k,loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k:1:-1),phys_ocn(ipo_mask_ocn,:,:,n_k:1:-1))

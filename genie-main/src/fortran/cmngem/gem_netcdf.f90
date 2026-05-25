@@ -659,7 +659,7 @@ CONTAINS
   end subroutine sub_putvar1d_scalar
 
 
-  subroutine sub_putvar2dI (dum_name, dum_ncid, dum_la, dum_lb, dum_is, dum_din)
+  subroutine sub_putvar2d_int (dum_name, dum_ncid, dum_la, dum_lb, dum_is, dum_din)
     !=======================================================================
     !     write data
 
@@ -678,7 +678,7 @@ CONTAINS
     !=======================================================================
 
     character(len=*), intent(in) :: dum_name
-    integer,      intent(in) :: dum_ncid, dum_is,  dum_la, dum_lb
+    integer,intent(in) :: dum_ncid, dum_is,  dum_la, dum_lb
     integer,dimension(dum_la,dum_lb),intent(in):: dum_din
 
     integer :: i, loc_iv
@@ -689,7 +689,7 @@ CONTAINS
     i = nf90_put_var (dum_ncid, loc_iv, dum_din, start = (/ dum_is, dum_is /), count = (/ dum_la, dum_lb /) )
     call sub_checkerror(i,'putvar2dI '//dum_name)
 
-  end subroutine sub_putvar2dI
+  end subroutine sub_putvar2d_int
 
   
   subroutine sub_putvar2d (dum_name, dum_ncid, dum_la, dum_lb, dum_is, dum_din, dum_mask)
@@ -870,6 +870,58 @@ CONTAINS
     call sub_enddef (dum_ncid)
 
   END SUBROUTINE sub_adddef_netcdf
+
+
+  SUBROUTINE sub_adddef_netcdf_int(dum_ncid, dum_dino, dum_tname, dum_tlname, dum_unit, dum_min, dum_max)
+    !-----------------------------------------------------------------------
+    ! integer type version of sub_adddef_netcdf
+    !-----------------------------------------------------------------------
+
+    character(len=*), intent(in) :: dum_tname, dum_tlname, dum_unit
+    integer,      intent(in) :: dum_ncid, dum_dino
+    real,         intent(in) :: dum_min, dum_max
+    integer        :: i
+    integer        :: loc_it(4), loc_id_time, loc_id_lon, loc_id_lat, loc_id_zt
+
+    i = nf90_inq_dimid (dum_ncid, 'time', loc_id_time)
+    call sub_checkerror (i,'adddef nf90_inq_varid time')
+    if (dum_dino .ge. 2 ) then
+       i = nf90_inq_dimid (dum_ncid, 'lon', loc_id_lon)
+       call sub_checkerror (i,'adddef nf90_inq_varid lon')
+       i = nf90_inq_dimid (dum_ncid, 'lat', loc_id_lat)
+       call sub_checkerror (i,'adddef nf90_inq_varid lat')
+    endif
+    if ( dum_dino .eq. 4 ) then
+       i = nf90_inq_dimid (dum_ncid, 'zt', loc_id_zt)
+       call sub_checkerror (i,'adddef nf90_inq_varid zt')
+    endif
+    !-----------------------------------------------------------------------
+    !       define time dependent 3d or 4d data (x,y,(z,)t)
+    !-----------------------------------------------------------------------
+    if (dum_dino .eq. 1 ) then
+       loc_it(1) = loc_id_time
+    else      
+       loc_it(1) = loc_id_lon
+       loc_it(2) = loc_id_lat
+       loc_it(3) = loc_id_time
+    endif
+    if ( dum_dino .eq. 4 ) then
+       loc_it(3) = loc_id_zt
+       loc_it(4) = loc_id_time
+    endif
+    !-----------------------------------------------------------------------
+    !       start definitions
+    !-----------------------------------------------------------------------
+    call sub_redef (dum_ncid)
+    call sub_defvar (dum_tname, dum_ncid, dum_dino, &
+         & loc_it, dum_min, dum_max, ' ', 'I', &
+         & dum_tlname, ' ', dum_unit)
+    !-----------------------------------------------------------------------
+    !       end definitions
+    !-----------------------------------------------------------------------
+    call sub_enddef (dum_ncid)
+
+  END SUBROUTINE sub_adddef_netcdf_int
 
 
   SUBROUTINE sub_adddef_netcdf_moc (dum_ncid, dum_tname, dum_tlname, dum_unit, dum_min, dum_max)
