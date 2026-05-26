@@ -2336,7 +2336,7 @@ CONTAINS
        !       e.g., par_bio_CaCO3precip_sf=10.0E-6 would remove 10 uM DIC, Ca per year from the ocean surface
        if (loc_ohm > par_bio_CaCO3precip_abioticohm_min) then
           loc_bio_part(is_CaCO3,k) = &
-               & dum_dt*par_bio_CaCO3precip_sf*(loc_ohm - 1.0)**par_bio_CaCO3precip_exp
+               & dum_dt*par_bio_CaCO3precip_sf*(loc_ohm - par_bio_CaCO3precip_abioticohm_min)**par_bio_CaCO3precip_exp
        else
           loc_bio_part(is_CaCO3,k) = 0.0
        end if

@@ -817,6 +817,8 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/ctrl_force_ocn_age,ctrl_force_ocn_age1
   REAL::par_force_FCaCO3                                        ! CaCO3 flux (for saturaton restoring) (mol yr-1)
   NAMELIST /ini_biogem_nml/par_force_FCaCO3
+  logical::ctrl_force_ocn_Sall                                  ! Force all tracers in proportion to salinity forcing? (if selected)
+  NAMELIST /ini_biogem_nml/ctrl_force_ocn_Sall
   ! ---------------- TRANSPORT MATRIX---------------------------!
   LOGICAL::ctrl_data_diagnose_TM !                              ! diagnose matrix in run?
   NAMELIST /ini_biogem_nml/ctrl_data_diagnose_TM

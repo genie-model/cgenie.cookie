@@ -647,19 +647,20 @@ CONTAINS
           end if
        end DO
        ! ----------------------------------------------------- ! (c) calculate numerical internal ages
+       ! NOTE: replace zero age with very small, negative so that it can be excluded as invalid in the netCDF
        DO o = 1,loc_n_sedcore_tot
           if (sed_select(is_CaCO3_age)) then
              IF (loc_vsedcore(m)%lay(is2l(is_CaCO3),o) > const_real_nullsmall) THEN
                 loc_sedcore_age_cal(m,o) = loc_vsedcore(m)%lay(is2l(is_CaCO3_age),o)/loc_vsedcore(m)%lay(is2l(is_CaCO3),o)
              ELSE
-                loc_sedcore_age_cal(m,o) = 0.0
+                loc_sedcore_age_cal(m,o) = const_real_nullsmallneg
              ENDIF
           end if
           if (sed_select(is_det_age)) then
              IF (loc_vsedcore(m)%lay(is2l(is_det),o) > const_real_nullsmall) THEN
                 loc_sedcore_age_det(m,o) = loc_vsedcore(m)%lay(is2l(is_det_age),o)/loc_vsedcore(m)%lay(is2l(is_det),o)
              ELSE
-                loc_sedcore_age_det(m,o) = 0.0
+                loc_sedcore_age_det(m,o) = const_real_nullsmallneg
              ENDIF
           end if
        ENDDO
@@ -929,14 +930,14 @@ CONTAINS
          & 'Sediment layer thickness (cm)','Sediment layer thickness (cm)',' ')
     call sub_defvar('phys_porosity',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
          & 'Sediment layer porosity (cm3 cm-3)','Sediment layer porosity (cm3 cm-3)',' ')
-    call sub_defvar('age_CaCO3',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
+    call sub_defvar('age_CaCO3',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
          & 'Age from sediment CaCO3 (yr)','Age from sediment CaCO3 (yr)',' ')
-    call sub_defvar('age_det',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
+    call sub_defvar('age_det',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
          & 'Age from sediment detrital (yr)','Age from sediment detrital (yr)',' ')
-    call sub_defvar('age_ash',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
+    call sub_defvar('age_ash',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
          & 'Age by linear sedimentation rate (yr)','Age by linear sedimentation rate (yr)',' ')
     if (sed_select(is_CaCO3_14C)) then
-       call sub_defvar('age_14C',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
+       call sub_defvar('age_14C',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
             & 'Radiocarbon age (yr)','Radioncarbon age (yr)',' ')
     end if
     DO l=1,n_l_sed

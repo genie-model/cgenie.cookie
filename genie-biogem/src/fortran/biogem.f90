@@ -1211,6 +1211,16 @@ subroutine biogem(        &
                     END DO
                  END IF
               END DO
+              ! scale all dissolved tracers with salinity forcing (if selected)
+              if (force_flux_ocn_select(io_S) .AND. ctrl_force_ocn_Sall) then
+                 DO l=3,n_l_ocn
+                    io = conv_iselected_io(l)
+                    if (ocn_select(io)) then
+                       locijk_focn(io,i,j,n_k) = locijk_focn(io,i,j,n_k) + &
+                            & (force_flux_locn(2,i,j,n_k)/ocn(io_S,i,j,n_k))*ocn(io,i,j,n_k)
+                    end if
+                 end do
+              end if
               ! test for, and apply, additional salinity flux forcing
               if (.NOT. ctrl_force_ocn_age) then
                  IF (force_flux_ocn_select(io_S) .AND. force_flux_ocn_select(io_colb)) THEN

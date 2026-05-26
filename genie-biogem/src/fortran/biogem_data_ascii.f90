@@ -91,9 +91,9 @@ CONTAINS
             & loc_t,par_outdir_name,'timeseries','climate_opsi',string_results_ext)
        select case (fname_topo)
        case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
-          loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(real(n_k)/2.0)) //'] / '// &
-               & 'Atlantic min opsi (Sv) [k <= '// fun_conv_num_char_n(2,int(real(n_k)/2.0)) //'] / '// &
+          loc_string = '% time (yr) / global min opsi (Sv) [full grid] / global max opsi (Sv) [full grid] / '// &
+               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
                & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
                & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
        case default

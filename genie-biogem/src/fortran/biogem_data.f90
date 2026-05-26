@@ -573,6 +573,7 @@ CONTAINS
        print*,'Automatic ocean age tracer?                         : ',ctrl_force_ocn_age
        print*,'Or ... automatic ocean age single-tracer tracer?    : ',ctrl_force_ocn_age1
        print*,'CaCO3 flux (for saturaton restoring) (mol yr-1)     : ',par_force_FCaCO3
+       print*,'Force all tracers in proportion to salinity?        : ',ctrl_force_ocn_Sall
        ! --- TRANSPORT MATRIX ---------------------------------------------------------------------------------------------------- !
        print*,'Diagnose transport matrix during run?		: ',ctrl_data_diagnose_TM
        print*,'Year to start diagnosing transport matrix	: ',par_data_TM_start
@@ -1813,7 +1814,7 @@ CONTAINS
     ! CREATE COMPACT TRACER INDEX FORMAT ARRAY EQUIVALENTS
     ! -------------------------------------------------------- !
     ! -------------------------------------------------------- ! sed -> ocn
-    conv_ls_lo(:,:)      =  fun_conv_sedocn2lslo(conv_sed_ocn(:,:))
+    conv_ls_lo(:,:) =  fun_conv_sedocn2lslo(conv_sed_ocn(:,:))
     if (ocn_select(io_O2))    conv_ls_lo_O(:,:)    =  fun_conv_sedocn2lslo(conv_sed_ocn_O(:,:))
     if (ocn_select(io_NO3))   conv_ls_lo_N(:,:)    =  fun_conv_sedocn2lslo(conv_sed_ocn_N(:,:))
     if (ocn_select(io_FeOOH)) conv_ls_lo_Fe(:,:)   =  fun_conv_sedocn2lslo(conv_sed_ocn_Fe(:,:))
