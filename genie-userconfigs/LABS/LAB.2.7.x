@@ -55,8 +55,8 @@ bg_ctrl_ncout_expid_name=.false.
 # *** FORCINGS *********************************************************
 #
 # SPEFICY ANY FORCINGS OF OCEAN/ATMOSPHERE/SEDIMENTS
-# e.g., bg_par_forcing_name="p_worxx2.Fsal_SUR_EMed" -> apply salinity anomoly to the Eastern Mediterranean surface
-bg_par_forcing_name="p_worxx2.Fsal_SUR_EMed"
+# e.g., bg_par_forcing_name="p_worxx2.Fsal_SUR_SO" -> apply salinity anomoly to the Southern Ocean surface
+bg_par_forcing_name="p_worxx2.Fsal_SUR_SO"
 # SCALE THE FORCING
 # NOTE: make the value NEGATIVE to represent freshwater (rather than salinity) addition
 # NOTE: setting the scaling parameter bg_par_ocn_force_scale_val_2=1.0 is equivalent to 1Sv of SALT flux (a very large flux large!)
