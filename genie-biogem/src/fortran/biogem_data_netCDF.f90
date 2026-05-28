@@ -482,11 +482,11 @@ CONTAINS
        ! write 2D grid data
        SELECT CASE (dum_dd)
        CASE (2)
-          call sub_putvar2dI ('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d_int('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
                & goldstein_k1(:,:))
-          call sub_putvar2d ('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
                & loc_data(:,:), phys_ocn(ipo_mask_ocn,:,:,n_k))
 !!$          call sub_putvar2d ('axes_area', loc_iou, n_i, n_j, loc_ntrec, &
 !!$               & phys_ocnatm(ipoa_A,:,:), loc_mask_ALL)
@@ -494,11 +494,11 @@ CONTAINS
        ! write 3D grid data
        SELECT CASE (dum_dd)
        CASE (3,4)
-          call sub_putvar2dI ('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d_int('2Dgrid_level', loc_iou, n_i, n_j, loc_ntrec, &
                & goldstein_k1(:,:))
-          call sub_putvar2d ('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_mask_landsea', loc_iou, n_i, n_j, loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k), phys_ocn(ipo_mask_ocn,:,:,n_k))
-          call sub_putvar2d ('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
+          call sub_putvar2d('2Dgrid_topo', loc_iou, n_i, n_j, loc_ntrec, &
                & loc_data(:,:), phys_ocn(ipo_mask_ocn,:,:,n_k))
           call sub_putvar3d('3Dgrid_mask_seafloor',loc_iou,n_i,n_j,n_k,loc_ntrec, &
                & phys_ocn(ipo_mask_ocn,:,:,n_k:1:-1),phys_ocn(ipo_mask_ocn,:,:,n_k:1:-1))
@@ -2802,7 +2802,7 @@ CONTAINS
              ! isotopes
              If (ctrl_save_basic_proxies) then
                 call sub_adddef_netcdf(loc_iou,3,'sed_seafloor_'//trim(string_sed(is)), &
-                     & 'sediment core-top '//trim(string_sed(is)),trim(loc_unitsname),const_real_zero,const_real_zero)
+                     & 'sediment core-top '//trim(string_sed(is)),trim(loc_unitsname),sed_mima(l,1),sed_mima(l,2))
                 call sub_putvar2d('sed_seafloor_'//trim(string_sed(is)),loc_iou,n_i,n_j, &
                      & loc_ntrec,int_sfcsed1_timeslice(is,:,:)/int_t_timeslice,loc_mask_sed)
              end if
@@ -3240,7 +3240,7 @@ CONTAINS
           If (ctrl_save_basic_proxies) then
              call sub_adddef_netcdf(loc_iou,3,'biop_seasur_f_'//trim(string_sed(is)), &
                   & 'particulate biological export mean isotopic composition - '//trim(string_sed(is)), &
-                  & loc_unitsname,const_real_zero,const_real_zero)
+                  & loc_unitsname,sed_mima(l,1),sed_mima(l,2))
              call sub_putvar2d('biop_seasur_f_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           end if
        end SELECT
@@ -3283,7 +3283,7 @@ CONTAINS
              If (ctrl_save_basic_proxies) then
                 call sub_adddef_netcdf(loc_iou,3,'biop_seafloor_f_'//trim(string_sed(is)), &
                      & 'particulate sediment rain mean isotopic composition - '//trim(string_sed(is)), &
-                     & loc_unitsname,const_real_zero,const_real_zero)
+                     & loc_unitsname,sed_mima(l,1),sed_mima(l,2))
                 call sub_putvar2d('biop_seafloor_f_'//trim(string_sed(is)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
              end if
           end SELECT

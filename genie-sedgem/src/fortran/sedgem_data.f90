@@ -1021,9 +1021,11 @@ CONTAINS
        DO j=1,n_j
           if ((loc_ij(i,j) < const_real_nullsmall) .OR. (.NOT. sed_mask(i,j))) then
              sed_save_mask(i,j) = .FALSE.
+             sed_save_n(i,j)    = 0
           else
-             sed_save_mask(i,j) = .TRUE.
              nv_sedcore = nv_sedcore + 1
+             sed_save_mask(i,j) = .TRUE.
+             sed_save_n(i,j)    = nv_sedcore
           end if
        end do
     end do

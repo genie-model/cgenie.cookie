@@ -29,7 +29,7 @@ bg_par_bio_prodopt='NONE'
 #		(1)	all 'false' will leave you with the basic (hidden option!) defaults: bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
 #		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
 #		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
-#       (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
+#       	(4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
 #		(5) turning off a 'basic' option will also turn off the corresponding advanced option
 #		(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
 bg_ctrl_save_basic_reservoirs=.TRUE.
@@ -57,10 +57,12 @@ bg_ctrl_ncout_expid_name=.false.
 #
 # apply salinity anomoly to the Eastern Mediterranean surface
 bg_par_forcing_name="p_worxx2.Fsal_SUR_EMed"
-# scale the salinity forcing 
+# scale the salinity forcing
+# NOTE: units of bg_par_ocn_force_scale_val_2 are Sv
 # NOTE: make the value NEGATIVE to represent freshwater (rather than salinity) addition
-# NOTE: setting the scaling parameter bg_par_ocn_force_scale_val_2=1.1E18 is equivalent to 1Sv of SALT flux (a very large flux large!)
+# NOTE: bg_par_ocn_force_scale_time_2 is the duration of the salinity forcing in years
 bg_par_ocn_force_scale_val_2=0.0
+bg_par_ocn_force_scale_time_2=1.0
 #
 # *** MISC *************************************************************
 #

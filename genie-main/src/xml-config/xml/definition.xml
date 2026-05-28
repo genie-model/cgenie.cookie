@@ -5247,8 +5247,8 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>constant for the dynamical threshold to encourage N2 fixation</description>
                     </param>
                     <param name="par_bio_Nstar_offset">
-			<value datatype="real">2.90e-06</value>
-                        <description>N-star offset (mol kg-1)</description>
+			<value datatype="real">0.0</value>
+                        <description>N-star offset (mol kg-1) [was: 2.90e-06]</description>
                     </param>
                     <param name="par_nitri_mu">
 			<value datatype="real">10.0</value>
@@ -6962,6 +6962,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_force_FCaCO3">
 			<value datatype="real">1.0E15</value>
                         <description> CaCO3 flux (for saturaton restoring) (mol yr-1)</description>
+                    </param>
+                    <param name="ctrl_force_ocn_Sall">
+			<value datatype="boolean">.false.</value>
+                        <description>Force all tracers in proportion to salinity forcing? (if selected)</description>
                     </param>
 <!-- TRANSPORT MATRIX  -->
 		<param name="ctrl_data_diagnose_TM">

@@ -349,7 +349,7 @@ MODULE sedgem_lib
   ! 
   integer,parameter::n_diag_sed     = 3
   integer,parameter::n_diag_sed_err = 5
-
+  
   ! *** array index values ***
   ! sediment grid properties array indices
   INTEGER,PARAMETER::ips_lat                              = 01 ! latitude (degrees) [mid-point]
@@ -514,6 +514,7 @@ MODULE sedgem_lib
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_carbalk               ! carbonate chemistry alkalinity
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_carbisor              ! carbonate (carbon) isotopic properties array
   LOGICAL,ALLOCATABLE,DIMENSION(:,:)::sed_save_mask            ! sediment data save mask (.TRUE. == save sediment grid point)
+  integer,ALLOCATABLE,DIMENSION(:,:)::sed_save_n               ! sedcore ID
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_fsed_OLD              ! 
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_fdis_OLD              ! 
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Fsed_det                ! alt detrital burial flux field
