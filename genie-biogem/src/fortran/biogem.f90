@@ -966,58 +966,58 @@ subroutine biogem(        &
                  ! NOTE: used in time-series diagnostics AND for certain 'preformed' tracers if selected
                  ! NOTE: do not calculate if there was a failure to calculate carbonate chemsitry (carb(ic_err,i,j,n_k) == 1.0)
                  !       => assign a value of zero
-                 if (ctrl_data_save_buffering) then
-                 if (carb(ic_err,i,j,n_k) < const_real_nullsmall) then
-                    carb(ic_RdfCO2dDIC,i,j,n_k) = fun_calc_carb_SF0( &
-                         & par_carbchem_pH_tolerance, &
-                         & ocn(io_DIC,i,j,n_k),  &
-                         & ocn(io_ALK,i,j,n_k),  &
-                         & ocn(io_Ca,i,j,n_k),   &
-                         & ocn(io_PO4,i,j,n_k),  &
-                         & ocn(io_SiO2,i,j,n_k), &
-                         & ocn(io_B,i,j,n_k),    &
-                         & ocn(io_SO4,i,j,n_k),  &
-                         & ocn(io_F,i,j,n_k),    &
-                         & ocn(io_H2S,i,j,n_k),  &
-                         & ocn(io_NH4,i,j,n_k),  &
-                         & carbconst(:,i,j,n_k), &
-                         & carb(:,i,j,n_k)       &
-                         & )
-                    carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
-                         & par_carbchem_pH_tolerance,               &
-                         & ocn(io_DIC,i,j,n_k),  &
-                         & ocn(io_ALK,i,j,n_k),  &
-                         & ocn(io_Ca,i,j,n_k),   &
-                         & ocn(io_PO4,i,j,n_k),  &
-                         & ocn(io_SiO2,i,j,n_k), &
-                         & ocn(io_B,i,j,n_k),    &
-                         & ocn(io_SO4,i,j,n_k),  &
-                         & ocn(io_F,i,j,n_k),    &
-                         & ocn(io_H2S,i,j,n_k),  &
-                         & ocn(io_NH4,i,j,n_k),  &
-                         & carbconst(:,i,j,n_k), &
-                         & carb(:,i,j,n_k)       &
-                         & )
-                    carb(ic_RdALKdDIC,i,j,n_k) = fun_calc_carb_NF0( &
-                         & par_carbchem_pH_tolerance,               &
-                         & ocn(io_DIC,i,j,n_k),  &
-                         & ocn(io_ALK,i,j,n_k),  &
-                         & ocn(io_Ca,i,j,n_k),   &
-                         & ocn(io_PO4,i,j,n_k),  &
-                         & ocn(io_SiO2,i,j,n_k), &
-                         & ocn(io_B,i,j,n_k),    &
-                         & ocn(io_SO4,i,j,n_k),  &
-                         & ocn(io_F,i,j,n_k),    &
-                         & ocn(io_H2S,i,j,n_k),  &
-                         & ocn(io_NH4,i,j,n_k),  &
-                         & carbconst(:,i,j,n_k), &
-                         & carb(:,i,j,n_k)       &
-                         & )
-                 end if
+                 IF (ctrl_save_advanced_geochemistry .AND. (.NOT. ctrl_carbchem_pH_OLD)) THEN
+                    if (carb(ic_err,i,j,n_k) < const_real_nullsmall) then
+                       carb(ic_RdfCO2dDIC,i,j,n_k) = fun_calc_carb_SF0( &
+                            & par_carbchem_pH_tolerance, &
+                            & ocn(io_DIC,i,j,n_k),  &
+                            & ocn(io_ALK,i,j,n_k),  &
+                            & ocn(io_Ca,i,j,n_k),   &
+                            & ocn(io_PO4,i,j,n_k),  &
+                            & ocn(io_SiO2,i,j,n_k), &
+                            & ocn(io_B,i,j,n_k),    &
+                            & ocn(io_SO4,i,j,n_k),  &
+                            & ocn(io_F,i,j,n_k),    &
+                            & ocn(io_H2S,i,j,n_k),  &
+                            & ocn(io_NH4,i,j,n_k),  &
+                            & carbconst(:,i,j,n_k), &
+                            & carb(:,i,j,n_k)       &
+                            & )
+                       carb(ic_RdDICdALK,i,j,n_k) = fun_calc_carb_EF0( &
+                            & par_carbchem_pH_tolerance,               &
+                            & ocn(io_DIC,i,j,n_k),  &
+                            & ocn(io_ALK,i,j,n_k),  &
+                            & ocn(io_Ca,i,j,n_k),   &
+                            & ocn(io_PO4,i,j,n_k),  &
+                            & ocn(io_SiO2,i,j,n_k), &
+                            & ocn(io_B,i,j,n_k),    &
+                            & ocn(io_SO4,i,j,n_k),  &
+                            & ocn(io_F,i,j,n_k),    &
+                            & ocn(io_H2S,i,j,n_k),  &
+                            & ocn(io_NH4,i,j,n_k),  &
+                            & carbconst(:,i,j,n_k), &
+                            & carb(:,i,j,n_k)       &
+                            & )
+                       carb(ic_RdALKdDIC,i,j,n_k) = fun_calc_carb_NF0( &
+                            & par_carbchem_pH_tolerance,               &
+                            & ocn(io_DIC,i,j,n_k),  &
+                            & ocn(io_ALK,i,j,n_k),  &
+                            & ocn(io_Ca,i,j,n_k),   &
+                            & ocn(io_PO4,i,j,n_k),  &
+                            & ocn(io_SiO2,i,j,n_k), &
+                            & ocn(io_B,i,j,n_k),    &
+                            & ocn(io_SO4,i,j,n_k),  &
+                            & ocn(io_F,i,j,n_k),    &
+                            & ocn(io_H2S,i,j,n_k),  &
+                            & ocn(io_NH4,i,j,n_k),  &
+                            & carbconst(:,i,j,n_k), &
+                            & carb(:,i,j,n_k)       &
+                            & )
+                    end if
                  else
-                 carb(ic_RdfCO2dDIC,i,j,n_k) = 0.0
-                 carb(ic_RdDICdALK,i,j,n_k)  = 0.0
-                 carb(ic_RdALKdDIC,i,j,n_k)  = 0.0
+                    carb(ic_RdfCO2dDIC,i,j,n_k) = 0.0
+                    carb(ic_RdDICdALK,i,j,n_k)  = 0.0
+                    carb(ic_RdALKdDIC,i,j,n_k)  = 0.0
                  end if
               end if
 
