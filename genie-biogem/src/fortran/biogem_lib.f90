@@ -1341,11 +1341,6 @@ MODULE biogem_lib
   REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_it                 ! change in the sum of occurrences of excessive pH iterations
 
   ! ---------------------------------------------------------- !
-  ! reaction selection
-  ! ---------------------------------------------------------- !
-  logical,dimension(n_diag_precip)::ctrl_save_n_diag_precip
-  logical,dimension(n_diag_react)::ctrl_save_n_diag_react
-  ! ---------------------------------------------------------- !
   ! integrated (time-averaged) time-series storage scalars and vectors
   ! ---------------------------------------------------------- !
   REAL::int_misc_gemlite_sig                                     !
