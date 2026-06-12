@@ -1,5 +1,5 @@
 # **********************************************************************
-# base-config: 	cookie.C.p_worbe2.BASES
+# base-config: 	cookie.CB.p_worbe2.BASES
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
@@ -65,8 +65,8 @@ bg_par_bio_remin_CaCO3_eL2=1000000.0
 bg_ctrl_save_basic_reservoirs=.TRUE.
 bg_ctrl_save_basic_geochemistry=.TRUE.
 bg_ctrl_save_basic_biologicalpump=.TRUE.
-bg_ctrl_save_basic_proxies=.TRUE.
-bg_ctrl_save_advanced_geochemistry=.TRUE.
+bg_ctrl_save_basic_proxies=.false.
+bg_ctrl_save_advanced_geochemistry=.true.
 # SPECIFY THE INTERVAL AT WHICH TIME-SERIES DATA IS SAVED
 # e.g., bg_par_data_save_sig_timeinterval=10.0 -> save time-series data every 10.0 years
 # NOTE: to employ a file of save years in determining when time-series data is saved, set:
