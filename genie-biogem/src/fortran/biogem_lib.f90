@@ -138,6 +138,12 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/ctrl_force_Vgrid
   CHARACTER(len=127)::par_force_Vgrid_file                       ! Filename for virtual grid
   NAMELIST /ini_biogem_nml/par_force_Vgrid_file
+  logical::ctrl_force_POCexport                                  ! Apply prescribed POC export field? 
+  logical::ctrl_force_CaCO3export                                ! Apply prescribed CaCO3 export field? 
+  NAMELIST /ini_biogem_nml/ctrl_force_POCexport,ctrl_force_CaCO3export
+  CHARACTER(len=127)::par_POCexport_file                         ! Filename for prescribed POC export field
+  CHARACTER(len=127)::par_CaCO3export_file                       ! Filename for prescribed CaCO3 export field
+  NAMELIST /ini_biogem_nml/par_POCexport_file,par_CaCO3export_file
   ! ------------------- BIOLOGICAL NEW PRODUCTION -------------------------------------------------------------------------------- !
   CHARACTER(len=63)::par_bio_prodopt                             ! biological scheme ID string (e.g., 1N1T_PO4MM, 1N1T_PO4MM_Cd)
   NAMELIST /ini_biogem_nml/par_bio_prodopt
@@ -1574,6 +1580,8 @@ MODULE biogem_lib
   REAL,DIMENSION(n_i,n_j)::force_Fgeothermal2D                   !
   REAL,DIMENSION(n_i,n_j)::par_det_Fe_sol_2D                     !
   integer,DIMENSION(n_i,n_j)::force_Vgrid                        !
+  REAL,DIMENSION(n_i,n_j)::par_bio_POCexport                     !
+  REAL,DIMENSION(n_i,n_j)::par_bio_CaCO3export                   !
 
   ! ****************************************************************************************************************************** !
   ! *** GLOBAL VARIABLES AND RUN-TIME SET PARAMETERS ***************************************************************************** !

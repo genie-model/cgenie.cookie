@@ -2330,11 +2330,20 @@ CONTAINS
           loc_ohm = carb(ic_ohm_arg,dum_i,dum_j,k)
        end if
        ! make precipitation!
-       ! NOTE: the units of loc_bio_part will be mol kg-1 yr-1
-       !       e.g., if par_bio_CaCO3precip_exp=0.0 then
-       !             par_bio_CaCO3precip_sf will be mol CaCO3 kg-1 yr-1 where-ever loc_ohm > par_bio_CaCO3precip_abioticohm_min
-       !       e.g., par_bio_CaCO3precip_sf=10.0E-6 would remove 10 uM DIC, Ca per year from the ocean surface
-       if (loc_ohm > par_bio_CaCO3precip_abioticohm_min) then
+       if (ctrl_force_CaCO3export) then
+          ! prescribed CaCO3 precip (export)
+          ! NOTE: netCDF output is units of mol m-2 yr-1
+          !       but units of loc_bio_part are mol kg-1 yr-1
+          !       => divide by layer depth (m-2 -> m-3) and then by density (m-3 -> kg-1)
+          ! NOTE: surface ocean layer only
+          loc_bio_part(is_CaCO3,n_k) = &
+               & dum_dt*par_bio_CaCO3export(dum_i,dum_j)/phys_ocn(ipo_dD,dum_i,dum_j,n_k)/conv_m3_kg
+       elseif (loc_ohm > par_bio_CaCO3precip_abioticohm_min) then
+          ! abiotic precip
+          ! NOTE: the units of loc_bio_part will be mol kg-1 yr-1
+          !       e.g., if par_bio_CaCO3precip_exp=0.0 then
+          !             par_bio_CaCO3precip_sf will be mol CaCO3 kg-1 yr-1 where-ever loc_ohm > par_bio_CaCO3precip_abioticohm_min
+          !       e.g., par_bio_CaCO3precip_sf=10.0E-6 would remove 10 uM DIC, Ca per year from the ocean surface
           loc_bio_part(is_CaCO3,k) = &
                & dum_dt*par_bio_CaCO3precip_sf*(loc_ohm - par_bio_CaCO3precip_abioticohm_min)**par_bio_CaCO3precip_exp
        else

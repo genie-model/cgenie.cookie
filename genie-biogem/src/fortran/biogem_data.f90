@@ -141,6 +141,10 @@ CONTAINS
        print*,'Filename for 2D geothermal heat input field         : ',trim(par_force_Fgeothermal2D_file)
        print*,'Use virtual grid (for remin)?                       : ',ctrl_force_Vgrid
        print*,'Filename for virtual grid                           : ',trim(par_force_Vgrid_file)
+       print*,'Apply prescribed POC export field?                  : ',ctrl_force_POCexport
+       print*,'Apply prescribed CaCO3 export field?                : ',ctrl_force_CaCO3export
+       print*,'Filename for prescribed POC export field            : ',trim(par_POCexport_file)
+       print*,'Filename for prescribed CaCO3 export field          : ',trim(par_CaCO3export_file)
        ! --- BIOLOGICAL NEW PRODUCTION ------------------------------------------------------------------------------------------- !
        print*,'--- BIOLOGICAL NEW PRODUCTION ----------------------'
        print*,'Biological scheme ID string                         : ',par_bio_prodopt
@@ -922,6 +926,19 @@ CONTAINS
     else
        par_bio_red_O2_H2SO4 = 0.0
        par_bio_red_O2_NO3 = 0.0
+    end if
+
+    ! *** load prescribed POC export field (if requested) ***
+    ! NOTE: not currently utilized
+    if (ctrl_force_POCexport) then
+       loc_filename = TRIM(par_indir_name)//TRIM(par_POCexport_file)
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,par_bio_POCexport(:,:))
+    end if
+
+    ! *** load prescribed CaCO3 export field (if requested) ***
+    if (ctrl_force_CaCO3export) then
+       loc_filename = TRIM(par_indir_name)//TRIM(par_CaCO3export_file)
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,par_bio_CaCO3export(:,:))
     end if
 
     ! *** load prescribed CaCO3:POC field (if requested) ***
