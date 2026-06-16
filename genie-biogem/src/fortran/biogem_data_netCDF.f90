@@ -1015,7 +1015,7 @@ CONTAINS
     loc_unitsname = 'mol kg-1 yr-1'
     DO id=1,n_diag_precip
        loc_ijk(:,:,:) = int_diag_precip_timeslice(id,:,:,:)/int_t_timeslice
-       if (ctrl_save_n_diag_precip(id)) then
+       if (sed_select(is_diag_precip(id))) then
           call sub_adddef_netcdf(loc_iou,4,'react_'//trim(string_diag_precip(id)), &
                & 'production rate - '//trim(string_diag_precip(id)),trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('react_'//trim(string_diag_precip(id)),loc_iou, &
@@ -1028,7 +1028,7 @@ CONTAINS
     loc_unitsname = 'mol kg-1 yr-1'
     DO id=1,n_diag_react
        loc_ijk(:,:,:) = int_diag_react_timeslice(id,:,:,:)/int_t_timeslice
-       if (ctrl_save_n_diag_react(id)) then
+       if (sed_select(is_diag_react(id))) then
           call sub_adddef_netcdf(loc_iou,4,'react_'//trim(string_diag_react(id)), &
                & 'reaction rate - '//trim(string_diag_react(id)),trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('react_'//trim(string_diag_react(id)),loc_iou, &
@@ -3014,6 +3014,75 @@ CONTAINS
        end if
     end if
     ! ---------------------------------------------------------------- !
+    ! WATER-COLUMN INTEGRATED PRODUCTION RATE
+    ! ---------------------------------------------------------------- !
+    loc_unitsname = 'mol m-2 yr-1'
+    DO id=1,n_diag_precip
+       loc_ij(:,:) = const_real_null
+       DO i=1,n_i
+          DO j=1,n_j
+             If (goldstein_k1(i,j) <= n_k) then
+                loc_ij(i,j) = &
+                     & sum(phys_ocn(ipo_M,i,j,:)*int_diag_precip_timeslice(id,i,j,:))* &
+                     & phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+             end If
+          end DO
+       end DO
+       if (sed_select(is_diag_precip(id))) then
+          call sub_adddef_netcdf(loc_iou,3,'geochem_wcint_'//trim(string_diag_precip(id)), &
+               & 'water-column integrated production rate - '//trim(string_diag_precip(id)), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d('geochem_wcint_'//trim(string_diag_precip(id)),loc_iou, &
+               & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       end if
+    end DO
+    ! ---------------------------------------------------------------- !
+    ! WATER-COLUMN INTEGRATED REACTION RATE
+    ! ---------------------------------------------------------------- !
+    loc_unitsname = 'mol m-2 yr-1'
+    DO id=1,n_diag_react
+       loc_ij(:,:) = const_real_null
+       DO i=1,n_i
+          DO j=1,n_j
+             If (goldstein_k1(i,j) <= n_k) then
+                loc_ij(i,j) = &
+                     & sum(phys_ocn(ipo_M,i,j,:)*int_diag_react_timeslice(id,i,j,:))* &
+                     & phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+             end If
+          end DO
+       end DO
+       if (sed_select(is_diag_react(id))) then
+          call sub_adddef_netcdf(loc_iou,3,'geochem_wcint_'//trim(string_diag_react(id)), &
+               & 'water-column integrated reaction rate - '//trim(string_diag_react(id)), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d('geochem_wcint_'//trim(string_diag_react(id)),loc_iou, &
+               & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       end if
+    end DO
+    ! ---------------------------------------------------------------- !
+    ! GEOCHEMICAL DIAGNOSTICS -- REDOX -- POM-aqueous reactions
+    ! ---------------------------------------------------------------- !
+    If (ctrl_save_hidden_redox) then
+       loc_unitsname = 'mol m-2 yr-1'
+       DO id=1,n_diag_redox_aq
+          loc_ij(:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                If (goldstein_k1(i,j) <= n_k) then
+                   loc_ij(i,j) = &
+                        & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))* &
+                        & phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                end If
+             end DO
+          end DO
+          call sub_adddef_netcdf(loc_iou,3,'geochem_wcint_'//trim(string_diag_redox(id)), &
+               & 'water-column integrated reaction rate - '//trim(string_diag_redox(id)), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d('geochem_wcint_'//trim(string_diag_redox(id)),loc_iou, &
+               & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       end DO
+    end if
+    ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_2d_save_geochemistry_basic
   ! ****************************************************************************************************************************** !
   
@@ -3109,69 +3178,6 @@ CONTAINS
           END DO
        end if
     end if
-    ! ---------------------------------------------------------------- !
-    ! WATER-COLUMN INTEGRATED PRODUCTION RATE
-    ! ---------------------------------------------------------------- !
-    loc_unitsname = 'mol m-2 yr-1'
-    DO id=1,n_diag_precip
-       loc_ij(:,:) = const_real_null
-       DO i=1,n_i
-          DO j=1,n_j
-             If (goldstein_k1(i,j) <= n_k) then
-                loc_ij(i,j) = &
-                     & sum(phys_ocn(ipo_M,i,j,:)*int_diag_precip_timeslice(id,i,j,:))* &
-                     & phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
-             end If
-          end DO
-       end DO
-       call sub_adddef_netcdf(loc_iou,3,'geochem_wcint_'//trim(string_diag_precip(id)), &
-            & 'water-column integrated production rate - '//trim(string_diag_precip(id)), &
-            & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('geochem_wcint_'//trim(string_diag_precip(id)),loc_iou, &
-            & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-    end DO
-    ! ---------------------------------------------------------------- !
-    ! WATER-COLUMN INTEGRATED REACTION RATE
-    ! ---------------------------------------------------------------- !
-    loc_unitsname = 'mol m-2 yr-1'
-    DO id=1,n_diag_react
-       loc_ij(:,:) = const_real_null
-       DO i=1,n_i
-          DO j=1,n_j
-             If (goldstein_k1(i,j) <= n_k) then
-                loc_ij(i,j) = &
-                     & sum(phys_ocn(ipo_M,i,j,:)*int_diag_react_timeslice(id,i,j,:))* &
-                     & phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
-             end If
-          end DO
-       end DO
-       call sub_adddef_netcdf(loc_iou,3,'geochem_wcint_'//trim(string_diag_react(id)), &
-            & 'water-column integrated reaction rate - '//trim(string_diag_react(id)), &
-            & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('geochem_wcint_'//trim(string_diag_react(id)),loc_iou, &
-            & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-    end DO
-    ! ---------------------------------------------------------------- !
-    ! WATER-COLUMN INTEGRATED REDOX TRANSFORMATIONS
-    ! ---------------------------------------------------------------- !
-    loc_unitsname = 'mol m-2 yr-1'
-    DO id=1,n_diag_redox
-       loc_ij(:,:) = const_real_null
-       DO i=1,n_i
-          DO j=1,n_j
-             If (goldstein_k1(i,j) <= n_k) then
-                loc_ij(i,j) = &
-                     & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))* &
-                     & phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
-             end If
-          end DO
-       end DO
-       call sub_adddef_netcdf(loc_iou,3,'redox_wcint_'//trim(string_diag_redox(id)), &
-            & 'water-column integrated redox transformation rate - '//trim(string_diag_redox(id)), &
-            & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('redox_wcint_'//trim(string_diag_redox(id)),loc_iou, &
-            & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-    end DO
     ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_2d_save_geochemistry_advanced
   ! ****************************************************************************************************************************** !
@@ -3773,7 +3779,7 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! define local variables
     ! ---------------------------------------------------------------- !
-    INTEGER::i,j,l,io,is,ib
+    INTEGER::i,j,l,io,is,ib,id
     integer::loc_k1
     integer::loc_iou,loc_ntrec
     real,DIMENSION(n_i,n_j)::loc_ij,loc_mask,loc_mask_surf,loc_sed_mask
@@ -4083,6 +4089,29 @@ CONTAINS
        call sub_putvar2d('biop_bio_'//trim(string_diag_bio(ib)),loc_iou, &
             & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end DO
+    ! ---------------------------------------------------------------- !
+    ! GEOCHEMICAL DIAGNOSTICS -- REDOX -- POM-aqueous reactions
+    ! ---------------------------------------------------------------- !
+    If (ctrl_save_hidden_redox) then
+       loc_unitsname = 'mol m-2 yr-1'
+       DO id=n_diag_redox_aq+1,n_diag_redox
+          loc_ij(:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                If (goldstein_k1(i,j) <= n_k) then
+                   loc_ij(i,j) = &
+                        & sum(phys_ocn(ipo_M,i,j,:)*int_diag_redox_timeslice(id,i,j,:))* &
+                        & phys_ocn(ipo_rA,i,j,n_k)/int_t_timeslice
+                end If
+             end DO
+          end DO
+          call sub_adddef_netcdf(loc_iou,3,'biop_wcint_remin_'//trim(string_diag_redox(id)), &
+               & 'water-column integrated redox transformation rate - '//trim(string_diag_redox(id)), &
+               & trim(loc_unitsname),const_real_zero,const_real_zero)
+          call sub_putvar2d('biop_wcint_remin_'//trim(string_diag_redox(id)),loc_iou, &
+               & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       end DO
+    end if
     ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_2d_save_biologicalpump_advanced
   ! ****************************************************************************************************************************** !

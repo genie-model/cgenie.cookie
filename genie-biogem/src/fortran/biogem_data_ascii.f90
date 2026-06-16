@@ -1099,7 +1099,7 @@ CONTAINS
        end DO
        ! ------------------------------------------------------------- ! REDOX
        If (ctrl_save_hidden_redox) then
-          DO id=1,n_diag_redox
+          DO id=1,n_diag_redox_aq
              loc_filename=fun_data_timeseries_filename(loc_t, &
                   & par_outdir_name,'timeseries_react',trim(string_diag_redox(id)),string_results_ext)
              loc_string = '% time (yr) / global rate (mol yr-1) / mean rate (mol kg-1 yr-1)'
@@ -1112,6 +1112,7 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
           end DO
        end if
+       ! ------------------------------------------------------------- !
     end if
     ! ---------------------------------------------------------------- !
     ! INVERSION FLUXES
@@ -2866,42 +2867,43 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
           end if
        end DO
-    end if
-    ! ------------------------------------------------------------- ! REACTION
-    DO id=1,n_diag_react
-       if (sed_select(is_diag_react(id))) then
-          loc_sig = int_diag_react_sig(id)/int_t_sig
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries_react',trim(string_diag_react(id)),string_results_ext)
-          call check_unit(out,__LINE__,__FILE__)
-          OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-          call check_iostat(ios,__LINE__,__FILE__)
-          WRITE(unit=out,fmt='(f16.3,2e15.6)',iostat=ios) &
-               & loc_t,                        &
-               & loc_ocn_tot_M*loc_sig,        &
-               & loc_sig
-          call check_iostat(ios,__LINE__,__FILE__)
-          CLOSE(unit=out,iostat=ios)
-          call check_iostat(ios,__LINE__,__FILE__)
-       end if
-    end DO
-    ! ------------------------------------------------------------- ! REDOX
-    If (ctrl_save_hidden_redox) then
-       DO id=1,n_diag_redox
-          loc_sig = int_diag_redox_sig(id)/int_t_sig
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries_react',trim(string_diag_redox(id)),string_results_ext)
-          call check_unit(out,__LINE__,__FILE__)
-          OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-          call check_iostat(ios,__LINE__,__FILE__)
-          WRITE(unit=out,fmt='(f16.3,2e15.6)',iostat=ios) &
-               & loc_t,                        &
-               & loc_ocn_tot_M*loc_sig,        &
-               & loc_sig
-          call check_iostat(ios,__LINE__,__FILE__)
-          CLOSE(unit=out,iostat=ios)
-          call check_iostat(ios,__LINE__,__FILE__)
+       ! ------------------------------------------------------------- ! REACTION
+       DO id=1,n_diag_react
+          if (sed_select(is_diag_react(id))) then
+             loc_sig = int_diag_react_sig(id)/int_t_sig
+             loc_filename=fun_data_timeseries_filename(loc_t, &
+                  & par_outdir_name,'timeseries_react',trim(string_diag_react(id)),string_results_ext)
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             WRITE(unit=out,fmt='(f16.3,2e15.6)',iostat=ios) &
+                  & loc_t,                        &
+                  & loc_ocn_tot_M*loc_sig,        &
+                  & loc_sig
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          end if
        end DO
+       ! ------------------------------------------------------------- ! REDOX
+       If (ctrl_save_hidden_redox) then
+          DO id=1,n_diag_redox_aq
+             loc_sig = int_diag_redox_sig(id)/int_t_sig
+             loc_filename=fun_data_timeseries_filename(loc_t, &
+                  & par_outdir_name,'timeseries_react',trim(string_diag_redox(id)),string_results_ext)
+             call check_unit(out,__LINE__,__FILE__)
+             OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+             WRITE(unit=out,fmt='(f16.3,2e15.6)',iostat=ios) &
+                  & loc_t,                        &
+                  & loc_ocn_tot_M*loc_sig,        &
+                  & loc_sig
+             call check_iostat(ios,__LINE__,__FILE__)
+             CLOSE(unit=out,iostat=ios)
+             call check_iostat(ios,__LINE__,__FILE__)
+          end DO
+       end if
+       ! ------------------------------------------------------------- !
     end if
     ! ---------------------------------------------------------------- !
     ! INVERSION FLUXES

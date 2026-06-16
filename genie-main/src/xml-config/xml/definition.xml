@@ -4291,6 +4291,22 @@
 			<value datatype="string">NONE.dat</value>
                         <description>Filename for virtual grid</description>
                     </param>
+                    <param name="ctrl_force_POCexport">
+			<value datatype="boolean">.false.</value>
+                        <description>Apply prescribed POC export field?</description>
+                    </param>
+                    <param name="par_POCexport_file">
+			<value datatype="string">NONE.dat</value>
+                        <description>Filename for prescribed POC export field</description>
+                    </param>
+                    <param name="ctrl_force_CaCO3export">
+			<value datatype="boolean">.false.</value>
+                        <description>Apply prescribed CaCO3 export field?</description>
+                    </param>
+                    <param name="par_CaCO3export_file">
+			<value datatype="string">NONE.dat</value>
+                        <description>Filename for prescribed CaCO3 export field</description>
+                    </param>
 <!-- BIOLOGICAL NEW PRODUCTION  -->
                     <param name="par_bio_prodopt">
 			<value datatype="string">1N1T_PO4MM</value>

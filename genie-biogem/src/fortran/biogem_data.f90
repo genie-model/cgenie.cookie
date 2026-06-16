@@ -141,6 +141,10 @@ CONTAINS
        print*,'Filename for 2D geothermal heat input field         : ',trim(par_force_Fgeothermal2D_file)
        print*,'Use virtual grid (for remin)?                       : ',ctrl_force_Vgrid
        print*,'Filename for virtual grid                           : ',trim(par_force_Vgrid_file)
+       print*,'Apply prescribed POC export field?                  : ',ctrl_force_POCexport
+       print*,'Apply prescribed CaCO3 export field?                : ',ctrl_force_CaCO3export
+       print*,'Filename for prescribed POC export field            : ',trim(par_POCexport_file)
+       print*,'Filename for prescribed CaCO3 export field          : ',trim(par_CaCO3export_file)
        ! --- BIOLOGICAL NEW PRODUCTION ------------------------------------------------------------------------------------------- !
        print*,'--- BIOLOGICAL NEW PRODUCTION ----------------------'
        print*,'Biological scheme ID string                         : ',par_bio_prodopt
@@ -922,6 +926,19 @@ CONTAINS
     else
        par_bio_red_O2_H2SO4 = 0.0
        par_bio_red_O2_NO3 = 0.0
+    end if
+
+    ! *** load prescribed POC export field (if requested) ***
+    ! NOTE: not currently utilized
+    if (ctrl_force_POCexport) then
+       loc_filename = TRIM(par_indir_name)//TRIM(par_POCexport_file)
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,par_bio_POCexport(:,:))
+    end if
+
+    ! *** load prescribed CaCO3 export field (if requested) ***
+    if (ctrl_force_CaCO3export) then
+       loc_filename = TRIM(par_indir_name)//TRIM(par_CaCO3export_file)
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,par_bio_CaCO3export(:,:))
     end if
 
     ! *** load prescribed CaCO3:POC field (if requested) ***
@@ -3221,48 +3238,6 @@ CONTAINS
   ! DATA SAVE OPTION FILTERING
   SUBROUTINE sub_filter_data_save()    
     ! ---------------------------------------------------------- !
-    ! INITIALIZE ITEMIZED SAVING
-    ! ---------------------------------------------------------- !
-    ! ---------------------------------------------------------- ! reactions
-    ctrl_save_n_diag_precip = .false.
-    if (sed_select(is_FeS2)) then
-       ctrl_save_n_diag_precip(idiag_precip_FeS2_dFe) = .true.
-       ctrl_save_n_diag_precip(idiag_precip_FeS2_dH2S) = .true.
-       ctrl_save_n_diag_precip(idiag_precip_FeS2_dSO4) = .true.
-    end if
-    if (sed_select(is_FeCO3)) then
-       ctrl_save_n_diag_precip(idiag_precip_FeCO3_dFe) = .true.
-       ctrl_save_n_diag_precip(idiag_precip_FeCO3_dDIC) = .true.
-    end if
-    if (sed_select(is_FeOOH)) then
-       ctrl_save_n_diag_precip(idiag_precip_FeOOH_dFe) = .true.
-    end if
-    if (sed_select(is_Fe3Si2O4)) then
-       ctrl_save_n_diag_precip(idiag_precip_Fe3Si2O4_dFe) = .true.
-    end if
-    if (sed_select(is_Fe3PO42)) then
-       ctrl_save_n_diag_precip(idiag_precip_Fe3PO42_dFe) = .true.
-       ctrl_save_n_diag_precip(idiag_precip_Fe3PO42_dPO4) = .true.
-    end if
-    ctrl_save_n_diag_react = .false.
-    if (sed_select(is_POM_S)) then
-       ctrl_save_n_diag_react(idiag_react_POMS_dH2S) = .true.
-    end if
-    if (sed_select(is_FeOOH)) then
-       ctrl_save_n_diag_react(idiag_react_FeOOH_dFe2) = .true.
-       ctrl_save_n_diag_react(idiag_react_FeOOH_dH2S) = .true.
-       ctrl_save_n_diag_react(idiag_react_FeOOH_dSO4) = .true.
-       ctrl_save_n_diag_react(idiag_react_FeOOH_dALK) = .true.
-       ctrl_save_n_diag_react(idiag_react_FeOOH_dPO4) = .true.
-    end if
-    if (sed_select(is_POM_FeOOH)) then
-       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dFe2) = .true.
-       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dH2S) = .true.
-       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dSO4) = .true.
-       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dALK) = .true.
-       ctrl_save_n_diag_react(idiag_react_POMFeOOH_dPO4) = .true.
-    end if
-    ! ---------------------------------------------------------- !
     ! FILTER BASIC DATA SAVING OPTIONS
     ! ---------------------------------------------------------- !
     ! filter (to .false.) basic options depending on if the necessary tracers, biological scheme etc. are not selected
@@ -3296,10 +3271,6 @@ CONTAINS
        ctrl_save_hidden_preformedtracers = .false.
     end if
     ! ---------------------------------------------------------- ! redox
-    ! select redox saving if advanced geochemsitry is selected
-    IF (ctrl_save_advanced_geochemistry) then
-       ctrl_save_hidden_redox = .true.
-    end if
     ! if redox saving is selected, set legacy redox saving parameter to true
     IF (ctrl_save_hidden_redox) then
        ctrl_bio_remin_redox_save = .true.
