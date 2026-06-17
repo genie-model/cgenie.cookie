@@ -1,5 +1,5 @@
 # **********************************************************************
-# base-config: 	cookie.CB.p_worjh2.BASES
+# base-config: 	cookie.CB.p_worbe2.BASES_Csoft
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
@@ -13,13 +13,13 @@ ea_36=y
 # *** BIOLOGICAL NEW PRODUCTION ****************************************
 #
 # SPECIFY THE BIOLOGICAL EXPORT SCHEME
-# e.g., bg_par_bio_prodopt='1N1T_PO4MM' -> as used in Cao et al. [2009]
+# e.g., bg_par_bio_prodopt='1N1T_PO4MM' -> as used in Ridgwell et al. [2007]
 bg_par_bio_prodopt='1N1T_PO4MM'
 # SPECIFY BIOLOGICAL EXPORT PARAMETERS
 # maximum rate of conversion of dissolved PO4 into organic matter by phytoplankton (mol kg-1 yr-1)
-bg_par_bio_k0_PO4=8.9876e-006
+bg_par_bio_k0_PO4=1.9582242E-06
 # [PO4] M-M half-sat value (mol kg-1)
-bg_par_bio_c0_PO4=8.9369e-007
+bg_par_bio_c0_PO4=2.1989611E-07
 #
 # *** EXPORT RATIOS ****************************************************
 #
@@ -27,9 +27,9 @@ bg_par_bio_c0_PO4=8.9369e-007
 # production fraction of dissolved organic matter
 bg_par_bio_red_DOMfrac=0.66
 # underlying export CaCO3 as a proportion of particulate organic matter (i.e., CaCO3/POC)
-bg_par_bio_red_POC_CaCO3=0.0485
+bg_par_bio_red_POC_CaCO3=0.044372
 # exponent for modifier of CaCO3:POC export ratio
-bg_par_bio_red_POC_CaCO3_pP=0.7440
+bg_par_bio_red_POC_CaCO3_pP=0.8053406
 #
 # *** REMINERALIZATION *************************************************
 #
@@ -38,16 +38,16 @@ bg_par_bio_red_POC_CaCO3_pP=0.7440
 bg_par_bio_remin_DOMlifetime=0.5
 # SPECIFY PARAMETERS CONTROLLIING WATER-COLUMN DECAY OF PARTICULATE ORGANIC MATTER (POM)
 # initial fractional abundance of POC component #2
-bg_par_bio_remin_POC_frac2=0.0557
+bg_par_bio_remin_POC_frac2=6.4591110E-02
 # depth of remineralization or particulate organic matter
-bg_par_bio_remin_POC_eL1=589.9451
+bg_par_bio_remin_POC_eL1=550.5195
 # remineralization length #2 for POC
 bg_par_bio_remin_POC_eL2=1000000.0
 # SPECIFY PARAMETERS CONTROLLIING WATER-COLUMN DECAY OF CaCO3
 # initial fractional abundance of CaCO3 component #2
-bg_par_bio_remin_CaCO3_frac2=0.45
+bg_par_bio_remin_CaCO3_frac2=0.4325
 # depth of remineralization or CaCO3
-bg_par_bio_remin_CaCO3_eL1=1.8905e+003
+bg_par_bio_remin_CaCO3_eL1=1083.486
 # remineralization length #2 for CaCO3
 bg_par_bio_remin_CaCO3_eL2=1000000.0
 #
@@ -55,13 +55,13 @@ bg_par_bio_remin_CaCO3_eL2=1000000.0
 #
 # SPECIFY WHAT TO SAVE!
 # NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!
-#		(1) all 'false' will leave you with the basic (hidden option!) defaults: 
+#	    (1) all 'false' will leave you with the basic (hidden option!) defaults: 
 #           bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
-#		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
-#		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
+#	    (2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
+#	    (3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
 #       (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
-#		(5) turning off a 'basic' option will also turn off the corresponding advanced option
-#		(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
+#	    (5) turning off a 'basic' option will also turn off the corresponding advanced option
+#	    (6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
 #           bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
 bg_ctrl_save_basic_reservoirs=.TRUE.
 bg_ctrl_save_basic_geochemistry=.TRUE.
@@ -93,10 +93,13 @@ bg_par_forcing_name="pyyyyz.RpCO2_Rp13CO2"
 bg_par_atm_force_scale_val_3=278.0E-06
 bg_par_atm_force_scale_val_4=-6.5
 #
-# *** MISC **********************************************************
+# *** MISC *************************************************************
 #
+bg_ctrl_force_ocn_age=.true.
+bg_ctrl_bio_preformed=.true.
+bg_ctrl_save_hidden_redox=.true.
 #
-# *******************************************************************
-# *** END ***********************************************************
-# *******************************************************************
+# **********************************************************************
+# *** END **************************************************************
+# **********************************************************************
 
