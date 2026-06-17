@@ -125,6 +125,7 @@ cleanall : clean cleanutils cleanmodules
 
 # clean  - just local files
 clean : $(CLEAN_LOCAL_TARGETS)
+	\rm -f cookie.current_grid_size.txt
 	\rm -f *.$(OBJ_EXT) $(EXECUTABLES) *.dep *.mod
 	cd $(F_DIR); $(MAKE) -I ../../ clean
 
