@@ -1,5 +1,4 @@
 # **********************************************************************
-# adapted from:	muffin.CB.p_worjh2.BASES.caoetal.SPIN
 # base-config: 	cookie.CB.p_worjh2.BASES
 # **********************************************************************
 #
@@ -56,13 +55,13 @@ bg_par_bio_remin_CaCO3_eL2=1000000.0
 #
 # SPECIFY WHAT TO SAVE!
 # NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!
-#	(1) all 'false' will leave you with the basic (hidden option!) defaults: 
+#		(1) all 'false' will leave you with the basic (hidden option!) defaults: 
 #           bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
-#	(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
-#	(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
+#		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
+#		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
 #       (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
-#	(5) turning off a 'basic' option will also turn off the corresponding advanced option
-#	(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
+#		(5) turning off a 'basic' option will also turn off the corresponding advanced option
+#       (6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
 #           bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
 bg_ctrl_save_basic_reservoirs=.TRUE.
 bg_ctrl_save_basic_geochemistry=.TRUE.
