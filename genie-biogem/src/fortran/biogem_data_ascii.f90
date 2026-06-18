@@ -3147,7 +3147,7 @@ CONTAINS
           loc_d14C = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_nulliso)
           loc_sig = fun_convert_delta14CtoD14C(loc_d13C,loc_d14C)
           loc_filename=fun_data_timeseries_filename( &
-               & dum_t,par_outdir_name,'timeseries','misc_atm_D14C',string_results_ext)
+               & dum_t,par_outdir_name,'timeseries','proxy_atm_D14C',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -3160,7 +3160,7 @@ CONTAINS
        IF (ocn_select(io_Sr_87Sr) .AND. ocn_select(io_Sr_88Sr)) THEN
           ! all Sr species
           loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','misc_Sr_ocn_Sr',string_results_ext)
+               & par_outdir_name,'timeseries','proxy_Sr_ocn_Sr',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -3177,7 +3177,7 @@ CONTAINS
           ! NOTE: 87Sr/86Sr == 87Sr / (Sr(tot) - 87Sr - 88Sr)
           !       in calculations, variable loc_tot == 86Sr
           loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','misc_Sr_ocn_r87Sr',string_results_ext)
+               & par_outdir_name,'timeseries','proxy_Sr_ocn_r87Sr',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -3197,7 +3197,7 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
           ! 88Sr
           loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','misc_Sr_ocn_d88Sr',string_results_ext)
+               & par_outdir_name,'timeseries','proxy_Sr_ocn_d88Sr',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -3214,7 +3214,7 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
           ! all Sr species
           loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','misc_Sr_fexport_Sr',string_results_ext)
+               & par_outdir_name,'timeseries','proxy_Sr_fexport_Sr',string_results_ext)
           call check_unit(out,__LINE__,__FILE__)
           OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
@@ -3231,7 +3231,7 @@ CONTAINS
              ! (1) OCN -> SED FLUXES
              ! all Sr species
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Sr_focnsed_Sr',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Sr_focnsed_Sr',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -3247,7 +3247,7 @@ CONTAINS
              ! 87Sr
              ! NOTE: 87Sr/86Sr == 87Sr / (Sr(tot) - 87Sr - 88Sr)
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Sr_focnsed_r87Sr',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Sr_focnsed_r87Sr',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -3266,7 +3266,7 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              ! 88Sr
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Sr_focnsed_d88Sr',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Sr_focnsed_d88Sr',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -3284,7 +3284,7 @@ CONTAINS
              ! (2) SED -> OCN FLUXES
              ! all Sr species
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Sr_fsedocn_Sr',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Sr_fsedocn_Sr',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -3300,7 +3300,7 @@ CONTAINS
              ! 87Sr
              ! NOTE: 87Sr/86Sr == 87Sr / (Sr(tot) - 87Sr - 88Sr)
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Sr_fsedocn_r87Sr',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Sr_fsedocn_r87Sr',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -3319,7 +3319,7 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              ! 88Sr
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Sr_fsedocn_d88Sr',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Sr_fsedocn_d88Sr',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -3339,7 +3339,7 @@ CONTAINS
           IF (ocn_select(io_Os_187Os) .AND. ocn_select(io_Os_188Os)) THEN
              ! all Sr species
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Os_ocn_Os',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Os_ocn_Os',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -3354,7 +3354,7 @@ CONTAINS
              call check_iostat(ios,__LINE__,__FILE__)
              ! 187Os
              loc_filename=fun_data_timeseries_filename(loc_t, &
-                  & par_outdir_name,'timeseries','misc_Os_ocn_r187Os',string_results_ext)
+                  & par_outdir_name,'timeseries','proxy_Os_ocn_r187Os',string_results_ext)
              call check_unit(out,__LINE__,__FILE__)
              OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
              call check_iostat(ios,__LINE__,__FILE__)
@@ -4923,7 +4923,7 @@ CONTAINS
        END DO
     END DO
     select case (fname_topo)
-    case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+    case ('worbe2', 'worjh2', 'worjh4', 'worlg4', 'p_worbe2', 'p_worjh2', 'GIteiiaa', 'GIteiiva')
        ! Pacific overturning streamfunction
        loc_ominp = 0.0
        loc_omaxp = 0.0
