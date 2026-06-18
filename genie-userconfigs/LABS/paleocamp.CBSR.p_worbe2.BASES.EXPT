@@ -128,10 +128,10 @@ bg_par_forcing_name="pyyyyz.FpCO2_Fp13CO2_PgC"
 # SCALE THE FORCING 
 # NOTE: bg_par_atm_force_scale_val_3 is the flux in PgC
 # NOTE: bg_par_atm_force_scale_time_3 is the duration of emissions in years
-bg_par_atm_force_scale_val_3=5000.0
-bg_par_atm_force_scale_time_3=1.0
+bg_par_atm_force_scale_val_3=50.0
+bg_par_atm_force_scale_time_3=100.0
 # (ignore the following for now)
-bg_par_atm_force_scale_val_4=-27.0
+bg_par_atm_force_scale_val_4=-10.0
 #
 # *** MISC *************************************************************
 #
