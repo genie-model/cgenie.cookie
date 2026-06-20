@@ -824,16 +824,6 @@ CONTAINS
           CLOSE(unit=out,iostat=ios)
           call check_iostat(ios,__LINE__,__FILE__)
        end IF
-       ! (5) silicate weathering ALT
-       IF (ocn_select(io_Ca)) THEN
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','geo_fweather_Ca',string_results_ext &
-               & )
-          loc_string = '% time (yr) / total cation (Ca+Mg) weathering flux (mol 2+ yr-1)'
-          OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
-          write(unit=out,fmt=*,iostat=ios) trim(loc_string)
-          CLOSE(unit=out,iostat=ios)
-       end IF       
     end if
     ! ---------------------------------------------------------------- !
     ! weathering solute fluxes
@@ -2469,14 +2459,26 @@ CONTAINS
     ! ---------------------------------------------------------------- ! 
     ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
     ! NOTE: write data only as the total flux
-    ! NOTE: only valid if the Si tracer is selcted AND rg_par_weather_CaSiO3_fracSi=1.0 (whose value is not known to BIOGEM ...)
-    ! NOTE: assume that Mg is only from silicates,
-    !       and that Si weathering is equal to Mg plus the fraction of Ca not from carbonate
-    ! NOTE: for kerogen weathering, assume that DIC associated with silicates and carbonates = 2.0*(Ca+Mg)
-    !       BUT, this is only valid if rg_opt_short_circuit_atm=.false. (whose value is not known to BIOGEM ...)
-    ! NOTE: for the net carbon flux, the calculation is:
-    !       DIC (from CaCO3 and Corg) minus CaCO3 burial minus Corg burial
-    !       so a negative net flux indicates sinks > sources (but not accounting for volcanic emissions)
+    ! NOTE: weathering can be partitioned only if the Si tracer is selcted
+    !       AND rg_par_weather_CaSiO3_fracSi=1.0 (whose value is not known to BIOGEM ...)
+    ! mass balance calculations:
+    ! (1) silicate weathering:
+    !     FSiO3  = FSi
+    ! (2) carbonate weathering:
+    !     FCaCO3 = FCa - x*FSi, where x == the fraction of Ca in silicates
+    !     FMg = (1-x)*FSi => 1-x = FMg/FSi => x = 1-FMg/FSi
+    !     => FCaCO3 = FCa - (1-FMg/FSi)*FSi
+    !     OR, FCa+FMg - FSi
+    ! NOTE: assume that Mg is only from silicates
+    ! (3) kerogen weathering:
+    !     FDIC = FCorg + 2*FCaCO3 + 2*FSi
+    !     => FCorg = FDIC - 2*FCaCO3 - 2*FSi
+    !     OR, FDIC - 2*(Ca+Mg)
+    !     NOTE: for kerogen weathering, assume that DIC associated with silicates and carbonates = 2.0*(Ca+Mg)
+    !           BUT, this is only valid if rg_opt_short_circuit_atm=.false. (whose value is not known to BIOGEM ...)
+    ! (4) net carbon flux:
+    !     DIC (from CaCO3 and Corg) minus CaCO3 burial minus Corg burial
+    !     so a negative net flux indicates sinks > sources (but not accounting for volcanic emissions)
     IF (flag_rokgem .AND. ctrl_save_basic_reservoirs) THEN
        IF (ocn_select(io_DIC) .AND. ocn_select(io_Ca) .AND. ocn_select(io_SiO2)) THEN
           ! (1) silicate weathering
@@ -2539,18 +2541,6 @@ CONTAINS
                & loc_tot
           CLOSE(unit=out,iostat=ios)    
        end IF
-       ! (5) silicate weathering ALT
-       IF (ocn_select(io_Ca)) THEN
-          loc_filename=fun_data_timeseries_filename(loc_t, &
-               & par_outdir_name,'timeseries','geo_fweather_Ca',string_results_ext &
-               & )
-          loc_tot = (int_diag_weather_sig(io_Ca)+int_diag_weather_sig(io_Mg))/int_t_sig
-          OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-          WRITE(unit=out,fmt='(f12.3,e15.7)',iostat=ios) &
-               & loc_t,                                  &
-               & loc_tot
-          CLOSE(unit=out,iostat=ios)
-       end IF            
     end if
     ! ---------------------------------------------------------------- !
     ! weathering solute fluxes
