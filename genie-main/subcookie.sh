@@ -11,7 +11,7 @@ echo ""
 #####################################################################
 # CHANGE THIS FOR SPECIFIC QUEUES
 # specific any particular queue to be used (empty string otherwise)
-QUEUE='-q puppy.q'
+QUEUE='-q dog.q'
 # CHANGE THIS FOR INSTALLATIONS OTHER THAN IN $HOME
 # SET THE SAME AS IN user.mak AND user.sh
 # set home directory
