@@ -2455,7 +2455,7 @@ CONTAINS
        end if          
     end if
     ! ---------------------------------------------------------------- !
-    ! estimted weathering fluxes
+    ! estimated weathering fluxes
     ! ---------------------------------------------------------------- ! 
     ! NOTE: count as primary reservoir exchange and include with ctrl_save_basic_reservoirs
     ! NOTE: write data only as the total flux

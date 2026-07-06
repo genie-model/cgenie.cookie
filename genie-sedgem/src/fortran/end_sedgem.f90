@@ -42,6 +42,7 @@ SUBROUTINE end_sedgem( &
   loc_dtyr = loc_dts/conv_yr_s
   ! save diagnostics
   call sub_data_save_seddiag_GLOBAL(loc_dtyr,dum_sfcsumocn,dum_SLT)
+  call sub_data_save_seddiag_burial(loc_dtyr)
   ! save final oecan-sediment interface properties
   ! NOTE: netCDF was set up to be able to save multiple time-slices, but is only being used here to save a single final slice
   call sub_save_netcdf(const_real_zero)
