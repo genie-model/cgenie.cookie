@@ -204,6 +204,8 @@ CONTAINS
        print*,'Impose alt Corg preservation (burial) flux?         : ',ctrl_sed_Pcorg
        print*,'Impose alt Porg preservation (burial) flux?         : ',ctrl_sed_Pporg
        print*,'Impose alt preservation (burial) rain ratio?        : ',ctrl_sed_Prr
+       print*,'Impose alt CaCO3 preservation (burial) flux?        : ',ctrl_sed_Pcaco3
+       print*,'Impose alt opal preservation (burial) flux?         : ',ctrl_sed_Popal
        print*,'Set dissolution flux = rain flux for CaCO3 only?    : ',ctrl_force_sed_closedsystem_CaCO3
        print*,'Set dissolution flux = rain flux for opal only?     : ',ctrl_force_sed_closedsystem_opal
        print*,'Impose alt sedimentation rates to sedcores?         : ',ctrl_sed_Fdet_sedcore
@@ -235,6 +237,8 @@ CONTAINS
        print*,'Alt Corg preservation (burial) flux filename        : ',trim(par_sed_Pcorg_name)
        print*,'Alt Porg preservation (burial) flux filename        : ',trim(par_sed_Pporg_name)
        print*,'Alt preservation (burial)rain ratio filename        : ',trim(par_sed_Prr_name)
+       print*,'Alt CaCO3 preservation (burial) flux filename       : ',trim(par_sed_Pcaco3_name)
+       print*,'Alt opal preservation (burial) flux filename        : ',trim(par_sed_Popal_name)
        ! --- I/O: MISC ----------------------------------------------------------------------------------------------------------- !
        print*,'--- I/O: MISC --------------------------------------'
        print*,'save timeseries output                              : ',ctrl_timeseries_output
@@ -856,6 +860,30 @@ CONTAINS
        loc_ij(:,:) = 0.0
     endif
     sed_Psed_rr = loc_ij
+    ! load alternative CaCO3 preservation (burial) field (mol cm-2 yr-1)
+    if (ctrl_sed_Pcaco3) then
+       if (loc_len > 0) then
+          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcaco3_name)
+       else
+          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcaco3_name)
+       endif
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+    else
+       loc_ij(:,:) = 0.0
+    endif
+    sed_Psed_caco3 = loc_ij
+    ! load alternative opal preservation (burial) field (mol cm-2 yr-1)
+    if (ctrl_sed_Popal) then
+       if (loc_len > 0) then
+          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Popal_name)
+       else
+          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Popal_name)
+       endif
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+    else
+       loc_ij(:,:) = 0.0
+    endif
+    sed_Psed_opal = loc_ij
     ! initialize diagnostics data array
     sed_diag(:,:,:) = 0.0
     ! initialize average sediment data arrays

@@ -256,6 +256,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/ctrl_sed_Pcorg,ctrl_sed_Pporg
   logical::ctrl_sed_Prr                                          ! apply alt preservation (burial) rain ratio (C/P) field?
   NAMELIST /ini_sedgem_nml/ctrl_sed_Prr
+  logical::ctrl_sed_Pcaco3,ctrl_sed_Popal                        ! apply alt preservation (burial) fields?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_Pcaco3,ctrl_sed_Popal
   logical::ctrl_force_sed_closedsystem_CaCO3                     ! Set dissolution flux = rain flux for CaCO3 ONLY?
   NAMELIST /ini_sedgem_nml/ctrl_force_sed_closedsystem_CaCO3
   logical::ctrl_force_sed_closedsystem_opal                      ! Set dissolution flux = rain flux for opal ONLY?
@@ -296,6 +298,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_Pcorg_name,par_sed_Pporg_name
   CHARACTER(len=127)::par_sed_Prr_name                           ! alt preservation (burial) rain ratio field file name
   NAMELIST /ini_sedgem_nml/par_sed_Prr_name
+  CHARACTER(len=127)::par_sed_Pcaco3_name,par_sed_Popal_name     ! alt preservation (burial) field file names
+  NAMELIST /ini_sedgem_nml/par_sed_Pcaco3_name,par_sed_Popal_name
   ! ------------------- I/O: MISC ------------------------------------------------------------------------------------------------ !
   logical::ctrl_append_data                                      ! append data to output files on restart
   logical::ctrl_timeseries_output                                ! save timeseries output
@@ -523,6 +527,8 @@ MODULE sedgem_lib
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_corg               ! alt Corg preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_porg               ! alt Porg preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_rr                 ! alt preservation (burial) rain ratio (C/P) field
+  REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_caco3              ! alt CaCO3 preservation (burial) flux field
+  REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_opal               ! alt opal preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag                  ! sediment diagnostics
   real,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag_err              ! sediment diagnostics -- diagenesis errors
   ! allocatable 2-D sediment arrays -- time-averaging

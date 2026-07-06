@@ -153,9 +153,10 @@ CONTAINS
           phys_sed(ips_mix_k0,dum_i,dum_j) = 0.0
        end select
     end if
-
+    ! -------------------------------------------------------- !
+    ! () calculate new sedimenting material to be added to the sediment top layer
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(c) calculate new sedimenting material to be added to the sediment top layer'
-    ! *** (c) calculate new sedimenting material to be added to the sediment top layer
     !         NOTE: sedimentary material is represented as SOILDS (i.e., zero porosity)
     !         NOTE: convert unts if new particulate matter added to sediments; from (mol cm-2) to (cm3 cm-2)
     !         NOTE: for particulate fractions, undo units conversion (cm2 -> m2) carried out in sedgem
@@ -186,13 +187,10 @@ CONTAINS
             & /),.FALSE. &
             & )
     END IF
-
-    IF (ctrl_misc_debug3) print*,'(d) estimate dissolution/remineralization from sediment top (mixed) sedimentary layer'
-    ! *** (d) estimate dissolution/remineralization from sediment top ('well mixed') sedimentary layer
-    !         NOTE: material is represented and stored as cm3 of SOILDs (i.e., zero porosity) in the sediment layers
-
+    ! -------------------------------------------------------- !
+    ! () diagenesis - organic matter remineralization
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug4) print*,'*** diagenesis - organic matter remineralization ***'
-    ! *** diagenesis - organic matter remineralization ***
     !     NOTE: particulate fluxes have been converted to units of (cm3 cm-2)
     select case (par_sed_diagen_Corgopt)
     case ('archer2002muds')
@@ -364,22 +362,25 @@ CONTAINS
        ! set fractional flux of POC available for CaCO3 diagenesis
        loc_sed_diagen_fCorg = loc_new_sed(is_POC)
     end select
-    
-    ! enable replacement of Corg preservation (burial) fields
+    ! -------------------------------------------------------- ! replacement of Corg preservation (burial) fields
+    ! NOTE: maximum preservation is 100% (i.e., burial is capped at the rain flux)
     ! NOTE: convert units from mol cm-2 yr-1 (from netCDF output) -> cm3 cm-2 per time-step
     if (ctrl_sed_Pcorg) then
        loc_dis_sed(is_POC) = loc_new_sed(is_POC) - &
             & min(dum_dtyr*conv_POC_mol_cm3*sed_Psed_corg(dum_i,dum_j),loc_new_sed(is_POC))
        ! 13C
-       if (loc_new_sed(is_POC) > const_rns) then
-          loc_dis_sed(is_POC_13C) = (loc_dis_sed(is_POC)/loc_new_sed(is_POC))*loc_new_sed(is_POC_13C)
-       else
-          loc_dis_sed(is_POC_13C) = 0.0
+       if (sed_select(is_POC_13C)) then
+          if (loc_new_sed(is_POC) > const_rns) then
+             loc_dis_sed(is_POC_13C) = (loc_dis_sed(is_POC)/loc_new_sed(is_POC))*loc_new_sed(is_POC_13C)
+          else
+             loc_dis_sed(is_POC_13C) = 0.0
+          end if
        end if
        ! re-set flux fraction of POC available for CaCO3 diagenesis
        loc_sed_diagen_fCorg = loc_dis_sed(is_POC)
     end if
-    ! enable replacement of Porg preservation (burial) fields, either directly or via a specified C/P rain ratio
+    ! -------------------------------------------------------- ! enable replacement of Porg preservation (burial) fields
+    ! Porg preservation (burial) is replaced either directly or via a specified C/P rain ratio
     ! NOTE: convert units from mol cm-2 yr-1 (from netCDF output) -> cm3 cm-2 per time-step
     if (ctrl_sed_Pporg) then
        loc_dis_sed(is_POP) = loc_new_sed(is_POP) - &
@@ -393,8 +394,9 @@ CONTAINS
           loc_dis_sed(is_POP) = 0.0
        end if
     end if
-    
-    ! add empirical Fe2+ return
+    ! -------------------------------------------------------- !
+    ! () diagenesis - Fe2+ return
+    ! -------------------------------------------------------- !
     ! NOTE: assume that at least is_POM_FeOOH is selected (other carriers may be too)
     if (sed_select(is_POM_FeOOH)) then
        ! calculate FeOOH total flux
@@ -471,9 +473,10 @@ CONTAINS
           end if
        end if
     end if
-
+    ! -------------------------------------------------------- !
+    ! () diagenesis - CaCO3 dissolution
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug4) print*,'*** diagenesis - CaCO3 dissolution ***'
-    ! *** diagenesis - CaCO3 dissolution ***
     select case (par_sed_diagen_CaCO3opt)
     case (                          &
          & 'archer1991explicit',    &
@@ -529,9 +532,30 @@ CONTAINS
           end if
        end DO
     end select
-
+    ! -------------------------------------------------------- ! replacement of CaCO3 preservation (burial) fields
+    ! NOTE: maximum preservation is 100% (i.e., burial is capped at the rain flux)
+    ! NOTE: convert units from mol cm-2 yr-1 (from netCDF output) -> cm3 cm-2 per time-step
+    if (ctrl_sed_Pcaco3) then
+       loc_dis_sed(is_CaCO3) = loc_new_sed(is_CaCO3) - &
+            & min(dum_dtyr*conv_cal_mol_cm3*sed_Psed_caco3(dum_i,dum_j),loc_new_sed(is_CaCO3))
+       ! 13C
+       if (sed_select(is_CaCO3_13C)) then
+          if (loc_new_sed(is_CaCO3) > const_rns) then
+             loc_dis_sed(is_CaCO3_13C) = (loc_dis_sed(is_CaCO3)/loc_new_sed(is_CaCO3))*loc_new_sed(is_CaCO3_13C)
+          else
+             loc_dis_sed(is_CaCO3_13C) = 0.0
+          end if
+       end if
+       ! -------------------------------------------------------- !
+       ! -------------------------------------------------------- !
+       ! ACCOUNT FOR OTHER ISOTOPES AND TRACE METALS
+       ! -------------------------------------------------------- ! 
+       ! -------------------------------------------------------- !
+    end if
+    ! -------------------------------------------------------- !
+    ! () diagenesis - opal dissolution
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug4) print*,'*** diagenesis - opal dissolution ***'
-    ! *** diagenesis - opal dissolution ***
     ! select opal daigenesis scheme
     select case (par_sed_diagen_opalopt)
     case (                            &
@@ -576,9 +600,18 @@ CONTAINS
           end if
        end DO
     end select
+    ! -------------------------------------------------------- ! replacement of opal preservation (burial) fields
+    ! NOTE: maximum preservation is 100% (i.e., burial is capped at the rain flux)
+    ! NOTE: convert units from mol cm-2 yr-1 (from netCDF output) -> cm3 cm-2 per time-step
+    if (ctrl_sed_Popal) then
 
+
+
+    end if
+    ! -------------------------------------------------------- !
+    ! () diagenesis - calculate total solids dissolved 
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug4) print*,'*** diagenesis - calculate total solids dissolved ***'
-    ! *** diagenesis - calculate total solids dissolved ***
     ! calculate volume of removed material (as SOILD matter. i.e., zero porosity), in units of cm3 (cm-2)
     ! NOTE: nutrients associated with organic carbon (POP, PON, POFe) have only a 'virtual volume' and so are not counted
     ! NOTE: ditto for isotope tracers
@@ -599,9 +632,10 @@ CONTAINS
     END IF
     ! set OMEN output data array values
     sed_diag(idiag_OMEN_bur,dum_i,dum_j) = (loc_new_sed_vol - loc_dis_sed_vol)
-
+    ! -------------------------------------------------------- !
+    ! () update sediment stack
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(d) update sediment stack'
-    ! *** (d) update sediment stack
     !         add the new sediment to the top sediment layer, and deduct the calculated dissolved material
     !         NOTE: all sediment volume (cm3) is of SOLID material (i.e., as if porosity was zero)
     !         NOTE: all sediment thickness (cm) is actual thickness (taking into account the porosity of the sediments)
@@ -725,9 +759,10 @@ CONTAINS
     ! update local variables of sub-layer number and thickness of top (incomplete) sub-layer of sediment stack
     loc_n_sed_stack_top = INT(sed_top_h(dum_i,dum_j)) + 1
     loc_sed_stack_top_th = sed_top_h(dum_i,dum_j) - REAL(loc_n_sed_stack_top - 1)
-
+    ! -------------------------------------------------------- !
+    ! () vertically mix the sediment stack (if bioturbation is selected as an option)
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(e) mix the sediment stack'
-    ! *** (e) vertically mix the sediment stack (if bioturbation is selected as an option)
     !        NOTE: although the entire mixable portion of the sediment stack array is passed,
     !              only the activited tracers are mixed in sub_sed_mix
     IF (ctrl_sed_bioturb) THEN
@@ -738,9 +773,10 @@ CONTAINS
             & loc_sed_stack_top_th                                                          &
             & )
     ENDIF
-
+    ! -------------------------------------------------------- !
+    ! () check the thickness of sediment stack
+    ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(f) check the thickness of sediment stack'
-    ! *** (f) check the thickness of sediment stack
     !         NOTE: if the sediment stack has reached the last available sub-layer, 
     !               then remove a number of sub-layers equal to 'n_sed_tot_drop' from the bottom, 
     !               and re-index the remaining sublayers starting from the bottom
@@ -787,12 +823,10 @@ CONTAINS
        sed_top_h(dum_i,dum_j) = sed_top_h(dum_i,dum_j) - REAL(n_sed_tot_drop)
        loc_n_sed_stack_top = INT(sed_top_h(dum_i,dum_j)) + 1
     ENDIF
-
     ! -------------------------------------------------------- !
     ! (G) calculate sediment dissolution flux to ocean
     ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(?) calculate sediment dissolution flux to ocean'
-    ! *** (?) calculate sediment dissolution flux to ocean
     !         NOTE: conv_ls_lo_i is global (hence why it is not passed, only dum_conv_ls_lo)
     ! -------------------------------------------------------- ! first, convert flux units from cm3 cm-2 to mol cm-2
     sed_fdis(:,dum_i,dum_j) = conv_sed_cm3_mol(:)*loc_dis_sed(:)
@@ -884,7 +918,6 @@ CONTAINS
     ! (H) record diagnostics
     ! -------------------------------------------------------- !
     IF (ctrl_misc_debug3) print*,'(h) record diagnostics'
-    ! *** (h) record diagnostics
     sed_diag_err(:,dum_i,dum_j) = loc_err(:)
     ! -------------------------------------------------------- !
     ! RETURN RESULT
