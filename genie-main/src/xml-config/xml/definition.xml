@@ -7352,6 +7352,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">0.150</value>
                         <description>prescribed (additional) flux of detrital material to the seds (g cm-2 kyr-1)</description>
                     </param>
+                    <param name="par_sed_fdet_rmuds">
+			<value datatype="real">1.0</value>
+                        <description>Enhancement of det flux to MUDS cells</description>
+                    </param>
                     <param name="ctrl_sed_det_NOdust">
 			<value datatype="boolean">.false.</value>
                         <description>No pelagic (dust) detrital contribution?</description>
@@ -7912,6 +7916,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_reef_mask_name.36x36</value>
                         <description>Shallow water sediment (coral reef) mask name</description>
                     </param>
+                    <param name="par_sed_muds_mask_name">
+			<value datatype="string"></value>
+                        <description>Shallow water sediment (muds) mask name</description>
+                    </param>
                     <param name="par_sedcore_save_mask_name">
 			<value datatype="string">sedgem_save_mask.36x36</value>
                         <description>Sediment core save mask name</description>
@@ -7971,6 +7979,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_force_sed_closedsystem_opal">
 			<value datatype="boolean">.false.</value>
                         <description>Set dissolution flux = rain flux for opal ONLY?</description>
+                    </param>
+                    <param name="ctrl_sed_P_inrstdir">
+			<value datatype="boolean">.false.</value>
+                        <description>Use restart experiment results dir for pres fields? </description>
                     </param>
 <!-- I/O: MISC  -->
                     <param name="ctrl_timeseries_output">

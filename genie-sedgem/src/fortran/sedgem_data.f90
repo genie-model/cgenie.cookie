@@ -73,6 +73,7 @@ CONTAINS
        print*,'# sedimentary stack sub-layers to drop off bottom   : ',n_sed_tot_drop
        ! --- DETRITAL CONFIGURATION ---------------------------------------------------------------------------------------------- !
        print*,'Flux of refractory material (g cm-2 kyr-1)          : ',par_sed_fdet
+       print*,'Enhancement of det flux to MUDS cells               : ',par_sed_fdet_rmuds
        print*,'No pelagic (dust) detrital contribution?            : ',ctrl_sed_det_NOdust
        ! --- DIAGENESIS SCHEME: SELECTION ---------------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: SELECTION -------------------'
@@ -225,6 +226,7 @@ CONTAINS
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
        print*,'Sediment water depth grid name                      : ',trim(par_sed_topo_D_name)
        print*,'Shallow water sediment (coral reef) mask name       : ',trim(par_sed_reef_mask_name)
+       print*,'Shallow water sediment (muds) mask name             : ',trim(par_sed_muds_mask_name)
        print*,'Sediment core save mask name                        : ',trim(par_sedcore_save_mask_name)
        print*,'Sediment core save list name                        : ',trim(par_sedcore_save_list_name)
        print*,'Biodiffusion profile name                           : ',trim(par_sed_mix_k_name)
@@ -239,6 +241,7 @@ CONTAINS
        print*,'Alt preservation (burial)rain ratio filename        : ',trim(par_sed_Prr_name)
        print*,'Alt CaCO3 preservation (burial) flux filename       : ',trim(par_sed_Pcaco3_name)
        print*,'Alt opal preservation (burial) flux filename        : ',trim(par_sed_Popal_name)
+       print*,'Use restart experiment results dir for pres fields? : ',ctrl_sed_P_inrstdir
        ! --- I/O: MISC ----------------------------------------------------------------------------------------------------------- !
        print*,'--- I/O: MISC --------------------------------------'
        print*,'save timeseries output                              : ',ctrl_timeseries_output
@@ -481,7 +484,7 @@ CONTAINS
     CHARACTER(len=255)::loc_filename
     real::loc_th0,loc_th1,loc_s0,loc_s1,loc_ds
     real,dimension(0:n_j)::loc_s,loc_sv
-    real,DIMENSION(n_i,n_j)::loc_ij                  ! 
+    real,DIMENSION(n_i,n_j)::loc_ij,loc_ij_reef,loc_ij_muds              ! 
     ! set alt dir path string length
     loc_len = LEN_TRIM(par_pindir_name)
     ! zero the grid information and 'physics' array
@@ -491,6 +494,7 @@ CONTAINS
     sed_mask(:,:)      = .FALSE.
     sed_mask_reef(:,:) = .FALSE.
     sed_mask_muds(:,:) = .FALSE.
+    sed_mask_dsea(:,:) = .FALSE.
     ! calculate local constants
     loc_th0 = -const_pi/2                            ! 
     loc_th1 = const_pi/2                             ! 
@@ -524,17 +528,37 @@ CONTAINS
     phys_sed(ips_D,:,:) = loc_ij(:,:)
     ! load reef mask
     if (par_sed_Dmax_neritic > -const_real_nullsmall) then
-       if (loc_len > 0) then
-            loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_reef_mask_name)
-       else
-            loc_filename = TRIM(par_indir_name)//TRIM(par_sed_reef_mask_name)            
-       endif
-       CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+       if (len(trim(par_sed_reef_mask_name)) > 0) then
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_reef_mask_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_reef_mask_name)            
+          endif
+          CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij_reef(:,:))
+       else          
+          loc_ij_reef(:,:) = 0.0
+       end if
     else
-       loc_ij(:,:) = 0.0
+       loc_ij_reef(:,:) = 0.0
     endif
-    ! define sediment masks - used as an area mulitplying factor
-    ! (both in logial and area mulitplying factor (real) representations)
+    ! load muds mask
+    ! NOTE: if mask filename is not specified, set all 1.0s so as to maintain back-compatability
+    !       (shallow water which is not reef is muds)
+    if (par_sed_Dmax_neritic > -const_real_nullsmall) then
+       if (len(trim(par_sed_muds_mask_name)) > 0) then
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_muds_mask_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_muds_mask_name)            
+          endif
+          CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij_muds(:,:))
+       else          
+          loc_ij_muds(:,:) = 1.0
+       end if
+    else
+       loc_ij_muds(:,:) = 0.0
+    endif
+    ! define sediment masks
     ! NOTE: subsquently, the masks are updated depending on whether there ia an overlying ocean cell or not.
     !       (hence, these masks are just 'potential' locations here at the outset)
     DO i=1,n_i
@@ -542,46 +566,49 @@ CONTAINS
           if (phys_sed(ips_D,i,j) < const_real_nullsmall) then
              ! land! => no sediments!!!
              phys_sed(ips_mask_sed,i,j) = 0.0
-             sed_mask(i,j) = .FALSE.
+             sed_mask(i,j)              = .FALSE.
              phys_sed(ips_mask_sed_reef,i,j) = 0.0
-             sed_mask_reef(i,j) = .FALSE.
+             sed_mask_reef(i,j)              = .FALSE.
              phys_sed(ips_mask_sed_muds,i,j) = 0.0
-             sed_mask_muds(i,j) = .FALSE.
+             sed_mask_muds(i,j)              = .FALSE.
+             phys_sed(ips_mask_sed_dsea,i,j) = 0.0
+             sed_mask_dsea(i,j)              = .FALSE.
           else
-             ! not land(!), so set sediment mask TRUE
-             phys_sed(ips_mask_sed,i,j) = 1.0
-             sed_mask(i,j) = .TRUE.
+             ! not land(!), so sediment mask will always be TRUE
+             phys_sed(ips_mask_sed,i,j)  = 1.0
+             sed_mask(i,j)               = .TRUE.
              if (phys_sed(ips_D,i,j) < par_sed_Dmax_neritic) then
                 ! water shallower than generic neritic depth limit => either reef or mud!
-                ! NOTE: if ctrl_sed_neritic_reef_force is set, then shallow points are forced to be reef
-                !       (ctrl_sed_neritic_reef_force is .false. by default)
-                if ((loc_ij(i,j) > const_real_nullsmall) .OR. ctrl_sed_neritic_reef_force) then
+                ! NOTE: shallow water that is neither reef nor muds -> no sediments
+                phys_sed(ips_mask_sed_dsea,i,j) = 0.0
+                sed_mask_dsea(i,j)              = .false.
+                if ((loc_ij_reef(i,j) > const_real_nullsmall)) then
                    ! mask specified as reef ... therefore reef!
                    phys_sed(ips_mask_sed_reef,i,j) = 1.0
-                   sed_mask_reef(i,j) = .TRUE.
+                   sed_mask_reef(i,j)              = .TRUE.
                    phys_sed(ips_mask_sed_muds,i,j) = 0.0
-                   sed_mask_muds(i,j) = .FALSE.
-                else
-                   ! mask not specified as reef -- you got mud instead!
+                   sed_mask_muds(i,j)              = .FALSE.
+                elseif (loc_ij_muds(i,j) > const_real_nullsmall) then
+                   ! mask specified as mud
                    phys_sed(ips_mask_sed_reef,i,j) = 0.0
-                   sed_mask_reef(i,j) = .FALSE.
+                   sed_mask_reef(i,j)              = .FALSE.
                    phys_sed(ips_mask_sed_muds,i,j) = 1.0
-                   sed_mask_muds(i,j) = .TRUE.
-                end if
-             elseif (ctrl_sed_neritic_reef_force) then
-                ! force reef occurrence regardless of depth (assuming depth greater than prescribed neritic limit)
-                if (loc_ij(i,j) > const_real_nullsmall) then
-                   phys_sed(ips_mask_sed_reef,i,j) = 1.0
-                   sed_mask_reef(i,j) = .TRUE.
+                   sed_mask_muds(i,j)              = .TRUE.
+                else
+                   ! shallow water as neither reef nor mud
+                   phys_sed(ips_mask_sed_reef,i,j) = 0.0
+                   sed_mask_reef(i,j)              = .FALSE.
                    phys_sed(ips_mask_sed_muds,i,j) = 0.0
-                   sed_mask_muds(i,j) = .FALSE.
-                endif
+                   sed_mask_muds(i,j)              = .FALSE.
+                end if
              else
-                ! otherwise ... no reef or mud!
+                ! deep water ... no reef or mud!
+                phys_sed(ips_mask_sed_dsea,i,j) = 1.0
+                sed_mask_dsea(i,j)              = .true.
                 phys_sed(ips_mask_sed_reef,i,j) = 0.0
-                sed_mask_reef(i,j) = .FALSE.
+                sed_mask_reef(i,j)              = .FALSE.
                 phys_sed(ips_mask_sed_muds,i,j) = 0.0
-                sed_mask_muds(i,j) = .FALSE.
+                sed_mask_muds(i,j)              = .FALSE.
              end if
           end if
        END DO
@@ -826,10 +853,14 @@ CONTAINS
     sed_mask_hydr = loc_ij
     ! load alternative Corg preservation (burial) field (mol cm-2 yr-1)
     if (ctrl_sed_Pcorg) then
-       if (loc_len > 0) then
-          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcorg_name)
+       if (ctrl_sed_P_inrstdir) then
+          loc_filename = TRIM(par_inrstdir_name)//'../results/timeslice_sediment_burial_FPOC.txt'       
        else
-          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcorg_name)
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcorg_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcorg_name)
+          endif
        endif
        CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
     else
@@ -838,11 +869,15 @@ CONTAINS
     sed_Psed_corg = loc_ij
     ! load alternative Porg preservation (burial) field (mol cm-2 yr-1)
     if (ctrl_sed_Pporg) then
-       if (loc_len > 0) then
-          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pporg_name)
+       if (ctrl_sed_P_inrstdir) then
+          loc_filename = TRIM(par_inrstdir_name)//'../results/timeslice_sediment_burial_FPOP.txt'       
        else
-          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pporg_name)
-       endif
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pporg_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pporg_name)
+          endif
+       end if
        CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
     else
        loc_ij(:,:) = 0.0
@@ -862,11 +897,15 @@ CONTAINS
     sed_Psed_rr = loc_ij
     ! load alternative CaCO3 preservation (burial) field (mol cm-2 yr-1)
     if (ctrl_sed_Pcaco3) then
-       if (loc_len > 0) then
-          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcaco3_name)
+       if (ctrl_sed_P_inrstdir) then
+          loc_filename = TRIM(par_inrstdir_name)//'../results/timeslice_sediment_burial_FCaCO3.txt'       
        else
-          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcaco3_name)
-       endif
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcaco3_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcaco3_name)
+          endif
+       end if
        CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
     else
        loc_ij(:,:) = 0.0

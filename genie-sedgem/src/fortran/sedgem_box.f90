@@ -604,9 +604,9 @@ CONTAINS
     ! NOTE: maximum preservation is 100% (i.e., burial is capped at the rain flux)
     ! NOTE: convert units from mol cm-2 yr-1 (from netCDF output) -> cm3 cm-2 per time-step
     if (ctrl_sed_Popal) then
-
-
-
+       ! ### <INSERT CODE> ####################################################################################################### !
+       ! 
+       ! ######################################################################################################################### !
     end if
     ! -------------------------------------------------------- !
     ! () diagenesis - calculate total solids dissolved 
@@ -1780,9 +1780,9 @@ CONTAINS
           if (sed_type(is) == par_sed_type_scavenged) then
              loc_dis_sed(is) = 0.0
              ! deal with how particle-reactive elements are left in the sediments (i.e., what do they stick on?) ...
-             ! ### <INSERT CODE> ############################################################################################## !
+             ! ### <INSERT CODE> ################################################################################################# !
              ! 
-             ! ################################################################################################################ !
+             ! ################################################################################################################### !
           else
              loc_dis_sed(is) = loc_new_sed(is)
           end if
@@ -1804,15 +1804,23 @@ CONTAINS
           if (sed_type(is) == par_sed_type_scavenged) then
              loc_dis_sed(is) = 0.0
              ! deal with how particle-reactive elements are left in the sediments (i.e., what do they stick on?) ...
-             ! ### <INSERT CODE> ############################################################################################## !
+             ! ### <INSERT CODE> ################################################################################################# !
              ! 
-             ! ################################################################################################################ !
+             ! ################################################################################################################### !
           else
              loc_dis_sed(is) = loc_new_sed(is)
           end if
        end if
     end DO    
     end select
+    ! -------------------------------------------------------- ! replacement of opal preservation (burial) fields
+    ! NOTE: maximum preservation is 100% (i.e., burial is capped at the rain flux)
+    ! NOTE: convert units from mol cm-2 yr-1 (from netCDF output) -> cm3 cm-2 per time-step
+    if (ctrl_sed_Popal) then
+       ! ### <INSERT CODE> ####################################################################################################### !
+       ! 
+       ! ######################################################################################################################### !
+    end if
     
     IF (ctrl_misc_debug4) print*,'*** diagenesis - calculate total solids dissolved ***'
     ! *** diagenesis - calculate total solids dissolved ***

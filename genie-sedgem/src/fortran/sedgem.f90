@@ -115,9 +115,11 @@ SUBROUTINE sedgem(          &
            sed_mask(i,j)      = .FALSE.
            sed_mask_reef(i,j) = .FALSE.
            sed_mask_muds(i,j) = .FALSE.
+           sed_mask_dsea(i,j) = .FALSE.
            phys_sed(ips_mask_sed,i,j)      = 0.0
            phys_sed(ips_mask_sed_reef,i,j) = 0.0
            phys_sed(ips_mask_sed_muds,i,j) = 0.0
+           phys_sed(ips_mask_sed_dsea,i,j) = 0.0
            sed_save_mask(i,j) = .FALSE.
         end IF
      end DO
@@ -234,6 +236,7 @@ SUBROUTINE sedgem(          &
            !       par_sed_fdet              == uniform prescibed additional flux
            !       sed_Fsed_det              == alternative prescibed detrital flux field
            !       at sedcore locations, sed_Fsed_det is over-written by ncMAR if defined
+           ! NOTE: for MUDS grid point locations, enable enhancement factor of sed_Fsed_det
            if (sed_select(is_det)) then
               if (ctrl_sed_det_NOdust) then
                  ! set zero det dust flux, which as passed from BIOGEM is assumed to be all pelagic (dust)
@@ -250,9 +253,15 @@ SUBROUTINE sedgem(          &
                          & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_opal(i,j)
                  endif
               else
-                 ! add prescribed (uniform) sed det flux to whatever pelagic source reaches the seafloor
-                 dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
-                      & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet
+                 if (sed_mask_muds(i,j)) then
+                    ! enhance det flux to MUDS cells by ratio par_sed_fdet_rmuds
+                    dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
+                         & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet_rmuds*par_sed_fdet
+                 else
+                    ! add prescribed (uniform) sed det flux to whatever pelagic source reaches the seafloor
+                    dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
+                         & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet
+                 endif
               endif
            endif
            ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
@@ -434,7 +443,7 @@ SUBROUTINE sedgem(          &
                    & dum_sfcsumocn(:,i,j),   &
                    & loc_conv_ls_lo(:,:)     &
                    & )
-           else
+           elseif (sed_mask_dsea(i,j)) then
               IF (ctrl_misc_debug3) print*,'> UPDATE SED: dsea (deep-sea)'
               loc_lslo_fnet = fun_update_sed_dsea( &
                    & loc_dtyr,               &
@@ -443,6 +452,22 @@ SUBROUTINE sedgem(          &
                    & dum_sfcsumocn(:,i,j),   &
                    & loc_conv_ls_lo(:,:)     &
                    & )
+           else
+              ! occasial case of no defined shallow water sediments (and not deep-sea)
+              ! (but still assumes a wet ocean grid-point and valid sediment location)
+              DO ls=1,n_l_sed
+                 is = conv_iselected_is(ls)
+                 ! set dissolution flux (as sediment solids)
+                 sed_fdis(is,i,j) = loc_sed_fsed_OLD(is,i,j)
+                 ! calculate equivalent ocean tracer flux
+                 loc_tot_m = conv_ls_lo_i(0,ls)
+                 do loc_m=1,loc_tot_m
+                    lo = conv_ls_lo_i(loc_m,ls)
+                    if (lo > 0) then
+                       sedocn_fnet(l2io(lo),i,j) = sedocn_fnet(l2io(lo),i,j) + loc_conv_ls_lo(lo,ls)*sed_fdis(l2is(ls),i,j)
+                    end if
+                 end do
+              end DO
            end if
            ! convert lo notation back to io and update sed -> ocn flux
            DO lo=3,n_l_ocn
