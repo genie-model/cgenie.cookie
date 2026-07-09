@@ -7592,7 +7592,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Min threshold for abiotic CaCO3 precipitation</description>
                     </param>
                     <param name="par_sed_poros_CaCO3_reef">
-			<value datatype="real">0.5</value>
+			<value datatype="real">0.0</value>
                         <description>Reef CaCO3 porosity (cm3 cm-3)</description>
                     </param>
                     <param name="par_sed_CaCO3burial">
