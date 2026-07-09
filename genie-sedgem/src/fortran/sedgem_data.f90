@@ -2370,6 +2370,7 @@ CONTAINS
     write(unit=out,fmt=*) '#       silicate weathering fraction (sg_par_sed_diag_fracSiweath)     == ',par_sed_diag_fracSiweath
     write(unit=out,fmt=*) '#       volcanic outgassing d13C (sg_par_sed_diag_volcanicd13C)        == ',par_sed_diag_volcanicd13C
     write(unit=out,fmt=*) '#       implicit P:ALK in OM N transformation (sg_par_sed_diag_P2ALK)  == ',par_sed_diag_P2ALK
+    write(unit=out,fmt=*) '#       adjust kerogen O2 consumption to balance global (Corg) O2 budget? ',ctrl_sed_diag_balanceO2
     Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# turn off atmospheric short circuit'
     Write(unit=out,fmt=*) 'rg_opt_short_circuit_atm=.false.'

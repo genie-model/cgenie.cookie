@@ -173,10 +173,6 @@ bg_par_bio_red_PON_ALK=0.0
 #
 # add redox-dependent SEDGEM remin
 sg_ctrl_sed_conv_sed_ocn_old=.false.
-# weathering diagnostic settings
-sg_par_sed_diag_fracSiweath=0.40000000000000002     
-sg_par_sed_diag_volcanicd13C=-6.0000000000000000     
-sg_par_sed_diag_P2ALK=0.0
 #
 # *** ROKGEM ***********************************************************
 #
@@ -189,6 +185,11 @@ rg_opt_short_circuit_atm=.false.
 rg_par_weather_CaSiO3_fracSi=1.0
 # remove Si from carb chem calc in case it accumulates unreasonably ...
 gm_ctrl_carbchem_noH3SiO4=.true.
+# weathering diagnostic settings
+sg_par_sed_diag_fracSiweath=0.40000000000000002     
+sg_par_sed_diag_volcanicd13C=-6.0000000000000000     
+sg_par_sed_diag_P2ALK=0.0
+sg_ctrl_sed_diag_balanceO2=.true.
 #
 # *** FEEDBACK CONFIGURATION *******************************************
 #
