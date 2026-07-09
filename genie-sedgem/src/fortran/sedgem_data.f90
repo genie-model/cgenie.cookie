@@ -2370,13 +2370,9 @@ CONTAINS
     write(unit=out,fmt=*) '#       silicate weathering fraction (sg_par_sed_diag_fracSiweath)     == ',par_sed_diag_fracSiweath
     write(unit=out,fmt=*) '#       volcanic outgassing d13C (sg_par_sed_diag_volcanicd13C)        == ',par_sed_diag_volcanicd13C
     write(unit=out,fmt=*) '#       implicit P:ALK in OM N transformation (sg_par_sed_diag_P2ALK)  == ',par_sed_diag_P2ALK
-    Write(unit=out,fmt=*) '# NOTE: BE CAREFUL -- the values of parameters #2 and #3 are duplicated in other modules ...'
-    Write(unit=out,fmt=*) '#       un-comment the following lines to ensure alignment:'
-    Write(unit=out,fmt=*) '#rg_par_outgas_CO2_d13C=',par_sed_diag_volcanicd13C
-    Write(unit=out,fmt=*) '#bg_par_bio_red_PON_ALK=',par_sed_diag_P2ALK/16.0
     Write(unit=out,fmt=*) '#'
-    Write(unit=out,fmt=*) '# set an OPEN system'
-    Write(unit=out,fmt=*) 'bg_ctrl_force_sed_closedsystem=.FALSE.'
+    Write(unit=out,fmt=*) '# turn off atmospheric short circuit'
+    Write(unit=out,fmt=*) 'rg_opt_short_circuit_atm=.false.'
     Write(unit=out,fmt=*) '# set CaCO3_weathering-temperature feedback'
     Write(unit=out,fmt=*) 'rg_opt_weather_T_Ca=.true.'
     Write(unit=out,fmt=*) '# set CaSiO3_weathering-temperature feedback'
@@ -2390,7 +2386,7 @@ CONTAINS
     Write(unit=out,fmt=*) 'rg_par_weather_CaSiO3=',par_sed_diag_fracSiweath*loc_tot_FCaCO3
     Write(unit=out,fmt=*) '# CO2 outgassing rate (mol C yr-1)'
     Write(unit=out,fmt=*) 'rg_par_outgas_CO2=',loc_Foutgassing
-    Write(unit=out,fmt=*) '# set isotopic value of CO2 outgassing (assumed) (o/oo)'
+    Write(unit=out,fmt=*) '# set isotopic value of CO2 outgassing (set by: par_sed_diag_volcanicd13C) (o/oo)'
     Write(unit=out,fmt=*) 'rg_par_outgas_CO2_d13C=',par_sed_diag_volcanicd13C
     Write(unit=out,fmt=*) '# set isotopic value of carbonate weathering (o/oo)'
     Write(unit=out,fmt=*) 'rg_par_weather_CaCO3_d13C=',loc_FCaCO3_d13C
@@ -2420,14 +2416,20 @@ CONTAINS
        Write(unit=out,fmt=*) 'rg_par_weather_kerogen_fracO2=',-loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '#'
-    Write(unit=out,fmt=*) '# -------------------------------'
-    Write(unit=out,fmt=*) ''
     ! optional/additional SEDGEM parameters
     Write(unit=out,fmt=*) '# --- SEDGEM USER-CONFIG --------'
     Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# scale factor for reefal precipitation rate (mol cm-2 yr-1) to achieve a global burial rate of: ', &
          & 1.0E-12*par_sed_CaCO3burialTOT,' (Tmol yr-1):'
     Write(unit=out,fmt=*) 'sg_par_sed_reef_CaCO3precip_sf=',par_sed_reef_CaCO3precip_sf
+    Write(unit=out,fmt=*) '#'
+    ! optional/additional BIOGEM parameters
+    Write(unit=out,fmt=*) '# --- BIOGEM USER-CONFIG --------'
+    Write(unit=out,fmt=*) '#'
+    Write(unit=out,fmt=*) '# set an OPEN system'
+    Write(unit=out,fmt=*) 'bg_ctrl_force_sed_closedsystem=.FALSE.'
+    Write(unit=out,fmt=*) '# align marine organic matter P:ALK Redfield ratio with kerogen:'
+    Write(unit=out,fmt=*) 'bg_par_bio_red_PON_ALK=',par_sed_diag_P2ALK/16.0
     Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# -------------------------------'
     Write(unit=out,fmt=*) ''
