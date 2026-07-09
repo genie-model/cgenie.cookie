@@ -89,18 +89,29 @@ CONTAINS
        ! ------------------------------------------------------------- ! OPSI
        loc_filename=fun_data_timeseries_filename( &
             & loc_t,par_outdir_name,'timeseries','climate_opsi',string_results_ext)
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
-          loc_string = '% time (yr) / global min opsi (Sv) [full grid] / global max opsi (Sv) [full grid] / '// &
-               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
-               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
-               & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
-               & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
-       case default
-          loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
-               & 'global min opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+       if (goldstein_jsf < n_j) then
+          loc_string = '% time (yr) ; '// &
+               & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] ; '// &
+               & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] ; '// &
+               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] ; '// &
+               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
+       else
+          loc_string = '% time (yr) ; '// &
+               & 'global min opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] ; '// &
                & 'global max opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
-       end select
+       end if       
+!!$       select case (fname_topo)
+!!$       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+!!$          loc_string = '% time (yr) / global min opsi (Sv) [full grid] / global max opsi (Sv) [full grid] / '// &
+!!$               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+!!$               & 'Atlantic min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+!!$               & 'global min opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+!!$               & 'global max opsi (Sv) [depth > '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
+!!$       case default
+!!$          loc_string = '% time (yr) / global min opsi (Sv) [full k grid] / global max opsi (Sv) [full k grid] / '// &
+!!$               & 'global min opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m] / '// &
+!!$               & 'global max opsi (Sv) [> '// fun_conv_num_char_n(4,int(par_data_save_opsi_Dmin)) //' m]'
+!!$       end select
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='replace',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -1552,24 +1563,37 @@ CONTAINS
        call check_unit(out,__LINE__,__FILE__)
        OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
-       select case (fname_topo)
-       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
-          WRITE(unit=out,fmt='(f12.3,6f9.3)',iostat=ios)          &
-               & loc_t,                                           &
-               & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
-               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
-               & loc_opsi_scale*int_misc_opsia_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
-               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
-       case default
+       if (goldstein_jsf < n_j) then
           WRITE(unit=out,fmt='(f12.3,4f9.3)',iostat=ios)          &
                & loc_t,                                           &
-               & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
-               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
+               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
+               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig, &
+               & loc_opsi_scale*int_misc_opsia_min_sig/int_t_sig, &
+               & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig
+       else
+          WRITE(unit=out,fmt='(f12.3,2f9.3)',iostat=ios)          &
+               & loc_t,                                           &
                & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
                & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
-       end select
+       end if       
+!!$       select case (fname_topo)
+!!$       case ('worbe2', 'worjh2', 'worjh4', 'worlg2', 'worlg4', 'wv2jh2', 'wv3jh2', 'worri4', 'p_worbe2', 'p_worjh2')
+!!$          WRITE(unit=out,fmt='(f12.3,6f9.3)',iostat=ios)          &
+!!$               & loc_t,                                           &
+!!$               & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
+!!$               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
+!!$               & loc_opsi_scale*int_misc_opsia_min_sig/int_t_sig, &
+!!$               & loc_opsi_scale*int_misc_opsia_max_sig/int_t_sig, &
+!!$               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
+!!$               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
+!!$       case default
+!!$          WRITE(unit=out,fmt='(f12.3,4f9.3)',iostat=ios)          &
+!!$               & loc_t,                                           &
+!!$               & loc_opsi_scale*int_misc_opsi_min_sig/int_t_sig,  &
+!!$               & loc_opsi_scale*int_misc_opsi_max_sig/int_t_sig,  &
+!!$               & loc_opsi_scale*int_misc_opsid_min_sig/int_t_sig, &
+!!$               & loc_opsi_scale*int_misc_opsid_max_sig/int_t_sig
+!!$       end select
        call check_iostat(ios,__LINE__,__FILE__)
        CLOSE(unit=out,iostat=ios)
        call check_iostat(ios,__LINE__,__FILE__)
@@ -4358,90 +4382,171 @@ CONTAINS
     ! NOTE: once printed, reset par_misc_t_echo_header to .false. so it is only printed before the first data line
     !       (unless set elsewhere to repeat the header line)
     if (par_misc_t_echo_header) then
-       print*,' '
-       if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
-          PRINT'(A3,A12,A3,A12,A10,A3,4A10)', &
-               & ' > ',          &
-               & '  model year', &
-               & ' | ',          &
-               & '            ', &
-               & '   SAT(oC)', &
-               & ' | ',          &
-               & '  AMOC(Sv)', &
-               & '    ice(%)', &
-               & '   SST(oC)', &
-               & '  SSS(PSU)'
-       elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
-          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14,A3,A12)', &
-               & ' > ',          &
-               & '  model year', &
-               & ' | ',          &
-               & '  pCO2(uatm)', &
-               & '   SAT(oC)', &
-               & ' | ',          &
-               & '  AMOC(Sv)', &
-               & '    ice(%)', &
-               & '   SST(oC)', &
-               & '  SSS(PSU)', &
-               & ' | ',           &
-               & '      pH', &
-               & '  OHMEGA', &
-               & ' | ',           &
-               & '  [O2](uM)', &
-               & '  fPOC(PgC/yr)', &
-               & ' | ',           &
-               & '  CaCO3(wt%)'
-       elseif (flag_sedgem) then
-          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A12)', &
-               & ' > ',          &
-               & '  model year', &
-               & ' | ',          &
-               & '  pCO2(uatm)', &
-               & '   SAT(oC)', &
-               & ' | ',          &
-               & '  AMOC(Sv)', &
-               & '    ice(%)', &
-               & '   SST(oC)', &
-               & '  SSS(PSU)', &
-               & ' | ',           &
-               & '      pH', &
-               & '  OHMEGA', &
-               & ' | ',           &
-               & '  CaCO3(wt%)'
-          elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
-          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14)', &
-               & ' > ',          &
-               & '  model year', &
-               & ' | ',          &
-               & '  pCO2(uatm)', &
-               & '   SAT(oC)', &
-               & ' | ',          &
-               & '  AMOC(Sv)', &
-               & '    ice(%)', &
-               & '   SST(oC)', &
-               & '  SSS(PSU)', &
-               & ' | ',           &
-               & '      pH', &
-               & '  OHMEGA', &
-               & ' | ',           &
-               & '  [O2](uM)', &
-               & '  fPOC(PgC/yr)'
-       else
-          PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8)', &
-               & ' > ',          &
-               & '  model year', &
-               & ' | ',          &
-               & '  pCO2(uatm)', &
-               & '   SAT(oC)', &
-               & ' | ',          &
-               & '  AMOC(Sv)', &
-               & '    ice(%)', &
-               & '   SST(oC)', &
-               & '  SSS(PSU)', &
-               & ' | ',           &
-               & '      pH', &
-               & '  OHMEGA'
-       end if
+          print*,' '
+          if (goldstein_jsf < n_j) then
+             if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
+                PRINT'(A3,A12,A3,A12,A10,A3,4A10)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '            ', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '  AMOC(Sv)', &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)'
+             elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
+                PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14,A3,A12)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '  AMOC(Sv)', &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA', &
+                     & ' | ',           &
+                     & '  [O2](uM)', &
+                     & '  fPOC(PgC/yr)', &
+                     & ' | ',           &
+                     & '  CaCO3(wt%)'
+             elseif (flag_sedgem) then
+                PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A12)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '  AMOC(Sv)', &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA', &
+                     & ' | ',           &
+                     & '  CaCO3(wt%)'
+             elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+                PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8,A3,A10,A14)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '  AMOC(Sv)', &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA', &
+                     & ' | ',           &
+                     & '  [O2](uM)', &
+                     & '  fPOC(PgC/yr)'
+             else
+                PRINT'(A3,A12,A3,A12,A10,A3,4A10,A3,2A8)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '  AMOC(Sv)', &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA'
+             end if
+          else
+             if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
+                PRINT'(A3,A12,A3,A12,A10,A3,3A10)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '            ', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)'
+             elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
+                PRINT'(A3,A12,A3,A12,A10,A3,3A10,A3,2A8,A3,A10,A14,A3,A12)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA', &
+                     & ' | ',           &
+                     & '  [O2](uM)', &
+                     & '  fPOC(PgC/yr)', &
+                     & ' | ',           &
+                     & '  CaCO3(wt%)'
+             elseif (flag_sedgem) then
+                PRINT'(A3,A12,A3,A12,A10,A3,3A10,A3,2A8,A3,A12)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA', &
+                     & ' | ',           &
+                     & '  CaCO3(wt%)'
+             elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+                PRINT'(A3,A12,A3,A12,A10,A3,3A10,A3,2A8,A3,A10,A14)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA', &
+                     & ' | ',           &
+                     & '  [O2](uM)', &
+                     & '  fPOC(PgC/yr)'
+             else
+                PRINT'(A3,A12,A3,A12,A10,A3,3A10,A3,2A8)', &
+                     & ' > ',          &
+                     & '  model year', &
+                     & ' | ',          &
+                     & '  pCO2(uatm)', &
+                     & '   SAT(oC)', &
+                     & ' | ',          &
+                     & '    ice(%)', &
+                     & '   SST(oC)', &
+                     & '  SSS(PSU)', &
+                     & ' | ',           &
+                     & '      pH', &
+                     & '  OHMEGA'
+             end if
+          end if
        print*,' '
        par_misc_t_echo_header = .FALSE.
     end if
@@ -4470,88 +4575,169 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! PRINT DATA!
     ! -------------------------------------------------------- !
-    if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
-       PRINT'(A3,F12.1,A3,A12,F10.3,A3,4F10.3)', &
-            & ' > ', &
-            & dum_yr, &
-            & ' | ', &
-            & '            ', &
-            & int_ocnatm_sig(ia_T), &
-            & ' | ', &
-            & loc_opsi_scale*int_misc_opsia_max_sig, &
-            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
-            & int_ocn_sur_sig(io_T) - const_zeroC, &
-            & int_ocn_sur_sig(io_S)
-    elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
-       PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3,A3,F12.3)', &
-            & ' > ', &
-            & dum_yr, &
-            & ' | ', &
-            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
-            & int_ocnatm_sig(ia_T), &
-            & ' | ', &
-            & loc_opsi_scale*int_misc_opsia_max_sig, &
-            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
-            & int_ocn_sur_sig(io_T) - const_zeroC, &
-            & int_ocn_sur_sig(io_S), &
-            & ' | ', &
-            & int_carb_opn_sig(ic_pHsws), &
-            & int_carb_opn_sig(ic_ohm_cal), &
-            & ' | ', &
-            & 1.0E6*int_ocn_sig(io_O2), &
-            & 12.0E-15*int_fexport_sig(is_POC), &
-            & ' | ', &
-            & int_ocnsed_sig(is_CaCO3)
-    elseif (flag_sedgem) then
-       PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F12.3)', &
-            & ' > ', &
-            & dum_yr, &
-            & ' | ', &
-            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
-            & int_ocnatm_sig(ia_T), &
-            & ' | ', &
-            & loc_opsi_scale*int_misc_opsia_max_sig, &
-            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
-            & int_ocn_sur_sig(io_T) - const_zeroC, &
-            & int_ocn_sur_sig(io_S), &
-            & ' | ', &
-            & int_carb_opn_sig(ic_pHsws), &
-            & int_carb_opn_sig(ic_ohm_cal), &
-            & ' | ', &
-            & int_ocnsed_sig(is_CaCO3)
-    elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
-       PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3)', &
-            & ' > ', &
-            & dum_yr, &
-            & ' | ', &
-            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
-            & int_ocnatm_sig(ia_T), &
-            & ' | ', &
-            & loc_opsi_scale*int_misc_opsia_max_sig, &
-            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
-            & int_ocn_sur_sig(io_T) - const_zeroC, &
-            & int_ocn_sur_sig(io_S), &
-            & ' | ', &
-            & int_carb_opn_sig(ic_pHsws), &
-            & int_carb_opn_sig(ic_ohm_cal), &
-            & ' | ', &
-            & 1.0E6*int_ocn_sig(io_O2), &
-            & 12.0E-15*int_fexport_sig(is_POC)
+    if (goldstein_jsf < n_j) then
+       if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
+          PRINT'(A3,F12.1,A3,A12,F10.3,A3,4F10.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & '            ', &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & loc_opsi_scale*int_misc_opsia_max_sig, &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S)
+       elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3,A3,F12.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & loc_opsi_scale*int_misc_opsia_max_sig, &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal), &
+               & ' | ', &
+               & 1.0E6*int_ocn_sig(io_O2), &
+               & 12.0E-15*int_fexport_sig(is_POC), &
+               & ' | ', &
+               & int_ocnsed_sig(is_CaCO3)
+       elseif (flag_sedgem) then
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F12.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & loc_opsi_scale*int_misc_opsia_max_sig, &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal), &
+               & ' | ', &
+               & int_ocnsed_sig(is_CaCO3)
+       elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3,A3,F10.3,F14.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & loc_opsi_scale*int_misc_opsia_max_sig, &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal), &
+               & ' | ', &
+               & 1.0E6*int_ocn_sig(io_O2), &
+               & 12.0E-15*int_fexport_sig(is_POC)
        else
           PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,4F10.3,A3,2F8.3)', &
-            & ' > ', &
-            & dum_yr, &
-            & ' | ', &
-            & 1.0E6*int_ocnatm_sig(ia_pCO2), &
-            & int_ocnatm_sig(ia_T), &
-            & ' | ', &
-            & loc_opsi_scale*int_misc_opsia_max_sig, &
-            & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
-            & int_ocn_sur_sig(io_T) - const_zeroC, &
-            & int_ocn_sur_sig(io_S), &
-            & ' | ', &
-            & int_carb_opn_sig(ic_pHsws), &
-            & int_carb_opn_sig(ic_ohm_cal)
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & loc_opsi_scale*int_misc_opsia_max_sig, &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal)
+       end if
+    else
+       if (.NOT. (ocn_select(io_DIC) .AND. ocn_select(io_ALK))) then
+          PRINT'(A3,F12.1,A3,A12,F10.3,A3,3F10.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & '            ', &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S)
+       elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2) .AND. flag_sedgem) then
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,3F10.3,A3,2F8.3,A3,F10.3,F14.3,A3,F12.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal), &
+               & ' | ', &
+               & 1.0E6*int_ocn_sig(io_O2), &
+               & 12.0E-15*int_fexport_sig(is_POC), &
+               & ' | ', &
+               & int_ocnsed_sig(is_CaCO3)
+       elseif (flag_sedgem) then
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,3F10.3,A3,2F8.3,A3,F12.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal), &
+               & ' | ', &
+               & int_ocnsed_sig(is_CaCO3)
+       elseif (ocn_select(io_PO4) .AND. ocn_select(io_O2)) then
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,3F10.3,A3,2F8.3,A3,F10.3,F14.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal), &
+               & ' | ', &
+               & 1.0E6*int_ocn_sig(io_O2), &
+               & 12.0E-15*int_fexport_sig(is_POC)
+       else
+          PRINT'(A3,F12.1,A3,F12.3,F10.3,A3,3F10.3,A3,2F8.3)', &
+               & ' > ', &
+               & dum_yr, &
+               & ' | ', &
+               & 1.0E6*int_ocnatm_sig(ia_pCO2), &
+               & int_ocnatm_sig(ia_T), &
+               & ' | ', &
+               & 100.0*int_misc_seaice_sig/SUM(phys_ocn(ipo_A,:,:,n_k)), &
+               & int_ocn_sur_sig(io_T) - const_zeroC, &
+               & int_ocn_sur_sig(io_S), &
+               & ' | ', &
+               & int_carb_opn_sig(ic_pHsws), &
+               & int_carb_opn_sig(ic_ohm_cal)
+       end if
        end if
     ! -------------------------------------------------------- !
     ! END
@@ -4912,8 +5098,9 @@ CONTAINS
           loc_opsi(j,k) = loc_opsi(j,k-1) - goldstein_dz(k)*loc_ou(j,k)
        END DO
     END DO
-    select case (fname_topo)
-    case ('worbe2', 'worjh2', 'worjh4', 'worlg4', 'p_worbe2', 'p_worjh2', 'GIteiiaa', 'GIteiiva')
+    if (goldstein_jsf < n_j) then
+!!$    select case (fname_topo)
+!!$    case ('worbe2', 'worjh2', 'worjh4', 'worlg4', 'p_worbe2', 'p_worjh2', 'GIteiiaa', 'GIteiiva')
        ! Pacific overturning streamfunction
        loc_ominp = 0.0
        loc_omaxp = 0.0
@@ -4947,10 +5134,14 @@ CONTAINS
        ENDDO
        dum_opsia_minmax(1) = loc_omina
        dum_opsia_minmax(2) = loc_omaxa
-    case default
+    else
        dum_opsip_minmax(:) = -999
        dum_opsia_minmax(:) = -999
-    end select
+    end if
+!!$    case default
+!!$       dum_opsip_minmax(:) = -999
+!!$       dum_opsia_minmax(:) = -999
+!!$    end select
     ! PSI
     loc_zpsi(:,:) = 0.0
     DO i=1,n_i-1

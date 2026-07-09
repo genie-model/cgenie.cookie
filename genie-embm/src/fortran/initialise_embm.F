@@ -86,7 +86,7 @@ c     real haavg(maxl,maxi,maxj)
 
 crma extra explicit declarations (rma, 22/12/03)
       integer ias(maxj),iaf(maxj),ips(maxj),ipf(maxj),jsf
-      integer bmask(maxi,maxj)
+      integer fmask(maxi,maxj)
 
       real z1, tv, tv1, tv2, tv3, tv4, tv5, tatm, relh0_ocean,
      +     relh0_land, sigma, diffamp(2), diffwid, difflin,
@@ -1571,17 +1571,17 @@ c sub-region 2 (b): 20S to 24N
 c sub-region 3 (c): 24N to 90N
 
       inquire(file=indir_name(1:lenin)//world(1:lenworld)//
-     &'.bmask',exist=ioex)
+     &'.fmask',exist=ioex)
       if (ioex) then
          if (debug_init) print *, 'reading in basin mask file'
          call check_unit(13,__LINE__,__FILE__)
          open(13,file=indir_name(1:lenin)//world(1:lenworld)//
-     &'.bmask',iostat=ios)
+     &'.fmask',iostat=ios)
          call check_iostat(ios,__LINE__,__FILE__)
          do j=jmax,1,-1
-            read(13,*,iostat=ios)(bmask(i,j),i=1,imax)
+            read(13,*,iostat=ios)(fmask(i,j),i=1,imax)
             call check_iostat(ios,__LINE__,__FILE__)
-            if (debug_init) write(6,'(i4,66i3)')j,(bmask(i,j),i=1,imax)
+            if (debug_init) write(6,'(i4,66i3)')j,(fmask(i,j),i=1,imax)
          enddo
          close(13,iostat=ios)
          call check_iostat(ios,__LINE__,__FILE__)
@@ -1597,14 +1597,14 @@ c find total no. of Pac/Atl gridboxes
       do j=1,jmax
          do i=1,imax
 c south Pacific, Atlantic (to 20 deg S)
-         if (bmask(i,j).eq.31) natl1a = natl1a + 1
-         if (bmask(i,j).eq.21) npac1a = npac1a + 1
+         if (fmask(i,j).eq.31) natl1a = natl1a + 1
+         if (fmask(i,j).eq.21) npac1a = npac1a + 1
 c tropical Pacific, Atlantic (20 deg S to 24 deg N)
-         if (bmask(i,j).eq.32) natl1b = natl1b + 1
-         if (bmask(i,j).eq.22) npac1b = npac1b + 1
+         if (fmask(i,j).eq.32) natl1b = natl1b + 1
+         if (fmask(i,j).eq.22) npac1b = npac1b + 1
 c north Pacific, Atlantic (north of 24 deg N)
-         if (bmask(i,j).eq.33) natl1c = natl1c + 1
-         if (bmask(i,j).eq.23) npac1c = npac1c + 1
+         if (fmask(i,j).eq.33) natl1c = natl1c + 1
+         if (fmask(i,j).eq.23) npac1c = npac1c + 1
          enddo
       enddo
 
@@ -1620,17 +1620,17 @@ ccc equally by area in Pac/Atl resp.
       enddo
       do j=1,jmax
          do i=1,imax
-         if (bmask(i,j).eq.31) 
+         if (fmask(i,j).eq.31) 
      1         pmeadj(i,j) = -1e6*extra1a/(natl1a*asurf(j))
-         if (bmask(i,j).eq.21) 
+         if (fmask(i,j).eq.21) 
      1         pmeadj(i,j) = 1e6*extra1a/(npac1a*asurf(j))
-         if (bmask(i,j).eq.32) 
+         if (fmask(i,j).eq.32) 
      1         pmeadj(i,j) = -1e6*extra1b/(natl1b*asurf(j))
-         if (bmask(i,j).eq.22) 
+         if (fmask(i,j).eq.22) 
      1         pmeadj(i,j) = 1e6*extra1b/(npac1b*asurf(j))
-         if (bmask(i,j).eq.33) 
+         if (fmask(i,j).eq.33) 
      1         pmeadj(i,j) = -1e6*extra1c/(natl1c*asurf(j))
-         if (bmask(i,j).eq.23) 
+         if (fmask(i,j).eq.23) 
      1         pmeadj(i,j) = 1e6*extra1c/(npac1c*asurf(j))
          enddo
       enddo

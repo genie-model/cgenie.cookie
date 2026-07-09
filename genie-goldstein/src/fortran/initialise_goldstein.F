@@ -818,73 +818,73 @@ c$$$         enddo
 c$$$         close(213,iostat=ios)
 c$$$         call check_iostat(ios,__LINE__,__FILE__)
       else
-c     ****************************************************************
-c     rma - light edits of code for ocean basin start/end i-points
-c     for now, derive ias(:), iaf(:), ips(:), ipf(:) north of j=jsf from
-c     the basin mask, jsf is set to be the first grid row south of the
-c     southern extent of the Atlantic basin
-c     allow Atlantic basin to extend across western/eastern model grid boundary
-c     find ocean positions semi-automatically, must start with a
-c     longitude i which is in the right ocean for all j, tricky in north
-         ias(jmax) = nint(imax*24.0/36.0)
-         ips(jmax) = nint(imax*10.0/36.0)
-         jsf = 1
-c     rma for 64x32l grid (15/9/05):
-c     rma      if(ldeg) then
-         if(igrid.ne.0) then
-            ias(jmax) = 61
-            ips(jmax) = 36
-            jsf = 10
-         endif
-         do j=1,jmax
-            ips(j) = ips(jmax)
-            ipf(j) = ips(j)
-            ias(j) = ias(jmax)
-            iaf(j) = ias(j)
-c     ************
-c     This bit to get the Southern tip of Greenland into the Atlantic
-            if (j.gt.nint((jmax*34.0/36.0)).and.
-     &           j.le.nint((jmax*35.0/36.0))) then
-               ias(j) = nint(imax*20.0/36.0)
-            endif
-c     ************
-            do i=1,imax
-               if(k1(ips(j)-1,j).le.kmax)ips(j) = ips(j) - 1
-               if(k1(ipf(j)+1,j).le.kmax)ipf(j) = ipf(j) + 1
-               if(k1(ias(j)-1,j).le.kmax)ias(j) = ias(j) - 1
-               if(k1(iaf(j)+1,j).le.kmax)iaf(j) = iaf(j) + 1
-               ips(j) = 1 + mod(ips(j)-1+imax,imax)
-               ipf(j) = 1 + mod(ipf(j)-1+imax,imax)
-               ias(j) = 1 + mod(ias(j)-1+imax,imax)
-               iaf(j) = 1 + mod(iaf(j)-1+imax,imax)
-            enddo
-            if(igrid.eq.0) then 
-               if(ias(j).ge.iaf(j).and.j.le.jmax/2)jsf = j
-               if(ips(j).ge.ipf(j).and.j.le.jmax/2)jsf = j
-            endif
-         enddo
-c     
-         if(igrid.eq.0) then
-c     ************
-c     This bit to get the Arctic all Atlantic
-            do j=1,jmax
-               if (j.gt.nint((jmax*35.0/36.0))) then
-                  ips(j) = 1
-                  ipf(j) = 0
-                  ias(j) = 1
-                  iaf(j) = imax
-               endif
-c     ************
-c     This bit to get the Southern tip of Greenland out of the Pacific
-               if (j.gt.nint((jmax*34.0/36.0)).and.
-     &              j.le.nint((jmax*35.0/36.0))) then
-                  ips(j) = 1
-                  ipf(j) = 0 
-               endif
-c     ************
-            enddo
-         endif
-c     ************
+c$$$c     ****************************************************************
+c$$$c     rma - light edits of code for ocean basin start/end i-points
+c$$$c     for now, derive ias(:), iaf(:), ips(:), ipf(:) north of j=jsf from
+c$$$c     the basin mask, jsf is set to be the first grid row south of the
+c$$$c     southern extent of the Atlantic basin
+c$$$c     allow Atlantic basin to extend across western/eastern model grid boundary
+c$$$c     find ocean positions semi-automatically, must start with a
+c$$$c     longitude i which is in the right ocean for all j, tricky in north
+c$$$         ias(jmax) = nint(imax*24.0/36.0)
+c$$$         ips(jmax) = nint(imax*10.0/36.0)
+c$$$         jsf = 1
+c$$$c     rma for 64x32l grid (15/9/05):
+c$$$c     rma      if(ldeg) then
+c$$$         if(igrid.ne.0) then
+c$$$            ias(jmax) = 61
+c$$$            ips(jmax) = 36
+c$$$            jsf = 10
+c$$$         endif
+c$$$         do j=1,jmax
+c$$$            ips(j) = ips(jmax)
+c$$$            ipf(j) = ips(j)
+c$$$            ias(j) = ias(jmax)
+c$$$            iaf(j) = ias(j)
+c$$$c     ************
+c$$$c     This bit to get the Southern tip of Greenland into the Atlantic
+c$$$            if (j.gt.nint((jmax*34.0/36.0)).and.
+c$$$     &           j.le.nint((jmax*35.0/36.0))) then
+c$$$               ias(j) = nint(imax*20.0/36.0)
+c$$$            endif
+c$$$c     ************
+c$$$            do i=1,imax
+c$$$               if(k1(ips(j)-1,j).le.kmax)ips(j) = ips(j) - 1
+c$$$               if(k1(ipf(j)+1,j).le.kmax)ipf(j) = ipf(j) + 1
+c$$$               if(k1(ias(j)-1,j).le.kmax)ias(j) = ias(j) - 1
+c$$$               if(k1(iaf(j)+1,j).le.kmax)iaf(j) = iaf(j) + 1
+c$$$               ips(j) = 1 + mod(ips(j)-1+imax,imax)
+c$$$               ipf(j) = 1 + mod(ipf(j)-1+imax,imax)
+c$$$               ias(j) = 1 + mod(ias(j)-1+imax,imax)
+c$$$               iaf(j) = 1 + mod(iaf(j)-1+imax,imax)
+c$$$            enddo
+c$$$            if(igrid.eq.0) then 
+c$$$               if(ias(j).ge.iaf(j).and.j.le.jmax/2)jsf = j
+c$$$               if(ips(j).ge.ipf(j).and.j.le.jmax/2)jsf = j
+c$$$            endif
+c$$$         enddo
+c$$$c     
+c$$$         if(igrid.eq.0) then
+c$$$c     ************
+c$$$c     This bit to get the Arctic all Atlantic
+c$$$            do j=1,jmax
+c$$$               if (j.gt.nint((jmax*35.0/36.0))) then
+c$$$                  ips(j) = 1
+c$$$                  ipf(j) = 0
+c$$$                  ias(j) = 1
+c$$$                  iaf(j) = imax
+c$$$               endif
+c$$$c     ************
+c$$$c     This bit to get the Southern tip of Greenland out of the Pacific
+c$$$               if (j.gt.nint((jmax*34.0/36.0)).and.
+c$$$     &              j.le.nint((jmax*35.0/36.0))) then
+c$$$                  ips(j) = 1
+c$$$                  ipf(j) = 0 
+c$$$               endif
+c$$$c     ************
+c$$$            enddo
+c$$$         endif
+c$$$c     ************
 c$$$c     REPRODUCE BMASK
 c$$$         do j=1,jmax
 c$$$            do i=1,imax

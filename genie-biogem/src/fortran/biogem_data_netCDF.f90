@@ -4633,10 +4633,11 @@ CONTAINS
     endwhere
     call sub_adddef_netcdf_moc(loc_iou,'climate_opsi','Global streamfunction','Sv',const_real_zero,const_real_zero)
     call sub_putvar2d('climate_opsi',loc_iou,n_j+1,n_k+1,loc_ntrec,loc_tmp_jk,loc_mask_opsi)
-    ! Atlantic & Pacific -- only for worlds with a basin mask provided
-    ! NOTE: goldstein_jsf is set > 0 if a mask exists and is read in, in initialize_goldstein.f
-    !       and goldstein_jsf == 1 if there are no Atl or Pac basins defined
-    if ((goldstein_jsf > 1) .AND. (goldstein_jsf < n_j)) then
+    ! Atlantic & Pacific -- calculated only for worlds with a basin mask provided
+    ! NOTE: goldstein_jsf is initialized jsf=j_max in initialize_goldstein.f
+    !       if a mask is provided, jsf is set to 1 and can then take any value up to jmax -1
+    !       mask provided => jsf < jmax
+    if (goldstein_jsf < n_j) then
        ! Atlantic
        loc_tmp_jk(:,:) = loc_scale*int_opsia_timeslice(:,:)/int_t_timeslice
        loc_tmp_jk(:,n_k:0:-1) = loc_tmp_jk(:,0:n_k:1)
