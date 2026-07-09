@@ -1,5 +1,5 @@
 # **********************************************************************
-# base-config: 	cookie.CB.p_worbe2.BASES
+# base-config: 	cookie.CBSR.fkl_pp51.BASESw
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
@@ -33,6 +33,9 @@ bg_opt_bio_CaCO3toPOCrainratio='FIXED'
 #       whereas the modern uniform equivalent is closer to 0.100
 # adjust CaCO3:POC rain ratio to give approximately 0.12 PgC CaCO3 yr-1 burial
 bg_par_bio_red_POC_CaCO3=0.165000
+# remove organic matter associated (implicit nitrogen) alkalinity transformations
+# => so we do not end up with spurious weathering ALK fluxes from kerogens (or spurious Corg burial related fluxes)
+bg_par_bio_red_PON_ALK=0.0
 #
 # *** REMINERALIZATION *************************************************
 #
@@ -53,6 +56,11 @@ bg_par_bio_remin_CaCO3_frac2=0.45
 bg_par_bio_remin_CaCO3_eL1=1.8905e+003
 # remineralization length #2 for CaCO3
 bg_par_bio_remin_CaCO3_eL2=1000000.0
+# set 'instantaneous' water column remineralziation
+bg_par_bio_remin_sinkingrate_physical=9.9E9
+bg_par_bio_remin_sinkingrate_reaction=125.0
+# maximum time-scale to geochemical reaction completion (days)
+bg_par_bio_geochem_tau=45.0
 #
 # *** SEDIMENTS - DEEP-SEA *********************************************
 #
@@ -71,6 +79,8 @@ sg_ctrl_sed_bioturb=.FALSE.
 # NOTE: set to zero when applying a dust field (unless an additional detrital flux is required)
 # set mean modern non-carbonate ('detrital' flux) (g cm-2 kyr-1)
 sg_par_sed_fdet=0.309
+# add redox-dependent SEDGEM remin
+sg_ctrl_sed_conv_sed_ocn_old=.false.
 #
 # *** SEDIMENTS - MUDS *************************************************
 #
@@ -107,13 +117,13 @@ rg_ctrl_force_sed_closedsystem=.TRUE.
 #
 # SPECIFY WHAT TO SAVE!
 # NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!
-#		(1) all 'false' will leave you with the basic (hidden option!) defaults: 
+#	(1) all 'false' will leave you with the basic (hidden option!) defaults: 
 #           bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
-#		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
-#		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
+#	(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
+#	(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
 #       (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
-#		(5) turning off a 'basic' option will also turn off the corresponding advanced option
-#		(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
+#	(5) turning off a 'basic' option will also turn off the corresponding advanced option
+#	(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
 #           bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
 bg_ctrl_save_basic_reservoirs=.TRUE.
 bg_ctrl_save_basic_geochemistry=.TRUE.
@@ -154,30 +164,6 @@ bg_par_force_restore_ohmega=5.1
 bg_ocn_init_35=2.700032948202354e-02 # Ca -- 'dissolved calcium (Ca)' 
 bg_ocn_init_50=3.500428338406979e-02 # Mg -- 'dissolved Magnesium (Mg)' 
 bg_ocn_init_38=1.175747273566755e-02 # SO4 -- 'dissolved sulphate (SO4)' 
-#
-# *** RECOMMENDED ******************************************************
-#
-# set 'instantaneous' water column remineralziation
-bg_par_bio_remin_sinkingrate_physical=9.9E9
-bg_par_bio_remin_sinkingrate_reaction=125.0
-# maximum time-scale to geochemical reaction completion (days)
-bg_par_bio_geochem_tau=45.0
-#
-# *** BIOGEM ***********************************************************
-#
-# remove organic matter associated (implicit nitrogen) alkalinity transformations
-# => so we do not end up with spurious weathering ALK fluxes from kerogens (or spurious Corg burial related fluxes)
-bg_par_bio_red_PON_ALK=0.0
-#
-# *** SEDGEM configuration *********************************************
-#
-# add redox-dependent SEDGEM remin
-sg_ctrl_sed_conv_sed_ocn_old=.false.
-#
-# *** ROKGEM ***********************************************************
-#
-# turn off atmospheric short circuit (so CO2 is now removed from the atmosphere during weathering, and volcanic CO2 added to it)
-rg_opt_short_circuit_atm=.false.
 #
 # *** DIAGNOSTICS ******************************************************
 #
