@@ -133,6 +133,7 @@ CONTAINS
        print*,'loop limit in <o2org> subroutine                    : ',par_sed_archer1991_iterationmax
        print*,'Use old error-catching scheme?                      : ',ctrl_sed_diagen_error_Archer_OLD
        print*,'Replace Archer model calc with lookup estimate?     : ',ctrl_sed_diagen_error_Archer2lookup
+       print*,'diffusion scale factor (all solutes)                : ',par_sed_archer1991_dif_sf
        ! --- DIAGENESIS SCHEME: opal --------------------------------------------------------------------------------------------- !
        print*,'base opal KSi value (yr-1)                          : ',par_sed_opal_KSi0
        ! --- CaCO3 PRODUCTION ---------------------------------------------------------------------------------------------------- !
@@ -265,6 +266,7 @@ CONTAINS
        print*,'1D netCDF sedcore output file name                  : ',trim(par_ncsedcore_name)
        print*,'time interval for averaging final data over (yr)    : ',par_sed_save_av_dtyr
        print*,'Save diagenesis error details?                      : ',ctrl_sed_diagen_error_save
+       print*,'Save hidden (all) fields?                           : ',ctrl_sed_save_hidden
        ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ########################################################################## !
        !
        ! ######################################################################################################################### !

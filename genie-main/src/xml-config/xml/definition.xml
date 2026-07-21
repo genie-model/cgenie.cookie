@@ -7561,6 +7561,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>Replace Archer model calc with lookup estimate?</description>
                     </param>
+                    <param name="par_sed_archer1991_dif_sf">
+			<value datatype="real">1.0</value>
+                        <description>diffusion scale factor (all solutes)</description>
+                    </param>
 <!-- DIAGENESIS SCHEME: opal  -->
                     <param name="par_sed_opal_KSi0">
 			<value datatype="real">1.25</value>
@@ -8061,6 +8065,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_sed_diagen_error_save">
 			<value datatype="boolean">.false.</value>
                         <description>Save diagenesis error details?</description>
+                    </param>
+                    <param name="ctrl_sed_save_hidden">
+			<value datatype="boolean">.false.</value>
+                        <description>Save hidden (all) fields?</description>
                     </param>
                 </namelist>
             </file>

@@ -134,8 +134,10 @@ MODULE sedgem_lib
   integer::par_sed_archer1991_iterationmax                       ! loop limit in 'o2org' subroutine
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
   logical::ctrl_sed_diagen_error_Archer_OLD                      ! Use old error-catching scheme?
-  logical::ctrl_sed_diagen_error_archer2lookup                  ! Replace Archer model calc with lookup estimate?
+  logical::ctrl_sed_diagen_error_archer2lookup                   ! Replace Archer model calc with lookup estimate?
   NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD,ctrl_sed_diagen_error_archer2lookup
+  REAL::par_sed_archer1991_dif_sf                                ! diffusion scale factor (all solutes)
+  NAMELIST /ini_sedgem_nml/par_sed_archer1991_dif_sf
   ! ------------------- DIAGENESIS SCHEME: opal ---------------------------------------------------------------------------------- !
   REAL::par_sed_opal_KSi0                                        ! base opal KSi value (yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_opal_KSi0
@@ -339,6 +341,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_save_av_dtyr
   logical::ctrl_sed_diagen_error_save                            ! Save diagenesis error details?
   NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_save
+  logical::ctrl_sed_save_hidden                                  ! Save hidden (all) fields?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_save_hidden
   ! ############################################################################################################################## !
 
 
