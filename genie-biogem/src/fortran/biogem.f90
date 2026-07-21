@@ -4557,7 +4557,7 @@ SUBROUTINE diag_biogem_timeseries( &
            END IF
            ! save time-series data (ASCII format)
            ! NOTE: netCDF time-series saving has been removed in cookie
-           CALL sub_data_save_runtime(loc_yr_save,loc_t)
+           CALL sub_data_save_runtime(loc_yr_save,loc_t,loc_dtyr)
            ! if high-resolution netCDF output is reuired -- re-open netcdf file, update record number, close file
            if (ctrl_data_save_3d_sig) then
               call sub_save_netcdf(loc_yr_save,4)

@@ -1458,12 +1458,12 @@ CONTAINS
   
   ! ****************************************************************************************************************************** !
   ! SAVE RUN-TIME DATA
-  SUBROUTINE sub_data_save_runtime(dum_yr_save,dum_t)
+  SUBROUTINE sub_data_save_runtime(dum_yr_save,dum_t,dum_dtyr)
     USE genie_util, ONLY:check_unit,check_iostat
     ! ---------------------------------------------------------------- !
     ! dummy arguments
     ! ---------------------------------------------------------------- !
-    REAL,INTENT(in)::dum_yr_save,dum_t
+    REAL,INTENT(in)::dum_yr_save,dum_t,dum_dtyr
     ! ---------------------------------------------------------------- !
     ! DEFINE LOCAL VARIABLES
     ! ---------------------------------------------------------------- !
@@ -1951,6 +1951,32 @@ CONTAINS
                       CLOSE(unit=out,iostat=ios)
                       call check_iostat(ios,__LINE__,__FILE__)
                    end if
+                CASE (ic_pH_n)
+                   loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
+                   loc_sig_sur = int_carb_sur_sig(ic)/int_t_sig
+                   call check_unit(out,__LINE__,__FILE__)
+                   OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   WRITE(unit=out,fmt='(f12.3,2f10.3)',iostat=ios) &
+                        & loc_t, &
+                        & loc_sig_opn, &
+                        & loc_sig_sur
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   CLOSE(unit=out,iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)          
+                CASE (ic_err)
+                   loc_sig_opn = int_carb_opn_sig(ic)/dum_dtyr
+                   loc_sig_sur = int_carb_sur_sig(ic)/dum_dtyr
+                   call check_unit(out,__LINE__,__FILE__)
+                   OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   WRITE(unit=out,fmt='(f12.3,2f10.3)',iostat=ios) &
+                        & loc_t, &
+                        & loc_sig_opn, &
+                        & loc_sig_sur
+                   call check_iostat(ios,__LINE__,__FILE__)
+                   CLOSE(unit=out,iostat=ios)
+                   call check_iostat(ios,__LINE__,__FILE__)                   
                 case default
                    loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
                    loc_sig_sur = int_carb_sur_sig(ic)/int_t_sig

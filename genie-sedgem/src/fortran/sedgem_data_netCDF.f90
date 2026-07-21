@@ -2056,60 +2056,65 @@ CONTAINS
     loc_ij(:,:) = phys_sed(ips_mask_sed,:,:)*phys_sed(ips_D,:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'grid_depth','seafloor depth',trim(loc_unitsname),loc_c0,loc_c0)
     call sub_putvar2d('grid_depth',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-    ! 
+    ! grid point area
+    loc_unitsname = 'm2'
+    loc_ij(:,:) = phys_sed(ips_mask_sed,:,:)*phys_sed(ips_A,:,:)
+    call sub_adddef_netcdf(ntrec_siou,3,'grid_area','grid point area',trim(loc_unitsname),loc_c0,loc_c0)
+    call sub_putvar2d('grid_area',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+    ! porosity
     loc_unitsname = 'cm3 cm-3'
     loc_ij(:,:) = phys_sed(ips_poros,:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'misc_sed_porosity', &
          & 'sediment surface porosity',trim(loc_unitsname),loc_c0,loc_c0)
     call sub_putvar2d('misc_sed_porosity',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-    ! 
+    ! mixing rate
     loc_unitsname = 'cm2 yr-1'
     loc_ij(:,:) = phys_sed(ips_mix_k0,:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'misc_sed_max_k', &
          & 'maximum (surface) sediment bioturbation mixing rate',trim(loc_unitsname),loc_c0,loc_c0)
     call sub_putvar2d('misc_sed_max_k',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-    ! 
+    ! deep-sea mask
     loc_unitsname = 'n/a'
     loc_ij(:,:) = loc_mask_dsea(:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'grid_mask_dsea','deep sea sediments mask',trim(loc_unitsname),loc_c0,loc_c0)
     call sub_putvar2d('grid_mask_dsea',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-    ! 
+    ! reef mask
     loc_unitsname = 'n/a'
     loc_ij(:,:) = loc_mask_reef(:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'grid_mask_reef','reef area mask',trim(loc_unitsname),loc_c0,loc_c0)
     call sub_putvar2d('grid_mask_reef',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-    ! 
+    ! muds mask
     loc_unitsname = 'n/a'
     loc_ij(:,:) = loc_mask_muds(:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'grid_mask_mud','shallow sediments mask',trim(loc_unitsname),loc_c0,loc_c0)
     call sub_putvar2d('grid_mask_mud',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
-    ! 
-    loc_unitsname = 'm'
-    loc_ij(:,:) = loc_mask_reef(:,:)*phys_sed(ips_D,:,:)
-    call sub_adddef_netcdf(ntrec_siou,3,'grid_topo_reef','reef topography',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('grid_topo_reef',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
-    ! shallow seafloor mask
+!!$    ! reef topography
+!!$    loc_unitsname = 'm'
+!!$    loc_ij(:,:) = loc_mask_reef(:,:)*phys_sed(ips_D,:,:)
+!!$    call sub_adddef_netcdf(ntrec_siou,3,'grid_topo_reef','reef topography',trim(loc_unitsname),loc_c0,loc_c0)
+!!$    call sub_putvar2d('grid_topo_reef',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
+    ! total shallow seafloor mask
     ! NOTE: there is no addition (to make a '2') as shallow seafloor is either 'mud' or 'reef' not both
     loc_unitsname = 'n/a'
-    loc_ij(:,:) = loc_mask_muds(:,:) + loc_mask_reef(:,:)
+    loc_ij(:,:) = min(loc_mask,loc_mask_muds(:,:) + loc_mask_reef(:,:))
     call sub_adddef_netcdf(ntrec_siou,3,'grid_mask_ssea','shallow seafloor mask (mud + reef)',trim(loc_unitsname),loc_c0,loc_c0)
     call sub_putvar2d('grid_mask_ssea',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
     ! sedcore details
     DO i=1,n_i
        DO j=1,n_j
           IF (sed_save_mask(i,j)) THEN
-             loc_mask(i,j) = 1.0
+             loc_ij(i,j) = 1.0
           else
-             loc_mask(i,j) = 0.0
+             loc_ij(i,j) = 0.0
           end if
        end do
     end do
     loc_unitsname = 'n/a'
     call sub_adddef_netcdf(ntrec_siou,3,'grid_mask_sedcore','sediment core locations',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('grid_mask_sedcore',ntrec_siou,n_i,n_j,ntrec_sout,loc_mask(:,:),loc_mask)
+    call sub_putvar2d('grid_mask_sedcore',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
     loc_unitsname = 'm'
     call sub_adddef_netcdf(ntrec_siou,3,'grid_topo_sedcore','sediment core topo',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('grid_topo_sedcore',ntrec_siou,n_i,n_j,ntrec_sout,loc_mask(:,:)*phys_sed(ips_D,:,:),loc_mask)
+    call sub_putvar2d('grid_topo_sedcore',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:)*phys_sed(ips_D,:,:),loc_ij)
     !
     ! NOTE: no mask is passed to sub_putvar2d_int [renamed from: sub_putvar2dI]
     loc_unitsname = 'n/a'

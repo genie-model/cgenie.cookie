@@ -3420,7 +3420,8 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! nutrient availablity diagnostics
     ! ---------------------------------------------------------------- !
-    if (ocn_select(io_PO4) .AND. ocn_select(io_SiO2)) then
+    ! NOTE: also test for is_opal because io_SiO2 on its own can be used as a weathering tracer ...
+    if (ocn_select(io_PO4) .AND. ocn_select(io_SiO2) .AND. ocn_select(is_opal)) then
        loc_unitsname = 'n/a'
        loc_ij(:,:) = const_real_null
        DO i=1,n_i

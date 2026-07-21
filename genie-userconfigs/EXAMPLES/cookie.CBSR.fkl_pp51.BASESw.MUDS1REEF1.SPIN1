@@ -85,7 +85,7 @@ sg_ctrl_sed_conv_sed_ocn_old=.false.
 # *** SEDIMENTS - MUDS *************************************************
 #
 # specify muds mask
-sg_par_sed_muds_mask_name='fkl_pp51.mudsmask1W.dat'
+sg_par_sed_muds_mask_name='fkl_pp51.mudsmask1E.dat'
 # enhancement of det flux to MUDS cells
 sg_par_sed_fdet_rmuds=1.0
 # add POC preservation and burial a-la Dunne et al. [2005]
@@ -100,7 +100,7 @@ sg_ctrl_sed_diagen_fracC2Ppres_wallmann2010=.true.
 # *** SEDIMENTS - REEF *************************************************
 #
 # specify reef mask
-sg_par_sed_reef_mask_name='fkl_pp51.reefmask1E.dat'
+sg_par_sed_reef_mask_name='fkl_pp51.reefmask1W.dat'
 # set a generic reef precip scaling (mol cm-2 yr-1) and then specify an initial global CaCO3 burial rate (mol yr-1)
 sg_par_sed_reef_CaCO3precip_sf=1.0E-6
 sg_par_sed_CaCO3burialTOT=5.0E12
