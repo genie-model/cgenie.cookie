@@ -346,21 +346,17 @@ CONTAINS
                      & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (n/a) / ' //&
                      & 'surface mean (total area) '//TRIM(string_carb(ic))//' (n/a)'
              CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
-                if (ocn_select(io_DIC_14C)) then
-                   If (ctrl_save_basic_proxies) then
-                      loc_string = '% time (yr) / ' //&
-                           & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                           & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
-                           & 'surface '//TRIM(string_carb(ic))//' d14C (o/oo) / ' //&
-                           & 'surface mean (total area)  '//TRIM(string_carb(ic))//' (mol kg-1)'
-                   end if
-                elseif (ocn_select(io_DIC_13C)) then
-                   If (ctrl_save_basic_proxies) then
-                      loc_string = '% time (yr) / ' //&
-                           & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
-                           & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
-                           & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
-                   end if
+                if (ctrl_save_advanced_geochemistry .AND. ctrl_save_basic_proxies .AND. ocn_select(io_DIC_14C)) then
+                   loc_string = '% time (yr) / ' //&
+                        & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                        & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
+                        & 'surface '//TRIM(string_carb(ic))//' d14C (o/oo) / ' //&
+                        & 'surface mean (total area)  '//TRIM(string_carb(ic))//' (mol kg-1)'
+                elseif (ctrl_save_advanced_geochemistry .AND. ctrl_save_basic_proxies .AND. ocn_select(io_DIC_13C)) then
+                   loc_string = '% time (yr) / ' //&
+                        & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
+                        & 'surface '//TRIM(string_carb(ic))// ' d13C (o/oo) / ' //&
+                        & 'surface mean (total area) '//TRIM(string_carb(ic))//' (mol kg-1)'
                 else
                    loc_string = '% time (yr) / ' //&
                         & 'surface mean (ice-free) '//TRIM(string_carb(ic))//' (mol kg-1) / ' //&
@@ -1902,41 +1898,37 @@ CONTAINS
              IF (ctrl_save_advanced_geochemistry) THEN
                 SELECT CASE (ic)
                 CASE (ic_conc_CO2,ic_conc_HCO3,ic_conc_CO3)
-                   if (ocn_select(io_DIC_14C)) then
-                      If (ctrl_save_basic_proxies) then
-                         loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
-                         loc_sig_sur = int_carb_sur_sig(ic)/int_t_sig
-                         call check_unit(out,__LINE__,__FILE__)
-                         OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-                         call check_iostat(ios,__LINE__,__FILE__)
-                         WRITE(unit=out,fmt='(f12.3,e15.7,2f12.3,e15.7)',iostat=ios) &
-                              & loc_t, &
-                              & loc_sig_opn, &
-                              & fun_calc_isotope_delta&
-                              & (loc_sig_opn,loc_carbisor(ic - 1)*loc_sig_opn,const_standards(11),.FALSE.,const_nulliso), &
-                              & fun_calc_isotope_delta &
-                              & (loc_sig_opn,loc_carbisor(ic + 3)*loc_sig_opn,const_standards(12),.FALSE.,const_nulliso), &
-                              & loc_sig_sur
-                         call check_iostat(ios,__LINE__,__FILE__)
-                         CLOSE(unit=out,iostat=ios)
-                         call check_iostat(ios,__LINE__,__FILE__)
-                      end if
-                   elseif (ocn_select(io_DIC_13C)) then
-                      If (ctrl_save_basic_proxies) then
-                         loc_sig_sur = int_carb_sur_sig(ic)/int_t_sig
-                         loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
-                         call check_unit(out,__LINE__,__FILE__)
-                         OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
-                         WRITE(unit=out,fmt='(f12.3,e15.7,f12.3,e15.7)',iostat=ios) &
-                              & loc_t, &
-                              & loc_sig_opn, &
-                              & fun_calc_isotope_delta &
-                              & (loc_sig_opn,loc_carbisor(ic - 1)*loc_sig_opn,const_standards(11),.FALSE.,const_nulliso), &
-                              & loc_sig_sur
-                         call check_iostat(ios,__LINE__,__FILE__)
-                         CLOSE(unit=out,iostat=ios)
-                         call check_iostat(ios,__LINE__,__FILE__)
-                      end if
+                   if (ctrl_save_advanced_geochemistry .AND. ctrl_save_basic_proxies .AND. ocn_select(io_DIC_14C)) then
+                      loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
+                      loc_sig_sur = int_carb_sur_sig(ic)/int_t_sig
+                      call check_unit(out,__LINE__,__FILE__)
+                      OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                      call check_iostat(ios,__LINE__,__FILE__)
+                      WRITE(unit=out,fmt='(f12.3,e15.7,2f12.3,e15.7)',iostat=ios) &
+                           & loc_t, &
+                           & loc_sig_opn, &
+                           & fun_calc_isotope_delta&
+                           & (loc_sig_opn,loc_carbisor(ic - 1)*loc_sig_opn,const_standards(11),.FALSE.,const_nulliso), &
+                           & fun_calc_isotope_delta &
+                           & (loc_sig_opn,loc_carbisor(ic + 3)*loc_sig_opn,const_standards(12),.FALSE.,const_nulliso), &
+                           & loc_sig_sur
+                      call check_iostat(ios,__LINE__,__FILE__)
+                      CLOSE(unit=out,iostat=ios)
+                      call check_iostat(ios,__LINE__,__FILE__)
+                   elseif (ctrl_save_advanced_geochemistry .AND. ctrl_save_basic_proxies .AND. ocn_select(io_DIC_13C)) then
+                      loc_sig_sur = int_carb_sur_sig(ic)/int_t_sig
+                      loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
+                      call check_unit(out,__LINE__,__FILE__)
+                      OPEN(unit=out,file=loc_filename,action='write',status='old',position='append',iostat=ios)
+                      WRITE(unit=out,fmt='(f12.3,e15.7,f12.3,e15.7)',iostat=ios) &
+                           & loc_t, &
+                           & loc_sig_opn, &
+                           & fun_calc_isotope_delta &
+                           & (loc_sig_opn,loc_carbisor(ic - 1)*loc_sig_opn,const_standards(11),.FALSE.,const_nulliso), &
+                           & loc_sig_sur
+                      call check_iostat(ios,__LINE__,__FILE__)
+                      CLOSE(unit=out,iostat=ios)
+                      call check_iostat(ios,__LINE__,__FILE__)
                    else
                       loc_sig_opn = int_carb_opn_sig(ic)/int_t_sig
                       loc_sig_sur = int_carb_sur_sig(ic)/int_t_sig
