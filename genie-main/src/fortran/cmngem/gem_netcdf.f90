@@ -356,8 +356,17 @@ CONTAINS
     endif
     if (dum_axis .eq. 'Z') then
        i = nf90_put_att (dum_ncid, loc_iv, 'positive', 'down')
-       call sub_checkerror (i,'defvar positive string '//trim(dum_name))
+       call sub_checkerror (i,'defvar positive '//trim(dum_name))
     end if
+    !
+!    if (dum_axis .eq. 'X') then
+!       i = nf90_put_att (dum_ncid, loc_iv, '_CoordinateAxisType', 'GeoX')
+!       call sub_checkerror (i,'defvar _CoordinateAxisType '//trim(dum_name))
+!    end if
+!    if (dum_axis .eq. 'Z') then
+!       i = nf90_put_att (dum_ncid, loc_iv, '_CoordinateAxisType', 'GeoZ')
+!       call sub_checkerror (i,'defvar _CoordinateAxisType '//trim(dum_name))
+!    end if
 
   end subroutine sub_defvar
 

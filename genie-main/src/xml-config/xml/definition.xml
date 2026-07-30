@@ -7352,9 +7352,9 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">0.150</value>
                         <description>prescribed (additional) flux of detrital material to the seds (g cm-2 kyr-1)</description>
                     </param>
-                    <param name="par_sed_fdet_rmuds">
+                    <param name="par_sed_fdet_rshelf">
 			<value datatype="real">1.0</value>
-                        <description>Enhancement of det flux to MUDS cells</description>
+                        <description>Enhancement of det flux to shelf cells</description>
                     </param>
                     <param name="ctrl_sed_det_NOdust">
 			<value datatype="boolean">.false.</value>
@@ -7594,10 +7594,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_sed_CaCO3_abioticohm_min">
 			<value datatype="real">10.0</value>
                         <description>Min threshold for abiotic CaCO3 precipitation</description>
-                    </param>
-                    <param name="par_sed_poros_CaCO3_reef">
-			<value datatype="real">0.0</value>
-                        <description>Reef CaCO3 porosity (cm3 cm-3)</description>
                     </param>
                     <param name="par_sed_CaCO3burial">
 			<value datatype="real">0.0</value>

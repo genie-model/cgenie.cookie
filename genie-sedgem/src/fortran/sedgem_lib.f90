@@ -46,8 +46,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/n_sed_tot,n_sed_tot_init,n_sed_tot_drop
   ! ------------------- DETRITAL CONFIGURATION ----------------------------------------------------------------------------------- !
   REAL::par_sed_fdet                                             ! prescribed (additional) flux of detrital material to the seds
-  REAL::par_sed_fdet_rmuds                                       ! Enhancement of det flux to MUDS cells 
-  NAMELIST /ini_sedgem_nml/par_sed_fdet,par_sed_fdet_rmuds
+  REAL::par_sed_fdet_rshelf                                      ! Enhancement of det flux to shelf cells 
+  NAMELIST /ini_sedgem_nml/par_sed_fdet,par_sed_fdet_rshelf
   LOGICAL::ctrl_sed_det_NOdust                                   ! no pelagic (dust) detrital contribution?
   NAMELIST /ini_sedgem_nml/ctrl_sed_det_NOdust
   ! ------------------- DIAGENESIS SCHEME: SELECTION ----------------------------------------------------------------------------- !
@@ -152,8 +152,6 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_reef_calcite                            
   REAL::par_sed_CaCO3_abioticohm_min                             ! Min threshold for abiotic CaCO3 precipitation
   NAMELIST /ini_sedgem_nml/par_sed_CaCO3_abioticohm_min
-  real::par_sed_poros_CaCO3_reef                                 ! reef CaCO3 porosity 
-  NAMELIST /ini_sedgem_nml/par_sed_poros_CaCO3_reef                 
   REAL::par_sed_CaCO3burial                                      ! prescribed neritic CaCO3 production rate (mol cm-2 yr-1)
   REAL::par_sed_CaCO3burialTOT                                   ! prescribed global neritic CaCO3 production rate (mol yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_CaCO3burial,par_sed_CaCO3burialTOT

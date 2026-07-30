@@ -221,20 +221,24 @@ CONTAINS
     ! -------------------------------------------------------- ! netCDF: out (save)
     integer::loc_ntrec,loc_iou
 !!$    integer::loc_id_latm,loc_id_lat_e
-    integer::loc_id_stationm,loc_id_station_e
-    integer::loc_id_zt,loc_id_zt_e
+!!$    integer::loc_id_zt,loc_id_zt_e
+    integer::loc_id_station,loc_id_station_e
+    integer::loc_id_level,loc_id_level_e
     integer,dimension(1:1)::loc_it_1
     integer,dimension(1:2)::loc_it_2
     character(127)::loc_title,loc_timunit
     character(127)::loc_string,loc_string_longname
     character(7)::loc_string_year
+    CHARACTER(len=127)::loc_unitsname
     real::loc_c0,loc_c1
 !!$    real,dimension(nv_sedcore)::loc_lat,loc_dlat
 !!$    real,dimension(0:nv_sedcore)::loc_lat_e
+!!$    real,DIMENSION(:),ALLOCATABLE::loc_depth,loc_ddepth        ! 
+!!$    real,DIMENSION(:),ALLOCATABLE::loc_depth_e     
     real,dimension(nv_sedcore)::loc_station,loc_dstation
     real,dimension(0:nv_sedcore)::loc_station_e
-    real,DIMENSION(:),ALLOCATABLE::loc_depth,loc_ddepth        ! 
-    real,DIMENSION(:),ALLOCATABLE::loc_depth_e                 ! 
+    real,DIMENSION(:),ALLOCATABLE::loc_level,loc_dlevel        ! 
+    real,DIMENSION(:),ALLOCATABLE::loc_level_e                 ! 
     real,dimension(:,:),ALLOCATABLE::loc_mk,loc_mk_mask
     integer,dimension(:),ALLOCATABLE::loc_m
     ! -------------------------------------------------------- ! netCDF: in (restart)
@@ -351,8 +355,8 @@ CONTAINS
        call check_iostat(alloc_error,__LINE__,__FILE__)
        ! -------------------------------------------------------- ! get variable dimensions
        call sub_inqvars(loc_ncid,loc_ndims,loc_nvars,loc_dimlen,loc_varname,loc_vdims,loc_varlen)
-       loc_nv_sedcore_rst = loc_dimlen(1)
-       loc_n_sedcore_tot_rst = loc_dimlen(3)
+       loc_nv_sedcore_rst       = loc_dimlen(1)
+       loc_n_sedcore_tot_rst    = loc_dimlen(3)
        loc_n_sedcore_tracer_rst = loc_nvars
        ! -------------------------------------------------------- ! allocate arrays: temp arrays
        ALLOCATE(loc_m_in(1:loc_nv_sedcore_rst),STAT=alloc_error)
@@ -614,13 +618,7 @@ CONTAINS
        end do
        loc_sed_tot_vol = fun_calc_sed_vol(loc_sed(:))
        if (loc_sed_tot_vol > const_real_nullsmall) then
-          if (sed_mask_reef(loc_i,loc_j)) then
-             loc_sedcore_poros(m,o) = par_sed_poros_CaCO3_reef
-          elseif (sed_mask_muds(loc_i,loc_j)) then
-             loc_sedcore_poros(m,o) = fun_calc_sed_poros_nsur(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol,par_sed_top_th)
-          else
-             loc_sedcore_poros(m,o) = fun_calc_sed_poros_nsur(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol,par_sed_top_th)
-          end if
+          loc_sedcore_poros(m,o) = fun_calc_sed_poros_nsur(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol,par_sed_top_th)
           loc_sedcore_th(m,o) = loc_sed_tot_vol/(1.0 - loc_sedcore_poros(m,o))
        else
           loc_sedcore_poros(m,o) = 1.0
@@ -633,13 +631,7 @@ CONTAINS
           end do
           loc_sed_tot_vol = fun_calc_sed_vol(loc_sed(:))
           if (loc_sed_tot_vol > const_real_nullsmall) then
-             if (sed_mask_reef(loc_i,loc_j)) then
-                loc_sedcore_poros(m,o) = par_sed_poros_CaCO3_reef
-             elseif (sed_mask_muds(loc_i,loc_j)) then
-                loc_sedcore_poros(m,o) = fun_calc_sed_poros(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol)
-             else
-                loc_sedcore_poros(m,o) = fun_calc_sed_poros(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol)
-             end if
+             loc_sedcore_poros(m,o) = fun_calc_sed_poros(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol)
              loc_sedcore_th(m,o) = loc_sed_tot_vol/(1.0 - loc_sedcore_poros(m,o))
           else
              loc_sedcore_poros(m,o) = 1.0
@@ -743,7 +735,6 @@ CONTAINS
                 loc_standard = const_standards(sed_type(is))
                 loc_delta = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
                 If (loc_delta == const_real_null) then
-!!$                   loc_vsedcore(m)%lay(l,o) = const_real_zero
                    loc_vsedcore(m)%lay(l,o) = const_real_null
                 else
                    loc_vsedcore(m)%lay(l,o) = loc_delta
@@ -850,11 +841,11 @@ CONTAINS
     ! -------------------------------------------------------- !
     IF (ctrl_misc_debug4) print*,'*** WRITE TO FILE ***'
     ! -------------------------------------------------------- ! allocate local grid arrays
-    ALLOCATE(loc_depth(1:loc_n_sedcore_tot),STAT=alloc_error)
+    ALLOCATE(loc_level(1:loc_n_sedcore_tot),STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_ddepth(1:loc_n_sedcore_tot),STAT=alloc_error)
+    ALLOCATE(loc_dlevel(1:loc_n_sedcore_tot),STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
-    ALLOCATE(loc_depth_e(0:loc_n_sedcore_tot),STAT=alloc_error)
+    ALLOCATE(loc_level_e(0:loc_n_sedcore_tot),STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
     ALLOCATE(loc_mk(1:nv_sedcore,1:loc_n_sedcore_tot),STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
@@ -874,8 +865,10 @@ CONTAINS
        loc_dstation(m) = 1.0
     end do
     do o = 1,loc_n_sedcore_tot
-       loc_depth(o)    = real(o) - 0.5
-       loc_ddepth(o)   = 1.0
+!!$       loc_depth(o)    = real(o) - 0.5
+!!$       loc_ddepth(o)   = 1.0
+       loc_level(o)    = real(o) - 0.5
+       loc_dlevel(o)   = 1.0
     end do
     ! -------------------------------------------------------- ! open file 
     call sub_opennew(dum_nameout,loc_iou)
@@ -888,10 +881,12 @@ CONTAINS
     ! -------------------------------------------------------- ! define dimensions
 !!$    call sub_defdim('lat',loc_iou,nv_sedcore,loc_id_latm)
 !!$    call sub_defdim('lat_edges',loc_iou,nv_sedcore+1,loc_id_lat_e)
-    call sub_defdim('station',loc_iou,nv_sedcore,loc_id_stationm)
+!!$    call sub_defdim('zt',loc_iou,loc_n_sedcore_tot,loc_id_zt)
+!!$    call sub_defdim('zt_edges',loc_iou,loc_n_sedcore_tot+1,loc_id_zt_e)
+    call sub_defdim('station',loc_iou,nv_sedcore,loc_id_station)
     call sub_defdim('station_edges',loc_iou,nv_sedcore+1,loc_id_station_e)
-    call sub_defdim('zt',loc_iou,loc_n_sedcore_tot,loc_id_zt)
-    call sub_defdim('zt_edges',loc_iou,loc_n_sedcore_tot+1,loc_id_zt_e)
+    call sub_defdim('level',loc_iou,loc_n_sedcore_tot,loc_id_level)
+    call sub_defdim('level_edges',loc_iou,loc_n_sedcore_tot+1,loc_id_level_e)
     ! -------------------------------------------------------- ! define 1d data
 !!$    loc_it_1(1) = loc_id_latm
 !!$    call sub_defvar ('lat', loc_iou, 1, loc_it_1, loc_c0, loc_c0, 'X', 'D' , &
@@ -899,21 +894,28 @@ CONTAINS
 !!$    loc_it_1(1) = loc_id_lat_e
 !!$    call sub_defvar ('lat_edges', loc_iou, 1, loc_it_1, loc_c0, loc_c0, ' ', 'D' , &
 !!$         &'latitude of t grid edges', ' ', 'degrees')
-    loc_it_1(1) = loc_id_stationm
+!!$    loc_it_1(1) = loc_id_zt
+!!$    call sub_defvar ('zt', loc_iou, 1, loc_it_1, loc_c0, loc_c0, 'Z', 'D' , &
+!!$         & 'depth of z grid', ' ', 'cm')
+!!$    loc_it_1(1) = loc_id_zt_e
+!!$    call sub_defvar ('zt_edges', loc_iou, 1, loc_it_1, loc_c0, loc_c0, ' ', 'D' , &
+!!$         & 'depth of z grid edges', ' ', 'cm')
+    loc_it_1(1) = loc_id_station
     call sub_defvar ('station', loc_iou, 1, loc_it_1, loc_c0, loc_c0, 'X', 'D' , &
-         &'station number', 'station', '#')
+         &'sediment core number', 'station', '#')
     loc_it_1(1) = loc_id_station_e
-    call sub_defvar ('station_edges', loc_iou, 1, loc_it_1, loc_c0, loc_c0, ' ', 'D' , &
+    call sub_defvar ('station_edges', loc_iou, 1, loc_it_1, loc_c0, loc_c0, '', 'D' , &
          &'station grid edges', ' ', '#')
-    loc_it_1(1) = loc_id_zt
-    call sub_defvar ('zt', loc_iou, 1, loc_it_1, loc_c0, loc_c0, 'Z', 'D' , &
-         & 'depth of z grid', ' ', 'cm')
-    loc_it_1(1) = loc_id_zt_e
-    call sub_defvar ('zt_edges', loc_iou, 1, loc_it_1, loc_c0, loc_c0, ' ', 'D' , &
-         & 'depth of z grid edges', ' ', 'cm')
+    loc_it_1(1) = loc_id_level
+    call sub_defvar ('level', loc_iou, 1, loc_it_1, loc_c0, loc_c0, 'Z', 'D' , &
+         & 'sediment level number', 'lev', '#')
+    loc_it_1(1) = loc_id_level_e
+    call sub_defvar ('level_edges', loc_iou, 1, loc_it_1, loc_c0, loc_c0, '', 'D' , &
+         & 'level edges', ' ', '#')
 !!$    loc_it_2(1) = loc_id_latm    
-    loc_it_2(1) = loc_id_stationm    
-    loc_it_2(2) = loc_id_zt
+!!$    loc_it_2(2) = loc_id_zt
+    loc_it_2(1) = loc_id_station 
+    loc_it_2(2) = loc_id_level
     ! -------------------------------------------------------- ! define (1D)  variables
     call sub_defvar('grid_i',loc_iou,1,loc_it_2(1),loc_c0,loc_c0,' ','F', &
          & 'i grid coordinate','i grid coordinate',' ')
@@ -921,31 +923,61 @@ CONTAINS
          & 'j grid coordinate','j grid coordinate',' ')
     call sub_defvar('grid_nrst',loc_iou,1,loc_it_2(1),loc_c0,loc_c0,' ','F', &
          & '# of layers in restart','# of layers in restart',' ')
-    ! -------------------------------------------------------- ! define (2D) tracer variables
+    ! -------------------------------------------------------- ! define (2D) tracer variables: sedcore physics tracers
     call sub_defvar('phys_layer',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
-         & 'Sediment layer number (1 == surface)','Sediment layer number (1 == surface)',' ')
+         & 'Sediment layer number','','n/a')
     call sub_defvar('phys_depth',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
-         & 'Sediment layer depth below surface (cm)','Sediment layer depth below surface (cm)',' ')
+         & 'Depth below surface','','cm')
     call sub_defvar('phys_thickness',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
-         & 'Sediment layer thickness (cm)','Sediment layer thickness (cm)',' ')
+         & 'Sediment layer thickness','','cm')
     call sub_defvar('phys_porosity',loc_iou,2,loc_it_2,loc_c0,loc_c0,' ','F', &
-         & 'Sediment layer porosity (cm3 cm-3)','Sediment layer porosity (cm3 cm-3)',' ')
-    call sub_defvar('age_CaCO3',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
-         & 'Age from sediment CaCO3 (yr)','Age from sediment CaCO3 (yr)',' ')
-    call sub_defvar('age_det',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
-         & 'Age from sediment detrital (yr)','Age from sediment detrital (yr)',' ')
-    call sub_defvar('age_ash',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
-         & 'Age by linear sedimentation rate (yr)','Age by linear sedimentation rate (yr)',' ')
-    if (sed_select(is_CaCO3_14C)) then
-       call sub_defvar('age_14C',loc_iou,2,loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
-            & 'Radiocarbon age (yr)','Radioncarbon age (yr)',' ')
+         & 'Sediment layer porosity','','cm3 cm-3')
+    if (sed_select(is_CaCO3_age)) then
+       call sub_defvar('age_CaCO3',loc_iou,2,loc_it_2,sed_mima(is2l(is),1),sed_mima(is2l(is),2),' ','F', &
+            & 'Mean CaCO3 sediment age','','years')
     end if
+    if (sed_select(is_det_age)) then
+       call sub_defvar('age_det',loc_iou,2,loc_it_2,sed_mima(is2l(is),1),sed_mima(is2l(is),2),' ','F', &
+            & 'Mean detrital sediment age','','years')
+    end if
+    call sub_defvar('age_ash',loc_iou,2,loc_it_2,sed_mima(is2l(is),1),sed_mima(is2l(is),2),' ','F', &
+         & 'Constant sedimentation rate age (from ash)','','years')
+    if (sed_select(is_CaCO3_14C)) then
+       call sub_defvar('age_14C',loc_iou,2,loc_it_2,sed_mima(is2l(is),1),sed_mima(is2l(is),2),' ','F', &
+            & 'Mean CaCO3 radiocarbon age','','years')
+    end if
+    ! -------------------------------------------------------- ! define (2D) tracer variables: sediment tracers
+    ! NOTE: define variables to exclude
     DO l=1,n_l_sed
        is = conv_iselected_is(l)
-       call sub_defvar('sed_'//trim(string_sed(is)),loc_iou,2, &
-            & loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
-            & string_longname_sed(is),'Sediment tracer - '//trim(string_sed(is)),' ')
+       select case (is)
+       CASE (is_POC_frac2,is_CaCO3_frac2,is_opal_frac2,is_POC_size,is_CaCO3_age,is_det_age,is_CaCO3_red,is_CaCO3_blue)
+          if (ctrl_sed_save_hidden) then
+             loc_unitsname = 'n/a'
+             call sub_defvar('sed_'//trim(string_sed(is)),loc_iou,2, &
+                  & loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
+                  & string_longname_sed(is),'Sediment tracer - '//trim(string_sed(is)),trim(loc_unitsname))
+          end if
+       case default
+          select case (sed_type(is))
+          case (par_sed_type_age)
+             loc_unitsname = 'years'
+          case (par_sed_type_bio,par_sed_type_POM,par_sed_type_scavenged,par_sed_type_abio)
+             loc_unitsname = 'wt%'
+          case default
+             loc_unitsname = 'o/oo'             
+          end select
+          call sub_defvar('sed_'//trim(string_sed(is)),loc_iou,2, &
+               & loc_it_2,sed_mima(l,1),sed_mima(l,2),' ','F', &
+               & string_longname_sed(is),'Sediment tracer - '//trim(string_sed(is)),trim(loc_unitsname))
+       end select
     end do
+    if (ctrl_sed_save_hidden) then
+       if (sed_select(is_POC) .AND. sed_select(is_POP)) then
+          call sub_defvar('sed_C2P',loc_iou,2,loc_it_2,const_real_nullsmall,const_real_nullhigh,' ','F', &
+               & 'Organic matter C/P','','n/a')
+       end if
+    end if
     ! -------------------------------------------------------- ! end definitions
     call sub_enddef (loc_iou)
     call sub_sync(loc_iou)
@@ -957,19 +989,25 @@ CONTAINS
 !!$    call edge_maker (1,loc_lat_e(:),loc_lat(:), &
 !!$         & loc_lat(:)+0.5*loc_dlat(:),loc_dlat(:),nv_sedcore)
 !!$    call sub_putvar1d ('lat_edges',loc_iou,nv_sedcore+1,loc_ntrec, &
-!!$         & nv_sedcore+1,loc_lat_e,loc_c1,loc_c0)    
+!!$         & nv_sedcore+1,loc_lat_e,loc_c1,loc_c0) 
+!!$    call sub_putvar1d ('zt',loc_iou,n_j,loc_ntrec,loc_n_sedcore_tot, &
+!!$         & loc_depth(:),loc_c1, loc_c0)
+!!$    call edge_maker (1,loc_depth_e(:),loc_depth(:), &
+!!$         & loc_depth(:)+0.5,loc_ddepth(:),loc_n_sedcore_tot)
+!!$    call sub_putvar1d ('zt_edges',loc_iou,loc_n_sedcore_tot+1,loc_ntrec, &
+!!$         & loc_n_sedcore_tot+1,loc_depth_e,loc_c1,loc_c0)   
     call sub_putvar1d ('station',loc_iou,nv_sedcore,loc_ntrec,nv_sedcore, &
          & loc_station(:),loc_c1,loc_c0)
     call edge_maker (1,loc_station_e(:),loc_station(:), &
          & loc_station(:)+0.5*loc_dstation(:),loc_dstation(:),nv_sedcore)
     call sub_putvar1d ('station_edges',loc_iou,nv_sedcore+1,loc_ntrec, &
          & nv_sedcore+1,loc_station_e,loc_c1,loc_c0)    
-    call sub_putvar1d ('zt',loc_iou,n_j,loc_ntrec,loc_n_sedcore_tot, &
-         & loc_depth(:),loc_c1, loc_c0)
-    call edge_maker (1,loc_depth_e(:),loc_depth(:), &
-         & loc_depth(:)+0.5,loc_ddepth(:),loc_n_sedcore_tot)
-    call sub_putvar1d ('zt_edges',loc_iou,loc_n_sedcore_tot+1,loc_ntrec, &
-         & loc_n_sedcore_tot+1,loc_depth_e,loc_c1,loc_c0)
+    call sub_putvar1d ('level',loc_iou,n_j,loc_ntrec,loc_n_sedcore_tot, &
+         & loc_level(:),loc_c1, loc_c0)
+    call edge_maker (1,loc_level_e(:),loc_level(:), &
+         & loc_level(:)+0.5,loc_dlevel(:),loc_n_sedcore_tot)
+    call sub_putvar1d ('level_edges',loc_iou,loc_n_sedcore_tot+1,loc_ntrec, &
+         & loc_n_sedcore_tot+1,loc_level_e,loc_c1,loc_c0)
     ! -------------------------------------------------------- ! write 1D variables: grid (i,j)
     loc_m(:) = 0
     DO m = 1,nv_sedcore
@@ -1016,10 +1054,14 @@ CONTAINS
     call sub_putvar2d('phys_thickness',loc_iou,nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
     loc_mk(:,:) = loc_sedcore_poros(:,:)
     call sub_putvar2d('phys_porosity',loc_iou,nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
-    loc_mk(:,:) = loc_sedcore_age_cal(:,:)
-    call sub_putvar2d('age_CaCO3',loc_iou,nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
-    loc_mk(:,:) = loc_sedcore_age_det(:,:)
-    call sub_putvar2d('age_det',loc_iou,nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
+    if (sed_select(is_CaCO3_age)) then
+       loc_mk(:,:) = loc_sedcore_age_cal(:,:)
+       call sub_putvar2d('age_CaCO3',loc_iou,nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
+    end if
+    if (sed_select(is_det_age)) then
+       loc_mk(:,:) = loc_sedcore_age_det(:,:)
+       call sub_putvar2d('age_det',loc_iou,nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
+    end if
     loc_mk(:,:) = loc_sedcore_age_ash(:,:)
     call sub_putvar2d('age_ash',loc_iou,nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
     if (sed_select(is_CaCO3_14C)) then
@@ -1035,9 +1077,31 @@ CONTAINS
              loc_mk(m,o) = loc_vsedcore(m)%lay(l,o)
           end do
        END DO
-       call sub_putvar2d('sed_'//trim(string_sed(is)),loc_iou, &
-            & nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
+       select case (is)
+       CASE (is_POC_frac2,is_CaCO3_frac2,is_opal_frac2,is_POC_size,is_CaCO3_age,is_det_age,is_CaCO3_red,is_CaCO3_blue)
+          if (ctrl_sed_save_hidden) then
+             call sub_putvar2d('sed_'//trim(string_sed(is)),loc_iou, &
+                  & nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
+          end if
+       case default
+          call sub_putvar2d('sed_'//trim(string_sed(is)),loc_iou, &
+               & nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
+       end select
     end do
+    if (ctrl_sed_save_hidden) then
+       if (sed_select(is_POC) .AND. sed_select(is_POP)) then
+          loc_mk(:,:) = 0.0
+          DO m = 1,nv_sedcore
+             DO o = 1,loc_n_sedcore_tot
+                if (loc_vsedcore(m)%lay(is2l(is_POC),o) > const_real_nullsmall) then
+                   loc_mk(m,o) = loc_vsedcore(m)%lay(is2l(is_POP),o)/loc_vsedcore(m)%lay(is2l(is_POC),o)
+                end if
+             end do
+          END DO
+          call sub_putvar2d('sed_C2P',loc_iou, &
+               & nv_sedcore,loc_n_sedcore_tot,loc_ntrec,loc_mk(:,:),loc_mk_mask(:,:))
+       end if
+    end if
     ! -------------------------------------------------------- ! close file and return IOU
     call sub_closefile(loc_iou)
     dum_iou = loc_iou
@@ -1071,11 +1135,11 @@ CONTAINS
     ! -------------------------------------------------------- ! deallocate arrays: netCDF arrays save
     DEALLOCATE(loc_vsedcore,STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
-    DEALLOCATE(loc_depth,STAT=alloc_error)
+    DEALLOCATE(loc_level,STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
-    DEALLOCATE(loc_ddepth,STAT=alloc_error)
+    DEALLOCATE(loc_dlevel,STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
-    DEALLOCATE(loc_depth_e,STAT=alloc_error)
+    DEALLOCATE(loc_level_e,STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
     DEALLOCATE(loc_mk,STAT=alloc_error)
     call check_iostat(alloc_error,__LINE__,__FILE__)
@@ -1120,7 +1184,6 @@ CONTAINS
     integer        :: loc_id_lat_e
     real,dimension(0:n_i) :: loc_lon_e
     real,dimension(0:n_j) :: loc_lat_e
-    real,dimension(n_i,n_j) :: loc_mask
     logical :: loc_defined
 
     loc_c0 = 0.
@@ -1276,8 +1339,8 @@ CONTAINS
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_coretop
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_burial,loc_sed_av_burial
     REAL,DIMENSION(n_sed,n_i,n_j)::loc_sed_preservation
-    REAL,DIMENSION(n_i,n_j)::loc_ij,loc_mask,loc_mask_err 
-    REAL,DIMENSION(n_i,n_j)::loc_mask_reef,loc_mask_muds       ! 
+    REAL,DIMENSION(n_i,n_j)::loc_ij,loc_mask_totl,loc_mask_err 
+    REAL,DIMENSION(n_i,n_j)::loc_mask_reef,loc_mask_muds,loc_mask_null       ! 
     REAL,DIMENSION(n_i,n_j)::loc_mask_dsea,loc_mask_dsea_err   ! 
     REAL,DIMENSION(n_i,n_j)::loc_mask_sedcore   ! 
     real::loc_tot,loc_frac,loc_standard                        ! 
@@ -1293,12 +1356,13 @@ CONTAINS
     loc_sed_burial(:,:,:)    = 0.0
     loc_sed_av_burial(:,:,:) = 0.0
     ! ---------------------------------------------------------------- ! local masks
-    loc_mask(:,:)      = phys_sed(ips_mask_sed,:,:)
+    loc_mask_totl(:,:) = phys_sed(ips_mask_sed,:,:)
+    loc_mask_dsea(:,:) = phys_sed(ips_mask_sed_dsea,:,:)
     loc_mask_reef(:,:) = phys_sed(ips_mask_sed_reef,:,:)
     loc_mask_muds(:,:) = phys_sed(ips_mask_sed_muds,:,:)
-    loc_mask_dsea(:,:) = phys_sed(ips_mask_sed,:,:)*(1.0 - loc_mask_reef(:,:))*(1.0 - loc_mask_muds(:,:))
+    loc_mask_null(:,:) = loc_mask_totl(:,:) - loc_mask_dsea(:,:) - loc_mask_reef(:,:) - loc_mask_muds(:,:)
     ! mask excluding points at which sediment daigenesis has failed to be solved
-    loc_mask_err(:,:)      = loc_mask(:,:)
+    loc_mask_err(:,:)      = loc_mask_totl(:,:)
     loc_mask_dsea_err(:,:) = loc_mask_dsea(:,:)
     DO i=1,n_i
        DO j=1,n_j
@@ -1358,7 +1422,7 @@ CONTAINS
        call sub_adddef_netcdf(ntrec_siou,3,'ocn_seafloor_'//trim(string_ocn(io)), &
             & 'overlying ocean tracer properties - '//trim(string_ocn(io)), &
             & trim(loc_unitsname),ocn_mima(io2l(io),1),ocn_mima(io2l(io),2))
-       call sub_putvar2d('ocn_seafloor_'//trim(string_ocn(io)),ntrec_siou,n_i, n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d('ocn_seafloor_'//trim(string_ocn(io)),ntrec_siou,n_i, n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     END DO
     ! ---------------------------------------------------------------- !
     ! SAVE carbonate chemistry data field
@@ -1376,7 +1440,8 @@ CONTAINS
        CASE (ic_conc_CO2,ic_conc_CO3,ic_conc_HCO3,ic_ohm_cal,ic_ohm_arg,ic_dCO3_cal,ic_dCO3_arg,ic_pHsws,ic_pH_n,ic_err)
           call sub_adddef_netcdf(ntrec_siou,3,'carbchem_seafloor_'//trim(string_carb(ic)), &
                & 'overlying ocean carbonate chemistry - '//trim(string_carb(ic)),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d('carbchem_seafloor_'//trim(string_carb(ic)),ntrec_siou,n_i,n_j,ntrec_sout,sed_carb(ic,:,:),loc_mask)
+          call sub_putvar2d('carbchem_seafloor_'//trim(string_carb(ic)), &
+               & ntrec_siou,n_i,n_j,ntrec_sout,sed_carb(ic,:,:),loc_mask_totl)
        end SELECT
     END DO
     ! ---------------------------------------------------------------- !
@@ -1404,7 +1469,7 @@ CONTAINS
           loc_shortname = 'interf_efflux_'//trim(string_ocn(io))
           loc_longname  = 'Net sediment -> ocean efflux (as solutes) -- '//trim(string_ocn(io))
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     END DO
     ! ---------------------------------------------------------------- ! interface flux data -- solid rain flux
     DO l=1,n_l_sed
@@ -1442,7 +1507,7 @@ CONTAINS
           loc_shortname = 'interf_rainflux_'//trim(string_sed(is))
           loc_longname  = 'Rain flux to sediment surface -- '//trim(string_sed(is))
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        END SELECT
     END DO
     ! ---------------------------------------------------------------- ! interface flux data -- (solids) dissolution flux
@@ -1478,7 +1543,7 @@ CONTAINS
              loc_shortname = 'interf_disflux_'//trim(string_sed(is))
              loc_longname  = 'Dissolution flux from sediments (as solid loss) -- '//trim(string_sed(is))
              call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
              if (sed_dep(is)==is_CaCO3) then
                 loc_shortname = 'interf_disflux_'//trim(string_sed(is))//'--masked'
                 loc_longname  = 'Dissolution flux from sediments (as solid loss) -- '//trim(string_sed(is))// &
@@ -1521,7 +1586,7 @@ CONTAINS
           loc_shortname = 'interf_burial_'//trim(string_sed(is))
           loc_longname  = 'Sediment burial flux -- '//trim(string_sed(is))
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
           if (sed_dep(is)==is_CaCO3) then
              loc_shortname = 'interf_burial_'//trim(string_sed(is))//'--masked'
              loc_longname  = 'Sediment burial flux -- '//trim(string_sed(is))// &
@@ -1552,7 +1617,7 @@ CONTAINS
              loc_shortname = 'interf_prespct_'//trim(string_sed(is))
              loc_longname  = 'Preservation of sediment rain flux -- '//trim(string_sed(is))
              call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),-100.0,100.0)
-             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
              if (sed_dep(is)==is_CaCO3) then
                 loc_shortname = 'interf_prespct_'//trim(string_sed(is))//'--masked'
                 loc_longname  = 'Preservation of sediment rain flux  -- '//trim(string_sed(is))// &
@@ -1578,7 +1643,7 @@ CONTAINS
           end do
           call sub_adddef_netcdf(ntrec_siou,3,'misc_fdet_log10', &
                & 'detrital material sediment rain flux (log10) ',trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d('misc_fdet_log10',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d('misc_fdet_log10',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        END IF
     end if
     ! ---------------------------------------------------------------- ! save interface flux data -- detrital (g cm-2 kyr-1)
@@ -1595,7 +1660,7 @@ CONTAINS
        end do
        call sub_adddef_netcdf(ntrec_siou,3,'interf_rainflux_det_gpercm2perkyr', &
             & 'detrital material sediment rain flux as ',trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d('interf_rainflux_det_gpercm2perkyr',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d('interf_rainflux_det_gpercm2perkyr',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     END IF
     ! ---------------------------------------------------------------- ! CaCO3:POC 'rain ratio'
     IF (sed_select(is_CaCO3) .AND. sed_select(is_POC)) THEN
@@ -1611,7 +1676,7 @@ CONTAINS
           END DO
        END DO
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     end if
     ! ---------------------------------------------------------------- ! POP:POC Redfield rain ratio data
     IF (sed_select(is_POC) .AND. sed_select(is_POP)) THEN
@@ -1627,7 +1692,7 @@ CONTAINS
           END DO
        END DO
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        loc_unitsname = 'n/a'
        loc_shortname = 'interf_burial_rPOPtoPOC'
        loc_longname  = 'Sediment burial flux -- C/P of organic matter' 
@@ -1640,7 +1705,7 @@ CONTAINS
           END DO
        END DO
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        loc_unitsname = 'n/a'
        loc_shortname = 'interf_efflux_rPOPtoPOC'
        loc_longname  = 'Dissolution flux from sediments (as solid loss) -- C/P of organic matter' 
@@ -1653,7 +1718,7 @@ CONTAINS
           END DO
        END DO
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     end if
     ! -------------------------------------------------------- ! diagnostics -- P-cycle
     ! [add diagnostics of P cycling]
@@ -1665,26 +1730,26 @@ CONTAINS
        loc_longname  = 'ocn -> sed flux of POC in units of mol cm-2 yr-1'
        loc_ij(:,:) = sed_fsed(is_POC,:,:)/dum_dtyr
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        loc_unitsname = 'mmol C m-2 d-1'
        loc_shortname = 'diag_frain_POC_mmolm2d1'
        loc_longname  = 'ocn -> sed flux of POC in units of mmol m-2 d-1'
        loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sed_fsed(is_POC,:,:)/dum_dtyr
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)          
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)          
        ! PON rain in variety of units
        loc_unitsname = 'mol N cm-2 yr-1'
        loc_shortname = 'diag_frain_PON_molcm2yr1'
        loc_longname  = 'ocn -> sed flux of PON in units of mol cm-2 yr-1'
        loc_ij(:,:) = sed_fsed(is_PON,:,:)/dum_dtyr
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        loc_unitsname = 'mmol N m-2 d-1'
        loc_shortname = 'diag_frain_PON_mmolm2d1'
        loc_longname  = 'ocn -> sed flux of PON in units of mmol m-2 d-1'
        loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sed_fsed(is_PON,:,:)/dum_dtyr
        call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)          
+       call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)          
        ! NO3 efflux in variety of units
        IF (ocn_select(io_NO3)) THEN
           loc_unitsname = 'mol N cm-2 yr-1'
@@ -1692,13 +1757,13 @@ CONTAINS
           loc_longname  = 'sed -> ocn flux of NO3 in units of mol cm-2 yr-1'
           loc_ij(:,:) = sedocn_fnet(io_NO3,:,:)/dum_dtyr
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
           loc_unitsname = 'mmol N m-2 d-1'
           loc_shortname = 'diag_fsedocn_NO3_mmolm2d1'
           loc_longname  = 'sed -> ocn flux of NO3 in units of mmol m-2 d-1'
           loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sedocn_fnet(io_NO3,:,:)/dum_dtyr
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        end if
        ! N2 efflux in variety of units
        IF (ocn_select(io_N2)) THEN
@@ -1707,13 +1772,13 @@ CONTAINS
           loc_longname  = 'sed -> ocn flux of N2 in units of mol cm-2 yr-1'
           loc_ij(:,:) = sedocn_fnet(io_N2,:,:)/dum_dtyr
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
           loc_unitsname = 'mmol N m-2 d-1'
           loc_shortname = 'diag_fsedocn_N2_mmolm2d1'
           loc_longname  = 'sed -> ocn flux of N2 in units of mmol m-2 d-1'
           loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sedocn_fnet(io_N2,:,:)/dum_dtyr
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        end if
        ! NH4 efflux in variety of units
        IF (ocn_select(io_N2)) THEN
@@ -1722,13 +1787,13 @@ CONTAINS
           loc_longname  = 'sed -> ocn flux of NH4 in units of mol cm-2 yr-1'
           loc_ij(:,:) = sedocn_fnet(io_NH4,:,:)/dum_dtyr
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
           loc_unitsname = 'mmol N m-2 d-1'
           loc_shortname = 'diag_fsedocn_NH4_mmolm2d1'
           loc_longname  = 'sed -> ocn flux of NH4 in units of mmol m-2 d-1'
           loc_ij(:,:) = (1.0E3*1.0E4/conv_yr_d)*sedocn_fnet(io_NH4,:,:)/dum_dtyr
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        end if
     end if
     ! -------------------------------------------------------- ! diagnostics -- OMENSED
@@ -1740,7 +1805,7 @@ CONTAINS
           loc_ij(:,:) = sed_diag(idiag,:,:)
           call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), &
                & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        end do
     end if
     ! -------------------------------------------------------- ! diagnostics -- diagenesis errors
@@ -1754,7 +1819,7 @@ CONTAINS
              loc_ij(:,:)   = sed_diag_err(idiag,:,:)
              call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
                   & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
           end do
        else
           loc_unitsname = 'yr-1'
@@ -1763,7 +1828,7 @@ CONTAINS
           loc_ij(:,:)   = sed_diag_err(idiag_err_NULL,:,:)
           call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
                & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        end if
        ! save error mask
        loc_ij(:,:) = const_real_zero
@@ -1780,7 +1845,7 @@ CONTAINS
        loc_ij(:,:)   = sed_diag_err(idiag_err_NULL,:,:)
        call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
             & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     end select
     ! ---------------------------------------------------------------- !
     ! SAVE DEEP-SEA SEDIMENT DATA
@@ -1822,72 +1887,75 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! SAVE REEF DATA
     ! ---------------------------------------------------------------- !
-    if ((sum(loc_mask_reef) > const_rns)  .AND. (par_sed_reef_CaCO3precip_sf > const_real_nullsmall)) then
-       ! ------------------------------------------------------------- ! bulk composition, precipitation
-       is = is_CaCO3
-       IF (sed_select(is)) THEN
-          loc_unitsname = 'wt%'
-          loc_ij(:,:) = loc_sed_coretop(is,:,:)
-          call sub_adddef_netcdf(ntrec_siou,3,'coretop_reef_'//trim(string_sed(is)), &
-               & 'reef composition - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          call sub_putvar2d('coretop_reef_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
-          loc_unitsname = 'mol cm-2 yr-1'
-          loc_ij(:,:) = sed_fsed(is,:,:)/dum_dtyr
-          call sub_adddef_netcdf(ntrec_siou,3,'diag_reef_precip_'//trim(string_sed(is)), &
-               & 'reef precipitation rate - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          call sub_putvar2d('diag_reef_precip_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
-       end if
-       ! ------------------------------------------------------------- ! 13C
-       is = is_CaCO3_13C
-       IF (sed_select(is)) THEN
-          loc_unitsname = 'o/oo'
-          loc_ij(:,:) = loc_sed_coretop(is,:,:)
-          call sub_adddef_netcdf(ntrec_siou,3,'coretop_reef_'//trim(string_sed(is)), &
-               & 'reef composition - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          call sub_putvar2d('coretop_reef_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
-          loc_unitsname = 'o/oo'
-          DO i=1,n_i
-             DO j=1,n_j
-                loc_tot  = sed_fsed(sed_dep(is),i,j)/dum_dtyr
-                loc_frac = sed_fsed(is,i,j)/dum_dtyr
-                loc_standard = const_standards(sed_type(is))
-                loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
-             end do
-          end do
-          call sub_adddef_netcdf(ntrec_siou,3,'diag_reef_precip_'//trim(string_sed(is)), &
-               & 'reef precipitation rate - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          call sub_putvar2d('diag_reef_precip_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
-       end if
+    if (sum(loc_mask_reef) > const_rns) then
+       ! ------------------------------------------------------------- ! CaCO3 composition
+       DO is=1,n_sed
+          IF (sed_select(is)) THEN
+             SELECT CASE (sed_dep(is))
+             CASE (is_CaCO3)
+                SELECT CASE (sed_type(is))
+                CASE (par_sed_type_bio,par_sed_type_CaCO3)
+                   loc_unitsname = 'wt%'
+                CASE (n_itype_min:n_itype_max)
+                   loc_unitsname = 'o/oo'
+                CASE (par_sed_type_age)
+                   loc_unitsname = 'years'
+                end select
+                loc_ij(:,:) = loc_sed_coretop(is,:,:)
+                call sub_adddef_netcdf(ntrec_siou,3,'coretop_reef_'//trim(string_sed(is)), &
+                     & 'shallow water sediment composition - '//trim(string_sed(is)), &
+                     & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+                call sub_putvar2d('coretop_reef_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
+             END SELECT
+          end if
+       end do
        ! ------------------------------------------------------------- !
     end if
     ! ---------------------------------------------------------------- !
     ! SAVE MUDS
     ! ---------------------------------------------------------------- !
     if (sum(loc_mask_muds) > const_rns) then
-       ! ------------------------------------------------------------- ! bulk composition
-       is = is_POC
-       IF (sed_select(is)) THEN
-          loc_unitsname = 'wt%'
-          loc_ij(:,:) = loc_sed_coretop(is,:,:)
-          call sub_adddef_netcdf(ntrec_siou,3,'coretop_muds_'//trim(string_sed(is)), &
-               & 'shallow water sediment composition - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          call sub_putvar2d('coretop_muds_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_muds)
-       end if
-       ! ------------------------------------------------------------- ! 13C
-       is = is_POC_13C
-       IF (sed_select(is)) THEN
-          loc_unitsname = 'o/oo'
-          loc_ij(:,:) = loc_sed_coretop(is,:,:)
-          call sub_adddef_netcdf(ntrec_siou,3,'coretop_muds_'//trim(string_sed(is)), &
-               & 'shallow water sediment composition - '//trim(string_sed(is)), &
-               & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
-          call sub_putvar2d('coretop_muds_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_muds)
-       end if
+       ! ------------------------------------------------------------- ! POM composition
+       DO is=1,n_sed
+          IF (sed_select(is)) THEN
+             SELECT CASE (sed_dep(is))
+             CASE (is_POC,is_PON,is_POP,is_POFe)
+                SELECT CASE (sed_type(is))
+                CASE (par_sed_type_bio,par_sed_type_POM)
+                   loc_unitsname = 'wt%'
+                CASE (n_itype_min:n_itype_max)
+                   loc_unitsname = 'o/oo'
+                CASE (par_sed_type_age)
+                   loc_unitsname = 'years'
+                end select
+                loc_ij(:,:) = loc_sed_coretop(is,:,:)
+                call sub_adddef_netcdf(ntrec_siou,3,'coretop_muds_'//trim(string_sed(is)), &
+                     & 'shallow water sediment composition - '//trim(string_sed(is)), &
+                     & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+                call sub_putvar2d('coretop_muds_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_muds)
+             END SELECT
+          end if
+       end do
+       ! ------------------------------------------------------------- !
+    end if
+    ! ---------------------------------------------------------------- !
+    ! SAVE NULL LOCATIONS
+    ! ---------------------------------------------------------------- !
+    if (sum(loc_mask_null) > const_rns) then
+       ! ------------------------------------------------------------- ! det/ash composition
+       DO is=1,n_sed
+          IF (sed_select(is)) THEN
+             SELECT CASE (sed_type(is))
+             CASE (par_sed_type_abio)
+                loc_unitsname = 'wt%'
+                loc_ij(:,:) = loc_sed_coretop(is,:,:)
+                call sub_adddef_netcdf(ntrec_siou,3,'coretop_null_'//trim(string_sed(is)), &
+                     & 'shallow water sediment composition - '//trim(string_sed(is)), &
+                     & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+                call sub_putvar2d('coretop_null_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_null)
+             END SELECT
+          end if
+       end do
        ! ------------------------------------------------------------- !
     end if
     ! ---------------------------------------------------------------- !
@@ -1897,33 +1965,37 @@ CONTAINS
     loc_unitsname = 'm'
     loc_ij(:,:) = phys_sed(ips_mask_sed,:,:)*phys_sed(ips_D,:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_depth','seafloor depth',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('2Dgrid_depth',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+    call sub_putvar2d('2Dgrid_depth',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     ! ---------------------------------------------------------------- ! grid point area
     loc_unitsname = 'm2'
     loc_ij(:,:) = phys_sed(ips_mask_sed,:,:)*phys_sed(ips_A,:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_area','grid point area',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('2Dgrid_area',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+    call sub_putvar2d('2Dgrid_area',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
+    ! ---------------------------------------------------------------- ! total sediment grid mask
+    loc_unitsname = 'n/a'
+    loc_ij(:,:) = loc_mask_totl(:,:)
+    call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_totl','total sediment grid mask',trim(loc_unitsname),loc_c0,loc_c0)
+    call sub_putvar2d('2Dgrid_mask_totl',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     ! ---------------------------------------------------------------- ! deep-sea mask
     loc_unitsname = 'n/a'
     loc_ij(:,:) = loc_mask_dsea(:,:)
     call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_dsea','deep sea sediments mask',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('2Dgrid_mask_dsea',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+    call sub_putvar2d('2Dgrid_mask_dsea',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     ! ---------------------------------------------------------------- ! reef mask
     loc_unitsname = 'n/a'
     loc_ij(:,:) = loc_mask_reef(:,:)
-    call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_reef','reef area mask',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('2Dgrid_mask_reef',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+    call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_reef','reefal carbonate sediments mask',trim(loc_unitsname),loc_c0,loc_c0)
+    call sub_putvar2d('2Dgrid_mask_reef',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     ! ---------------------------------------------------------------- ! muds mask
     loc_unitsname = 'n/a'
     loc_ij(:,:) = loc_mask_muds(:,:)
-    call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_mud','shallow sediments mask',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('2Dgrid_mask_mud',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+    call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_muds','Corg rich sediments mask',trim(loc_unitsname),loc_c0,loc_c0)
+    call sub_putvar2d('2Dgrid_mask_muds',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     ! ---------------------------------------------------------------- ! total shallow seafloor mask
-    ! NOTE: there is no addition (to make a '2') as shallow seafloor is either 'mud' or 'reef' not both
     loc_unitsname = 'n/a'
-    loc_ij(:,:) = min(loc_mask,loc_mask_muds(:,:) + loc_mask_reef(:,:))
-    call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_ssea','shallow seafloor mask (mud + reef)',trim(loc_unitsname),loc_c0,loc_c0)
-    call sub_putvar2d('2Dgrid_mask_ssea',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+    loc_ij(:,:) = loc_mask_totl(:,:) - loc_mask_dsea(:,:)
+    call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_ssea','shallow seafloor mask',trim(loc_unitsname),loc_c0,loc_c0)
+    call sub_putvar2d('2Dgrid_mask_ssea',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     ! ---------------------------------------------------------------- !
     ! SEDCORES
     ! ---------------------------------------------------------------- !
@@ -1941,7 +2013,7 @@ CONTAINS
        ! ------------------------------------------------------------- ! mask
        loc_unitsname = 'n/a'
        call sub_adddef_netcdf(ntrec_siou,3,'2Dgrid_mask_sedcore','sediment core locations',trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d('2Dgrid_mask_sedcore',ntrec_siou,n_i,n_j,ntrec_sout,loc_mask_sedcore(:,:),loc_mask)
+       call sub_putvar2d('2Dgrid_mask_sedcore',ntrec_siou,n_i,n_j,ntrec_sout,loc_mask_sedcore(:,:),loc_mask_totl)
        ! ------------------------------------------------------------- ! depth
        loc_unitsname = 'm'
        call sub_adddef_netcdf(ntrec_siou,3,'sedcore_depth','sediment core depths',trim(loc_unitsname),loc_c0,loc_c0)
@@ -1990,7 +2062,7 @@ CONTAINS
        loc_ij(:,:) = phys_sed(ips_poros,:,:)
        call sub_adddef_netcdf(ntrec_siou,3,'misc_sed_porosity', &
             & 'sediment surface porosity',trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d('misc_sed_porosity',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d('misc_sed_porosity',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
     end if
     ! ---------------------------------------------------------------- ! mixing rate
     if (ctrl_sed_save_hidden) then
@@ -1998,7 +2070,35 @@ CONTAINS
        loc_ij(:,:) = phys_sed(ips_mix_k0,:,:)
        call sub_adddef_netcdf(ntrec_siou,3,'misc_sed_max_k', &
             & 'maximum (surface) sediment bioturbation mixing rate',trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d('misc_sed_max_k',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+       call sub_putvar2d('misc_sed_max_k',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
+    end if
+    ! ---------------------------------------------------------------- ! reef diagnostics
+    if (ctrl_sed_save_hidden) then
+       if ((sum(loc_mask_reef) > const_rns)  .AND. (par_sed_reef_CaCO3precip_sf > const_real_nullsmall)) then
+          IF (sed_select(is_CaCO3)) THEN
+             loc_unitsname = 'mol cm-2 yr-1'
+             loc_ij(:,:) = sed_fsed(is,:,:)/dum_dtyr
+             call sub_adddef_netcdf(ntrec_siou,3,'diag_reef_precip_'//trim(string_sed(is)), &
+                  & 'reef precipitation rate - '//trim(string_sed(is)), &
+                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+             call sub_putvar2d('diag_reef_precip_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
+          end if
+          IF (sed_select(is_CaCO3_13C)) THEN
+             loc_unitsname = 'o/oo'
+             DO i=1,n_i
+                DO j=1,n_j
+                   loc_tot  = sed_fsed(sed_dep(is),i,j)/dum_dtyr
+                   loc_frac = sed_fsed(is,i,j)/dum_dtyr
+                   loc_standard = const_standards(sed_type(is))
+                   loc_ij(i,j) = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
+                end do
+             end do
+             call sub_adddef_netcdf(ntrec_siou,3,'diag_reef_precip_'//trim(string_sed(is)), &
+                  & 'reef precipitation rate - '//trim(string_sed(is)), &
+                  & trim(loc_unitsname),sed_mima(is2l(is),1),sed_mima(is2l(is),2))
+             call sub_putvar2d('diag_reef_precip_'//trim(string_sed(is)),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_reef)
+          end if
+       end if
     end if
     ! -------------------------------------------------------- !
     ! TIME-AVERAGED DATA
@@ -2038,7 +2138,7 @@ CONTAINS
                & n_itype_min:n_itype_max, &
                & par_sed_type_frac)
              call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
           END SELECT
        END DO
        ! interface flux data -- dissolution flux
@@ -2068,7 +2168,7 @@ CONTAINS
              loc_shortname = 'AVE_fdis_'//trim(string_sed(is))
              loc_longname  = 'Average over '//loc_str_dtyr//' -- '//trim(string_sed(is))//' sediment dissolution flux'
              call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
              if (sed_dep(is)==is_CaCO3) then
                 loc_shortname = 'AVE_fdis_'//trim(string_sed(is))//'--masked'
                 loc_longname  = 'Average over '//loc_str_dtyr//' -- '//trim(string_sed(is))//' sediment dissolution flux'// &
@@ -2105,7 +2205,7 @@ CONTAINS
              loc_shortname = 'AVE_fburial_'//trim(string_sed(is))
              loc_longname  = 'Average over '//loc_str_dtyr//' -- '//trim(string_sed(is))//' sediment burial flux'
              call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
              if (sed_dep(is)==is_CaCO3) then
                 loc_shortname = 'AVE_fburial_'//trim(string_sed(is))//'--masked'
                 loc_longname  = 'Average over '//loc_str_dtyr//' -- '//trim(string_sed(is))//' sediment burial flux'// &
@@ -2158,7 +2258,7 @@ CONTAINS
                      & 'Archer model diagenesis error occurrence -- '//trim(string_longname_diag_sed_err(idiag))
                 loc_ij(:,:)   = sed_av_diag_err(idiag,:,:)
                 call sub_adddef_netcdf(ntrec_siou,3,trim(loc_shortname), trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-                call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+                call sub_putvar2d(trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
              end do
           else
              loc_unitsname = 'yr-1'
@@ -2169,7 +2269,7 @@ CONTAINS
              loc_ij(:,:)   = sed_av_diag_err(idiag_err_NULL,:,:)
              call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
                   & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-             call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+             call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
           end if
           ! save error mask
           loc_ij(:,:) = const_real_zero
@@ -2187,7 +2287,7 @@ CONTAINS
           loc_ij(:,:)   = sed_av_diag_err(idiag_err_NULL,:,:)
           call sub_adddef_netcdf(ntrec_siou,3,''//trim(loc_shortname), &
                & trim(loc_longname),trim(loc_unitsname),loc_c0,loc_c0)
-          call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask)
+          call sub_putvar2d(''//trim(loc_shortname),ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        end select
     end if
     ! ---------------------------------------------------------------- !

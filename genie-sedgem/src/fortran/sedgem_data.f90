@@ -73,7 +73,7 @@ CONTAINS
        print*,'# sedimentary stack sub-layers to drop off bottom   : ',n_sed_tot_drop
        ! --- DETRITAL CONFIGURATION ---------------------------------------------------------------------------------------------- !
        print*,'Flux of refractory material (g cm-2 kyr-1)          : ',par_sed_fdet
-       print*,'Enhancement of det flux to MUDS cells               : ',par_sed_fdet_rmuds
+       print*,'Enhancement of det flux to shelf cells              : ',par_sed_fdet_rshelf
        print*,'No pelagic (dust) detrital contribution?            : ',ctrl_sed_det_NOdust
        ! --- DIAGENESIS SCHEME: SELECTION ---------------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: SELECTION -------------------'
@@ -144,7 +144,6 @@ CONTAINS
        print*,'CaCO3 precip rate law lower (corals)                : ',par_sed_reef_CaCO3precip_exp
        print*,'CaCO3 precipitation as calcite (o/w aragonite)?     : ',par_sed_reef_calcite
        print*,'Min threshold for abiotic CaCO3 precipitation       : ',par_sed_CaCO3_abioticohm_min
-       print*,'Reef CaCO3 porosity (cm3 cm-3)                      : ',par_sed_poros_CaCO3_reef
        print*,'prescribed CaCO3 production rate (mol cm-2 yr-1)    : ',par_sed_CaCO3burial
        print*,'prescribed global CaCO3 production rate (mol yr-1)  : ',par_sed_CaCO3burialTOT
        print*,'prescribed SrCO3 recryst rate (mol cm-2 yr-1)       : ',par_sed_SrCO3recryst
@@ -567,8 +566,8 @@ CONTAINS
        DO j=1,n_j
           if (phys_sed(ips_D,i,j) < const_real_nullsmall) then
              ! land! => no sediments!!!
-             phys_sed(ips_mask_sed,i,j) = 0.0
-             sed_mask(i,j)              = .FALSE.
+             phys_sed(ips_mask_sed,i,j)      = 0.0
+             sed_mask(i,j)                   = .FALSE.
              phys_sed(ips_mask_sed_reef,i,j) = 0.0
              sed_mask_reef(i,j)              = .FALSE.
              phys_sed(ips_mask_sed_muds,i,j) = 0.0
@@ -955,16 +954,8 @@ CONTAINS
        DO j=1,n_j
           IF (sed_mask(i,j)) THEN
              ! set sediment porosity
-             if (sed_mask_reef(i,j)) then
-                loc_sed_poros = par_sed_poros_CaCO3_reef
-                loc_sed_poros_top = par_sed_poros_CaCO3_reef
-             elseif (sed_mask_muds(i,j)) then
-                loc_sed_poros = par_sed_poros_det
-                loc_sed_poros_top = fun_calc_sed_poros_nsur(0.0,par_sed_top_th)
-             else
-                loc_sed_poros = par_sed_poros_det
-                loc_sed_poros_top = fun_calc_sed_poros_nsur(0.0,par_sed_top_th)
-             endif
+             loc_sed_poros     = par_sed_poros_det
+             loc_sed_poros_top = fun_calc_sed_poros_nsur(0.0,par_sed_top_th)
              ! set default sediment stack values
              ! NOTE: sediment component volumes are in the units of 
              !       actual volume of solid matter per cm2 area of sub-layer
