@@ -72,6 +72,14 @@ sg_par_sed_Dmax_neritic=175.0
 # specify carbonate diagenesis option
 # NOTE: "ridgwell2001lookup" is the the simplest/fastest option
 sg_par_sed_diagen_CaCO3opt="ridgwell2001lookup"
+# add POC preservation and burial a-la Dunne et al. [2005]
+sg_par_sed_diagen_Corgopt='dunne2007'
+# scale POC burial
+# NOTE: becasue the configuration includes a 'shelf', try no-scaling of POC preservation
+sg_par_sed_diagen_fracCpres_scale=1.0
+# add variable C:P remin a-la Wallmann [2010]
+# NOTE: the default behaviour is for POP preservation to be in the same proportion as POC preservation and burial
+sg_ctrl_sed_diagen_fracC2Ppres_wallmann2010=.true.
 # bioturbation
 # NOTE: turn OFF bioturbation to equilibriate the system faster
 sg_ctrl_sed_bioturb=.FALSE.
@@ -86,16 +94,6 @@ sg_ctrl_sed_conv_sed_ocn_old=.false.
 #
 # specify muds mask
 sg_par_sed_muds_mask_name='fkl_pp51.mudsmask1E.dat'
-# enhancement of det flux to MUDS cells
-sg_par_sed_fdet_rmuds=1.0
-# add POC preservation and burial a-la Dunne et al. [2005]
-sg_par_sed_diagen_Corgopt='dunne2007'
-# scale POC burial
-# NOTE: becasue the configuration includes a 'shelf', try no-scaling of POC preservation
-sg_par_sed_diagen_fracCpres_scale=1.0
-# add variable C:P remin a-la Wallmann [2010]
-# NOTE: the default behaviour is for POP preservation to be in the same proportion as POC preservation and burial
-sg_ctrl_sed_diagen_fracC2Ppres_wallmann2010=.true.
 #
 # *** SEDIMENTS - REEF *************************************************
 #
@@ -104,6 +102,15 @@ sg_par_sed_reef_mask_name='fkl_pp51.reefmask1W.dat'
 # set a generic reef precip scaling (mol cm-2 yr-1) and then specify an initial global CaCO3 burial rate (mol yr-1)
 sg_par_sed_reef_CaCO3precip_sf=1.0E-6
 sg_par_sed_CaCO3burialTOT=5.0E12
+#
+# *** SEDIMENTS - MISC *************************************************
+#
+# enhancement of det flux to SHELF cells
+sg_par_sed_fdet_rshelf=1.0
+# configure some sediment cores ... 
+sg_par_sedcore_save_mask_name='fkl_pp51.sedcoremask.shelf.dat'
+# increase number of internal array sedcore layers (from 10 x run duration to 20x run duration (kyr))
+sg_par_n_sedcore_tot_perky=20
 #
 # *** WEATHERING *******************************************************
 #
@@ -204,10 +211,6 @@ gm_par_carbchem_Smax = 45.0
 #
 # *** MISC *************************************************************
 #
-# configure some sediment cores ... 
-sg_par_sedcore_save_mask_name='fkl_pp51.sedcoremask.shelf.dat'
-# increase number of internal array sedcore layers (from 10 x run duration to 20x run duration (kyr))
-sg_par_n_sedcore_tot_perky=20
 #
 # **********************************************************************
 # *** END **************************************************************

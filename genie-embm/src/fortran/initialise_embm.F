@@ -1295,268 +1295,343 @@ ccc read scaling factor for extra1a, extra1b, extra1c
       if (debug_init) print*,'EMBM reference height, z1 (m)'
       if (debug_init) print*,z1_embm
 
-ccc apply scl_fwf
-      extra1a = scl_fwf*extra1a
-      extra1b = scl_fwf*extra1b
-      extra1c = scl_fwf*extra1c
-
-ccc use extra1a, extra1b, extra1c, basins data to set up P-E adjustments
-
-c find total no. of Pac/Atl gridboxes
-
-c find southern boundaries of regions for FW flux adjustment
-c region 1a: 'jsf+1' to 20S
-c region 1b: 20S to 24N
-c region 1c: 24N to 90N
-
-c southern boundary of region 1a
-      j1as = jsf+1
-      tv=sin(-20.0*pi/180.0)
-      tv2=sin(24.0*pi/180.0)
-      do j=1,jmax
-c southern boundary of region 1b
-         if ((tv.ge.sv(j-1)).and.
-     &        (tv.le.sv(j))) then
-c at least half of box area has to be in region
-            if (((sv(j)-tv)/ds(j)).ge.0.5) then
-               j1bs = j
-            else
-               j1bs = j+1
-            endif
-         endif
-c southern boundary of region 1c
-         if ((tv2.ge.sv(j-1)).and.
-     &        (tv2.le.sv(j))) then
-c at least half of box area has to be in region
-            if (((sv(j)-tv2)/ds(j)).ge.0.5) then
-               j1cs = j
-            else
-               j1cs = j+1
-            endif
-         endif
-      enddo
-
-      if(igrid.eq.0) then
-
-c in south Atlantic (to 20 deg S)
-      npac1a = 0
-      natl1a = 0
-      do j=j1as,(j1bs-1)
-         npac1a = npac1a + ipf(j) - ips(j) + 1
-         natl1a = natl1a + iaf(j) - ias(j) + 1
-      enddo
-
-c in tropical Atlantic (20 deg S to 24 deg N)
-      npac1b = 0
-      natl1b = 0
-      do j=j1bs,(j1cs-1)
-         npac1b = npac1b + ipf(j) - ips(j) + 1
-         natl1b = natl1b + iaf(j) - ias(j) + 1
-      enddo
-
-c in north Atlantic (north of 24 deg N) NB INCLUDES DRY POINTS
-      npac1c = 0
-      natl1c = 0
-      do j=j1cs,jmax
-         do i=ips(j),ipf(j)
-            if(k1(i,j).le.kmax)npac1c = npac1c + 1
+c     ==================================================================
+c     Set up FwF pattern
+c     ==================================================================
+c
+c     NOTE: extra1a,extra1b,extra1c in units of Sv (km3 s-1)
+c     these are divided by the area of each basin (m3)
+c     and then multiplied by 1E6 (km3 -> m3)
+c     => pmeadj in units of m3 s-1 m-2 => m s-1 freshwater flux
+c
+c     ******************************************************************
+c
+c     test for file
+      inquire(file=indir_name(1:lenin)//world(1:lenworld)//
+     &     '.pmeadj',exist=ioex)
+      if (ioex) then
+c
+c     *** READ FwF FROM FILE *******************************************
+c
+c     read file
+         if (debug_init) print *, 'reading in FwF file'
+         call check_unit(13,__LINE__,__FILE__)
+         open(13,file=indir_name(1:lenin)//world(1:lenworld)//
+     &        '.pmeadj',iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+         do j=jmax,1,-1
+            read(13,*,iostat=ios)(pmeadj(i,j),i=1,imax)
+            call check_iostat(ios,__LINE__,__FILE__)
          enddo
-         do i=ias(j),iaf(j)
-            if(k1(i,j).le.kmax)natl1c = natl1c + 1
+         close(13,iostat=ios)
+c     scale by scl_fwf
+         do j=1,jmax
+            do i=1,imax
+               pmeadj(i,j) = scl_fwf*pmeadj(i,j)
+            enddo
          enddo
-      enddo
-
+c
+c     ******************************************************************
+c
+      else
+c
+c     *** DEFAULT ******************************************************
+c
+c     file does not exist => set FwF to zero
+         do j=1,jmax
+            do i=1,imax
+               pmeadj(i,j) = 0.
+            enddo
+         enddo
+c
+c     ******************************************************************
+c
       endif
+c
+c     ******************************************************************
+         
+c$$$ccc apply scl_fwf
+c$$$      extra1a = scl_fwf*extra1a
+c$$$      extra1b = scl_fwf*extra1b
+c$$$      extra1c = scl_fwf*extra1c
+c$$$
+c$$$ccc use extra1a, extra1b, extra1c, basins data to set up P-E adjustments
+c$$$
+c$$$c find total no. of Pac/Atl gridboxes
+c$$$
+c$$$c find southern boundaries of regions for FW flux adjustment
+c$$$c region 1a: 'jsf+1' to 20S
+c$$$c region 1b: 20S to 24N
+c$$$c region 1c: 24N to 90N
+c$$$
+c$$$c southern boundary of region 1a
+c$$$      j1as = jsf+1
+c$$$      tv=sin(-20.0*pi/180.0)
+c$$$      tv2=sin(24.0*pi/180.0)
+c$$$      do j=1,jmax
+c$$$c southern boundary of region 1b
+c$$$         if ((tv.ge.sv(j-1)).and.
+c$$$     &        (tv.le.sv(j))) then
+c$$$c at least half of box area has to be in region
+c$$$            if (((sv(j)-tv)/ds(j)).ge.0.5) then
+c$$$               j1bs = j
+c$$$            else
+c$$$               j1bs = j+1
+c$$$            endif
+c$$$         endif
+c$$$c southern boundary of region 1c
+c$$$         if ((tv2.ge.sv(j-1)).and.
+c$$$     &        (tv2.le.sv(j))) then
+c$$$c at least half of box area has to be in region
+c$$$            if (((sv(j)-tv2)/ds(j)).ge.0.5) then
+c$$$               j1cs = j
+c$$$            else
+c$$$               j1cs = j+1
+c$$$            endif
+c$$$         endif
+c$$$      enddo
+c$$$
+c$$$      if(igrid.eq.0) then
+c$$$
+c$$$c in south Atlantic (to 20 deg S)
+c$$$      npac1a = 0
+c$$$      natl1a = 0
+c$$$      do j=j1as,(j1bs-1)
+c$$$         npac1a = npac1a + ipf(j) - ips(j) + 1
+c$$$         natl1a = natl1a + iaf(j) - ias(j) + 1
+c$$$      enddo
+c$$$
+c$$$c in tropical Atlantic (20 deg S to 24 deg N)
+c$$$      npac1b = 0
+c$$$      natl1b = 0
+c$$$      do j=j1bs,(j1cs-1)
+c$$$         npac1b = npac1b + ipf(j) - ips(j) + 1
+c$$$         natl1b = natl1b + iaf(j) - ias(j) + 1
+c$$$      enddo
+c$$$
+c$$$c in north Atlantic (north of 24 deg N) NB INCLUDES DRY POINTS
+c$$$      npac1c = 0
+c$$$      natl1c = 0
+c$$$      do j=j1cs,jmax
+c$$$         do i=ips(j),ipf(j)
+c$$$            if(k1(i,j).le.kmax)npac1c = npac1c + 1
+c$$$         enddo
+c$$$         do i=ias(j),iaf(j)
+c$$$            if(k1(i,j).le.kmax)natl1c = natl1c + 1
+c$$$         enddo
+c$$$      enddo
+c$$$
+c$$$      endif
+c$$$
+c$$$      if((igrid.eq.1).or.(igrid.eq.2))then
+c$$$
+c$$$      area_pac1a = 0.
+c$$$      area_atl1a = 0.
+c$$$      do j=j1as,(j1bs-1)
+c$$$         do i=ips(j),ipf(j)
+c$$$            area_pac1a = area_pac1a + asurf(j)
+c$$$         enddo
+c$$$c conditionality to take care of "split Atlantic" (rma, 5/10/05)
+c$$$         if(ias(j).gt.iaf(j)) then
+c$$$            do i=ias(j),imax
+c$$$               area_atl1a = area_atl1a + asurf(j)
+c$$$            enddo
+c$$$            do i=1,iaf(j)
+c$$$               area_atl1a = area_atl1a + asurf(j)
+c$$$            enddo
+c$$$         else
+c$$$            do i=ias(j),iaf(j)
+c$$$               area_atl1a = area_atl1a + asurf(j)
+c$$$            enddo
+c$$$         endif
+c$$$      enddo
+c$$$
+c$$$      area_pac1b = 0.
+c$$$      area_atl1b = 0.
+c$$$      do j=j1bs,(j1cs-1)
+c$$$         do i=ips(j),ipf(j)
+c$$$               area_pac1b = area_pac1b + asurf(j)
+c$$$         enddo
+c$$$c conditionality to take care of "split Atlantic" (rma, 5/10/05)
+c$$$         if(ias(j).gt.iaf(j)) then
+c$$$            do i=ias(j),imax
+c$$$               area_atl1b = area_atl1b + asurf(j)
+c$$$            enddo
+c$$$            do i=1,iaf(j)
+c$$$               area_atl1b = area_atl1b + asurf(j)
+c$$$            enddo
+c$$$         else
+c$$$            do i=ias(j),iaf(j)
+c$$$               area_atl1b = area_atl1b + asurf(j)
+c$$$            enddo
+c$$$         endif
+c$$$      enddo
+c$$$
+c$$$      area_pac1c = 0.
+c$$$      area_atl1c = 0.
+c$$$      do j=j1cs,jmax
+c$$$         do i=ips(j),ipf(j)
+c$$$            if(k1(i,j).le.kmax)
+c$$$     1         area_pac1c = area_pac1c + asurf(j)  
+c$$$         enddo
+c$$$c conditionality to take care of "split Atlantic" (rma, 5/10/05)
+c$$$         if(ias(j).gt.iaf(j)) then
+c$$$            do i=ias(j),imax
+c$$$               if(k1(i,j).le.kmax)
+c$$$     1         area_atl1c = area_atl1c + asurf(j)  
+c$$$            enddo
+c$$$            do i=1,iaf(j)
+c$$$               if(k1(i,j).le.kmax)
+c$$$     1         area_atl1c = area_atl1c + asurf(j)  
+c$$$            enddo
+c$$$         else
+c$$$            do i=ias(j),iaf(j)
+c$$$               if(k1(i,j).le.kmax)
+c$$$     1         area_atl1c = area_atl1c + asurf(j)  
+c$$$            enddo
+c$$$         endif
+c$$$      enddo
+c$$$
+c$$$      endif
+c$$$
+c$$$      if (debug_init) print*,
+c$$$     & natl1a, npac1a, natl1b, npac1b, natl1c, npac1c 
+c$$$      if (debug_init) print*,
+c$$$     & 'natl1a, npac1a, natl1b, npac1b, natl1c, npac1c '
+c$$$
+c$$$ccc increase/decrease P-E in Pacific/Atlantic as in Broecker (1991)
+c$$$ccc [after Oort 1983]: net freshwater loss by Atlantic = 0.32 Sv
+c$$$ccc here add/remove total extra1a, extra1b, extra1c Sv of freshwater
+c$$$ccc equally by area in Pac/Atl resp.
+c$$$
+c$$$      do j=1,jmax
+c$$$         do i=1,imax
+c$$$            pmeadj(i,j) = 0.
+c$$$         enddo
+c$$$      enddo
+c$$$
+c$$$crma If 36x36s ...
+c$$$
+c$$$      if(igrid.eq.0)then
+c$$$
+c$$$      do j=j1as,(j1bs-1)
+c$$$         do i=ips(j),ipf(j)
+c$$$            pmeadj(i,j) = 1e6*extra1a/(npac1a*asurf(j))
+c$$$         enddo
+c$$$         do i=ias(j),iaf(j)
+c$$$            pmeadj(i,j) = -1e6*extra1a/(natl1a*asurf(j))
+c$$$         enddo
+c$$$      enddo
+c$$$
+c$$$      do j=j1bs,(j1cs-1)
+c$$$         do i=ips(j),ipf(j)
+c$$$            pmeadj(i,j) = 1e6*extra1b/(npac1b*asurf(j))
+c$$$         enddo
+c$$$         do i=ias(j),iaf(j)
+c$$$            pmeadj(i,j) = -1e6*extra1b/(natl1b*asurf(j))
+c$$$         enddo
+c$$$      enddo
+c$$$
+c$$$      do j=j1cs,jmax
+c$$$         do i=ips(j),ipf(j)
+c$$$            if(k1(i,j).le.kmax)
+c$$$     1         pmeadj(i,j) = 1e6*extra1c/(npac1c*asurf(j))
+c$$$         enddo
+c$$$         do i=ias(j),iaf(j)
+c$$$            if(k1(i,j).le.kmax)
+c$$$     1         pmeadj(i,j) = -1e6*extra1c/(natl1c*asurf(j))
+c$$$         enddo
+c$$$      enddo
+c$$$
+c$$$      endif
+c$$$
+c$$$ccc If 64x32 or 64x32l ...
+c$$$
+c$$$      if((igrid.eq.1).or.(igrid.eq.2))then
+c$$$
+c$$$      do j=j1as,(j1bs-1)
+c$$$         do i=ips(j),ipf(j)
+c$$$            pmeadj(i,j) = 1e6*extra1a/area_pac1a
+c$$$         enddo
+c$$$c conditionality to take care of "split Atlantic" (rma, 5/10/05)
+c$$$         if(ias(j).gt.iaf(j)) then
+c$$$            do i=ias(j),imax
+c$$$               pmeadj(i,j) = -1e6*extra1a/area_atl1a
+c$$$            enddo
+c$$$            do i=1,iaf(j)
+c$$$               pmeadj(i,j) = -1e6*extra1a/area_atl1a
+c$$$            enddo
+c$$$         else
+c$$$            do i=ias(j),iaf(j)
+c$$$               pmeadj(i,j) = -1e6*extra1a/area_atl1a
+c$$$            enddo
+c$$$         endif
+c$$$      enddo
+c$$$
+c$$$      do j=j1bs,(j1cs-1)
+c$$$         do i=ips(j),ipf(j)
+c$$$            pmeadj(i,j) = 1e6*extra1b/area_pac1b
+c$$$         enddo
+c$$$c conditionality to take care of "split Atlantic" (rma, 5/10/05)
+c$$$         if(ias(j).gt.iaf(j)) then
+c$$$            do i=ias(j),imax
+c$$$               pmeadj(i,j) = -1e6*extra1b/area_atl1b
+c$$$            enddo
+c$$$            do i=1,iaf(j)
+c$$$               pmeadj(i,j) = -1e6*extra1b/area_atl1b
+c$$$            enddo
+c$$$         else
+c$$$            do i=ias(j),iaf(j)
+c$$$               pmeadj(i,j) = -1e6*extra1b/area_atl1b
+c$$$            enddo
+c$$$         endif
+c$$$      enddo
+c$$$
+c$$$      do j=j1cs,jmax
+c$$$         do i=ips(j),ipf(j)
+c$$$            if(k1(i,j).le.kmax)
+c$$$     1         pmeadj(i,j) = 1e6*extra1c/area_pac1c
+c$$$         enddo
+c$$$c conditionality to take care of "split Atlantic" (rma, 5/10/05)
+c$$$         if(ias(j).gt.iaf(j)) then
+c$$$            do i=ias(j),imax
+c$$$               if(k1(i,j).le.kmax)
+c$$$     1          pmeadj(i,j) = -1e6*extra1c/area_atl1c
+c$$$            enddo
+c$$$            do i=1,iaf(j)
+c$$$               if(k1(i,j).le.kmax)
+c$$$     1          pmeadj(i,j) = -1e6*extra1c/area_atl1c
+c$$$            enddo
+c$$$         else
+c$$$            do i=ias(j),iaf(j)
+c$$$               if(k1(i,j).le.kmax)
+c$$$     1          pmeadj(i,j) = -1e6*extra1c/area_atl1c
+c$$$            enddo
+c$$$         endif
+c$$$      enddo
+c$$$
+c$$$      endif
 
-      if((igrid.eq.1).or.(igrid.eq.2))then
-
-      area_pac1a = 0.
-      area_atl1a = 0.
-      do j=j1as,(j1bs-1)
-         do i=ips(j),ipf(j)
-            area_pac1a = area_pac1a + asurf(j)
-         enddo
-c conditionality to take care of "split Atlantic" (rma, 5/10/05)
-         if(ias(j).gt.iaf(j)) then
-            do i=ias(j),imax
-               area_atl1a = area_atl1a + asurf(j)
-            enddo
-            do i=1,iaf(j)
-               area_atl1a = area_atl1a + asurf(j)
-            enddo
-         else
-            do i=ias(j),iaf(j)
-               area_atl1a = area_atl1a + asurf(j)
-            enddo
-         endif
-      enddo
-
-      area_pac1b = 0.
-      area_atl1b = 0.
-      do j=j1bs,(j1cs-1)
-         do i=ips(j),ipf(j)
-               area_pac1b = area_pac1b + asurf(j)
-         enddo
-c conditionality to take care of "split Atlantic" (rma, 5/10/05)
-         if(ias(j).gt.iaf(j)) then
-            do i=ias(j),imax
-               area_atl1b = area_atl1b + asurf(j)
-            enddo
-            do i=1,iaf(j)
-               area_atl1b = area_atl1b + asurf(j)
-            enddo
-         else
-            do i=ias(j),iaf(j)
-               area_atl1b = area_atl1b + asurf(j)
-            enddo
-         endif
-      enddo
-
-      area_pac1c = 0.
-      area_atl1c = 0.
-      do j=j1cs,jmax
-         do i=ips(j),ipf(j)
-            if(k1(i,j).le.kmax)
-     1         area_pac1c = area_pac1c + asurf(j)  
-         enddo
-c conditionality to take care of "split Atlantic" (rma, 5/10/05)
-         if(ias(j).gt.iaf(j)) then
-            do i=ias(j),imax
-               if(k1(i,j).le.kmax)
-     1         area_atl1c = area_atl1c + asurf(j)  
-            enddo
-            do i=1,iaf(j)
-               if(k1(i,j).le.kmax)
-     1         area_atl1c = area_atl1c + asurf(j)  
-            enddo
-         else
-            do i=ias(j),iaf(j)
-               if(k1(i,j).le.kmax)
-     1         area_atl1c = area_atl1c + asurf(j)  
-            enddo
-         endif
-      enddo
-
-      endif
-
-      if (debug_init) print*,
-     & natl1a, npac1a, natl1b, npac1b, natl1c, npac1c 
-      if (debug_init) print*,
-     & 'natl1a, npac1a, natl1b, npac1b, natl1c, npac1c '
-
-ccc increase/decrease P-E in Pacific/Atlantic as in Broecker (1991)
-ccc [after Oort 1983]: net freshwater loss by Atlantic = 0.32 Sv
-ccc here add/remove total extra1a, extra1b, extra1c Sv of freshwater
-ccc equally by area in Pac/Atl resp.
-
-      do j=1,jmax
-         do i=1,imax
-            pmeadj(i,j) = 0.
-         enddo
-      enddo
-
-crma If 36x36s ...
-
-      if(igrid.eq.0)then
-
-      do j=j1as,(j1bs-1)
-         do i=ips(j),ipf(j)
-            pmeadj(i,j) = 1e6*extra1a/(npac1a*asurf(j))
-         enddo
-         do i=ias(j),iaf(j)
-            pmeadj(i,j) = -1e6*extra1a/(natl1a*asurf(j))
-         enddo
-      enddo
-
-      do j=j1bs,(j1cs-1)
-         do i=ips(j),ipf(j)
-            pmeadj(i,j) = 1e6*extra1b/(npac1b*asurf(j))
-         enddo
-         do i=ias(j),iaf(j)
-            pmeadj(i,j) = -1e6*extra1b/(natl1b*asurf(j))
-         enddo
-      enddo
-
-      do j=j1cs,jmax
-         do i=ips(j),ipf(j)
-            if(k1(i,j).le.kmax)
-     1         pmeadj(i,j) = 1e6*extra1c/(npac1c*asurf(j))
-         enddo
-         do i=ias(j),iaf(j)
-            if(k1(i,j).le.kmax)
-     1         pmeadj(i,j) = -1e6*extra1c/(natl1c*asurf(j))
-         enddo
-      enddo
-
-      endif
-
-ccc If 64x32 or 64x32l ...
-
-      if((igrid.eq.1).or.(igrid.eq.2))then
-
-      do j=j1as,(j1bs-1)
-         do i=ips(j),ipf(j)
-            pmeadj(i,j) = 1e6*extra1a/area_pac1a
-         enddo
-c conditionality to take care of "split Atlantic" (rma, 5/10/05)
-         if(ias(j).gt.iaf(j)) then
-            do i=ias(j),imax
-               pmeadj(i,j) = -1e6*extra1a/area_atl1a
-            enddo
-            do i=1,iaf(j)
-               pmeadj(i,j) = -1e6*extra1a/area_atl1a
-            enddo
-         else
-            do i=ias(j),iaf(j)
-               pmeadj(i,j) = -1e6*extra1a/area_atl1a
-            enddo
-         endif
-      enddo
-
-      do j=j1bs,(j1cs-1)
-         do i=ips(j),ipf(j)
-            pmeadj(i,j) = 1e6*extra1b/area_pac1b
-         enddo
-c conditionality to take care of "split Atlantic" (rma, 5/10/05)
-         if(ias(j).gt.iaf(j)) then
-            do i=ias(j),imax
-               pmeadj(i,j) = -1e6*extra1b/area_atl1b
-            enddo
-            do i=1,iaf(j)
-               pmeadj(i,j) = -1e6*extra1b/area_atl1b
-            enddo
-         else
-            do i=ias(j),iaf(j)
-               pmeadj(i,j) = -1e6*extra1b/area_atl1b
-            enddo
-         endif
-      enddo
-
-      do j=j1cs,jmax
-         do i=ips(j),ipf(j)
-            if(k1(i,j).le.kmax)
-     1         pmeadj(i,j) = 1e6*extra1c/area_pac1c
-         enddo
-c conditionality to take care of "split Atlantic" (rma, 5/10/05)
-         if(ias(j).gt.iaf(j)) then
-            do i=ias(j),imax
-               if(k1(i,j).le.kmax)
-     1          pmeadj(i,j) = -1e6*extra1c/area_atl1c
-            enddo
-            do i=1,iaf(j)
-               if(k1(i,j).le.kmax)
-     1          pmeadj(i,j) = -1e6*extra1c/area_atl1c
-            enddo
-         else
-            do i=ias(j),iaf(j)
-               if(k1(i,j).le.kmax)
-     1          pmeadj(i,j) = -1e6*extra1c/area_atl1c
-            enddo
-         endif
-      enddo
-
-      endif
-
+c     ******************************************************************
+c
+c$$$c     save a reconstructed copy of mpeadj field
+c$$$c     NOTE: remove scl_fwf scaling
+c$$$c     as this is (re-)applied when the file is read in
+c$$$c     (and allowing easy control of FwF magnitude, and switching 'off')
+c$$$      call check_iostat(ios,__LINE__,__FILE__)
+c$$$      call check_unit(113,__LINE__,__FILE__)
+c$$$      open(213,file=indir_name(1:lenin)//world(1:lenworld)//
+c$$$     &     '.pmeadj',iostat=ios)
+c$$$      call check_iostat(ios,__LINE__,__FILE__)
+c$$$      do j=jmax,1,-1
+c$$$         write(213,*,iostat=ios)(pmeadj(i,j)/scl_fwf,i=1,imax)
+c$$$         call check_iostat(ios,__LINE__,__FILE__)
+c$$$      enddo
+c$$$      close(213,iostat=ios)
+c$$$      call check_iostat(ios,__LINE__,__FILE__)
+c
+c     ******************************************************************
+      
 c *********************************************************************
 c *** alternaive mask-based methodology *******************************
 c *********************************************************************

@@ -753,9 +753,9 @@ c count wet cells
          enddo
       enddo
 
-c     ======================================================================
+c     ==================================================================
 c     Set up OPSI basin mask
-c     ======================================================================
+c     ==================================================================
 c     NOTE: i?s and i?f are vectors defiend in ocean.cmn for the
 c     start and end i-points of a basin for each j value
 c     integer ips(maxj),ipf(maxj),ias(maxj),iaf(maxj)
@@ -764,13 +764,13 @@ c     2: Pacific
 c     3: Atlantic
 c     1: remaining ocean grid cells
 c     NOTE: bmask is local and only used to derive ips,ipf,ias,iaf
-c     NOTE: initialize jsf = jmax so that no basins are applied as default
+c     NOTE: initialize jsf = jmax => no basins are applied by default
       ips(:)=0
       ipf(:)=0
       ias(:)=0
       iaf(:)=0
       jsf = jmax
-c     ****************************************************************
+c     ******************************************************************
       inquire(file=indir_name(1:lenin)//world(1:lenworld)//
      &     '.bmask',exist=ioex)
       if (ioex) then
@@ -783,6 +783,7 @@ c     ****************************************************************
             read(13,*,iostat=ios)(bmask(i,j),i=1,imax)
             call check_iostat(ios,__LINE__,__FILE__)
          enddo
+         close(13,iostat=ios)
          jsf = 1
          do j=1,jmax
             iatl=0
@@ -804,19 +805,6 @@ c     ****************************************************************
             if (ips(j).eq.0) ips(j)=1
             if (ias(j).eq.0) ias(j)=1
          enddo
-         close(13,iostat=ios)
-c$$$c     save a reconstructed copy of mask(!)
-c$$$         call check_iostat(ios,__LINE__,__FILE__)
-c$$$         call check_unit(113,__LINE__,__FILE__)
-c$$$         open(213,file=indir_name(1:lenin)//world(1:lenworld)//
-c$$$     &        '.bmask.OUTIN',iostat=ios)
-c$$$         call check_iostat(ios,__LINE__,__FILE__)
-c$$$         do j=jmax,1,-1
-c$$$            write(213,'(36I4)',iostat=ios)(bmask(i,j),i=1,imax)
-c$$$            call check_iostat(ios,__LINE__,__FILE__)
-c$$$         enddo
-c$$$         close(213,iostat=ios)
-c$$$         call check_iostat(ios,__LINE__,__FILE__)
       else
 c$$$c     ****************************************************************
 c$$$c     rma - light edits of code for ocean basin start/end i-points

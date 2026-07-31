@@ -1843,7 +1843,6 @@ CONTAINS
     end if
     ! -------------------------------------------------------- ! indexing array (all possible)
     ! NOTE: fun_recalc_tracerrelationships_i works on the full (ocn,sed) tracer matrix (and hence conv_sed_ocn_i)
-!!$    conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(fun_recalc_tracerrelationships_i(loc_conv_sed_ocn(:,:)))
     conv_ls_lo_i(:,:) =  fun_conv_sedocn2lslo_i(conv_sed_ocn_i(:,:))
     ! -------------------------------------------------------- ! POM -> DOM
     conv_lP_lD(:,:)   =  fun_conv_sedocn2lslo(conv_POM_DOM(:,:))

@@ -2402,14 +2402,20 @@ CONTAINS
     ! TRANSFORM INDICES
     ! -------------------------------------------------------- !
     ! re-index array to compact tracer format
-    ! NOTE: the counter 'io' here is only a count of the number of ocean tracer, and not s epcific ocean tracer
-    !       (the specific ocean tracer number is held in dum_sed_ocn_i(io,is)
+    ! NOTE: the counter 'io' here is only a count of the number of ocean tracer, and not a sepcific ocean tracer
+    !       (the specific ocean tracer number is held in dum_sed_ocn_i(io,is))
     !       hence, it is dum_sed_ocn_i(io,is) that is converted to the compact tracer numbering format for ocean tracers
     !       ('is' is converted to the compact tracer numbering format for solid tracers as normal)
+    ! NOTE: changed
+    !       if (abs(dum_sed_ocn_i(io,is)) > 0)) then
+    !       to
+    !       if (ocn_select(io) .AND. sed_select(is) .AND. (abs(dum_sed_ocn_i(io,is)) > 0)) then
+    !       becasue with BUILD=DEBUG and no sed tracers, io in loc_lslo_i(io,is2l(is)) was out of range
+    !       (now the code is like the similar functions, e.g., fun_conv_ocnsed2lols_i)
     do is=1,n_sed
        loc_lslo_i(0,is2l(is)) = dum_sed_ocn_i(0,is)
        do io=1,n_ocn
-          if (abs(dum_sed_ocn_i(io,is)) > 0) then
+          if (ocn_select(io) .AND. sed_select(is) .AND. (abs(dum_sed_ocn_i(io,is)) > 0)) then
              loc_lslo_i(io,is2l(is)) = io2l(dum_sed_ocn_i(io,is))
           end if
        end do
