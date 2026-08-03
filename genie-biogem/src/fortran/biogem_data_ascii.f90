@@ -3975,10 +3975,8 @@ CONTAINS
           call check_iostat(ios,__LINE__,__FILE__)
        end if
     else
-       Write(unit=out,fmt=*) 'No remineralization summary output saved -- choose a save option that includes redox saving:'
-       Write(unit=out,fmt=*) 'bg_par_data_save_level=[14,15,16,99]'
-       Write(unit=out,fmt=*) 'or set:'
-       Write(unit=out,fmt=*) 'bg_ctrl_bio_remin_redox_save=.true.'
+       Write(unit=out,fmt=*) 'No remineralization summary output saved, set:'
+       Write(unit=out,fmt=*) 'bg_ctrl_save_hidden_redox=.true.'
     end if
     ! -------------------------------------------------------- !
 

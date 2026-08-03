@@ -4499,12 +4499,12 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>CaCO3:POC rain ratio option ID</description>
                     </param>
                     <param name="par_bio_red_POC_CaCO3">
-			<value datatype="real">0.2</value>
-                        <description>base CaCO3:POC export ratio</description>
+			<value datatype="real">1.0</value>
+                        <description>base CaCO3:POC export ratio [ORIGINAL: 0.0285]</description>
                     </param>
                     <param name="par_bio_red_POC_CaCO3_pP">
 			<value datatype="real">0.0</value>
-                        <description>exponent for modifier of CaCO3:POC export ratio</description>
+                        <description>exponent for modifier of CaCO3:POC export ratio [ORIGINAL: 0.744]</description>
                     </param>
                     <param name="par_bio_red_POC_CaCO3_Kmax">
 			<value datatype="real">0.4</value>
@@ -9334,15 +9334,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="temp_max">
 			<value datatype="real">99.9</value>
 	                  <description>Maximum applied temperature</description>
-                    </param>
-<!-- INORGANIC MATTER EXPORT RATIOS  -->
-                    <param name="par_bio_red_POC_CaCO3">
-			<value datatype="real">1.0</value>
-                        <description>base CaCO3:POC export ratio [ORIGINAL: 0.0285]</description>
-                    </param>
-                    <param name="par_bio_red_POC_CaCO3_pP">
-			<value datatype="real">0.0</value>
-                        <description>exponent for modifier of CaCO3:POC export ratio [ORIGINAL: 0.744]</description>
                     </param>
 <!-- ISOTOPIC FRACTIONATION -->
                     <param name="opt_d13C_DIC_Corg">
