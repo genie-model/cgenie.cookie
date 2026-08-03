@@ -3300,10 +3300,10 @@ CONTAINS
     ! ---------------------------------------------------------- !
     ! MAKE BASIC <-> ADVANCED CONSISTENT
     ! ---------------------------------------------------------- !
-    if (ctrl_save_advanced_reservoirs) ctrl_save_basic_reservoirs = .true.
-    if (ctrl_save_advanced_geochemistry) ctrl_save_basic_geochemistry = .true.
+    if (ctrl_save_advanced_reservoirs)     ctrl_save_basic_reservoirs = .true.
+    if (ctrl_save_advanced_geochemistry)   ctrl_save_basic_geochemistry = .true.
     if (ctrl_save_advanced_biologicalpump) ctrl_save_basic_biologicalpump = .true.
-    if (ctrl_save_advanced_proxies) ctrl_save_basic_proxies = .true.
+    if (ctrl_save_advanced_proxies)        ctrl_save_basic_proxies = .true.
     ! ---------------------------------------------------------- !
     ! IMPOSE META SELECTIONS
     ! ---------------------------------------------------------- !
