@@ -1203,7 +1203,7 @@ CONTAINS
     ! if so - take the simplest response - reject all sediment input and set dissolution = rain
     ! NOTE: the 1 cm limit arises because of the way in which excess sedimentary material 
     !        is removed from the top layer and added to the sediment stack, which has layers of thickness 1.0 cm
-    loc_sed_top_dth = (loc_new_sed_vol - loc_dis_sed_vol)/(1.0 - max(par_sed_poros_det,par_sed_poros_CaCO3))
+    loc_sed_top_dth = (loc_new_sed_vol - loc_dis_sed_vol)/(1.0 - par_sed_poros_shelf)
     IF ((loc_sed_top_dth > 1.0) .OR. (loc_sed_top_dth < -1.0)) THEN
        loc_dis_sed(:)  = loc_new_sed(:)
        loc_dis_sed_vol = loc_new_sed_vol
@@ -1215,7 +1215,7 @@ CONTAINS
     ! calculate surface layer porosity
     ! NOTE: calculate porosity as a function of the VOLUME (not weight) fraction of CaCO3
     loc_frac_CaCO3_top = sed_top(is_CaCO3,dum_i,dum_j)/fun_calc_sed_vol(sed_top(:,dum_i,dum_j))
-    loc_sed_poros_top = fun_calc_sed_poros_nsur(loc_frac_CaCO3_top,par_sed_top_th)
+    loc_sed_poros_top = par_sed_poros_shelf
     ! calculate thickness of material to be exchanged
     loc_sed_top_dth = fun_calc_sed_vol(sed_top(:,dum_i,dum_j))/(1.0 - loc_sed_poros_top) - par_sed_top_th
     loc_exe_sed_th = ABS(loc_sed_top_dth)
@@ -1238,7 +1238,7 @@ CONTAINS
        !      add sufficient material to top sub-layer to fill it plus additional material to next layer up
        ! update sediment surface layer
        loc_frac_CaCO3_top = sed_top(is_CaCO3,dum_i,dum_j)/fun_calc_sed_vol(sed_top(:,dum_i,dum_j))
-       loc_r_sed_por = fun_calc_r_sed_por(loc_frac_CaCO3_top,par_sed_top_th)
+       loc_r_sed_por = 1.0
        IF (loc_exe_sed_th < (loc_r_sed_por*(1.0 - loc_sed_stack_top_th))) THEN
           ! calculate material to be exchanged
           loc_exe_sed(:) = (loc_exe_sed_th/(par_sed_top_th + loc_exe_sed_th))*sed_top(:,dum_i,dum_j)
@@ -1277,7 +1277,7 @@ CONTAINS
           loc_frac_CaCO3 = &
                & sed(is_CaCO3,dum_i,dum_j,loc_n_sed_stack_top)/fun_calc_sed_vol(sed(:,dum_i,dum_j,loc_n_sed_stack_top))
        end if
-       loc_r_sed_por = fun_calc_r_sed_por(loc_frac_CaCO3,par_sed_top_th)
+       loc_r_sed_por = 1.0
        IF (loc_exe_sed_th <= (loc_r_sed_por*loc_sed_stack_top_th)) THEN
           ! calculate material to be exchanged
           loc_exe_sed(:) = (loc_exe_sed_th/(loc_r_sed_por*loc_sed_stack_top_th))*sed(:,dum_i,dum_j,loc_n_sed_stack_top)
@@ -1845,7 +1845,7 @@ CONTAINS
     ! if so - take the simplest response - reject all sediment input and set dissolution = rain
     ! NOTE: the 1 cm limit arises because of the way in which excess sedimentary material 
     !        is removed from the top layer and added to the sediment stack, which has layers of thickness 1.0 cm
-    loc_sed_top_dth = (loc_new_sed_vol - loc_dis_sed_vol)/(1.0 - max(par_sed_poros_det,par_sed_poros_CaCO3))
+    loc_sed_top_dth = (loc_new_sed_vol - loc_dis_sed_vol)/(1.0 - par_sed_poros_shelf)
     IF ((loc_sed_top_dth > 1.0) .OR. (loc_sed_top_dth < -1.0)) THEN
        loc_dis_sed(:)  = loc_new_sed(:)
        loc_dis_sed_vol = loc_new_sed_vol
@@ -1857,7 +1857,7 @@ CONTAINS
     ! calculate surface layer porosity
     ! NOTE: calculate porosity as a function of the VOLUME (not weight) fraction of CaCO3
     loc_frac_CaCO3_top = sed_top(is_CaCO3,dum_i,dum_j)/fun_calc_sed_vol(sed_top(:,dum_i,dum_j))
-    loc_sed_poros_top = fun_calc_sed_poros_nsur(loc_frac_CaCO3_top,par_sed_top_th)
+    loc_sed_poros_top  = par_sed_poros_shelf
     ! calculate thickness of material to be exchanged
     loc_sed_top_dth = fun_calc_sed_vol(sed_top(:,dum_i,dum_j))/(1.0 - loc_sed_poros_top) - par_sed_top_th
     loc_exe_sed_th = ABS(loc_sed_top_dth)
@@ -1880,7 +1880,7 @@ CONTAINS
        !      add sufficient material to top sub-layer to fill it plus additional material to next layer up
        ! update sediment surface layer
        loc_frac_CaCO3_top = sed_top(is_CaCO3,dum_i,dum_j)/fun_calc_sed_vol(sed_top(:,dum_i,dum_j))
-       loc_r_sed_por = fun_calc_r_sed_por(loc_frac_CaCO3_top,par_sed_top_th)
+       loc_r_sed_por = 1.0
        IF (loc_exe_sed_th < (loc_r_sed_por*(1.0 - loc_sed_stack_top_th))) THEN
           ! calculate material to be exchanged
           loc_exe_sed(:) = (loc_exe_sed_th/(par_sed_top_th + loc_exe_sed_th))*sed_top(:,dum_i,dum_j)
@@ -1919,7 +1919,7 @@ CONTAINS
           loc_frac_CaCO3 = &
                & sed(is_CaCO3,dum_i,dum_j,loc_n_sed_stack_top)/fun_calc_sed_vol(sed(:,dum_i,dum_j,loc_n_sed_stack_top))
        end if
-       loc_r_sed_por = fun_calc_r_sed_por(loc_frac_CaCO3,par_sed_top_th)
+       loc_r_sed_por = 1.0
        IF (loc_exe_sed_th <= (loc_r_sed_por*loc_sed_stack_top_th)) THEN
           ! calculate material to be exchanged
           loc_exe_sed(:) = (loc_exe_sed_th/(loc_r_sed_por*loc_sed_stack_top_th))*sed(:,dum_i,dum_j,loc_n_sed_stack_top)
@@ -2164,7 +2164,7 @@ CONTAINS
     ! if so - take the simplest response - reject all sediment input and set dissolution = rain
     ! NOTE: the 1 cm limit arises because of the way in which excess sedimentary material 
     !        is removed from the top layer and added to the sediment stack, which has layers of thickness 1.0 cm
-    loc_sed_top_dth = (loc_new_sed_vol - loc_dis_sed_vol)/(1.0 - max(par_sed_poros_det,par_sed_poros_CaCO3))
+    loc_sed_top_dth = (loc_new_sed_vol - loc_dis_sed_vol)/(1.0 - par_sed_poros_shelf)
     IF ((loc_sed_top_dth > 1.0) .OR. (loc_sed_top_dth < -1.0)) THEN
        loc_dis_sed(:)  = loc_new_sed(:)
        loc_dis_sed_vol = loc_new_sed_vol
@@ -2176,7 +2176,7 @@ CONTAINS
     ! calculate surface layer porosity
     ! NOTE: calculate porosity as a function of the VOLUME (not weight) fraction of CaCO3
     loc_frac_CaCO3_top = sed_top(is_CaCO3,dum_i,dum_j)/fun_calc_sed_vol(sed_top(:,dum_i,dum_j))
-    loc_sed_poros_top = fun_calc_sed_poros_nsur(loc_frac_CaCO3_top,par_sed_top_th)
+    loc_sed_poros_top = par_sed_poros_shelf
     ! calculate thickness of material to be exchanged
     loc_sed_top_dth = fun_calc_sed_vol(sed_top(:,dum_i,dum_j))/(1.0 - loc_sed_poros_top) - par_sed_top_th
     loc_exe_sed_th = ABS(loc_sed_top_dth)
@@ -2199,7 +2199,7 @@ CONTAINS
        !      add sufficient material to top sub-layer to fill it plus additional material to next layer up
        ! update sediment surface layer
        loc_frac_CaCO3_top = sed_top(is_CaCO3,dum_i,dum_j)/fun_calc_sed_vol(sed_top(:,dum_i,dum_j))
-       loc_r_sed_por = fun_calc_r_sed_por(loc_frac_CaCO3_top,par_sed_top_th)
+       loc_r_sed_por = 1.0
        IF (loc_exe_sed_th < (loc_r_sed_por*(1.0 - loc_sed_stack_top_th))) THEN
           ! calculate material to be exchanged
           loc_exe_sed(:) = (loc_exe_sed_th/(par_sed_top_th + loc_exe_sed_th))*sed_top(:,dum_i,dum_j)
@@ -2238,7 +2238,7 @@ CONTAINS
           loc_frac_CaCO3 = &
                & sed(is_CaCO3,dum_i,dum_j,loc_n_sed_stack_top)/fun_calc_sed_vol(sed(:,dum_i,dum_j,loc_n_sed_stack_top))
        end if
-       loc_r_sed_por = fun_calc_r_sed_por(loc_frac_CaCO3,par_sed_top_th)
+       loc_r_sed_por = 1.0
        IF (loc_exe_sed_th <= (loc_r_sed_por*loc_sed_stack_top_th)) THEN
           ! calculate material to be exchanged
           loc_exe_sed(:) = (loc_exe_sed_th/(loc_r_sed_por*loc_sed_stack_top_th))*sed(:,dum_i,dum_j,loc_n_sed_stack_top)

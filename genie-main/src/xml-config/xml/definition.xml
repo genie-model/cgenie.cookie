@@ -7319,6 +7319,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">0.610</value>
                         <description>carbonate porosity in top layer (cm3(pore water) / cm3(sed))</description>
                     </param>
+                    <param name="par_sed_poros_shelf">
+			<value datatype="real">0.5</value>
+                        <description>Shelf sediments porosity (cm3 cm-3) [to provide back-compatability with removed parameter par_sed_poros_CaCO3_reef]</description>
+                    </param>
                     <param name="par_sed_Dmax_neritic">
 			<value datatype="real">-9999.9</value>
                         <description>Maximum depth of shallow water sediments (m)</description>

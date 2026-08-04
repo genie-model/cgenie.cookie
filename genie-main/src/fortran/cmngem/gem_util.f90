@@ -2392,7 +2392,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DEFINE LOCAL VARIABLES
     ! -------------------------------------------------------- !
-    INTEGER::io,is
+    INTEGER::ls,i,loc_m
     integer,dimension(0:n_l_ocn,0:n_l_sed)::loc_lslo_i               !
     ! -------------------------------------------------------- !
     ! INITIALIZE
@@ -2402,24 +2402,33 @@ CONTAINS
     ! TRANSFORM INDICES
     ! -------------------------------------------------------- !
     ! re-index array to compact tracer format
-    ! NOTE: the counter 'io' here is only a count of the number of ocean tracer, and not a sepcific ocean tracer
-    !       (the specific ocean tracer number is held in dum_sed_ocn_i(io,is))
-    !       hence, it is dum_sed_ocn_i(io,is) that is converted to the compact tracer numbering format for ocean tracers
-    !       ('is' is converted to the compact tracer numbering format for solid tracers as normal)
-    ! NOTE: changed
-    !       if (abs(dum_sed_ocn_i(io,is)) > 0)) then
-    !       to
-    !       if (ocn_select(io) .AND. sed_select(is) .AND. (abs(dum_sed_ocn_i(io,is)) > 0)) then
-    !       becasue with BUILD=DEBUG and no sed tracers, io in loc_lslo_i(io,is2l(is)) was out of range
-    !       (now the code is like the similar functions, e.g., fun_conv_ocnsed2lols_i)
-    do is=1,n_sed
-       loc_lslo_i(0,is2l(is)) = dum_sed_ocn_i(0,is)
-       do io=1,n_ocn
-          if (ocn_select(io) .AND. sed_select(is) .AND. (abs(dum_sed_ocn_i(io,is)) > 0)) then
-             loc_lslo_i(io,is2l(is)) = io2l(dum_sed_ocn_i(io,is))
+    ! for all selected solid tracers:
+    ! (1) loop (i) through all the ocean tracers (dum_sed_ocn_i(0,l2is(ls))) potentially involved in transformation from the solid
+    !     NOTE: i is just a counter of ocean tracers involved in a transformation,
+    !           and does not equate to a tracer number (which is: dum_sed_ocn_i(i,l2is(ls)))
+    ! (2) count (loc_m) all selected ocean tracers involved
+    ! (3) if there are no selected ocean tracers involved, loc_m (and loc_lslo_i(0,ls)) will be zero
+    ! original (muffin) code was:
+    ! do is=1,n_sed
+    !    loc_lslo_i(0,is2l(is)) = dum_sed_ocn_i(0,is)
+    !    do io=1,n_ocn
+    !       if (abs(dum_sed_ocn_i(io,is)) > 0) then
+    !          loc_lslo_i(io,is2l(is)) = io2l(dum_sed_ocn_i(io,is))
+    !       end if
+    !    end do
+    ! end do
+    ! ... which 'worked' (by luck?), except not in debug with BUILD=DEBUG and no sed tracers selected (e.g., abiotic ocean),
+    !     io in loc_lslo_i(io,is2l(is)) was out of range
+    do ls = 1,n_l_sed
+       loc_m = 0
+       do i = 1,dum_sed_ocn_i(0,l2is(ls))
+          if (ocn_select(dum_sed_ocn_i(i,l2is(ls)))) then
+             loc_m = loc_m + 1
+             loc_lslo_i(loc_m,ls) = io2l(dum_sed_ocn_i(i,l2is(ls)))
           end if
        end do
-    end do
+       loc_lslo_i(0,ls) = loc_m
+    end do    
     ! return function result
     fun_conv_sedocn2lslo_i = loc_lslo_i
     ! -------------------------------------------------------- !
@@ -2483,7 +2492,7 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DEFINE LOCAL VARIABLES
     ! -------------------------------------------------------- !
-    INTEGER::io,is
+    INTEGER::lo,i,loc_m
     integer,dimension(0:n_l_sed,0:n_l_ocn)::loc_lols_i               !
     ! -------------------------------------------------------- !
     ! INITIALIZE
@@ -2493,14 +2502,27 @@ CONTAINS
     ! TRANSFORM INDICES
     ! -------------------------------------------------------- !
     ! re-index array to compact tracer format
-    do io=1,n_ocn
-       do is=1,n_sed
-          loc_lols_i(0,io2l(io)) = dum_ocn_sed_i(0,io)
-          if (ocn_select(io) .AND. sed_select(is) .AND. (abs(dum_ocn_sed_i(is,io)) > 0)) then
-             loc_lols_i(is2l(is),io2l(io)) = is2l(dum_ocn_sed_i(is,io))
+    ! NOTE: simply re-written from fun_conv_sedocn2lslo_i
+    ! original (muffin) code was:
+    ! do io=1,n_ocn
+    !    do is=1,n_sed
+    !       loc_lols_i(0,io2l(io)) = dum_ocn_sed_i(0,io)
+    !       if (ocn_select(io) .AND. sed_select(is) .AND. (abs(dum_ocn_sed_i(is,io)) > 0)) then
+    !          loc_lols_i(is2l(is),io2l(io)) = is2l(dum_ocn_sed_i(is,io))
+    !       end if
+    !    end do
+    ! end do
+    ! (for whcih there were no apparent issues(?))
+    do lo = 1,n_l_ocn
+       loc_m = 0
+       do i = 1,dum_ocn_sed_i(0,l2io(lo))
+          if (sed_select(dum_ocn_sed_i(i,l2io(lo)))) then
+             loc_m = loc_m + 1
+             loc_lols_i(loc_m,lo) = is2l(dum_ocn_sed_i(i,l2io(lo)))
           end if
        end do
-    end do
+       loc_lols_i(0,lo) = loc_m
+    end do    
     ! return function result
     fun_conv_ocnsed2lols_i = loc_lols_i
     ! -------------------------------------------------------- !

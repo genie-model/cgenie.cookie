@@ -618,7 +618,11 @@ CONTAINS
        end do
        loc_sed_tot_vol = fun_calc_sed_vol(loc_sed(:))
        if (loc_sed_tot_vol > const_real_nullsmall) then
-          loc_sedcore_poros(m,o) = fun_calc_sed_poros_nsur(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol,par_sed_top_th)
+          if (sed_mask_dsea(loc_i,loc_j)) then
+             loc_sedcore_poros(m,o) = fun_calc_sed_poros_nsur(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol,par_sed_top_th)
+          else
+             loc_sedcore_poros(m,o) = par_sed_poros_shelf
+          end if
           loc_sedcore_th(m,o) = loc_sed_tot_vol/(1.0 - loc_sedcore_poros(m,o))
        else
           loc_sedcore_poros(m,o) = 1.0
@@ -631,7 +635,11 @@ CONTAINS
           end do
           loc_sed_tot_vol = fun_calc_sed_vol(loc_sed(:))
           if (loc_sed_tot_vol > const_real_nullsmall) then
-             loc_sedcore_poros(m,o) = fun_calc_sed_poros(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol)
+             if (sed_mask_dsea(loc_i,loc_j)) then
+                loc_sedcore_poros(m,o) = fun_calc_sed_poros(loc_vsedcore(m)%lay(is2l(is_CaCO3),o)/loc_sed_tot_vol)
+             else
+                loc_sedcore_poros(m,o) = par_sed_poros_shelf
+             end if
              loc_sedcore_th(m,o) = loc_sed_tot_vol/(1.0 - loc_sedcore_poros(m,o))
           else
              loc_sedcore_poros(m,o) = 1.0
@@ -1646,22 +1654,22 @@ CONTAINS
           call sub_putvar2d('misc_fdet_log10',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
        END IF
     end if
-    ! ---------------------------------------------------------------- ! save interface flux data -- detrital (g cm-2 kyr-1)
-    IF (sed_select(is_det)) THEN
-       loc_ij(:,:) = const_real_zero
-       loc_unitsname = 'g cm-2 kyr-1'
-       ! g cm-2 kyr-1 data
-       DO i=1,n_i
-          DO j=1,n_j
-             IF (sed_fsed(is_det,i,j) > 0.0) THEN
-                loc_ij(i,j) = conv_det_mol_g*sed_fsed(is_det,i,j)/conv_yr_kyr
-             end if
-          end do
-       end do
-       call sub_adddef_netcdf(ntrec_siou,3,'interf_rainflux_det_gpercm2perkyr', &
-            & 'detrital material sediment rain flux as ',trim(loc_unitsname),loc_c0,loc_c0)
-       call sub_putvar2d('interf_rainflux_det_gpercm2perkyr',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
-    END IF
+!!$    ! ---------------------------------------------------------------- ! save interface flux data -- detrital (g cm-2 kyr-1)
+!!$    IF (sed_select(is_det)) THEN
+!!$       loc_ij(:,:) = const_real_zero
+!!$       loc_unitsname = 'g cm-2 kyr-1'
+!!$       ! g cm-2 kyr-1 data
+!!$       DO i=1,n_i
+!!$          DO j=1,n_j
+!!$             IF (sed_fsed(is_det,i,j) > 0.0) THEN
+!!$                loc_ij(i,j) = conv_det_mol_g*sed_fsed(is_det,i,j)/conv_yr_kyr
+!!$             end if
+!!$          end do
+!!$       end do
+!!$       call sub_adddef_netcdf(ntrec_siou,3,'interf_rainflux_det_gpercm2perkyr', &
+!!$            & 'detrital material sediment rain flux as ',trim(loc_unitsname),loc_c0,loc_c0)
+!!$       call sub_putvar2d('interf_rainflux_det_gpercm2perkyr',ntrec_siou,n_i,n_j,ntrec_sout,loc_ij(:,:),loc_mask_totl)
+!!$    END IF
     ! ---------------------------------------------------------------- ! CaCO3:POC 'rain ratio'
     IF (sed_select(is_CaCO3) .AND. sed_select(is_POC)) THEN
        loc_unitsname = 'n/a'

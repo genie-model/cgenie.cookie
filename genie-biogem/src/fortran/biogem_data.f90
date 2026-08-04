@@ -1216,9 +1216,9 @@ CONTAINS
     ! -------------------------------------------------------- ! record aqueous reaction subtotal
     n_diag_redox_aq = n
     ! -------------------------------------------------------- ! (2) solid -> dissolved
-    !                                                                NOTE: repeat loop to add dissolved redox transformations
-    !                                                                      (as if a 2nd set of particulates)
-    !                                                                NOTE: also generate index array in addition to string
+    ! NOTE: repeat loop to add dissolved redox transformations
+    !       (as if a 2nd set of particulates)
+    ! NOTE: also generate index array in addition to string
     if (ctrl_bio_remin_redox_save) then
        DO ls=1,n_l_sed
           loc_tot_m = conv_ls_lo_i(0,ls)
@@ -1243,7 +1243,7 @@ CONTAINS
           end do
        end DO
     end if
-    ! -------------------------------------------------------- ! record total
+    ! -------------------------------------------------------- ! record total total
     n_diag_redox = n
     ! -------------------------------------------------------- !
     ! ALLOCATE ARRAYS
@@ -3239,7 +3239,7 @@ CONTAINS
     ! ---------------------------------------------------------- !
     ! FILTER BASIC DATA SAVING OPTIONS
     ! ---------------------------------------------------------- !
-    ! filter (to .false.) basic options depending on if the necessary tracers, biological scheme etc. are not selected
+    ! filter (to .true./.false.) basic options depending on if the necessary tracers, biological scheme etc. are not selected
     ! ---------------------------------------------------------- ! grid info saving
     ! save grid etc. info
     ! ctrl_save_basic_modelgrid = .true. [DEFAULT]
@@ -3268,11 +3268,6 @@ CONTAINS
     ! ctrl_save_hidden_preformedtracers = .true. [DEFAULT]
     IF (.NOT. ctrl_bio_preformed) then
        ctrl_save_hidden_preformedtracers = .false.
-    end if
-    ! ---------------------------------------------------------- ! redox
-    ! if redox saving is selected, set legacy redox saving parameter to true
-    IF (ctrl_save_hidden_redox) then
-       ctrl_bio_remin_redox_save = .true.
     end if
     ! ---------------------------------------------------------- ! inversions
     ! detrmine whether to save inversion diagnostics
@@ -3329,6 +3324,15 @@ CONTAINS
        ctrl_save_hidden_redox = .true.
        ctrl_save_hidden_extra = .true.
        ctrl_save_hidden_fossilfuelco2 = .true.
+    end if
+    ! ---------------------------------------------------------- !
+    ! FINAL DATA SAVING OPTION FILTERING
+    ! ---------------------------------------------------------- !
+    ! filter (to .true./.false.)
+    ! ---------------------------------------------------------- ! redox
+    ! if redox saving is selected, set legacy redox saving parameter (that is still used throughout the code) to .true.
+    IF (ctrl_save_hidden_redox) then
+       ctrl_bio_remin_redox_save = .true.
     end if
     ! ---------------------------------------------------------- !
     ! END

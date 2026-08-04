@@ -64,6 +64,7 @@ CONTAINS
        print*,'Top (well-mixed) sediment layer thickness (cm)      : ',par_sed_top_th
        print*,'Sub-surface detrital porosity (cm3 cm-3)            : ',par_sed_poros_det
        print*,'Sub-surface carbonate porosity (cm3 cm-3)           : ',par_sed_poros_CaCO3
+       print*,'Shelf sediment porosity (cm3 cm-3)                  : ',par_sed_poros_shelf
        print*,'Maximum depth of shallow water sediments (m)        : ',par_sed_Dmax_neritic
        print*,'Force reef occurrence?                              : ',ctrl_sed_neritic_reef_force
        print*,'Minimum (basic) number of sedcore layers            : ',par_n_sedcore_tot_min
@@ -954,8 +955,13 @@ CONTAINS
        DO j=1,n_j
           IF (sed_mask(i,j)) THEN
              ! set sediment porosity
-             loc_sed_poros     = par_sed_poros_det
-             loc_sed_poros_top = fun_calc_sed_poros_nsur(0.0,par_sed_top_th)
+             if (sed_mask_dsea(i,j)) then
+                loc_sed_poros     = par_sed_poros_det
+                loc_sed_poros_top = fun_calc_sed_poros_nsur(0.0,par_sed_top_th)
+             else
+                loc_sed_poros = par_sed_poros_shelf
+                loc_sed_poros_top = par_sed_poros_shelf
+             end if
              ! set default sediment stack values
              ! NOTE: sediment component volumes are in the units of 
              !       actual volume of solid matter per cm2 area of sub-layer

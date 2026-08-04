@@ -32,7 +32,8 @@ MODULE sedgem_lib
   REAL::par_sed_top_th                                           ! top ('well-mixed') sediment layer thickness (cm)
   REAL::par_sed_poros_det                                        ! detrital porosity (cm3(pore water) / cm3(sed))
   REAL::par_sed_poros_CaCO3                                      ! carbonate porosity in top layer (cm3(pore water) / cm3(sed))
-  NAMELIST /ini_sedgem_nml/par_sed_top_th,par_sed_poros_det,par_sed_poros_CaCO3
+  REAL::par_sed_poros_shelf                                      ! shelf sediment porosity (cm3(pore water) / cm3(sed))
+  NAMELIST /ini_sedgem_nml/par_sed_top_th,par_sed_poros_det,par_sed_poros_CaCO3,par_sed_poros_shelf
   REAL::par_sed_Dmax_neritic                                     ! maximum depth of neritic (shallow water) sediments
   NAMELIST /ini_sedgem_nml/par_sed_Dmax_neritic
   LOGICAL::ctrl_sed_neritic_reef_force                           ! Force reef occurrence regardless of ocean depth?
