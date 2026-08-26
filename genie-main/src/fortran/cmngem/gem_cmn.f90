@@ -596,8 +596,8 @@ MODULE gem_cmn
        & 'Sensitivity of DIC to an ALK perturbation at fixed pCO2        ', &
        & 'Sensitivity of fCO2 to a DIC perturbation at fixed ALK         ', &
        & 'Sensitivity of ALK to a DIC perturbation at fixed OHM          ', &
-       & 'Number of iterations required to converge pH                   ', &
-       & 'Failure to solve for pH                                        '/)
+       & '# iterations to converge pH, per time-step per grid point      ', &
+       & '# failures to solve for pH, per time-step per grid point       '/)
 
   ! *** I/O ************************************************************************************************************************
   ! default I/O parameters

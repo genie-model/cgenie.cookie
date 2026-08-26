@@ -67,13 +67,13 @@ CONTAINS
     ! 
     expb = 3.0
     ! diffusion coefficient for o2
-    difo2 = 12.1e-6
+    difo2 = par_sed_archer1991_dif_sf*12.1e-6
     ! diffusion coefficient for co2
-    difc(1) = 10.5e-6
+    difc(1) = par_sed_archer1991_dif_sf*10.5e-6
     ! diffusion coefficient for hco3
-    difc(2) = 6.4e-6
+    difc(2) = par_sed_archer1991_dif_sf*6.4e-6
     ! diffusion coefficient for co3
-    difc(3) = 5.2e-6 
+    difc(3) = par_sed_archer1991_dif_sf*5.2e-6 
     ! dissolution rate constant, units of 1/s
     dissc = (par_sed_archer1991_disscpct/100.0) * par_sed_archer1991_dissc ! 1. * 1.1574e-5
     ! dissolution rate order

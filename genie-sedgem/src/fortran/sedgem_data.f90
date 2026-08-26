@@ -64,6 +64,7 @@ CONTAINS
        print*,'Top (well-mixed) sediment layer thickness (cm)      : ',par_sed_top_th
        print*,'Sub-surface detrital porosity (cm3 cm-3)            : ',par_sed_poros_det
        print*,'Sub-surface carbonate porosity (cm3 cm-3)           : ',par_sed_poros_CaCO3
+       print*,'Shelf sediment porosity (cm3 cm-3)                  : ',par_sed_poros_shelf
        print*,'Maximum depth of shallow water sediments (m)        : ',par_sed_Dmax_neritic
        print*,'Force reef occurrence?                              : ',ctrl_sed_neritic_reef_force
        print*,'Minimum (basic) number of sedcore layers            : ',par_n_sedcore_tot_min
@@ -73,6 +74,7 @@ CONTAINS
        print*,'# sedimentary stack sub-layers to drop off bottom   : ',n_sed_tot_drop
        ! --- DETRITAL CONFIGURATION ---------------------------------------------------------------------------------------------- !
        print*,'Flux of refractory material (g cm-2 kyr-1)          : ',par_sed_fdet
+       print*,'Enhancement of det flux to shelf cells              : ',par_sed_fdet_rshelf
        print*,'No pelagic (dust) detrital contribution?            : ',ctrl_sed_det_NOdust
        ! --- DIAGENESIS SCHEME: SELECTION ---------------------------------------------------------------------------------------- !
        print*,'--- DIAGENESIS SCHEME: SELECTION -------------------'
@@ -132,6 +134,7 @@ CONTAINS
        print*,'loop limit in <o2org> subroutine                    : ',par_sed_archer1991_iterationmax
        print*,'Use old error-catching scheme?                      : ',ctrl_sed_diagen_error_Archer_OLD
        print*,'Replace Archer model calc with lookup estimate?     : ',ctrl_sed_diagen_error_Archer2lookup
+       print*,'diffusion scale factor (all solutes)                : ',par_sed_archer1991_dif_sf
        ! --- DIAGENESIS SCHEME: opal --------------------------------------------------------------------------------------------- !
        print*,'base opal KSi value (yr-1)                          : ',par_sed_opal_KSi0
        ! --- CaCO3 PRODUCTION ---------------------------------------------------------------------------------------------------- !
@@ -142,7 +145,6 @@ CONTAINS
        print*,'CaCO3 precip rate law lower (corals)                : ',par_sed_reef_CaCO3precip_exp
        print*,'CaCO3 precipitation as calcite (o/w aragonite)?     : ',par_sed_reef_calcite
        print*,'Min threshold for abiotic CaCO3 precipitation       : ',par_sed_CaCO3_abioticohm_min
-       print*,'Reef CaCO3 porosity (cm3 cm-3)                      : ',par_sed_poros_CaCO3_reef
        print*,'prescribed CaCO3 production rate (mol cm-2 yr-1)    : ',par_sed_CaCO3burial
        print*,'prescribed global CaCO3 production rate (mol yr-1)  : ',par_sed_CaCO3burialTOT
        print*,'prescribed SrCO3 recryst rate (mol cm-2 yr-1)       : ',par_sed_SrCO3recryst
@@ -204,6 +206,8 @@ CONTAINS
        print*,'Impose alt Corg preservation (burial) flux?         : ',ctrl_sed_Pcorg
        print*,'Impose alt Porg preservation (burial) flux?         : ',ctrl_sed_Pporg
        print*,'Impose alt preservation (burial) rain ratio?        : ',ctrl_sed_Prr
+       print*,'Impose alt CaCO3 preservation (burial) flux?        : ',ctrl_sed_Pcaco3
+       print*,'Impose alt opal preservation (burial) flux?         : ',ctrl_sed_Popal
        print*,'Set dissolution flux = rain flux for CaCO3 only?    : ',ctrl_force_sed_closedsystem_CaCO3
        print*,'Set dissolution flux = rain flux for opal only?     : ',ctrl_force_sed_closedsystem_opal
        print*,'Impose alt sedimentation rates to sedcores?         : ',ctrl_sed_Fdet_sedcore
@@ -223,6 +227,7 @@ CONTAINS
        print*,'Filename for restart output                         : ',trim(par_outfile_name)
        print*,'Sediment water depth grid name                      : ',trim(par_sed_topo_D_name)
        print*,'Shallow water sediment (coral reef) mask name       : ',trim(par_sed_reef_mask_name)
+       print*,'Shallow water sediment (muds) mask name             : ',trim(par_sed_muds_mask_name)
        print*,'Sediment core save mask name                        : ',trim(par_sedcore_save_mask_name)
        print*,'Sediment core save list name                        : ',trim(par_sedcore_save_list_name)
        print*,'Biodiffusion profile name                           : ',trim(par_sed_mix_k_name)
@@ -235,6 +240,9 @@ CONTAINS
        print*,'Alt Corg preservation (burial) flux filename        : ',trim(par_sed_Pcorg_name)
        print*,'Alt Porg preservation (burial) flux filename        : ',trim(par_sed_Pporg_name)
        print*,'Alt preservation (burial)rain ratio filename        : ',trim(par_sed_Prr_name)
+       print*,'Alt CaCO3 preservation (burial) flux filename       : ',trim(par_sed_Pcaco3_name)
+       print*,'Alt opal preservation (burial) flux filename        : ',trim(par_sed_Popal_name)
+       print*,'Use restart experiment results dir for pres fields? : ',ctrl_sed_P_inrstdir
        ! --- I/O: MISC ----------------------------------------------------------------------------------------------------------- !
        print*,'--- I/O: MISC --------------------------------------'
        print*,'save timeseries output                              : ',ctrl_timeseries_output
@@ -258,6 +266,7 @@ CONTAINS
        print*,'1D netCDF sedcore output file name                  : ',trim(par_ncsedcore_name)
        print*,'time interval for averaging final data over (yr)    : ',par_sed_save_av_dtyr
        print*,'Save diagenesis error details?                      : ',ctrl_sed_diagen_error_save
+       print*,'Save hidden (all) fields?                           : ',ctrl_sed_save_hidden
        ! #### INSERT CODE TO LOAD ADDITIONAL PARAMETERS ########################################################################## !
        !
        ! ######################################################################################################################### !
@@ -477,7 +486,7 @@ CONTAINS
     CHARACTER(len=255)::loc_filename
     real::loc_th0,loc_th1,loc_s0,loc_s1,loc_ds
     real,dimension(0:n_j)::loc_s,loc_sv
-    real,DIMENSION(n_i,n_j)::loc_ij                  ! 
+    real,DIMENSION(n_i,n_j)::loc_ij,loc_ij_reef,loc_ij_muds              ! 
     ! set alt dir path string length
     loc_len = LEN_TRIM(par_pindir_name)
     ! zero the grid information and 'physics' array
@@ -487,6 +496,7 @@ CONTAINS
     sed_mask(:,:)      = .FALSE.
     sed_mask_reef(:,:) = .FALSE.
     sed_mask_muds(:,:) = .FALSE.
+    sed_mask_dsea(:,:) = .FALSE.
     ! calculate local constants
     loc_th0 = -const_pi/2                            ! 
     loc_th1 = const_pi/2                             ! 
@@ -520,64 +530,87 @@ CONTAINS
     phys_sed(ips_D,:,:) = loc_ij(:,:)
     ! load reef mask
     if (par_sed_Dmax_neritic > -const_real_nullsmall) then
-       if (loc_len > 0) then
-            loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_reef_mask_name)
-       else
-            loc_filename = TRIM(par_indir_name)//TRIM(par_sed_reef_mask_name)            
-       endif
-       CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+       if (len(trim(par_sed_reef_mask_name)) > 0) then
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_reef_mask_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_reef_mask_name)            
+          endif
+          CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij_reef(:,:))
+       else          
+          loc_ij_reef(:,:) = 0.0
+       end if
     else
-       loc_ij(:,:) = 0.0
+       loc_ij_reef(:,:) = 0.0
     endif
-    ! define sediment masks - used as an area mulitplying factor
-    ! (both in logial and area mulitplying factor (real) representations)
+    ! load muds mask
+    ! NOTE: if mask filename is not specified, set all 1.0s so as to maintain back-compatability
+    !       (shallow water which is not reef is muds)
+    if (par_sed_Dmax_neritic > -const_real_nullsmall) then
+       if (len(trim(par_sed_muds_mask_name)) > 0) then
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_muds_mask_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_muds_mask_name)            
+          endif
+          CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij_muds(:,:))
+       else          
+          loc_ij_muds(:,:) = 1.0
+       end if
+    else
+       loc_ij_muds(:,:) = 0.0
+    endif
+    ! define sediment masks
     ! NOTE: subsquently, the masks are updated depending on whether there ia an overlying ocean cell or not.
     !       (hence, these masks are just 'potential' locations here at the outset)
     DO i=1,n_i
        DO j=1,n_j
           if (phys_sed(ips_D,i,j) < const_real_nullsmall) then
              ! land! => no sediments!!!
-             phys_sed(ips_mask_sed,i,j) = 0.0
-             sed_mask(i,j) = .FALSE.
+             phys_sed(ips_mask_sed,i,j)      = 0.0
+             sed_mask(i,j)                   = .FALSE.
              phys_sed(ips_mask_sed_reef,i,j) = 0.0
-             sed_mask_reef(i,j) = .FALSE.
+             sed_mask_reef(i,j)              = .FALSE.
              phys_sed(ips_mask_sed_muds,i,j) = 0.0
-             sed_mask_muds(i,j) = .FALSE.
+             sed_mask_muds(i,j)              = .FALSE.
+             phys_sed(ips_mask_sed_dsea,i,j) = 0.0
+             sed_mask_dsea(i,j)              = .FALSE.
           else
-             ! not land(!), so set sediment mask TRUE
-             phys_sed(ips_mask_sed,i,j) = 1.0
-             sed_mask(i,j) = .TRUE.
+             ! not land(!), so sediment mask will always be TRUE
+             phys_sed(ips_mask_sed,i,j)  = 1.0
+             sed_mask(i,j)               = .TRUE.
              if (phys_sed(ips_D,i,j) < par_sed_Dmax_neritic) then
                 ! water shallower than generic neritic depth limit => either reef or mud!
-                ! NOTE: if ctrl_sed_neritic_reef_force is set, then shallow points are forced to be reef
-                !       (ctrl_sed_neritic_reef_force is .false. by default)
-                if ((loc_ij(i,j) > const_real_nullsmall) .OR. ctrl_sed_neritic_reef_force) then
+                ! NOTE: shallow water that is neither reef nor muds -> no sediments
+                phys_sed(ips_mask_sed_dsea,i,j) = 0.0
+                sed_mask_dsea(i,j)              = .false.
+                if ((loc_ij_reef(i,j) > const_real_nullsmall)) then
                    ! mask specified as reef ... therefore reef!
                    phys_sed(ips_mask_sed_reef,i,j) = 1.0
-                   sed_mask_reef(i,j) = .TRUE.
+                   sed_mask_reef(i,j)              = .TRUE.
                    phys_sed(ips_mask_sed_muds,i,j) = 0.0
-                   sed_mask_muds(i,j) = .FALSE.
-                else
-                   ! mask not specified as reef -- you got mud instead!
+                   sed_mask_muds(i,j)              = .FALSE.
+                elseif (loc_ij_muds(i,j) > const_real_nullsmall) then
+                   ! mask specified as mud
                    phys_sed(ips_mask_sed_reef,i,j) = 0.0
-                   sed_mask_reef(i,j) = .FALSE.
+                   sed_mask_reef(i,j)              = .FALSE.
                    phys_sed(ips_mask_sed_muds,i,j) = 1.0
-                   sed_mask_muds(i,j) = .TRUE.
-                end if
-             elseif (ctrl_sed_neritic_reef_force) then
-                ! force reef occurrence regardless of depth (assuming depth greater than prescribed neritic limit)
-                if (loc_ij(i,j) > const_real_nullsmall) then
-                   phys_sed(ips_mask_sed_reef,i,j) = 1.0
-                   sed_mask_reef(i,j) = .TRUE.
+                   sed_mask_muds(i,j)              = .TRUE.
+                else
+                   ! shallow water as neither reef nor mud
+                   phys_sed(ips_mask_sed_reef,i,j) = 0.0
+                   sed_mask_reef(i,j)              = .FALSE.
                    phys_sed(ips_mask_sed_muds,i,j) = 0.0
-                   sed_mask_muds(i,j) = .FALSE.
-                endif
+                   sed_mask_muds(i,j)              = .FALSE.
+                end if
              else
-                ! otherwise ... no reef or mud!
+                ! deep water ... no reef or mud!
+                phys_sed(ips_mask_sed_dsea,i,j) = 1.0
+                sed_mask_dsea(i,j)              = .true.
                 phys_sed(ips_mask_sed_reef,i,j) = 0.0
-                sed_mask_reef(i,j) = .FALSE.
+                sed_mask_reef(i,j)              = .FALSE.
                 phys_sed(ips_mask_sed_muds,i,j) = 0.0
-                sed_mask_muds(i,j) = .FALSE.
+                sed_mask_muds(i,j)              = .FALSE.
              end if
           end if
        END DO
@@ -822,10 +855,14 @@ CONTAINS
     sed_mask_hydr = loc_ij
     ! load alternative Corg preservation (burial) field (mol cm-2 yr-1)
     if (ctrl_sed_Pcorg) then
-       if (loc_len > 0) then
-          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcorg_name)
+       if (ctrl_sed_P_inrstdir) then
+          loc_filename = TRIM(par_inrstdir_name)//'../results/timeslice_sediment_burial_FPOC.txt'       
        else
-          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcorg_name)
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcorg_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcorg_name)
+          endif
        endif
        CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
     else
@@ -834,11 +871,15 @@ CONTAINS
     sed_Psed_corg = loc_ij
     ! load alternative Porg preservation (burial) field (mol cm-2 yr-1)
     if (ctrl_sed_Pporg) then
-       if (loc_len > 0) then
-          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pporg_name)
+       if (ctrl_sed_P_inrstdir) then
+          loc_filename = TRIM(par_inrstdir_name)//'../results/timeslice_sediment_burial_FPOP.txt'       
        else
-          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pporg_name)
-       endif
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pporg_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pporg_name)
+          endif
+       end if
        CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
     else
        loc_ij(:,:) = 0.0
@@ -856,6 +897,34 @@ CONTAINS
        loc_ij(:,:) = 0.0
     endif
     sed_Psed_rr = loc_ij
+    ! load alternative CaCO3 preservation (burial) field (mol cm-2 yr-1)
+    if (ctrl_sed_Pcaco3) then
+       if (ctrl_sed_P_inrstdir) then
+          loc_filename = TRIM(par_inrstdir_name)//'../results/timeslice_sediment_burial_FCaCO3.txt'       
+       else
+          if (loc_len > 0) then
+             loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Pcaco3_name)
+          else
+             loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Pcaco3_name)
+          endif
+       end if
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+    else
+       loc_ij(:,:) = 0.0
+    endif
+    sed_Psed_caco3 = loc_ij
+    ! load alternative opal preservation (burial) field (mol cm-2 yr-1)
+    if (ctrl_sed_Popal) then
+       if (loc_len > 0) then
+          loc_filename = TRIM(par_pindir_name)//TRIM(par_sed_Popal_name)
+       else
+          loc_filename = TRIM(par_indir_name)//TRIM(par_sed_Popal_name)
+       endif
+       CALL sub_load_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+    else
+       loc_ij(:,:) = 0.0
+    endif
+    sed_Psed_opal = loc_ij
     ! initialize diagnostics data array
     sed_diag(:,:,:) = 0.0
     ! initialize average sediment data arrays
@@ -886,16 +955,13 @@ CONTAINS
        DO j=1,n_j
           IF (sed_mask(i,j)) THEN
              ! set sediment porosity
-             if (sed_mask_reef(i,j)) then
-                loc_sed_poros = par_sed_poros_CaCO3_reef
-                loc_sed_poros_top = par_sed_poros_CaCO3_reef
-             elseif (sed_mask_muds(i,j)) then
-                loc_sed_poros = par_sed_poros_det
+             if (sed_mask_dsea(i,j)) then
+                loc_sed_poros     = par_sed_poros_det
                 loc_sed_poros_top = fun_calc_sed_poros_nsur(0.0,par_sed_top_th)
              else
-                loc_sed_poros = par_sed_poros_det
-                loc_sed_poros_top = fun_calc_sed_poros_nsur(0.0,par_sed_top_th)
-             endif
+                loc_sed_poros = par_sed_poros_shelf
+                loc_sed_poros_top = par_sed_poros_shelf
+             end if
              ! set default sediment stack values
              ! NOTE: sediment component volumes are in the units of 
              !       actual volume of solid matter per cm2 area of sub-layer
@@ -2286,18 +2352,16 @@ CONTAINS
     Write(unit=out,fmt=*) ' '
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
-
+    ! -------------------------------------------------------- !
     ! *** SAVE WEATHERING PARAMETERS ***
-    
-    ! set filename
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! set filename
     loc_filename = TRIM(par_outdir_name)//'INFO_weathering_parameters_AT_END'//string_results_ext
-    
-    ! open file
+    ! -------------------------------------------------------- ! open file
     call check_unit(out,__LINE__,__FILE__)
     OPEN(out,file=TRIM(loc_filename),action='write',iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
-    
-    ! write out section of text for copy-paste into a user-config
+    ! -------------------------------------------------------- ! write out section of text for copy-paste into a user-config
     Write(unit=out,fmt=*) '# --- ROKGEM USER-CONFIG --------'
     Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# NOTE: automatically generated by SEDGEM'
@@ -2305,13 +2369,10 @@ CONTAINS
     write(unit=out,fmt=*) '#       silicate weathering fraction (sg_par_sed_diag_fracSiweath)     == ',par_sed_diag_fracSiweath
     write(unit=out,fmt=*) '#       volcanic outgassing d13C (sg_par_sed_diag_volcanicd13C)        == ',par_sed_diag_volcanicd13C
     write(unit=out,fmt=*) '#       implicit P:ALK in OM N transformation (sg_par_sed_diag_P2ALK)  == ',par_sed_diag_P2ALK
-    Write(unit=out,fmt=*) '# NOTE: BE CAREFUL -- the values of parameters #2 and #3 are duplicated in other modules ...'
-    Write(unit=out,fmt=*) '#       un-comment the following lines to ensure alignment:'
-    Write(unit=out,fmt=*) '#rg_par_outgas_CO2_d13C=',par_sed_diag_volcanicd13C
-    Write(unit=out,fmt=*) '#bg_par_bio_red_PON_ALK=',par_sed_diag_P2ALK/16.0
+    write(unit=out,fmt=*) '#       adjust kerogen O2 consumption to balance global (Corg) O2 budget? ',ctrl_sed_diag_balanceO2
     Write(unit=out,fmt=*) '#'
-    Write(unit=out,fmt=*) '# set an OPEN system'
-    Write(unit=out,fmt=*) 'bg_ctrl_force_sed_closedsystem=.FALSE.'
+    Write(unit=out,fmt=*) '# turn off atmospheric short circuit'
+    Write(unit=out,fmt=*) 'rg_opt_short_circuit_atm=.false.'
     Write(unit=out,fmt=*) '# set CaCO3_weathering-temperature feedback'
     Write(unit=out,fmt=*) 'rg_opt_weather_T_Ca=.true.'
     Write(unit=out,fmt=*) '# set CaSiO3_weathering-temperature feedback'
@@ -2325,7 +2386,7 @@ CONTAINS
     Write(unit=out,fmt=*) 'rg_par_weather_CaSiO3=',par_sed_diag_fracSiweath*loc_tot_FCaCO3
     Write(unit=out,fmt=*) '# CO2 outgassing rate (mol C yr-1)'
     Write(unit=out,fmt=*) 'rg_par_outgas_CO2=',loc_Foutgassing
-    Write(unit=out,fmt=*) '# set isotopic value of CO2 outgassing (assumed) (o/oo)'
+    Write(unit=out,fmt=*) '# set isotopic value of CO2 outgassing (set by: par_sed_diag_volcanicd13C) (o/oo)'
     Write(unit=out,fmt=*) 'rg_par_outgas_CO2_d13C=',par_sed_diag_volcanicd13C
     Write(unit=out,fmt=*) '# set isotopic value of carbonate weathering (o/oo)'
     Write(unit=out,fmt=*) 'rg_par_weather_CaCO3_d13C=',loc_FCaCO3_d13C
@@ -2355,8 +2416,6 @@ CONTAINS
        Write(unit=out,fmt=*) 'rg_par_weather_kerogen_fracO2=',-loc_tot_FO2/loc_Fkerogen
     end if
     Write(unit=out,fmt=*) '#'
-    Write(unit=out,fmt=*) '# -------------------------------'
-    Write(unit=out,fmt=*) ''
     ! optional/additional SEDGEM parameters
     Write(unit=out,fmt=*) '# --- SEDGEM USER-CONFIG --------'
     Write(unit=out,fmt=*) '#'
@@ -2364,23 +2423,29 @@ CONTAINS
          & 1.0E-12*par_sed_CaCO3burialTOT,' (Tmol yr-1):'
     Write(unit=out,fmt=*) 'sg_par_sed_reef_CaCO3precip_sf=',par_sed_reef_CaCO3precip_sf
     Write(unit=out,fmt=*) '#'
+    ! optional/additional BIOGEM parameters
+    Write(unit=out,fmt=*) '# --- BIOGEM USER-CONFIG --------'
+    Write(unit=out,fmt=*) '#'
+    Write(unit=out,fmt=*) '# set an OPEN system'
+    Write(unit=out,fmt=*) 'bg_ctrl_force_sed_closedsystem=.FALSE.'
+    Write(unit=out,fmt=*) '# align marine organic matter P:ALK Redfield ratio with kerogen:'
+    Write(unit=out,fmt=*) 'bg_par_bio_red_PON_ALK=',par_sed_diag_P2ALK/16.0
+    Write(unit=out,fmt=*) '#'
     Write(unit=out,fmt=*) '# -------------------------------'
     Write(unit=out,fmt=*) ''
     ! close file
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
-
+    ! -------------------------------------------------------- !
     ! *** SAVE FULL CORE-TOP DATA IN TEXT FILE FORMAT ***
-    
-    ! set filename
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! set filename
     loc_filename = TRIM(par_outdir_name)//'INFO_sediment_locations_AT_END'//string_results_ext
-    
-    ! open file
+    ! -------------------------------------------------------- ! open file
     call check_unit(out,__LINE__,__FILE__)
     OPEN(out,file=TRIM(loc_filename),action='write',iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
-
-    ! write data
+    ! -------------------------------------------------------- ! write data
     Write(unit=out,fmt=*) '% ========================================'
     Write(unit=out,fmt=*) '% Sediment diagnostics data'
     Write(unit=out,fmt=*) '% ========================================'
@@ -2541,15 +2606,61 @@ CONTAINS
        end do
     end do
     Write(unit=out,fmt=*) '% ========================================'
-    
-    ! close file
+    ! -------------------------------------------------------- ! close file
     CLOSE(out,iostat=ios)
     call check_iostat(ios,__LINE__,__FILE__)
-
     ! ---------------------------------------------------------- !
     ! END
     ! ---------------------------------------------------------- !
   end SUBROUTINE sub_data_save_seddiag_GLOBAL
+  ! ****************************************************************************************************************************** !
+
+
+  ! ****************************************************************************************************************************** !
+  ! SAVE BURIAL FIELDS
+  SUBROUTINE sub_data_save_seddiag_burial(dum_dtyr)
+    USE genie_util, ONLY: check_unit, check_iostat
+    ! ---------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! ---------------------------------------------------------- !
+    real,INTENT(in)::dum_dtyr                                  ! 
+    ! ---------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! ---------------------------------------------------------- !
+    integer::is,l
+    integer::ios
+    REAL,DIMENSION(n_i,n_j)::loc_ij
+    CHARACTER(len=255)::loc_filename
+    ! ---------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! ---------------------------------------------------------- !
+    loc_ij(:,:) = 0.0
+    ! ---------------------------------------------------------- !
+    ! CALCULATE AND SAVE BURIAL FLUX
+    ! ---------------------------------------------------------- !
+    ! NOTE: units == mol cm-2 yr-1
+    DO l=1,n_l_sed
+       is = conv_iselected_is(l)
+       SELECT CASE (trim(string_sed(is)))
+       case ('POC','POP','CaCO3')       
+          loc_ij(:,:) = (sed_fsed(is,:,:) - sed_fdis(is,:,:))/dum_dtyr
+          ! -------------------------------------------------------- ! set filename
+          loc_filename = TRIM(par_outdir_name)//'timeslice_sediment_burial_F'//trim(string_sed(is))//string_results_ext
+          ! -------------------------------------------------------- ! open file
+          call check_unit(out,__LINE__,__FILE__)
+          OPEN(out,file=TRIM(loc_filename),action='write',iostat=ios)
+          call check_iostat(ios,__LINE__,__FILE__)
+          ! -------------------------------------------------------- ! write data
+          CALL sub_save_data_ij(loc_filename,n_i,n_j,loc_ij(:,:))
+          ! -------------------------------------------------------- ! close file
+          CLOSE(out,iostat=ios)
+          call check_iostat(ios,__LINE__,__FILE__)
+       END SELECT
+    end do
+    ! ---------------------------------------------------------- !
+    ! END
+    ! ---------------------------------------------------------- !
+  end SUBROUTINE sub_data_save_seddiag_burial
   ! ****************************************************************************************************************************** !
 
 

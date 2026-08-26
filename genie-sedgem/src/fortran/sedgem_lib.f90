@@ -32,7 +32,8 @@ MODULE sedgem_lib
   REAL::par_sed_top_th                                           ! top ('well-mixed') sediment layer thickness (cm)
   REAL::par_sed_poros_det                                        ! detrital porosity (cm3(pore water) / cm3(sed))
   REAL::par_sed_poros_CaCO3                                      ! carbonate porosity in top layer (cm3(pore water) / cm3(sed))
-  NAMELIST /ini_sedgem_nml/par_sed_top_th,par_sed_poros_det,par_sed_poros_CaCO3
+  REAL::par_sed_poros_shelf                                      ! shelf sediment porosity (cm3(pore water) / cm3(sed))
+  NAMELIST /ini_sedgem_nml/par_sed_top_th,par_sed_poros_det,par_sed_poros_CaCO3,par_sed_poros_shelf
   REAL::par_sed_Dmax_neritic                                     ! maximum depth of neritic (shallow water) sediments
   NAMELIST /ini_sedgem_nml/par_sed_Dmax_neritic
   LOGICAL::ctrl_sed_neritic_reef_force                           ! Force reef occurrence regardless of ocean depth?
@@ -46,7 +47,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/n_sed_tot,n_sed_tot_init,n_sed_tot_drop
   ! ------------------- DETRITAL CONFIGURATION ----------------------------------------------------------------------------------- !
   REAL::par_sed_fdet                                             ! prescribed (additional) flux of detrital material to the seds
-  NAMELIST /ini_sedgem_nml/par_sed_fdet
+  REAL::par_sed_fdet_rshelf                                      ! Enhancement of det flux to shelf cells 
+  NAMELIST /ini_sedgem_nml/par_sed_fdet,par_sed_fdet_rshelf
   LOGICAL::ctrl_sed_det_NOdust                                   ! no pelagic (dust) detrital contribution?
   NAMELIST /ini_sedgem_nml/ctrl_sed_det_NOdust
   ! ------------------- DIAGENESIS SCHEME: SELECTION ----------------------------------------------------------------------------- !
@@ -133,8 +135,10 @@ MODULE sedgem_lib
   integer::par_sed_archer1991_iterationmax                       ! loop limit in 'o2org' subroutine
   NAMELIST /ini_sedgem_nml/par_sed_archer1991_iterationmax
   logical::ctrl_sed_diagen_error_Archer_OLD                      ! Use old error-catching scheme?
-  logical::ctrl_sed_diagen_error_archer2lookup                  ! Replace Archer model calc with lookup estimate?
+  logical::ctrl_sed_diagen_error_archer2lookup                   ! Replace Archer model calc with lookup estimate?
   NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_Archer_OLD,ctrl_sed_diagen_error_archer2lookup
+  REAL::par_sed_archer1991_dif_sf                                ! diffusion scale factor (all solutes)
+  NAMELIST /ini_sedgem_nml/par_sed_archer1991_dif_sf
   ! ------------------- DIAGENESIS SCHEME: opal ---------------------------------------------------------------------------------- !
   REAL::par_sed_opal_KSi0                                        ! base opal KSi value (yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_opal_KSi0
@@ -149,8 +153,6 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_reef_calcite                            
   REAL::par_sed_CaCO3_abioticohm_min                             ! Min threshold for abiotic CaCO3 precipitation
   NAMELIST /ini_sedgem_nml/par_sed_CaCO3_abioticohm_min
-  real::par_sed_poros_CaCO3_reef                                 ! reef CaCO3 porosity 
-  NAMELIST /ini_sedgem_nml/par_sed_poros_CaCO3_reef                 
   REAL::par_sed_CaCO3burial                                      ! prescribed neritic CaCO3 production rate (mol cm-2 yr-1)
   REAL::par_sed_CaCO3burialTOT                                   ! prescribed global neritic CaCO3 production rate (mol yr-1)
   NAMELIST /ini_sedgem_nml/par_sed_CaCO3burial,par_sed_CaCO3burialTOT
@@ -256,6 +258,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/ctrl_sed_Pcorg,ctrl_sed_Pporg
   logical::ctrl_sed_Prr                                          ! apply alt preservation (burial) rain ratio (C/P) field?
   NAMELIST /ini_sedgem_nml/ctrl_sed_Prr
+  logical::ctrl_sed_Pcaco3,ctrl_sed_Popal                        ! apply alt preservation (burial) fields?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_Pcaco3,ctrl_sed_Popal
   logical::ctrl_force_sed_closedsystem_CaCO3                     ! Set dissolution flux = rain flux for CaCO3 ONLY?
   NAMELIST /ini_sedgem_nml/ctrl_force_sed_closedsystem_CaCO3
   logical::ctrl_force_sed_closedsystem_opal                      ! Set dissolution flux = rain flux for opal ONLY?
@@ -282,8 +286,9 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_infile_name,par_outfile_name
   CHARACTER(len=127)::par_sed_topo_D_name                        ! Sediment water depth grid name
   CHARACTER(len=127)::par_sed_reef_mask_name                     ! Shallow water sediment (coral reef) mask name
+  CHARACTER(len=127)::par_sed_muds_mask_name                     ! Shallow water sediment (muds) mask name
   CHARACTER(len=127)::par_sedcore_save_mask_name                 ! Sediment core save mask name
-  NAMELIST /ini_sedgem_nml/par_sed_topo_D_name,par_sed_reef_mask_name,par_sedcore_save_mask_name
+  NAMELIST /ini_sedgem_nml/par_sed_topo_D_name,par_sed_reef_mask_name,par_sed_muds_mask_name,par_sedcore_save_mask_name
   CHARACTER(len=127)::par_sedcore_save_list_name                 ! Sediment core save list name
   CHARACTER(len=127)::par_sed_mix_k_name                         ! Biodiffusion profile name
   NAMELIST /ini_sedgem_nml/par_sedcore_save_list_name,par_sed_mix_k_name  
@@ -296,6 +301,10 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_Pcorg_name,par_sed_Pporg_name
   CHARACTER(len=127)::par_sed_Prr_name                           ! alt preservation (burial) rain ratio field file name
   NAMELIST /ini_sedgem_nml/par_sed_Prr_name
+  CHARACTER(len=127)::par_sed_Pcaco3_name,par_sed_Popal_name     ! alt preservation (burial) field file names
+  NAMELIST /ini_sedgem_nml/par_sed_Pcaco3_name,par_sed_Popal_name
+  logical::ctrl_sed_P_inrstdir                                   ! use results dir of restart experiment for pres fields
+  NAMELIST /ini_sedgem_nml/ctrl_sed_P_inrstdir
   ! ------------------- I/O: MISC ------------------------------------------------------------------------------------------------ !
   logical::ctrl_append_data                                      ! append data to output files on restart
   logical::ctrl_timeseries_output                                ! save timeseries output
@@ -331,6 +340,8 @@ MODULE sedgem_lib
   NAMELIST /ini_sedgem_nml/par_sed_save_av_dtyr
   logical::ctrl_sed_diagen_error_save                            ! Save diagenesis error details?
   NAMELIST /ini_sedgem_nml/ctrl_sed_diagen_error_save
+  logical::ctrl_sed_save_hidden                                  ! Save hidden (all) fields?
+  NAMELIST /ini_sedgem_nml/ctrl_sed_save_hidden
   ! ############################################################################################################################## !
 
 
@@ -343,7 +354,7 @@ MODULE sedgem_lib
   INTEGER,PARAMETER::n_i = ilon1_sed                           ! max i dimension copied from genie_control
   INTEGER,PARAMETER::n_j = ilat1_sed                           ! max j dimension copied from genie_control
   ! grid properties array dimensions 
-  INTEGER,PARAMETER::n_phys_sed     = 15                       ! # grid properties descriptors
+  INTEGER,PARAMETER::n_phys_sed     = 16                       ! # grid properties descriptors
   ! options array dimensions
   INTEGER,PARAMETER::n_opt_sed      = 26                       ! 
   ! 
@@ -364,9 +375,10 @@ MODULE sedgem_lib
   INTEGER,PARAMETER::ips_mask_sed                         = 10 ! sediment grid point mask (sediment = 1.0)
   INTEGER,PARAMETER::ips_mask_sed_reef                    = 11 ! reef grid point mask (reef = 1.0)
   INTEGER,PARAMETER::ips_mask_sed_muds                    = 12 ! shallow sediment grid point mask (muds = 1.0)
-  INTEGER,PARAMETER::ips_mask_sed_hydr                    = 13 ! hydrothermal grid point mask (input == 1.0)
-  INTEGER,PARAMETER::ips_poros                            = 14 ! sediment surface porosity
-  INTEGER,PARAMETER::ips_mix_k0                           = 15 ! maximum (surface) sediment bioturbation mixing rate (cm2 yr-1)
+  INTEGER,PARAMETER::ips_mask_sed_dsea                    = 13 ! deep-sea sediment grid point mask (for completeness)
+  INTEGER,PARAMETER::ips_mask_sed_hydr                    = 14 ! hydrothermal grid point mask (input == 1.0)
+  INTEGER,PARAMETER::ips_poros                            = 15 ! sediment surface porosity
+  INTEGER,PARAMETER::ips_mix_k0                           = 16 ! maximum (surface) sediment bioturbation mixing rate (cm2 yr-1)
   ! options - sediements
   INTEGER,PARAMETER::iopt_sed_save_diag_final             = 20 ! save final sediment data?
   INTEGER,PARAMETER::iopt_sed_save_diag                   = 21 ! save sediment diagnostics time-slice data?
@@ -434,6 +446,7 @@ MODULE sedgem_lib
        & 'mask_sed        ', &
        & 'mask_sed_reef   ', &
        & 'mask_sed_muds   ', &
+       & 'mask_sed_dsea   ', &
        & 'mask_sed_hydr   ', &
        & 'poros           ', &
        & 'misc_k0         ' /)
@@ -501,6 +514,7 @@ MODULE sedgem_lib
   LOGICAL,ALLOCATABLE,DIMENSION(:,:)::sed_mask                 ! sediment mask (.TRUE. == sediment grid point exists)
   LOGICAL,ALLOCATABLE,DIMENSION(:,:)::sed_mask_reef            ! shallow water sediment mask - coral reefs
   LOGICAL,ALLOCATABLE,DIMENSION(:,:)::sed_mask_muds            ! shallow water sediment mask - muds
+  LOGICAL,ALLOCATABLE,DIMENSION(:,:)::sed_mask_dsea            ! deep-sea sediment mask
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_mask_hydr               ! hydrothermal input mask
   REAL,ALLOCATABLE,DIMENSION(:,:,:,:)::sed                     ! the sediment layer stack
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_top                   ! top sedimentary layer
@@ -523,6 +537,8 @@ MODULE sedgem_lib
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_corg               ! alt Corg preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_porg               ! alt Porg preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_rr                 ! alt preservation (burial) rain ratio (C/P) field
+  REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_caco3              ! alt CaCO3 preservation (burial) flux field
+  REAL,ALLOCATABLE,DIMENSION(:,:)::sed_Psed_opal               ! alt opal preservation (burial) flux field
   REAL,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag                  ! sediment diagnostics
   real,ALLOCATABLE,DIMENSION(:,:,:)::sed_diag_err              ! sediment diagnostics -- diagenesis errors
   ! allocatable 2-D sediment arrays -- time-averaging

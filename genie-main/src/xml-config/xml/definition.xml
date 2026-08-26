@@ -4499,12 +4499,12 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>CaCO3:POC rain ratio option ID</description>
                     </param>
                     <param name="par_bio_red_POC_CaCO3">
-			<value datatype="real">0.2</value>
-                        <description>base CaCO3:POC export ratio</description>
+			<value datatype="real">1.0</value>
+                        <description>base CaCO3:POC export ratio [ORIGINAL: 0.0285]</description>
                     </param>
                     <param name="par_bio_red_POC_CaCO3_pP">
 			<value datatype="real">0.0</value>
-                        <description>exponent for modifier of CaCO3:POC export ratio</description>
+                        <description>exponent for modifier of CaCO3:POC export ratio [ORIGINAL: 0.744]</description>
                     </param>
                     <param name="par_bio_red_POC_CaCO3_Kmax">
 			<value datatype="real">0.4</value>
@@ -7319,6 +7319,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">0.610</value>
                         <description>carbonate porosity in top layer (cm3(pore water) / cm3(sed))</description>
                     </param>
+                    <param name="par_sed_poros_shelf">
+			<value datatype="real">0.5</value>
+                        <description>Shelf sediments porosity (cm3 cm-3) [to provide back-compatability with removed parameter par_sed_poros_CaCO3_reef]</description>
+                    </param>
                     <param name="par_sed_Dmax_neritic">
 			<value datatype="real">-9999.9</value>
                         <description>Maximum depth of shallow water sediments (m)</description>
@@ -7351,6 +7355,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_sed_fdet">
 			<value datatype="real">0.150</value>
                         <description>prescribed (additional) flux of detrital material to the seds (g cm-2 kyr-1)</description>
+                    </param>
+                    <param name="par_sed_fdet_rshelf">
+			<value datatype="real">1.0</value>
+                        <description>Enhancement of det flux to shelf cells</description>
                     </param>
                     <param name="ctrl_sed_det_NOdust">
 			<value datatype="boolean">.false.</value>
@@ -7557,6 +7565,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="boolean">.false.</value>
                         <description>Replace Archer model calc with lookup estimate?</description>
                     </param>
+                    <param name="par_sed_archer1991_dif_sf">
+			<value datatype="real">1.0</value>
+                        <description>diffusion scale factor (all solutes)</description>
+                    </param>
 <!-- DIAGENESIS SCHEME: opal  -->
                     <param name="par_sed_opal_KSi0">
 			<value datatype="real">1.25</value>
@@ -7586,10 +7598,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_sed_CaCO3_abioticohm_min">
 			<value datatype="real">10.0</value>
                         <description>Min threshold for abiotic CaCO3 precipitation</description>
-                    </param>
-                    <param name="par_sed_poros_CaCO3_reef">
-			<value datatype="real">0.5</value>
-                        <description>Reef CaCO3 porosity (cm3 cm-3)</description>
                     </param>
                     <param name="par_sed_CaCO3burial">
 			<value datatype="real">0.0</value>
@@ -7843,6 +7851,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <value datatype="boolean">.false.</value>
                         <description>Use alt preservation (burial) rain ratio field?</description>
                     </param>
+                    <param name="ctrl_sed_Pcaco3">
+                        <value datatype="boolean">.false.</value>
+                        <description>Use alt CaCO3 preservation (burial) field?</description>
+                    </param>
+                    <param name="ctrl_sed_Popal">
+                        <value datatype="boolean">.false.</value>
+                        <description>Use alt opal preservation (burial) field?</description>
+                    </param>
                     <param name="ctrl_sed_Fdet_sedcore">
                         <value datatype="boolean">.false.</value>
                         <description>Use alt detrital burial rates for sedcores?</description>
@@ -7904,6 +7920,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_reef_mask_name.36x36</value>
                         <description>Shallow water sediment (coral reef) mask name</description>
                     </param>
+                    <param name="par_sed_muds_mask_name">
+			<value datatype="string"></value>
+                        <description>Shallow water sediment (muds) mask name</description>
+                    </param>
                     <param name="par_sedcore_save_mask_name">
 			<value datatype="string">sedgem_save_mask.36x36</value>
                         <description>Sediment core save mask name</description>
@@ -7916,9 +7936,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_sed_mix_k.dat</value>
                         <description>Biodiffusion profile name</description>
                     </param>
-                    
-                    
-                    
                     <param name="par_output_years_file_0d">
 			<value datatype="string">sedgem_output_years_0d.dat</value>
                         <description>file containing years for 0D output to be generated (to summary file)</description>
@@ -7927,9 +7944,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="string">sedgem_output_years_2d.dat</value>
                         <description>file containing years for 2D output to be generated (to netcdf/ascii)</description>
                     </param>
-                    
-                    
-                    
                     <param name="par_sed_Fdet_name">
                         <value datatype="string">hello_world</value>
                         <description>Alt detrital burial flux field file name</description>
@@ -7954,6 +7968,14 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <value datatype="string">hello_world</value>
                         <description>Alt preservation (burial) rain ratio (C/P) field file name</description>
                     </param>
+                    <param name="par_sed_Pcaco3_name">
+                        <value datatype="string">hello_world</value>
+                        <description>Alt CaCO3 preservation (burial) field file name</description>
+                    </param>
+                    <param name="par_sed_Popal_name">
+                        <value datatype="string">hello_world</value>
+                        <description>Alt opal preservation (burial) field file name</description>
+                    </param>
                     <param name="ctrl_force_sed_closedsystem_CaCO3">
 			<value datatype="boolean">.false.</value>
                         <description>Set dissolution flux = rain flux for CaCO3 ONLY?</description>
@@ -7961,6 +7983,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_force_sed_closedsystem_opal">
 			<value datatype="boolean">.false.</value>
                         <description>Set dissolution flux = rain flux for opal ONLY?</description>
+                    </param>
+                    <param name="ctrl_sed_P_inrstdir">
+			<value datatype="boolean">.false.</value>
+                        <description>Use restart experiment results dir for pres fields? </description>
                     </param>
 <!-- I/O: MISC  -->
                     <param name="ctrl_timeseries_output">
@@ -8039,6 +8065,10 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="ctrl_sed_diagen_error_save">
 			<value datatype="boolean">.false.</value>
                         <description>Save diagenesis error details?</description>
+                    </param>
+                    <param name="ctrl_sed_save_hidden">
+			<value datatype="boolean">.false.</value>
+                        <description>Save hidden (all) fields?</description>
                     </param>
                 </namelist>
             </file>
@@ -9308,15 +9338,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="temp_max">
 			<value datatype="real">99.9</value>
 	                  <description>Maximum applied temperature</description>
-                    </param>
-<!-- INORGANIC MATTER EXPORT RATIOS  -->
-                    <param name="par_bio_red_POC_CaCO3">
-			<value datatype="real">1.0</value>
-                        <description>base CaCO3:POC export ratio [ORIGINAL: 0.0285]</description>
-                    </param>
-                    <param name="par_bio_red_POC_CaCO3_pP">
-			<value datatype="real">0.0</value>
-                        <description>exponent for modifier of CaCO3:POC export ratio [ORIGINAL: 0.744]</description>
                     </param>
 <!-- ISOTOPIC FRACTIONATION -->
                     <param name="opt_d13C_DIC_Corg">

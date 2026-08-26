@@ -27,13 +27,11 @@ SUBROUTINE sedgem(          &
   integer::loc_m,loc_tot_m                                     !
   real::loc_dtyr                                               ! local time step (in years)
   real::loc_dts                                                ! local time step (in seconds)
-  real::loc_tot_A,loc_tot_A_reef,loc_tot_A_muds                ! local total area
-  real::loc_tot_A_hydr                                         ! local total area
+  real::loc_tot_A_dsea,loc_tot_A_reef,loc_tot_A_muds,loc_tot_A_hydr ! local total area
   logical::loc_flag_save                                       ! local flag
   REAL,DIMENSION(n_sed)::loc_fracdecay_sed                     ! local reduction factor for decaying sediment tracers
   real,DIMENSION(n_ocn)::loc_fhydrothermal                     ! local dissolved tracer array for hydrothermal input
   real,DIMENSION(n_ocn)::loc_flowTalteration                   ! local dissolved tracer array for low T alteration sink
-  real,DIMENSION(n_i,n_j)::loc_phys_sed_mask_deepsea           ! 
   real::loc_tot,loc_standard                                   ! 
   real::loc_r7Li,loc_r44Ca                                     ! 
   real::loc_87Sr,loc_88Sr
@@ -52,7 +50,7 @@ SUBROUTINE sedgem(          &
   ! *** STORE PREVIOUS ITERATION DATA ***
   sed_fsed_OLD(:,:,:) = sed_fsed(:,:,:) 
   sed_fdis_OLD(:,:,:) = sed_fdis(:,:,:)
-  ! copy current (passed) sediemnt flux
+  ! copy current (passed) sediment flux
   loc_sfxsumsed_OLD(:,:,:) = dum_sfxsumsed(:,:,:)
 
   ! *** INITIALIZE RESULTS ARRAYS ***
@@ -63,7 +61,6 @@ SUBROUTINE sedgem(          &
   ! *** INITIALIZE LOCAL ARRAYS AND VARIABLES ***
   loc_fhydrothermal(:)           = 0.0
   loc_flowTalteration(:)         = 0.0
-  loc_phys_sed_mask_deepsea(:,:) = 0.0
   loc_tot_Mg                     = 0.0
   loc_tot_Ca                     = 0.0
   loc_tot_fsed                   = 0.0
@@ -115,16 +112,17 @@ SUBROUTINE sedgem(          &
            sed_mask(i,j)      = .FALSE.
            sed_mask_reef(i,j) = .FALSE.
            sed_mask_muds(i,j) = .FALSE.
+           sed_mask_dsea(i,j) = .FALSE.
            phys_sed(ips_mask_sed,i,j)      = 0.0
            phys_sed(ips_mask_sed_reef,i,j) = 0.0
            phys_sed(ips_mask_sed_muds,i,j) = 0.0
+           phys_sed(ips_mask_sed_dsea,i,j) = 0.0
            sed_save_mask(i,j) = .FALSE.
         end IF
      end DO
   end DO
   ! set local deep-sea mask & calculate total area
-  loc_phys_sed_mask_deepsea(:,:) = phys_sed(ips_mask_sed,:,:) - phys_sed(ips_mask_sed_reef,:,:) - phys_sed(ips_mask_sed_muds,:,:)
-  loc_tot_A      = sum(loc_phys_sed_mask_deepsea(:,:)*phys_sed(ips_A,:,:))
+  loc_tot_A_dsea = sum(phys_sed(ips_mask_sed_dsea,:,:)*phys_sed(ips_A,:,:))
   loc_tot_A_reef = sum(phys_sed(ips_mask_sed_reef,:,:)*phys_sed(ips_A,:,:))
   loc_tot_A_muds = sum(phys_sed(ips_mask_sed_muds,:,:)*phys_sed(ips_A,:,:))
   loc_tot_A_hydr = sum(phys_sed(ips_mask_sed_hydr,:,:)*phys_sed(ips_A,:,:))
@@ -138,13 +136,15 @@ SUBROUTINE sedgem(          &
      par_sed_SrCO3recryst = conv_cm2_m2*par_sed_SrCO3recrystTOT/loc_tot_A_reef
   end if
   if (par_sed_Os_dep < const_real_nullsmall) then
-     par_sed_Os_dep = par_sed_Os_depTOT/loc_tot_A
+     par_sed_Os_dep = par_sed_Os_depTOT/loc_tot_A_dsea
   end if
 
   ! *** CALCULATE BENTHIC MEANS ***
   if (ocn_select(io_Ca) .AND. ocn_select(io_Mg)) then
-     if (ocn_select(io_Mg)) loc_tot_Mg = sum(dum_sfcsumocn(io_Mg,:,:)*loc_phys_sed_mask_deepsea(:,:)*phys_sed(ips_A,:,:))/loc_tot_A
-     if (ocn_select(io_Ca)) loc_tot_Ca = sum(dum_sfcsumocn(io_Ca,:,:)*loc_phys_sed_mask_deepsea(:,:)*phys_sed(ips_A,:,:))/loc_tot_A
+     if (ocn_select(io_Mg)) loc_tot_Mg = &
+          & sum(dum_sfcsumocn(io_Mg,:,:)*phys_sed(ips_mask_sed_dsea,:,:)*phys_sed(ips_A,:,:))/loc_tot_A_dsea
+     if (ocn_select(io_Ca)) loc_tot_Ca = &
+          & sum(dum_sfcsumocn(io_Ca,:,:)*phys_sed(ips_mask_sed_dsea,:,:)*phys_sed(ips_A,:,:))/loc_tot_A_dsea
   end if
 
   ! *** UPDATE CARBONATE CHEMSITRY ***
@@ -165,9 +165,9 @@ SUBROUTINE sedgem(          &
               call sub_adj_carbconst(          &
                    & dum_sfcsumocn(io_Ca,i,j), &
                    & dum_sfcsumocn(io_Mg,i,j), &
-                   & dum_sfcsumocn(io_S,i,j), &
-                   & dum_sfcsumocn(io_T,i,j),&
-                   & phys_sed(ips_D,i,j),     &
+                   & dum_sfcsumocn(io_S,i,j),  &
+                   & dum_sfcsumocn(io_T,i,j),  &
+                   & phys_sed(ips_D,i,j),      &
                    & sed_carbconst(:,i,j)      &
                    & )
            end if
@@ -234,6 +234,7 @@ SUBROUTINE sedgem(          &
            !       par_sed_fdet              == uniform prescibed additional flux
            !       sed_Fsed_det              == alternative prescibed detrital flux field
            !       at sedcore locations, sed_Fsed_det is over-written by ncMAR if defined
+           ! NOTE: for MUDS grid point locations, enable enhancement factor of sed_Fsed_det
            if (sed_select(is_det)) then
               if (ctrl_sed_det_NOdust) then
                  ! set zero det dust flux, which as passed from BIOGEM is assumed to be all pelagic (dust)
@@ -250,9 +251,15 @@ SUBROUTINE sedgem(          &
                          & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_opal(i,j)
                  endif
               else
-                 ! add prescribed (uniform) sed det flux to whatever pelagic source reaches the seafloor
-                 dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
-                      & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet
+                 if (sed_mask_dsea(i,j)) then
+                    ! add prescribed (uniform) sed det flux to whatever pelagic source reaches the seafloor
+                    dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
+                         & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet
+                 else
+                    ! enhance det flux to shallow cells by ratio par_sed_fdet_rshelf
+                    dum_sfxsumsed(is_det,i,j) = dum_sfxsumsed(is_det,i,j) + &
+                         & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet_rshelf*par_sed_fdet
+                 endif
               endif
            endif
            ! if sedcore detrital (ncMAR) fluxes are specified -- completely replace det flux at those locations
@@ -262,19 +269,13 @@ SUBROUTINE sedgem(          &
               dum_sfxsumsed(is_det,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
            end if
            ! assign det age
-           if (sed_select(is_det_age)) then
-              if (ctrl_sed_Fdet) then
-                 dum_sfxsumsed(is_det_age,i,j) = sed_age*conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*sed_Fsed_det(i,j)
-              else
-                 dum_sfxsumsed(is_det_age,i,j) = dum_sfxsumsed(is_det_age,i,j) + &
-                      & sed_age*conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_fdet          
-              endif
+           if (sed_select(is_det_age))then
+              dum_sfxsumsed(is_det_age,i,j) = sed_age*dum_sfxsumsed(is_det,i,j)
            endif
            ! add ash layer (if selected)
            if (sed_select(is_ash)) then
               if (par_sed_ashevent) then
-                 dum_sfxsumsed(is_ash,i,j) = dum_sfxsumsed(is_ash,i,j) + &
-                      & conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_ashevent_fash
+                 dum_sfxsumsed(is_ash,i,j) = conv_m2_cm2*conv_det_g_mol*(conv_yr_kyr*loc_dtyr)*par_sed_ashevent_fash
               end if
            endif
            ! replace sediment rain flux according to prescribed CaCO3 input
@@ -434,9 +435,20 @@ SUBROUTINE sedgem(          &
                    & dum_sfcsumocn(:,i,j),   &
                    & loc_conv_ls_lo(:,:)     &
                    & )
-           else
+           elseif (sed_mask_dsea(i,j)) then
               IF (ctrl_misc_debug3) print*,'> UPDATE SED: dsea (deep-sea)'
               loc_lslo_fnet = fun_update_sed_dsea( &
+                   & loc_dtyr,               &
+                   & i,j,                    &
+                   & phys_sed(ips_D,i,j),    &
+                   & dum_sfcsumocn(:,i,j),   &
+                   & loc_conv_ls_lo(:,:)     &
+                   & )
+           else
+              ! occasial case of no defined shallow water sediments (and not deep-sea)
+              ! (assumes a wet ocean grid-point and valid sediment location)
+              IF (ctrl_misc_debug3) print*,'> UPDATE SED: none'
+              loc_lslo_fnet = fun_update_sed_none( &
                    & loc_dtyr,               &
                    & i,j,                    &
                    & phys_sed(ips_D,i,j),    &
@@ -625,7 +637,7 @@ SUBROUTINE sedgem(          &
   ! NOTE: adjust units from mol yr-1 (for the total global flux) to mol m-2 s-1
   DO i=1,n_i
      DO j=1,n_j
-        if (loc_phys_sed_mask_deepsea(i,j) > const_real_nullsmall) then
+        if (phys_sed(ips_mask_sed_dsea,i,j) > const_real_nullsmall) then
            if (ctrl_sed_Fhydr2D) then
               ! distribute total hydrothermal flux weighted by a mask
               ! NOTE: normalize to sum of mask elements
@@ -635,10 +647,10 @@ SUBROUTINE sedgem(          &
                       & (sed_mask_hydr(i,j)/sum(sed_mask_hydr(:,:)))*loc_fhydrothermal(io)/loc_tot_A_hydr/conv_yr_s
               end DO
            else
-              ! distribute hydrotherma flux evenly over all sediment grid points
+              ! distribute hydrothermal flux evenly over all deep sea sediment grid points
               DO lo=1,n_l_ocn
                  io = conv_iselected_io(lo)
-                 dum_sfxocn(io,i,j) = dum_sfxocn(io,i,j) + loc_fhydrothermal(io)/loc_tot_A/conv_yr_s
+                 dum_sfxocn(io,i,j) = dum_sfxocn(io,i,j) + loc_fhydrothermal(io)/loc_tot_A_dsea/conv_yr_s
               end DO
            endif
         end if
@@ -648,7 +660,7 @@ SUBROUTINE sedgem(          &
   ! NOTE: dum_sfxocn(io,:,:) in units of (mol m-2 s-1)
   DO i=1,n_i
      DO j=1,n_j
-        if (loc_phys_sed_mask_deepsea(i,j) > const_real_nullsmall) then
+        if (phys_sed(ips_mask_sed_dsea,i,j) > const_real_nullsmall) then
            ! Os
            ! NOTE: deposition rates are given in mol m-2 s-1
            IF ((ocn_select(io_Os)) .AND. (dum_sfcsumocn(io_Os,i,j) > const_real_nullsmall)) then
@@ -736,7 +748,7 @@ SUBROUTINE sedgem(          &
            ! CO2(!) (aka 'weathering')
            ! NOTE: assume no fractionation in CO2 uptake
            ! NOTE: scale to a m-2 s-1 basis from the original parameter mol yr-1 units
-           loc_flowTalteration(io_DIC) = par_sed_lowTalt_fCO2/loc_tot_A/conv_yr_s
+           loc_flowTalteration(io_DIC) = par_sed_lowTalt_fCO2/loc_tot_A_dsea/conv_yr_s
            If (ocn_select(io_DIC_13C)) then
               loc_flowTalteration(io_DIC_13C) = loc_flowTalteration(io_DIC)*dum_sfcsumocn(io_DIC_13C,i,j)/dum_sfcsumocn(io_DIC,i,j)
            endif

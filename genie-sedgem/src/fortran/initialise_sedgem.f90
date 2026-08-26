@@ -49,6 +49,8 @@ SUBROUTINE initialise_sedgem( &
   call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed_mask_muds(n_i,n_j),STAT=alloc_error)
   call check_iostat(alloc_error,__LINE__,__FILE__)
+  ALLOCATE(sed_mask_dsea(n_i,n_j),STAT=alloc_error)
+  call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed_mask_hydr(n_i,n_j),STAT=alloc_error)
   call check_iostat(alloc_error,__LINE__,__FILE__)
   ALLOCATE(sed(n_sed,n_i,n_j,n_sed_tot),STAT=alloc_error)

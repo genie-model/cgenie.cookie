@@ -4235,14 +4235,14 @@ SUBROUTINE diag_biogem_timeseries( &
                       & loc_dtyr*SUM(locij_focnatm(ia,:,:))
               END DO
            end if
-           IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
+           IF (flag_sedgem .AND. (ctrl_save_hidden_interfacefluxes .OR. ctrl_save_basic_reservoirs)) THEN
               DO l=1,n_l_sed
                  is = conv_iselected_is(l)
                  int_focnsed_sig(is) = int_focnsed_sig(is) + &
                       & SUM(locij_focnsed(is,:,:))
               END DO
            end if
-           IF (flag_sedgem .AND. ctrl_save_hidden_interfacefluxes) THEN
+           IF (flag_sedgem .AND. (ctrl_save_hidden_interfacefluxes .OR. ctrl_save_basic_reservoirs)) THEN
               DO l=1,n_l_ocn
                  io = conv_iselected_io(l)
                  int_fsedocn_sig(io) = int_fsedocn_sig(io) + loc_dts*&
@@ -4557,7 +4557,7 @@ SUBROUTINE diag_biogem_timeseries( &
            END IF
            ! save time-series data (ASCII format)
            ! NOTE: netCDF time-series saving has been removed in cookie
-           CALL sub_data_save_runtime(loc_yr_save,loc_t)
+           CALL sub_data_save_runtime(loc_yr_save,loc_t,loc_dtyr)
            ! if high-resolution netCDF output is reuired -- re-open netcdf file, update record number, close file
            if (ctrl_data_save_3d_sig) then
               call sub_save_netcdf(loc_yr_save,4)
