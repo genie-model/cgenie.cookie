@@ -1303,6 +1303,8 @@ c     NOTE: extra1a,extra1b,extra1c in units of Sv (km3 s-1)
 c     these are divided by the area of each basin (m3)
 c     and then multiplied by 1E6 (km3 -> m3)
 c     => pmeadj in units of m3 s-1 m-2 => m s-1 freshwater flux
+c     UPDATE: pmeadjSv in units of Sv (10^6 m3 s-1) per grid point
+c             (but still scaled by scl_fwf)
 c
 c     ******************************************************************
 c
@@ -1317,7 +1319,8 @@ c     read file
          if (debug_init) print *, 'reading in FwF file'
          call check_unit(13,__LINE__,__FILE__)
          open(13,file=indir_name(1:lenin)//world(1:lenworld)//
-     &        '.pmeadj',iostat=ios)
+     &        '.pmeadjSv',iostat=ios)
+c$$$     &        '.pmeadj',iostat=ios)
          call check_iostat(ios,__LINE__,__FILE__)
          do j=jmax,1,-1
             read(13,*,iostat=ios)(pmeadj(i,j),i=1,imax)
@@ -1325,9 +1328,11 @@ c     read file
          enddo
          close(13,iostat=ios)
 c     scale by scl_fwf
+c     and also convert units from Sv per grid point to m s-1
          do j=1,jmax
             do i=1,imax
-               pmeadj(i,j) = scl_fwf*pmeadj(i,j)
+               pmeadj(i,j) = 1.0E6*scl_fwf*pmeadj(i,j)/asurf(j)
+c$$$               pmeadj(i,j) = scl_fwf*pmeadj(i,j)
             enddo
          enddo
 c
@@ -1347,6 +1352,31 @@ c
 c     ******************************************************************
 c
       endif
+
+c     ******************************************************************
+c
+c$$$c     save a reconstructed copy of mpeadj field
+c$$$c     NOTE: remove scl_fwf scaling
+c$$$c           as this is (re-)applied when the file is read in
+c$$$c           (allowing easy control of FwF magnitude, and switching 'off')
+c$$$c     NOTE: scale by surface area to create units of m3 s-1 per grid pt
+c$$$c           and then by 10E-6 for Sv
+c$$$      call check_iostat(ios,__LINE__,__FILE__)
+c$$$      call check_unit(113,__LINE__,__FILE__)
+c$$$      open(213,file=indir_name(1:lenin)//world(1:lenworld)//
+c$$$     &     '.pmeadjSv',iostat=ios)
+c$$$c$$$     &     '.pmeadj',iostat=ios)
+c$$$      call check_iostat(ios,__LINE__,__FILE__)
+c$$$      do j=jmax,1,-1
+c$$$         write(213,*,iostat=ios)
+c$$$     &      (1.0E-6*asurf(j)*pmeadj(i,j)/scl_fwf,i=1,imax)
+c$$$c$$$     &      (pmeadj(i,j)/scl_fwf,i=1,imax)
+c$$$         call check_iostat(ios,__LINE__,__FILE__)
+c$$$      enddo
+c$$$      close(213,iostat=ios)
+c$$$      call check_iostat(ios,__LINE__,__FILE__)
+c
+c     ******************************************************************
 c
 c     ******************************************************************
          
