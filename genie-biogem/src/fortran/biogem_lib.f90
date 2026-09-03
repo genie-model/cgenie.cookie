@@ -441,6 +441,17 @@ MODULE biogem_lib
   ! ECOGEM coupling
   LOGICAL::ctrl_bio_remin_ecogemMLD                              ! dilute tracers across the mixed layer
   NAMELIST /ini_biogem_nml/ctrl_bio_remin_ecogemMLD
+  ! MSPACMAM
+  CHARACTER(len=63)::opt_biogem_particles
+  real::MWc,MWcaco3,MWsio2,alpha_omc,rho_om,rho_caco3,rho_opal,SSA_calcSm,SSA_calcLg,SSA_arag,r_sm,r_lg
+  real::phi_sm,phi_lg,k_POC,aE,remin_Tref,K_O2,e_arag,n_calcUp,k_calcUp_ex,n_calcLow,k_calcLow_ex,n_arag
+  real::k_arag,rresxcal,rresmcal,rresxarag,rresmarag,a_pom_frac2
+  NAMELIST /ini_biogem_nml/opt_biogem_particles
+  NAMELIST /ini_biogem_nml/MWc,MWcaco3,MWsio2,alpha_omc,rho_om
+  NAMELIST /ini_biogem_nml/rho_caco3,rho_opal,SSA_calcSm,SSA_calcLg,SSA_arag,r_sm,r_lg
+  NAMELIST /ini_biogem_nml/phi_sm,phi_lg,k_POC,aE,remin_Tref,K_O2,e_arag,n_calcUp
+  NAMELIST /ini_biogem_nml/k_calcUp_ex,n_calcLow,k_calcLow_ex,n_arag
+  NAMELIST /ini_biogem_nml/k_arag,rresxcal,rresmcal,rresxarag,rresmarag,a_pom_frac2
   ! ------------------- ISOTOPIC FRACTIONATION ----------------------------------------------------------------------------------- !
   CHARACTER(len=63)::opt_d13C_DIC_Corg                           ! Corg 13C fractionation scheme ID string
   NAMELIST /ini_biogem_nml/opt_d13C_DIC_Corg
@@ -680,9 +691,10 @@ MODULE biogem_lib
   LOGICAL::ctrl_save_basic_geochemistry                          ! basic carb chem, O2/NO3/SO4 remin summary [requires redox saving]
   LOGICAL::ctrl_save_basic_proxies                               ! trace-metal ratios, tracer isotopic properties (if selected)
   LOGICAL::ctrl_save_basic_ALL                                   ! 
+  LOGICAL::ctrl_save_basic_particles                             ! particle flux diagnostics
   NAMELIST /ini_biogem_nml/ctrl_save_basic_reservoirs,ctrl_save_basic_biologicalpump, &
        & ctrl_save_basic_geochemistry, ctrl_save_basic_proxies, &
-       & ctrl_save_basic_ALL
+       & ctrl_save_basic_ALL, ctrl_save_basic_particles
   ! advanced data saving
   ! catagories of more advannced data saving for R&D
   LOGICAL::ctrl_save_advanced_reservoirs                         ! inventories
@@ -874,6 +886,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
   INTEGER::n_diag_redox_aq                                =  0 !
+  INTEGER,PARAMETER::n_diag_part                          = 06 !
 
   ! ****************************************************************************************************************************** !
   ! DEFINE ARRAY INDICES
@@ -1026,6 +1039,13 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_misc_2D_FALK                  = 07    !
   INTEGER,PARAMETER::idiag_misc_2D_FCa                   = 08    !
   INTEGER,PARAMETER::idiag_misc_2D_FCa_44Ca              = 09    !
+  ! diagnostics - misc - 2D
+  INTEGER,PARAMETER::idiag_part_smallW                   = 01    !
+  INTEGER,PARAMETER::idiag_part_largeW                   = 02    !
+  INTEGER,PARAMETER::idiag_part_meanW                    = 03    !
+  INTEGER,PARAMETER::idiag_part_smallPOC                 = 04    !
+  INTEGER,PARAMETER::idiag_part_smallPOC_frac2           = 05    !
+  INTEGER,PARAMETER::idiag_part_smallCalc                = 06    !
 
   ! ****************************************************************************************************************************** !
   ! DEFINE ARRAY INDICES NAMES
@@ -1170,6 +1190,14 @@ MODULE biogem_lib
        & 'FALK          ', &
        & 'FCa           ', &
        & 'FCa_44Ca      ' /)
+  ! diagnostics - particle fluxes
+  CHARACTER(len=14),DIMENSION(n_diag_part),PARAMETER::string_diag_particles = (/ &
+       & 'smallW         ', &
+       & 'largeW         ', &
+       & 'meanW          ', &
+       & 'smallPOC       ', &
+       & 'smallPOC_frac2 ', &
+       & 'smallCalc      ' /)
   ! diagnostics - redox
   ! NOTE: set a generous potential string length for automatically-generated variable names
   CHARACTER(len=63),DIMENSION(:),ALLOCATABLE::string_diag_redox        !
@@ -1345,6 +1373,7 @@ MODULE biogem_lib
   REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_errsum                  ! total sum of accumulated occurrence of falures to solve pH 
   REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_pH                 ! change in the sum of occurrences of falure to solve pH 
   REAL,DIMENSION(n_i,n_j,n_k)::diag_carb_derr_it                 ! change in the sum of occurrences of excessive pH iterations
+  REAL,DIMENSION(n_diag_part,n_i,n_j,n_k)::diag_particle         ! particle flux diagnostics
 
   ! ---------------------------------------------------------- !
   ! integrated (time-averaged) time-series storage scalars and vectors
@@ -1445,6 +1474,7 @@ MODULE biogem_lib
   REAL,DIMENSION(n_diag_react,n_i,n_j,n_k)::int_diag_react_timeslice ! geochemistry solid-solute reaction diagnostics
   REAL,DIMENSION(n_ocn,n_i,n_j)::int_diag_weather_timeslice      ! weathering diagnostics
   REAL,DIMENSION(n_atm,n_i,n_j)::int_diag_airsea_timeslice       ! air-sea gas exchange diagnostics
+  REAL,DIMENSION(n_diag_part,n_i,n_j,n_k)::int_diag_particle_timeslice       ! particle flux diagnostics
   ! redox
   real,DIMENSION(:,:,:,:),ALLOCATABLE::int_diag_redox_timeslice  ! redox diagnostics 3D time-slice
   ! ecogem

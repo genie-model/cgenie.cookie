@@ -3161,6 +3161,14 @@ CONTAINS
 !!$    ! define and allocate local arrays
 !!$    real,DIMENSION(:,:),ALLOCATABLE::loc_diag_redox
 !!$    allocate(loc_diag_redox(n_diag_redox,n_k),STAT=alloc_error)
+    !MSPACMAM
+    real,dimension(1:n_k,2)::fldpomz,fldpomz_frac2,fldcalz,fldaragz,fldopz
+    real,dimension(1:n_l_sed,1:n_k)::loc_diag_part
+    real::sigmaL,smallW,largeW,meanW
+    real::MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2
+    real,dimension(2)::SSA_calc
+    real::loc_input
+    CHARACTER(len=31)::loc_string     !
 
     ! *** INITIALIZE VARIABLES ***
     !
@@ -3203,6 +3211,21 @@ CONTAINS
     loc_size0=1.0/par_bio_remin_POC_size0 ! JDW
     !
     loc_bio_settle(:,:) = 0.0
+    SELECT CASE (trim(opt_biogem_particles))
+    CASE ('mspacmam') 
+       loc_diag_part(:,:) = 0.0
+       fldpomz(:,:) = 0.0
+       fldpomz_frac2(:,:) = 0.0
+       fldcalz(:,:) = 0.0
+       fldaragz(:,:) = 0.0
+       fldopz(:,:) = 0.0
+       MWpoc = MWc*alpha_omc
+       MWrho_om = MWpoc/rho_om
+       MWrho_caco3 = MWcaco3/rho_caco3
+       MWrho_sio2 = MWsio2/rho_opal
+       SSA_calc(1) = SSA_calcSm
+       SSA_calc(2) = SSA_calcLg
+    END SELECT
     !
     loc_vocn(:) = 0.0
     ! replace loc_k1 with virtual grid layer (if virtual grid world selected)
@@ -3210,6 +3233,7 @@ CONTAINS
     if (ctrl_force_Vgrid) then
        loc_k1 = max(loc_k1,force_Vgrid(dum_i,dum_j))
     end if
+    
     ! -------------------------------------------------------- ! set water column particulate tracer loop limit and sinking rate
     ! => test for sinking in any one time-step being less than the max depth of the ocean
     if (dum_dtyr*par_bio_remin_sinkingrate_physical <= goldstein_dsc) then
@@ -3313,6 +3337,10 @@ CONTAINS
           If (k == loc_k1) then
              loc_bio_remin_min_k = loc_k1 - 1
           else
+             SELECT CASE (trim(opt_biogem_particles))
+             CASE ('mspacmam') 
+             loc_bio_remin_min_k = loc_k1 - 1
+             CASE default 
              ! determine the deepest layer that sinking material can reach within the current time-step
              ! NOTE: do this regardless of whether a fixed remineralization profile is selected, or whether
              !       remineralization is calculated as a function of residence time in an ocena layer
@@ -3327,6 +3355,7 @@ CONTAINS
                    exit
                 end if
              end do
+             end SELECT
           end if
           ! zero local (temporary) particulate field array, and seed value at location in water column identified
           loc_bio_part_TMP(:,:) = 0.0
@@ -3586,6 +3615,7 @@ CONTAINS
           ! then, if the sediments are reached, calculate sediment flux
           ! NOTE: the particulate tracer field is in units of mol kg-1, following the (dissolved) ocean tracers, and as a result,
           !       corrections must be made for changes in ocean layer thickness
+          
           do kk=k-1,loc_bio_remin_min_k,-1
              ! test to see whether the ocean bottom has been reached
              If (kk >= loc_k1) then
@@ -3594,6 +3624,62 @@ CONTAINS
                 !  comprising layers of non-uniform thickness)
                 loc_bio_remin_layerratio = dum_vphys_ocn%mk(ipo_dD,kk+1)/dum_vphys_ocn%mk(ipo_dD,kk)
                 loc_bio_remin_dD = dum_vphys_ocn%mk(ipo_dD,kk)
+                SELECT CASE (trim(opt_biogem_particles))
+                CASE ('mspacmam')    
+                   if (kk == k-1) then
+                      ! Set up MSPACMAM scheme
+                      ! sigmaL: export fluxes converted to g/(m**2 s)
+                      sigmaL = (bio_part(is_opal,dum_i,dum_j,k)*Mwsio2 + bio_part(is_CaCO3,dum_i,dum_j,k)*e_arag*MWcaco3) &
+                      &              / ( bio_part(is_POC,dum_i,dum_j,k)*MWc + bio_part(is_CaCO3,dum_i,dum_j,k)*MWcaco3 &
+                      &                  + bio_part(is_opal,dum_i,dum_j,k)*MWsio2)
+                      sigmaL = max(0.0, sigmaL)
+                      fldpomz(n_k:k,1) = (1-a_pom_frac2)*bio_part(is_POC,dum_i,dum_j,k)*sigmaL !Divide fractions!
+                      fldpomz(n_k:k,2) = (1-a_pom_frac2)*bio_part(is_POC,dum_i,dum_j,k)*(1-sigmaL) !Divide fractions!
+                      fldpomz_frac2(n_k:k,1) = a_pom_frac2*bio_part(is_POC,dum_i,dum_j,k)*sigmaL !Divide fractions!
+                      fldpomz_frac2(n_k:k,2) = a_pom_frac2*bio_part(is_POC,dum_i,dum_j,k)*(1-sigmaL) !Divide fractions!
+                      fldcalz(n_k:k,1) = bio_part(is_CaCO3,dum_i,dum_j,k)*(1-e_arag)*sigmaL !Divide fractions!
+                      fldcalz(n_k:k,2) = bio_part(is_CaCO3,dum_i,dum_j,k)*(1-e_arag)*(1-sigmaL) !Divide fractions!
+                      fldaragz(n_k:k,1) = 0. !no small aragonite
+                      fldaragz(n_k:k,2) = bio_part(is_CaCO3,dum_i,dum_j,k)*e_arag !only large aragonite
+                      fldopz(n_k:k,1) = 0. !no small opal particles
+                      fldopz(n_k:k,2) = bio_part(is_opal,dum_i,dum_j,k) !only large opal particles
+                   endif
+                    ! calculate particle flux changes below zb
+                    call sub_biogem_mspacmam(dum_i,dum_j,kk, &
+                    &          MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2,SSA_calc,fldpomz(kk+1,:), &
+                    &          fldpomz_frac2(kk+1,:),fldcalz(kk+1,:),fldaragz(kk+1,:),fldopz(kk+1,:), &
+                    &          fldpomz(kk,:),fldpomz_frac2(kk,:),fldcalz(kk,:),fldaragz(kk,:),fldopz(kk,:),smallW,largeW,meanW)
+                    loc_bio_remin_sinkingrate_physical = meanW
+                    if (dum_dtyr*par_bio_remin_sinkingrate_physical <= goldstein_dsc) then
+                        loc_bio_remin_sinkingrate_reaction = loc_bio_remin_sinkingrate_physical
+                    endif
+                    loc_string = 'smallW'
+                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                    loc_diag_part(id,kk) = smallW
+                    
+                    loc_string = 'largeW'
+                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                    loc_diag_part(id,kk) = largeW
+                    
+                    loc_string = 'meanW'
+                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                    loc_diag_part(id,kk) = meanW
+                    
+                    loc_string = 'smallPOC'
+                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                    loc_diag_part(id,kk) = fldpomz(kk,1)/sum(fldpomz(kk,:))
+                    
+                    loc_string = 'smallPOC_frac2'
+                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                    loc_diag_part(id,kk) = fldpomz_frac2(kk,1)/sum(fldpomz_frac2(kk,:))
+                    
+                    loc_string = 'smallCalc'
+                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                    loc_diag_part(id,kk) = fldcalz(kk,1)/sum(fldcalz(kk,:))
+                    
+                CASE default
+                ! NOTHING!
+                end SELECT
                 ! calculate residence time (yr) of particulates in ocean layer (from layer thickness and sinking speed)
                 ! NOTE: sinking rate has units of (m yr-1) (converted from parameter file input units)
                 if (loc_bio_remin_sinkingrate_physical > const_real_nullsmall) &
@@ -3609,6 +3695,18 @@ CONTAINS
                       ! ### INSERT CODE ########################################################################################## !
                       !
                       ! ########################################################################################################## !
+                      SELECT CASE (trim(opt_biogem_particles))
+                      CASE ('mspacmam')
+                         loc_input = (sum(fldcalz(kk+1,:)) + sum(fldaragz(kk+1,:)))
+                         if (loc_input > 0.0) then
+                            loc_bio_remin_CaCO3_frac1 = 1.0 - (sum(fldcalz(kk,:)) + sum(fldaragz(kk,:)))/loc_input
+                         else
+                            loc_bio_remin_CaCO3_frac1 = 0.0
+                         endif
+                         loc_bio_remin_CaCO3_frac2 = 0.0
+                      CASE default
+                      !NOTHING!
+                      end SELECT
                    else
                       ! if both reminerilization lengths have been set to zero,
                       ! then under undersaturated conditions assume that all CaCO3 dissolves
@@ -3645,18 +3743,27 @@ CONTAINS
                 ! -------------------------------------------- ! opal
                 if (sed_select(is_opal)) then
                    If (.NOT. ctrl_bio_remin_opal_fixed) then
-                      ! set local variables - temperature (K) and silicic acid concentration (mol kg-1)
-                      loc_T     = dum_vocn%mk(conv_io_lselected(io_T),kk)
-                      loc_SiO2  = dum_vocn%mk(conv_io_lselected(io_SiO2),kk)
-                      ! calculate opal equilibrium H4SiO4 saturation concentration
-                      loc_Si_eq = conv_umol_mol*10.0**(6.44 - 968.0/loc_T)
-                      ! calculate degree of opal undersatruation
-                      loc_u     = (loc_Si_eq - loc_SiO2)/loc_Si_eq
-                      IF (loc_u > const_real_one)       loc_u = 1.0
-                      IF (loc_u < const_real_nullsmall) loc_u = 0.0
-                      ! calculate opal fractional dissolution
-                      ! NOTE: for now, assume that both opal 'fractions' behave identically
-                      loc_bio_remin_opal_frac1 = 1.0 - EXP(                                  &
+                      SELECT CASE (trim(opt_biogem_particles))
+                      CASE ('mspacmam')
+                         if (sum(fldopz(kk+1,:)) > 0.0) then
+                            loc_bio_remin_opal_frac1 = 1.0 - sum(fldopz(kk,:))/sum(fldopz(kk+1,:))
+                         else
+                            loc_bio_remin_opal_frac1 = 0.0
+                         endif
+                         loc_bio_remin_opal_frac2 = 0.0
+                      CASE default
+                         ! set local variables - temperature (K) and silicic acid concentration (mol kg-1)
+                         loc_T     = dum_vocn%mk(conv_io_lselected(io_T),kk)
+                         loc_SiO2  = dum_vocn%mk(conv_io_lselected(io_SiO2),kk)
+                         ! calculate opal equilibrium H4SiO4 saturation concentration
+                         loc_Si_eq = conv_umol_mol*10.0**(6.44 - 968.0/loc_T)
+                         ! calculate degree of opal undersatruation
+                         loc_u     = (loc_Si_eq - loc_SiO2)/loc_Si_eq
+                         IF (loc_u > const_real_one)       loc_u = 1.0
+                         IF (loc_u < const_real_nullsmall) loc_u = 0.0
+                         ! calculate opal fractional dissolution
+                         ! NOTE: for now, assume that both opal 'fractions' behave identically
+                         loc_bio_remin_opal_frac1 = 1.0 - EXP(                                  &
                            & -loc_bio_remin_dt_reaction*par_bio_remin_opal_K*                &
                            & (1.0/0.71)*                                                     &
                            & (                                                               &
@@ -3664,8 +3771,9 @@ CONTAINS
                            &   (0.55*((1.0 + (loc_T - const_zeroC)/400.0)**4.0*loc_u)**9.25) &
                            & )                                                               &
                            & )
-                      if (loc_bio_remin_opal_frac1 > const_real_one) loc_bio_remin_opal_frac1 = 1.0
-                      loc_bio_remin_opal_frac2 = loc_bio_remin_opal_frac1
+                         if (loc_bio_remin_opal_frac1 > const_real_one) loc_bio_remin_opal_frac1 = 1.0
+                         loc_bio_remin_opal_frac2 = loc_bio_remin_opal_frac1
+                      end SELECT
                    else
                       loc_bio_remin_opal_frac1 = (1.0 - EXP(-loc_bio_remin_dD/par_bio_remin_opal_eL1))
                       loc_bio_remin_opal_frac2 = (1.0 - EXP(-loc_bio_remin_dD/par_bio_remin_opal_eL2))
@@ -3689,16 +3797,30 @@ CONTAINS
                 ! -------------------------------------------- ! particulate organic matter
                 if (sed_select(is_POC)) then
                    If (.NOT. ctrl_bio_remin_POC_fixed) then
-                      ! set local variables - temperature (K)
-                      loc_T = dum_vocn%mk(conv_io_lselected(io_T),kk)
-                      ! calculate POC fractional remin
-                      loc_bio_remin_POC_frac1 = &
+                      SELECT CASE (trim(opt_biogem_particles))
+                      CASE ('mspacmam')
+                         if (sum(fldpomz(kk+1,:)) > 0.0) then
+                            loc_bio_remin_POC_frac1 = 1.0 - sum(fldpomz(kk,:))/sum(fldpomz(kk+1,:))
+                         else
+                            loc_bio_remin_POC_frac1 = 0.0
+                         endif
+                         if (sum(fldpomz_frac2(kk+1,:)) > 0.0) then
+                            loc_bio_remin_POC_frac2 = 1.0 - sum(fldpomz_frac2(kk,:))/sum(fldpomz_frac2(kk+1,:))
+                         else
+                            loc_bio_remin_POC_frac2 = 0.0
+                         endif
+                      CASE default
+                         ! set local variables - temperature (K)
+                         loc_T = dum_vocn%mk(conv_io_lselected(io_T),kk)
+                         ! calculate POC fractional remin
+                         loc_bio_remin_POC_frac1 = &
                            & loc_bio_remin_dt_reaction*par_bio_remin_POC_K1*exp(-par_bio_remin_POC_Ea1/(const_R_SI*loc_T))
-                      loc_bio_remin_POC_frac2 = &
+                         loc_bio_remin_POC_frac2 = &
                            & loc_bio_remin_dt_reaction*par_bio_remin_POC_K2*exp(-par_bio_remin_POC_Ea2/(const_R_SI*loc_T))
-                      ! check for an impossible >1.0 degradation fraction
-                      if (loc_bio_remin_POC_frac1 >= 1.0) loc_bio_remin_POC_frac1 = 1.0
-                      if (loc_bio_remin_POC_frac2 >= 1.0) loc_bio_remin_POC_frac2 = 1.0
+                         ! check for an impossible >1.0 degradation fraction
+                         if (loc_bio_remin_POC_frac1 >= 1.0) loc_bio_remin_POC_frac1 = 1.0
+                         if (loc_bio_remin_POC_frac2 >= 1.0) loc_bio_remin_POC_frac2 = 1.0
+                      end SELECT
                    else
                       ! FRACTION #1
                       select case (par_bio_remin_fun)
@@ -4359,6 +4481,16 @@ CONTAINS
        is = conv_iselected_is(l)
        bio_settle(is,dum_i,dum_j,:) = loc_bio_settle(l,:)
     end do
+    ! record particle flux diagnostics if particle flux scheme is used
+    SELECT CASE (trim(opt_biogem_particles))
+    CASE ('mspacmam')
+       diag_particle(idiag_part_smallW,dum_i,dum_j,:) = dum_dtyr*loc_diag_part(idiag_part_smallW,:)
+       diag_particle(idiag_part_largeW,dum_i,dum_j,:) = dum_dtyr*loc_diag_part(idiag_part_largeW,:)
+       diag_particle(idiag_part_meanW,dum_i,dum_j,:) = dum_dtyr*loc_diag_part(idiag_part_meanW,:)
+       diag_particle(idiag_part_smallPOC,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallPOC,:)*loc_bio_settle(is_POC,:)
+       diag_particle(idiag_part_smallPOC_frac2,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallPOC_frac2,:)*loc_bio_settle(is_POC_frac2,:)
+       diag_particle(idiag_part_smallCalc,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallCalc,:)*loc_bio_settle(is_CaCO3,:)
+    END SELECT
     ! write ocean tracer field and settling flux arrays (global array)
     dum_vbio_part%mk(:,:) = loc_bio_part(:,:)
     ! write ocean tracer remineralization field (global array)
@@ -5615,5 +5747,162 @@ CONTAINS
   END SUBROUTINE sub_biogem_copy_ocntotsTS
   ! ****************************************************************************************************************************** !
 
+  ! ****************************************************************************************************************************** !
+  !   MSPACMAM particle flux module
+  !   Particle flux changes between two depth levels
+  !   Implementation and variable names follow Dinauer et al. 2022 GBC
+  !   This also updates global arrays
+      subroutine sub_biogem_mspacmam (i,j,k,MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2, &
+      &     SSA_calc,fpomz,fpomz_frac2,fcalz,faragz,fopz, &
+      &     opomz,opomz_frac2,ocalz,oaragz,oopz,bgcWsmall,bgcWlarge,bgcWmean) ! OUT
+      
+
+  !   INPUT variables
+      integer,intent(in) :: i,j,k                         ! grid indices
+      real,intent(in) :: MWpoc,MWrho_om                   ! Molar weights POC and organic matter
+      real,intent(in) :: MWrho_caco3,MWrho_sio2           ! Molar weights CaCO3 and opal
+      real,intent(in) :: SSA_calc(2)                      ! Specific surface area CaCO3: small and large
+      real,intent(in) :: fpomz(2),fpomz_frac2(2),fcalz(2) ! Input POM and calcite fluxes
+      real,intent(in) :: faragz(2),fopz(2)                ! Input aragonite and opal fluxes
+      
+  !   OUTPUT variables
+      real,intent(out) :: opomz(2),opomz_frac2(2),ocalz(2),oaragz(2),oopz(2) ! Output of remineralization
+      real,intent(out) :: bgcWmean, bgcWsmall, bgcWlarge
+
+  !   LOCAL variables
+      integer::l
+      real::k_poc_star,rt,k_opal
+      real::a_aerob
+      real::massConc_PM(2),rho_solid(2),rho_p(2),w_up(2)
+      real::Rres_cal,Rres_arag
+      real::bgcphis(2)
+      real::T_up,S_up,O2_up,omegaA_up,omegaC_up,rho_up,visc_up
+      real::T_zero,A,B,mu_w
+      real::zk,zkp1,zb,zbm1
+      real::bgc_a1s(2),bgc_a2s(2)
+      real::bgck_calcUp,bgck_calcLow
+
+      zk = phys_ocn(ipo_Dmid,i,j,k)
+      zkp1 = phys_ocn(ipo_Dmid,i,j,k+1)
+      zb = phys_ocn(ipo_Dbot,i,j,k+1)
+      zbm1 = phys_ocn(ipo_Dbot,i,j,k)
+      T_up = ocn(io_T,i,j,k)
+      !$              + (ocn(io_T,dum_i,dum_j,kk) - ocn(io_T,dum_i,dum_j,kk+1))
+      !$              /(zk-zkp1)*(zb - zkp1)
+      O2_up = ocn(io_O2,i,j,k)
+      !$              + (ocn(io_O2,dum_i,dum_j,kk) - ocn(io_O2,dum_i,dum_j,kk+1))
+      !$              /(zk-zkp1)*(zb - zkp1)
+      O2_up = max(0.0, O2_up)
+      omegaA_up = carb(ic_ohm_arg,i,j,k)
+      !$              + (carb(ic_ohm_arg,dum_i,dum_j,kk) - carb(ic_ohm_arg,dum_i,dum_j,kk+1))
+      !$              /(zk-zkp1)*(zb - zkp1)
+      omegaC_up = carb(ic_ohm_cal,i,j,k)
+      !$              + (carb(ic_ohm_cal,dum_i,dum_j,kk) - carb(ic_ohm_cal,dum_i,dum_j,kk+1))
+      !$              /(zk-zkp1)*(zb - zkp1)
+      omegaA_up = max(0.0, omegaA_up)
+      omegaC_up = max(0.0, omegaC_up)
+      S_up = ocn(io_S,i,j,k)
+      !$              + (ocn(io_S,dum_i,dum_j,kk) - ocn(io_S,dum_i,dum_j,kk+1))
+      !$              /(zk-zkp1)*(zb - zkp1)
+      rho_up = phys_ocn(ipo_rho,i,j,k) 
+      !$              + (phys_ocn(ipo_rho,dum_i,dum_j,kk) - phys_ocn(ipo_rho,dum_i,dum_j,kk+1))
+      !$              /(zk-zkp1)*(zb - zkp1)
+      T_zero = max(0.0, T_up)
+      !Seawater viscosity in g/cm/s
+      A = 1.541 + 1.998*0.01*T_zero - 9.52*0.00001*T_zero**2
+      B = 7.974 - 7.561*0.01*T_zero + 4.724*0.0001*T_zero**2
+      mu_w = 4.2844e-5+1./(0.157*(T_zero+64.993)**2-91.296)
+      visc_up = mu_w*(1+A*S_up/1000.+B*(S_up/1000.)**2)*10.    
+      
+      bgc_a1s(1) = 4./3.*981*r_sm**3
+      bgc_a1s(2) = 4./3.*981*r_lg**3
+      bgc_a2s(1) = r_sm
+      bgc_a2s(2) = r_lg
+      bgck_calcUp = 10**k_calcUp_ex
+      bgck_calcLow = 10**k_calcLow_ex
+     
+      bgcphis(1) = phi_sm
+      bgcphis(2) = phi_lg
+
+      k_poc_star = k_POC*exp(aE*(T_up-remin_Tref)) &
+      &          *(O2_up/(O2_up+K_O2))
+      k_opal = 1.32e16*exp(-11481./(T_up+273.15))/(24.*60*60)
+
+  !   Loop over small and large particle types, density in [g/cm**3]
+      do l=1,2
+         massConc_PM(l) = (fpomz(l)*MWpoc) &
+      &        + ((fcalz(l)+faragz(l))*MWcaco3) &
+      &        + (fopz(l)*MWsio2)
+
+        if (massConc_PM(l).gt.0.) then
+           rho_solid(l) = massConc_PM(l) / (fpomz(l)*MWrho_om & 
+      &          + (fcalz(l)+faragz(l))*MWrho_caco3 &
+      &          + fopz(l)*MWrho_sio2)
+        elseif (isnan(massConc_PM(l))) then
+           massConc_PM(l) = 0.0
+           rho_solid(l)   = 0.0
+        else
+           rho_solid(l) = 0.0
+        endif
+                
+        rho_p(l) = (1-bgcphis(l))*rho_solid(l) + bgcphis(l)*rho_up
+        rho_p(l) = max(rho_p(l), rho_up+tiny(1.0)) ! limit rho_p to be just larger than seawater density
+
+  !     Sinking velocity [cm/s]
+        w_up(l) = ( sqrt(bgc_a1s(l)*rho_up*(rho_p(l)-rho_up) + &
+      &       + 9.*visc_up**2) - 3.*visc_up ) / (rho_up*bgc_a2s(l))
+  !     Conversion to [m/s]
+        w_up(l) = w_up(l) / 100. 
+                
+  !     Negative w-velocity values are set to close to zero
+        w_up(l) = max(tiny(1.0), w_up(l))
+    
+  !     residence time (s), catch infinity
+        rt = min((zbm1-zb)/w_up(l), 1.e12)
+
+  !     POM fluxes
+        a_aerob = (k_poc_star)*rt
+        opomz(l) = fpomz(l)/(1.+a_aerob) 
+        opomz_frac2(l) = fpomz_frac2(l)/(1.+a_aerob*0.1) 
+
+  !     PIC fluxes
+      !     PIC dissolution due to remineralisation (Liang et al. 2023GBC)
+        Rres_cal = rresxcal*(fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l))**rresmcal
+        Rres_arag = rresxarag*(fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l))**rresmarag
+        if (omegaC_up < 1. .and. omegaC_up > 0.8) then
+           ocalz(l) = fcalz(l) &
+      &           /(1.+(Rres_cal+bgck_calcUp*SSA_calc(l) &
+      &           *(1-omegaC_up)**n_calcUp)*rt)
+        elseif (omegaC_up <= 0.8) then
+           ocalz(l) = fcalz(l) &
+      &           /(1.+(Rres_cal+bgck_calcLow*SSA_calc(l) &
+      &           *(1.-omegaC_up)**n_calcLow)*rt)
+        else
+           ocalz(l) = fcalz(l) &
+      &           /(1.+(Rres_cal)*rt)
+        endif
+        if (omegaA_up < 1.) then
+           oaragz(l) = faragz(l) &
+      &           /(1.+(Rres_arag+k_arag*SSA_arag &
+      &           *(1.-omegaA_up)**n_arag)*rt)
+        else
+           oaragz(l) = faragz(l) / (1.+(Rres_arag)*rt)
+        endif
+!       opal fluxes
+        oopz(l) = fopz(l)/(1.+(k_opal)*rt)
+      enddo
+
+!     save small, large and mean sinking velocity in 3D arrays, convert to m/yr 
+      bgcWsmall = w_up(1) * 365.25*24*60*60
+      bgcWlarge = w_up(2) * 365.25*24*60*60     
+      bgcWmean = (w_up(1)*massConc_PM(1) + w_up(2)*massConc_PM(2)) &
+      &     / (massConc_PM(1)+massConc_PM(2)) * 365.25*24*60*60
+      if (isnan(bgcWmean)) then
+         bgcWmean = 0.0
+      endif
+       
+      return
+      end subroutine sub_biogem_mspacmam
+  ! ****************************************************************************************************************************** !
 
 END MODULE biogem_box

@@ -1216,9 +1216,9 @@ CONTAINS
     ! -------------------------------------------------------- ! record aqueous reaction subtotal
     n_diag_redox_aq = n
     ! -------------------------------------------------------- ! (2) solid -> dissolved
-    ! NOTE: repeat loop to add dissolved redox transformations
-    !       (as if a 2nd set of particulates)
-    ! NOTE: also generate index array in addition to string
+    !                                                                NOTE: repeat loop to add dissolved redox transformations
+    !                                                                      (as if a 2nd set of particulates)
+    !                                                                NOTE: also generate index array in addition to string
     if (ctrl_bio_remin_redox_save) then
        DO ls=1,n_l_sed
           loc_tot_m = conv_ls_lo_i(0,ls)
@@ -1243,7 +1243,7 @@ CONTAINS
           end do
        end DO
     end if
-    ! -------------------------------------------------------- ! record total total
+    ! -------------------------------------------------------- ! record total
     n_diag_redox = n
     ! -------------------------------------------------------- !
     ! ALLOCATE ARRAYS
@@ -1902,6 +1902,7 @@ CONTAINS
     int_diag_weather_timeslice(:,:,:)   = 0.0
     int_diag_airsea_timeslice(:,:,:)    = 0.0
     int_diag_redox_timeslice(:,:,:,:)   = 0.0
+    int_diag_particle_timeslice(:,:,:,:)  = 0.0
     ! ### ADD ADDITIONAL TIME-SLICE ARRAY INITIALIZATIONS HERE ################################################################### !
     ! ############################################################################################################################ !
   END SUBROUTINE sub_init_int_timeslice
@@ -2084,6 +2085,7 @@ CONTAINS
     diag_forcing(:,:,:)       = 0.0
     diag_forcing_atm(:)       = 0.0
     diag_forcing_ocn(:)       = 0.0
+    diag_particle(:,:,:,:)    = 0.0
   END SUBROUTINE sub_init_diag
   ! ****************************************************************************************************************************** !
 

@@ -699,9 +699,7 @@ CONTAINS
   ! ****************************************************************************************************************************** !
   ! *** save time-slice data ***
   SUBROUTINE sub_save_netcdf_3d(dum_t)
-    ! ---------------------------------------------------------------- !
-    ! DUMMY ARGUMENTS
-    ! ---------------------------------------------------------------- !
+    ! dummy arguments
     REAL,INTENT(in)::dum_t
     ! ---------------------------------------------------------------- !
     ! reservoir FIELDS
@@ -718,6 +716,10 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     if (ctrl_save_basic_biologicalpump) CALL sub_3d_save_biologicalpump_basic()
     if (ctrl_save_advanced_biologicalpump) CALL sub_3d_save_biologicalpump_advanced()
+    ! ---------------------------------------------------------------- !
+    ! particle FIELDS
+    ! ---------------------------------------------------------------- !
+    if (ctrl_save_basic_particles) CALL sub_3d_save_particles_basic()
     ! ---------------------------------------------------------------- !
     ! proxy-related FIELDS
     ! ---------------------------------------------------------------- !
@@ -1780,6 +1782,118 @@ CONTAINS
   END SUBROUTINE sub_3d_save_biologicalpump_advanced
   ! ****************************************************************************************************************************** !
 
+  ! ****************************************************************************************************************************** !
+  SUBROUTINE sub_3d_save_particles_basic()
+    ! ---------------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! ---------------------------------------------------------------- !
+    integer::i,j,k,io,id
+    INTEGER::loc_iou,loc_ntrec
+    real,DIMENSION(n_i,n_j)::loc_ij
+    real,DIMENSION(n_i,n_j,n_k)::loc_ijk,loc_mask
+    CHARACTER(len=255)::loc_name
+    CHARACTER(len=255)::loc_unitsname
+    CHARACTER(len=31)::loc_string     !
+    real::loc_tot,loc_frac,loc_standard
+    real::loc_min,loc_max
+    logical::loc_save
+    ! ---------------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! ---------------------------------------------------------------- !
+    loc_iou   = ncout3d_iou
+    loc_ntrec = ncout3d_ntrec
+    loc_ij(:,:)     = 0.0
+    loc_ijk(:,:,:)  = 0.0
+    loc_mask(:,:,:) = phys_ocn(ipo_mask_ocn,:,:,:)
+    ! ---------------------------------------------------------------- !
+    ! Particle field properties
+    ! ---------------------------------------------------------------- !
+    
+
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k
+             loc_string = 'smallW'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallW','sinking speed of small particles','m/yr',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_smallW',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'largeW'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_largeW','sinking speed of large particles','m/yr',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_largeW',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'meanW'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_meanW','mean sinking speed of particles','m/yr',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_meanW',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'smallPOC'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)*phys_ocn(ipo_rA,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallPOC','small POC particle flux','mol m-2 yr-1',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_smallPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'smallPOC_frac2'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)*phys_ocn(ipo_rA,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallPOC_frac2','small POC_frac2 particle flux','mol m-2 yr-1',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_smallPOC_frac2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'smallCalc'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)*phys_ocn(ipo_rA,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallCalc','small calcite particle flux','mol m-2 yr-1',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_smallCalc',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+    
+
+    ! ---------------------------------------------------------------- !
+    ! END
+    ! ---------------------------------------------------------------- !
+  END SUBROUTINE sub_3d_save_particles_basic
+  ! ****************************************************************************************************************************** !
 
   ! ****************************************************************************************************************************** !
   SUBROUTINE sub_3d_save_proxies_basic()

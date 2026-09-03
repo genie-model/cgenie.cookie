@@ -3828,6 +3828,7 @@ SUBROUTINE diag_biogem_timeslice( &
            int_diag_redox_timeslice(:,:,:,:)       = int_diag_redox_timeslice(:,:,:,:)       + diag_redox(:,:,:,:)
            int_diag_iron_timeslice(:,:,:,:)        = int_diag_iron_timeslice(:,:,:,:)        + loc_dtyr*diag_iron(:,:,:,:)
            int_diag_airsea_timeslice(:,:,:)        = int_diag_airsea_timeslice(:,:,:)        + loc_dtyr*diag_airsea(:,:,:)
+           int_diag_particle_timeslice(:,:,:,:)    = int_diag_particle_timeslice(:,:,:,:)    + diag_particle(:,:,:,:)
            ! gemlite
            if (dum_gemlite) then
               int_diag_weather_timeslice(:,:,:)   = int_diag_weather_timeslice(:,:,:) + loc_dtyr*dum_sfxsumrok1(:,:,:)
