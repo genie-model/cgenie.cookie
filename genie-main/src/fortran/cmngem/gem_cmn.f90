@@ -786,6 +786,8 @@ MODULE gem_cmn
   REAL,PARAMETER::const_lambda_14C           = 1./8267.0 ! decay constant (years^{-1})
   ! lambda for 14C (years^{-1}) using Libby half-life
   ! NOTE: half-life = 5568.0 years [Stuiver and Polach, 1977]
+  ! NOTE: AI says: Libby is 'often used in older calculations for historical consistency'
+  !       5730 yeas is the more accurate 'modern/Cambridge' value
   REAL,PARAMETER::const_lambda_14C_libby     = 1./8033.0 ! decay constant (years^{-1})
 !!$  ! NOTE: the constants const_lamda_14C, const_lamda_14C_libby, and const_fracdecay_14C are retained here for
 !!$  !       compatibility reasons
