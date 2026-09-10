@@ -1809,7 +1809,6 @@ CONTAINS
     ! Particle field properties
     ! ---------------------------------------------------------------- !
     
-
     loc_ijk(:,:,:) = const_real_null
     DO i=1,n_i
        DO j=1,n_j
@@ -1855,11 +1854,11 @@ CONTAINS
           DO k=goldstein_k1(i,j),n_k             
              loc_string = 'smallPOC'
              id = fun_find_str_i(trim(loc_string),string_diag_particles)
-             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)*phys_ocn(ipo_rA,i,j,k)/int_t_timeslice
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
            end DO
        end DO
     end DO
-    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallPOC','small POC particle flux','mol m-2 yr-1',const_real_zero,const_real_zero)
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallPOC','small POC particle fraction','',const_real_zero,const_real_zero)
     call sub_putvar3d_g('part_diag_smallPOC',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
 
     loc_ijk(:,:,:) = const_real_null
@@ -1868,11 +1867,11 @@ CONTAINS
           DO k=goldstein_k1(i,j),n_k             
              loc_string = 'smallPOC_frac2'
              id = fun_find_str_i(trim(loc_string),string_diag_particles)
-             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)*phys_ocn(ipo_rA,i,j,k)/int_t_timeslice
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
            end DO
        end DO
     end DO
-    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallPOC_frac2','small POC_frac2 particle flux','mol m-2 yr-1',const_real_zero,const_real_zero)
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallPOC_frac2','small POC_frac2 particle fraction','',const_real_zero,const_real_zero)
     call sub_putvar3d_g('part_diag_smallPOC_frac2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
 
     loc_ijk(:,:,:) = const_real_null
@@ -1881,13 +1880,25 @@ CONTAINS
           DO k=goldstein_k1(i,j),n_k             
              loc_string = 'smallCalc'
              id = fun_find_str_i(trim(loc_string),string_diag_particles)
-             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)*phys_ocn(ipo_rA,i,j,k)/int_t_timeslice
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
            end DO
        end DO
     end DO
-    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallCalc','small calcite particle flux','mol m-2 yr-1',const_real_zero,const_real_zero)
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallCalc','small calcite particle fraction','',const_real_zero,const_real_zero)
     call sub_putvar3d_g('part_diag_smallCalc',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'CaCO3_fracA'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_CaCO3_fracA','CaCO3 aragonite fraction','',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_CaCO3_fracA',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
 
     ! ---------------------------------------------------------------- !
     ! END
