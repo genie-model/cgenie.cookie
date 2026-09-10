@@ -787,16 +787,16 @@ MODULE gem_cmn
   ! lambda for 14C (years^{-1}) using Libby half-life
   ! NOTE: half-life = 5568.0 years [Stuiver and Polach, 1977]
   REAL,PARAMETER::const_lambda_14C_libby     = 1./8033.0 ! decay constant (years^{-1})
-  ! NOTE: the constants const_lamda_14C, const_lamda_14C_libby, and const_fracdecay_14C are retained here for
-  !       compatibility reasons
-  ! lamda for 14C (yrs)
-  ! NOTE: half-life = 5730.0 years [Orr, 2002] (GOSAC final report)
-  REAL,PARAMETER::const_lamda_14C            = 8267.0    ! e-folding time of radiocarbon decay (years)
-  ! lambda for 14C (yrs) using Libby half-life
-  ! NOTE: half-life = 5568.0 years [Stuiver and Polach, 1977]
-  REAL,PARAMETER::const_lamda_14C_libby      = 8033.0
-  ! yearly fractional reduction factor for 14C ( = EXP[-1.0 / const_lamda_14C] )
-  REAL,PARAMETER::const_fracdecay_14C        = 0.9998790
+!!$  ! NOTE: the constants const_lamda_14C, const_lamda_14C_libby, and const_fracdecay_14C are retained here for
+!!$  !       compatibility reasons
+!!$  ! lamda for 14C (yrs)
+!!$  ! NOTE: half-life = 5730.0 years [Orr, 2002] (GOSAC final report)
+!!$  REAL,PARAMETER::const_lamda_14C            = 8267.0    ! e-folding time of radiocarbon decay (years)
+!!$  ! lambda for 14C (yrs) using Libby half-life
+!!$  ! NOTE: half-life = 5568.0 years [Stuiver and Polach, 1977]
+!!$  REAL,PARAMETER::const_lamda_14C_libby      = 8033.0
+!!$  ! yearly fractional reduction factor for 14C ( = EXP[-1.0 / const_lamda_14C] )
+!!$  REAL,PARAMETER::const_fracdecay_14C        = 0.9998790
   ! 230Th and 231Pa:
   ! lambda for 230Th (years^{-1}): half-life of 75.2e3 years used by Marchal et al. (2000)
   !                                and Siddall et al. (2005)

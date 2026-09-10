@@ -2222,7 +2222,7 @@ CONTAINS
                    loc_frac    = loc_ocn(io_DIC_14C)
                    loc_d14Cocn = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
                    bio_remin(io,dum_i,dum_j,n_k) = &
-                        & const_lamda_14C_libby*log( (loc_d14Catm+1000.0)/(loc_d14Cocn+1000.0) ) - loc_ocn(io)
+                        & (1.0/const_lambda_14C_libby)*log( (loc_d14Catm+1000.0)/(loc_d14Cocn+1000.0) ) - loc_ocn(io)
                 else
                    bio_remin(io,dum_i,dum_j,n_k) = 0.0 - loc_ocn(io)                  
                 end if
