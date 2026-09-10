@@ -886,7 +886,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
   INTEGER::n_diag_redox_aq                                =  0 !
-  INTEGER,PARAMETER::n_diag_part                          = 06 !
+  INTEGER,PARAMETER::n_diag_part                          = 07 !
 
   ! ****************************************************************************************************************************** !
   ! DEFINE ARRAY INDICES
@@ -1046,6 +1046,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_part_smallPOC                 = 04    !
   INTEGER,PARAMETER::idiag_part_smallPOC_frac2           = 05    !
   INTEGER,PARAMETER::idiag_part_smallCalc                = 06    !
+  INTEGER,PARAMETER::idiag_part_CaCO3_fracA              = 07    !
 
   ! ****************************************************************************************************************************** !
   ! DEFINE ARRAY INDICES NAMES
@@ -1197,7 +1198,8 @@ MODULE biogem_lib
        & 'meanW          ', &
        & 'smallPOC       ', &
        & 'smallPOC_frac2 ', &
-       & 'smallCalc      ' /)
+       & 'smallCalc      ', &
+       & 'CaCO3_fracA    ' /)
   ! diagnostics - redox
   ! NOTE: set a generous potential string length for automatically-generated variable names
   CHARACTER(len=63),DIMENSION(:),ALLOCATABLE::string_diag_redox        !
