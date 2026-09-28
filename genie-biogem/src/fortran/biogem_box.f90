@@ -3281,7 +3281,7 @@ CONTAINS
     select case (trim(opt_biogem_particles))
     case ('mspacmam')
        !NOTE: set loc_klim to n_k to run the kk loop only once. Particles already present deeper
-       ! in the water column are added at the appropriate depth and the contribute to the sinking particle
+       ! in the water column are added at the appropriate depth and thus still contribute to the sinking particle
        ! mix 
        loc_klim = n_k
     end select
@@ -3643,32 +3643,54 @@ CONTAINS
                    if (kk == k-1) then
                       ! Set up MSPACMAM scheme
                       ! sigmaL: export fluxes converted to g/(m**2 s)
-                      sigmaL = (loc_bio_part_TMP(is2l(is_opal),k)*Mwsio2 + loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*MWcaco3) &
-                      &              / ( loc_bio_part_TMP(is2l(is_POC),k)*MWc + loc_bio_part_TMP(is2l(is_CaCO3),k)*MWcaco3 &
-                      &                  + loc_bio_part_TMP(is2l(is_opal),k)*MWsio2)
+                      if (sed_select(is_opal)) then
+                         sigmaL = (loc_bio_part_TMP(is2l(is_opal),k)*Mwsio2 + loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*MWcaco3) &
+                         &              / ( loc_bio_part_TMP(is2l(is_POC),k)*MWc + loc_bio_part_TMP(is2l(is_CaCO3),k)*MWcaco3 &
+                         &                  + loc_bio_part_TMP(is2l(is_opal),k)*MWsio2)
+                      else
+                         sigmaL = (loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*MWcaco3) &
+                         &              / ( loc_bio_part_TMP(is2l(is_POC),k)*MWc + loc_bio_part_TMP(is2l(is_CaCO3),k)*MWcaco3)
+                      endif
                       sigmaL = max(0.0, sigmaL)
-                      fldpomz(n_k:k,1) = (1-loc_bio_part_TMP(is2l(is_POC_frac2),k))*loc_bio_part_TMP(is2l(is_POC),k)*sigmaL*conv_conc2flux !Divide fractions and convert to mol m-2 s-1
-                      fldpomz(n_k:k,2) = (1-loc_bio_part_TMP(is2l(is_POC_frac2),k))*loc_bio_part_TMP(is2l(is_POC),k)*(1-sigmaL)*conv_conc2flux  !Divide fractions!
-                      fldpomz_frac2(n_k:k,1) = loc_bio_part_TMP(is2l(is_POC_frac2),k)*loc_bio_part_TMP(is2l(is_POC),k)*sigmaL*conv_conc2flux !Divide fractions!
-                      fldpomz_frac2(n_k:k,2) = loc_bio_part_TMP(is2l(is_POC_frac2),k)*loc_bio_part_TMP(is2l(is_POC),k)*(1-sigmaL)*conv_conc2flux !Divide fractions!
-                      fldcalz(n_k:k,1) = loc_bio_part_TMP(is2l(is_CaCO3),k)*(1-e_arag)*sigmaL*conv_conc2flux !Divide fractions!
-                      fldcalz(n_k:k,2) = loc_bio_part_TMP(is2l(is_CaCO3),k)*(1-e_arag)*(1-sigmaL)*conv_conc2flux !Divide fractions!
-                      fldaragz(n_k:k,1) = 0. !no small aragonite
-                      fldaragz(n_k:k,2) = loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*conv_conc2flux !only large aragonite
-                      fldopz(n_k:k,1) = 0. !no small opal particles
-                      fldopz(n_k:k,2) = loc_bio_part_TMP(is2l(is_opal),k)*conv_conc2flux !only large opal particles
+                      fldpomz(k,1) = loc_bio_remin_layerratio*(1-loc_bio_part_TMP(is2l(is_POC_frac2),k))*loc_bio_part_TMP(is2l(is_POC),k)*(1-sigmaL)*conv_conc2flux !Divide fractions and convert to mol m-2 s-1
+                      fldpomz(k,2) = loc_bio_remin_layerratio*(1-loc_bio_part_TMP(is2l(is_POC_frac2),k))*loc_bio_part_TMP(is2l(is_POC),k)*sigmaL*conv_conc2flux  !Divide fractions!
+                      fldpomz_frac2(k,1) = loc_bio_remin_layerratio*loc_bio_part_TMP(is2l(is_POC_frac2),k)*loc_bio_part_TMP(is2l(is_POC),k)*(1-sigmaL)*conv_conc2flux !Divide fractions!
+                      fldpomz_frac2(k,2) = loc_bio_remin_layerratio*loc_bio_part_TMP(is2l(is_POC_frac2),k)*loc_bio_part_TMP(is2l(is_POC),k)*sigmaL*conv_conc2flux !Divide fractions!
+                      fldcalz(k,1) = loc_bio_remin_layerratio*loc_bio_part_TMP(is2l(is_CaCO3),k)*(1-e_arag)*(1-sigmaL)*conv_conc2flux !Divide fractions!
+                      fldcalz(k,2) = loc_bio_remin_layerratio*loc_bio_part_TMP(is2l(is_CaCO3),k)*(1-e_arag)*sigmaL*conv_conc2flux !Divide fractions!
+                      fldaragz(k,1) = 0. !no small aragonite
+                      fldaragz(k,2) = loc_bio_remin_layerratio*loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*conv_conc2flux !only large aragonite
+                      fldopz(k,1) = 0. !no small opal particles
+                      if (sed_select(is_opal)) then
+                          fldopz(k,2) = loc_bio_remin_layerratio*loc_bio_part_TMP(is2l(is_opal),k)*conv_conc2flux !only large opal particles
+                      else
+                          fldopz(k,2) = 0.
+                      endif
                    else
-                      fldpomz(kk+1,1) = fldpomz(kk+1,1)+loc_bio_part_OLD(is2l(is_POC),kk)*(1-loc_bio_part_OLD(is2l(is_POC_frac2),kk))*diag_particle(idiag_part_smallPOC,dum_i,dum_j,kk)*conv_conc2flux !Divide fractions and convert to mol m-2 s-1
-                      fldpomz(kk+1,2) = fldpomz(kk+1,2)+loc_bio_part_OLD(is2l(is_POC),kk)*(1-loc_bio_part_OLD(is2l(is_POC_frac2),kk))*(1-diag_particle(idiag_part_smallPOC,dum_i,dum_j,kk))*conv_conc2flux  !Divide fractions!
-                      fldpomz_frac2(kk+1,1) = fldpomz_frac2(kk+1,1)+loc_bio_part_OLD(is2l(is_POC),kk)*loc_bio_part_OLD(is2l(is_POC_frac2),kk)*diag_particle(idiag_part_smallPOC_frac2,dum_i,dum_j,kk)*conv_conc2flux !Divide fractions!
-                      fldpomz_frac2(kk+1,2) = fldpomz_frac2(kk+1,2)+loc_bio_part_OLD(is2l(is_POC),kk)*loc_bio_part_OLD(is2l(is_POC_frac2),kk)*diag_particle(idiag_part_smallPOC_frac2,dum_i,dum_j,kk)*conv_conc2flux !Divide fractions!
-                      fldcalz(kk+1,1) = fldcalz(kk+1,1)+loc_bio_part_OLD(is2l(is_CaCO3),kk)*(1-diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk))*diag_particle(idiag_part_smallCalc,dum_i,dum_j,kk)*conv_conc2flux !Divide fractions!
-                      fldcalz(kk+1,2) = fldcalz(kk+1,2)+loc_bio_part_OLD(is2l(is_CaCO3),kk)*(1-diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk))*(1-diag_particle(idiag_part_smallCalc,dum_i,dum_j,kk))*conv_conc2flux !Divide fractions!
+                      fldpomz(kk+1,1) = fldpomz(kk+1,1)+loc_bio_part_OLD(is2l(is_POC),kk+1)*(1-loc_bio_part_OLD(is2l(is_POC_frac2),kk+1)) &
+                      &  *diag_particle(idiag_part_smallPOC,dum_i,dum_j,kk)*conv_conc2flux*loc_bio_remin_layerratio !Divide fractions and convert to mol m-2 s-1
+                      fldpomz(kk+1,2) = fldpomz(kk+1,2)+loc_bio_part_OLD(is2l(is_POC),kk+1)*(1-loc_bio_part_OLD(is2l(is_POC_frac2),kk+1)) &
+                      & *(1-diag_particle(idiag_part_smallPOC,dum_i,dum_j,kk))*conv_conc2flux*loc_bio_remin_layerratio  !Divide fractions!
+                      loc_bio_part_TMP(is2l(is_POC),kk+1) = loc_bio_part_TMP(is2l(is_POC),kk+1)+loc_bio_part_OLD(is2l(is_POC),kk+1)
+                      fldpomz_frac2(kk+1,1) = fldpomz_frac2(kk+1,1)+loc_bio_part_OLD(is2l(is_POC),kk+1)*loc_bio_part_OLD(is2l(is_POC_frac2),kk+1) &
+                      & *diag_particle(idiag_part_smallPOC_frac2,dum_i,dum_j,kk)*conv_conc2flux*loc_bio_remin_layerratio !Divide fractions!
+                      fldpomz_frac2(kk+1,2) = fldpomz_frac2(kk+1,2)+loc_bio_part_OLD(is2l(is_POC),kk+1)*loc_bio_part_OLD(is2l(is_POC_frac2),kk+1) &
+                      & *(1-diag_particle(idiag_part_smallPOC_frac2,dum_i,dum_j,kk))*conv_conc2flux*loc_bio_remin_layerratio !Divide fractions!
+                      fldcalz(kk+1,1) = fldcalz(kk+1,1)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)*(1-diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk)) &
+                      & *diag_particle(idiag_part_smallCalc,dum_i,dum_j,kk)*conv_conc2flux*loc_bio_remin_layerratio !Divide fractions!
+                      fldcalz(kk+1,2) = fldcalz(kk+1,2)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)*(1-diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk)) &
+                      & *(1-diag_particle(idiag_part_smallCalc,dum_i,dum_j,kk))*conv_conc2flux*loc_bio_remin_layerratio !Divide fractions!
+                      loc_bio_part_TMP(is2l(is_CaCO3),kk+1) = loc_bio_part_TMP(is2l(is_CaCO3),kk+1)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)
                       fldaragz(kk+1,1) = 0. !no small aragonite
-                      fldaragz(kk+1,2) = fldaragz(kk+1,2)+loc_bio_part_OLD(is2l(is_CaCO3),kk)*diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk)*conv_conc2flux !only large aragonite
+                      fldaragz(kk+1,2) = fldaragz(kk+1,2)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)*diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk) &
+                      & *conv_conc2flux*loc_bio_remin_layerratio !large aragonite
                       fldopz(kk+1,1) = 0. !no small opal particles
-                      fldopz(kk+1,2) = fldopz(kk+1,2)+loc_bio_part_OLD(is2l(is_opal),kk)*conv_conc2flux !only large opal particles
+                      if (sed_select(is_opal)) then
+                          fldopz(kk+1,2) = fldopz(kk+1,2)+loc_bio_part_OLD(is2l(is_opal),kk+1)*conv_conc2flux*loc_bio_remin_layerratio !only large opal particles
+                          loc_bio_part_TMP(is2l(is_opal),kk+1) = loc_bio_part_TMP(is2l(is_opal),kk+1)+loc_bio_part_OLD(is2l(is_opal),kk+1)
+                      endif
                    endif
+                   
                    ! calculate particle flux changes below zb
                    call sub_biogem_mspacmam(dum_dtyr,dum_i,dum_j,kk, &
                    &          MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2,SSA_calc,fldpomz(kk+1,:), &
@@ -3691,50 +3713,7 @@ CONTAINS
                    loc_string = 'meanW'
                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
                    loc_diag_part(id,kk) = loc_W(3)
-                    
-                   loc_string = 'smallPOC'
-                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
-                   if (kk == k-1) then
-                      loc_diag_part(id,n_k:k) = fldpomz(k,1)/sum(fldpomz(k,:))
-                      loc_diag_part(id,kk) = fldpomz(kk,1)/sum(fldpomz(kk,:))
-                      if (sum(fldpomz(k,:)).le.0) loc_diag_part(id,n_k:k) = 0.
-                   else
-                      loc_diag_part(id,kk) = fldpomz(kk,1)/sum(fldpomz(kk,:))
-                   endif
-                   if (sum(fldpomz(kk,:)).le.0) loc_diag_part(id,kk) = 0.
-                    
-                   loc_string = 'smallPOC_frac2'
-                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
-                   if (kk == k-1) then
-                      loc_diag_part(id,n_k:k) = fldpomz_frac2(k,1)/sum(fldpomz_frac2(k,:))
-                      loc_diag_part(id,kk) = fldpomz_frac2(kk,1)/sum(fldpomz_frac2(kk,:))
-                      if (sum(fldpomz_frac2(k,:)).le.0) loc_diag_part(id,n_k:k) = 0.
-                   else
-                      loc_diag_part(id,kk) = fldpomz_frac2(kk,1)/sum(fldpomz_frac2(kk,:))
-                   endif
-                   if (sum(fldpomz_frac2(kk,:)).le.0) loc_diag_part(id,kk) = 0.
-                    
-                   loc_string = 'smallCalc'
-                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
-                   if (kk == k-1) then
-                      loc_diag_part(id,n_k:k) = fldcalz(k,1)/sum(fldcalz(k,:))
-                      loc_diag_part(id,kk) = fldcalz(kk,1)/sum(fldcalz(kk,:))
-                      if (sum(fldcalz(k,:)).le.0) loc_diag_part(id,n_k:k) = 0.
-                   else
-                      loc_diag_part(id,kk) = fldcalz(kk,1)/sum(fldcalz(kk,:))
-                   endif
-                   if (sum(fldcalz(kk,:)).le.0) loc_diag_part(id,kk) = 0.
                    
-                   loc_string = 'CaCO3_fracA'
-                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
-                   if (kk == k-1) then
-                      loc_diag_part(id,n_k:k) = sum(fldaragz(k,:))/(sum(fldcalz(k,:))+sum(fldaragz(k,:)))
-                      loc_diag_part(id,kk) = sum(fldaragz(kk,:))/(sum(fldcalz(kk,:))+sum(fldaragz(kk,:)))
-                      if (sum(fldcalz(k,:))+sum(fldaragz(k,:)).le.0) loc_diag_part(id,n_k:k) = 0.
-                   else
-                      loc_diag_part(id,kk) = sum(fldaragz(kk,:))/(sum(fldcalz(kk,:))+sum(fldaragz(kk,:)))
-                   endif
-                   if (sum(fldcalz(kk,:))+sum(fldaragz(kk,:)).le.0) loc_diag_part(id,kk) = 0.
                     
                 end SELECT
                 
@@ -3756,7 +3735,7 @@ CONTAINS
                       SELECT CASE (trim(opt_biogem_particles))
                       CASE ('mspacmam')
                          loc_input = (sum(fldcalz(kk+1,:)) + sum(fldaragz(kk+1,:)))
-                         if (loc_input > 0.0) then
+                         if (loc_input > const_real_nullsmall) then
                             loc_bio_remin_CaCO3_frac1 = 1.0 - (sum(fldcalz(kk,:)) + sum(fldaragz(kk,:)))/loc_input
                          else
                             loc_bio_remin_CaCO3_frac1 = 0.0
@@ -3803,7 +3782,7 @@ CONTAINS
                    If (.NOT. ctrl_bio_remin_opal_fixed) then
                       SELECT CASE (trim(opt_biogem_particles))
                       CASE ('mspacmam')
-                         if (sum(fldopz(kk+1,:)) > 0.0) then
+                         if (sum(fldopz(kk+1,:)) > const_real_nullsmall) then
                             loc_bio_remin_opal_frac1 = 1.0 - sum(fldopz(kk,:))/sum(fldopz(kk+1,:))
                          else
                             loc_bio_remin_opal_frac1 = 0.0
@@ -3857,12 +3836,12 @@ CONTAINS
                    If (.NOT. ctrl_bio_remin_POC_fixed) then
                       SELECT CASE (trim(opt_biogem_particles))
                       CASE ('mspacmam')
-                         if (sum(fldpomz(kk+1,:)) > 0.0) then
+                         if (sum(fldpomz(kk+1,:)) > const_real_nullsmall) then
                             loc_bio_remin_POC_frac1 = 1.0 - sum(fldpomz(kk,:))/sum(fldpomz(kk+1,:))
                          else
                             loc_bio_remin_POC_frac1 = 0.0
                          endif
-                         if (sum(fldpomz_frac2(kk+1,:)) > 0.0) then
+                         if (sum(fldpomz_frac2(kk+1,:)) > const_real_nullsmall) then
                             loc_bio_remin_POC_frac2 = 1.0 - sum(fldpomz_frac2(kk,:))/sum(fldpomz_frac2(kk+1,:))
                          else
                             loc_bio_remin_POC_frac2 = 0.0
@@ -4045,33 +4024,6 @@ CONTAINS
                    !     i.e. just re-apply a layer ratio concentration change
                    if (is == is_POM_S) loc_bio_part_TMP(l,kk) = loc_bio_part_TMP(l,kk+1)*loc_bio_remin_layerratio
                 end do
-                
-                do l=1,2
-                   select case (trim(opt_biogem_particles))
-                   case ('mspacmam')
-                      if ((dum_vphys_ocn%mk(ipo_Dbot,kk)-dum_vphys_ocn%mk(ipo_Dbot,kk+1))/loc_W(l).gt.dum_dtyr*conv_yr_s) then
-                      ! if particles do not reach next grid cell within time step
-                      ! save local particle concentration for the next time step and do not 
-                      ! transfer particles to next grid cell below
-                      ! convert units back to concentrations
-                      ! NOTE: leave unchanged if flux is 0
-                         if (fldpomz(kk,l).gt.0) then
-                            loc_bio_part_TMP(is2l(is_POC_frac2),kk) = (loc_bio_part_TMP(is2l(is_POC_frac2),kk)*loc_bio_part_TMP(is2l(is_POC),kk) &
-                            &  +fldpomz_frac2(kk,l)/conv_conc2flux)/(loc_bio_part_TMP(is2l(is_POC),kk)+fldpomz(kk,l)/conv_conc2flux)
-                            loc_bio_part_TMP(is2l(is_POC),kk) = loc_bio_part_TMP(is2l(is_POC),kk)+fldpomz(kk,l)/conv_conc2flux
-                            fldpomz(kk,l) = 0.0
-                            fldpomz_frac2(kk,l) = 0.0
-                         endif 
-                         loc_bio_part_TMP(is2l(is_CaCO3),kk) = loc_bio_part_TMP(is2l(is_CaCO3),kk) + fldcalz(kk,l)/conv_conc2flux
-                         fldcalz(kk,l) = 0.0
-                         loc_bio_part_TMP(is2l(is_CaCO3),kk) = loc_bio_part_TMP(is2l(is_CaCO3),kk) + fldaragz(kk,l)/conv_conc2flux
-                         fldaragz(kk,l) = 0.0
-                         loc_bio_part_TMP(is2l(is_opal),kk) = loc_bio_part_TMP(is2l(is_opal),kk) + fldopz(kk,l)/conv_conc2flux
-                         fldopz(kk,l) = 0.0
-                      endif
-                   end select
-                end do
-
                 ! -------------------------------------------- !
                 ! CALCULATE INCREASE IN TRACER CONCENTRATIONS DUE TO PARTICLE REMINERALIZATION
                 ! -------------------------------------------- !
@@ -4118,6 +4070,7 @@ CONTAINS
 !!$                      loc_bio_part_remin(is) = (1.0 - loc_r_POM_RDOM*par_bio_remin_RDOMfrac)*loc_bio_part_remin(is)
 !!$                   end do
                 end DO
+                
                 ! carry out the remineralization (POM -> inorganic constitutents) itself
                 ! (0) make tempoary conversion of is_POM_FeOOH -> io_FeOOH
                 if (sed_select(is_POM_FeOOH) .AND. ocn_select(io_FeOOH)) then
@@ -4471,6 +4424,93 @@ CONTAINS
                    end if
                 end if
 
+                select case (trim(opt_biogem_particles))
+                case ('mspacmam')  
+                   !diagnostics of sinking particle flux
+                   loc_string = 'smallPOC'
+                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                   if (kk == k-1) then
+                      loc_diag_part(id,n_k:k) = fldpomz(k,1)/sum(fldpomz(k,:))
+                      loc_diag_part(id,kk) = fldpomz(kk,1)/sum(fldpomz(kk,:))
+                      if (sum(fldpomz(k,:)).le.const_real_nullsmall) loc_diag_part(id,n_k:k) = 0.
+                   else
+                      loc_diag_part(id,kk) = fldpomz(kk,1)/sum(fldpomz(kk,:))
+                   endif
+                   if (sum(fldpomz(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.    
+                
+                   loc_string = 'smallPOC_frac2'
+                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                   if (kk == k-1) then
+                      loc_diag_part(id,n_k:k) = fldpomz_frac2(k,1)/sum(fldpomz_frac2(k,:))
+                      loc_diag_part(id,kk) = fldpomz_frac2(kk,1)/sum(fldpomz_frac2(kk,:))
+                      if (sum(fldpomz_frac2(k,:)).le.const_real_nullsmall) loc_diag_part(id,n_k:k) = 0.
+                   else
+                      loc_diag_part(id,kk) = fldpomz_frac2(kk,1)/sum(fldpomz_frac2(kk,:))
+                   endif
+                   if (sum(fldpomz_frac2(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.
+                    
+                   loc_string = 'smallCalc'
+                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                   if (kk == k-1) then
+                      loc_diag_part(id,n_k:k) = fldcalz(k,1)/sum(fldcalz(k,:))
+                      loc_diag_part(id,kk) = fldcalz(kk,1)/sum(fldcalz(kk,:))
+                      if (sum(fldcalz(k,:)).le.const_real_nullsmall) loc_diag_part(id,n_k:k) = 0.
+                   else
+                      loc_diag_part(id,kk) = fldcalz(kk,1)/sum(fldcalz(kk,:))
+                   endif
+                   if (sum(fldcalz(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.
+                   
+                   loc_string = 'CaCO3_fracA'
+                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                   if (kk == k-1) then
+                      loc_diag_part(id,n_k:k) = sum(fldaragz(k,:))/(sum(fldcalz(k,:))+sum(fldaragz(k,:)))
+                      loc_diag_part(id,kk) = sum(fldaragz(kk,:))/(sum(fldcalz(kk,:))+sum(fldaragz(kk,:)))
+                      if (sum(fldcalz(k,:))+sum(fldaragz(k,:)).le.const_real_nullsmall) loc_diag_part(id,n_k:k) = 0.
+                   else
+                      loc_diag_part(id,kk) = sum(fldaragz(kk,:))/(sum(fldcalz(kk,:))+sum(fldaragz(kk,:)))
+                   endif
+                   if (sum(fldcalz(kk,:))+sum(fldaragz(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.
+                   
+                   do l=1,2,1              
+                      if ((dum_vphys_ocn%mk(ipo_Dbot,kk)-dum_vphys_ocn%mk(ipo_Dbot,kk+1))/loc_W(l).gt.dum_dtyr*conv_yr_s) then
+                      ! if particles do not reach next grid cell within time step
+                      ! save local particle concentration for the next time step 
+                      ! in the previous grid cell and do not 
+                      ! transfer particles to next grid cell below
+                      ! convert units back to concentrations
+                      ! NOTE: leave unchanged if flux is 0
+                         if (fldpomz(kk,l)+fldpomz_frac2(kk,l).gt.const_real_nullsmall) then
+                            loc_bio_part(is2l(is_POC_frac2),kk+1) = (loc_bio_part(is2l(is_POC_frac2),kk+1)*loc_bio_part(is2l(is_POC),kk+1) &
+                            & +fldpomz_frac2(kk,l)/conv_conc2flux/loc_bio_remin_layerratio)/(loc_bio_part(is2l(is_POC),kk)+(fldpomz(kk,l) &
+                            & +fldpomz_frac2(kk,l))/conv_conc2flux/loc_bio_remin_layerratio)
+                            loc_bio_part_TMP(is2l(is_POC_frac2),kk) = (loc_bio_part_TMP(is2l(is_POC_frac2),kk)*loc_bio_part_TMP(is2l(is_POC),kk) &
+                            & -fldpomz_frac2(kk,l)/conv_conc2flux)/(loc_bio_part_TMP(is2l(is_POC),kk)-(fldpomz(kk,l) + fldpomz_frac2(kk,l))/conv_conc2flux)
+                            loc_bio_part(is2l(is_POC),kk+1) = loc_bio_part(is2l(is_POC),kk+1) &
+                            & +(fldpomz(kk,l)+fldpomz_frac2(kk,l))/conv_conc2flux/loc_bio_remin_layerratio
+                            loc_bio_part_TMP(is2l(is_POC),kk) = loc_bio_part_TMP(is2l(is_POC),kk) - (fldpomz(kk,l) + fldpomz_frac2(kk,l))/conv_conc2flux
+                            fldpomz(kk,l) = 0.0
+                            fldpomz_frac2(kk,l) = 0.0
+                         endif
+                         if (fldcalz(kk,l).gt.const_real_nullsmall) then
+                            loc_bio_part(is2l(is_CaCO3),kk+1) = loc_bio_part(is2l(is_CaCO3),kk+1) + fldcalz(kk,l)/conv_conc2flux/loc_bio_remin_layerratio
+                            loc_bio_part_TMP(is2l(is_CaCO3),kk) = loc_bio_part_TMP(is2l(is_CaCO3),kk) - fldcalz(kk,l)/conv_conc2flux
+                            fldcalz(kk,l) = 0.0
+                            loc_bio_part_TMP(is2l(is_POC),kk) = 0.
+                         endif
+                         if (fldaragz(kk,l).gt.const_real_nullsmall) then
+                            loc_bio_part(is2l(is_CaCO3),kk+1) = loc_bio_part(is2l(is_CaCO3),kk+1) + fldaragz(kk,l)/conv_conc2flux/loc_bio_remin_layerratio
+                            loc_bio_part_TMP(is2l(is_CaCO3),kk) = loc_bio_part_TMP(is2l(is_CaCO3),kk) - fldaragz(kk,l)/conv_conc2flux
+                            fldaragz(kk,l) = 0.0
+                         endif
+                         if (fldopz(kk,l).gt.const_real_nullsmall) then
+                            loc_bio_part(is2l(is_opal),kk+1) = loc_bio_part(is2l(is_opal),kk+1) + fldopz(kk,l)/conv_conc2flux/loc_bio_remin_layerratio
+                            loc_bio_part_TMP(is2l(is_opal),kk) = loc_bio_part_TMP(is2l(is_opal),kk) - fldopz(kk,l)/conv_conc2flux
+                            fldopz(kk,l) = 0.0
+                         endif
+                      endif
+                   enddo
+                end select
+
              end If
           end do
 
@@ -4478,88 +4518,39 @@ CONTAINS
           ! *** kk SUB-LOOP END ***
           ! <<<<<<<<<<<<<<<<<<<<<<<
 
-          select case (trim(opt_biogem_particles))
-          case ('mspacmam')
-             ! *** UPDATE PARTICULATE MATTER INFORMATION ***
-             ! update local ocean particulate tracer field - store residual particulate tracer at the point of
-             ! the deepest level reached
-             ! NOTE: do not store if the sediment surface is reached and do not save particle concentration
-             ! NOTE: at the base of the euphotic zone
-             ! NOTE: to be correct, the conc for par_sed_type_frac needs to be flux-weighted when summed ...
-             do kk=k,loc_bio_remin_min_k+1,-1
-                if (kk.le.k-1) then
-                   do l=1,n_l_sed
-                      is = conv_iselected_is(l)
-                      select case (sed_type(is))
-                      case (par_sed_type_frac)
-                         loc_bio_part(l,kk) = loc_bio_part_TMP(l,kk)
-                      case default
-                         loc_bio_part(l,kk) = loc_bio_part(l,kk) + &
-                           & loc_bio_part_TMP(l,kk)
-                      end select
-                   end do
-                end if
-          
-                ! record particulate fluxes at base of the layer (units of: mol per time-step)
-                ! NOTE: to be correct, the flux for par_sed_type_frac needs to be flux-weighted when summed ...
-                !       for now, just scaled by the time-step (so it is integrated properly later)
-                conv_conc2flux = conv_m3_kg*dum_vphys_ocn%mk(ipo_dD,kk)/(dum_dtyr*conv_yr_s)
-                do l=1,n_l_sed
-                   is = conv_iselected_is(l)
-                   if (l.eq.is2l(is_POC_frac2)) then
-                      loc_bio_settle(l,kk) = dum_dtyr*(sum(fldpomz_frac2(kk,:))/(sum(fldpomz(kk,:))+sum(fldpomz_frac2(kk,:))))
-                   elseif (l.eq.is2l(is_POC)) then
-                      loc_bio_settle(l,kk) = loc_bio_settle(l,kk) + (sum(fldpomz(kk,:))+sum(fldpomz_frac2(kk,:)))/conv_conc2flux *dum_vphys_ocn%mk(ipo_M,kk)
-                   elseif (l.eq.is2l(is_CaCO3)) then
-                      loc_bio_settle(l,kk) = loc_bio_settle(l,kk) + (sum(fldcalz(kk,:))+sum(fldaragz(kk,:)))/conv_conc2flux *dum_vphys_ocn%mk(ipo_M,kk)
-                   elseif (l.eq.is2l(is_opal)) then
-                      loc_bio_settle(l,kk) = loc_bio_settle(l,kk) + sum(fldopz(kk,:))/conv_conc2flux *dum_vphys_ocn%mk(ipo_M,kk)
-                   else
-                      select case (sed_type(is))
-                      case (par_sed_type_frac)
-                         loc_bio_settle(l,kk) = dum_dtyr*loc_bio_part_TMP(l,kk)
-                      case default
-                         loc_bio_settle(l,kk) = loc_bio_settle(l,kk) + dum_vphys_ocn%mk(ipo_M,kk)*loc_bio_part_TMP(l,kk)
-                      end select
-                   end if
-                end do
+          ! *** UPDATE PARTICULATE MATTER INFORMATION ***
+          ! update local ocean particulate tracer field - store residual particulate tracer at the point of
+          ! the deepest level reached
+          ! NOTE: do not store if the sediment surface is reached
+          ! NOTE: to be correct, the conc for par_sed_type_frac needs to be flux-weighted when summed ...
+          If (loc_bio_remin_min_k >= loc_k1) then
+             DO l=1,n_l_sed
+                is = conv_iselected_is(l)
+                SELECT CASE (sed_type(is))
+                case (par_sed_type_frac)
+                   loc_bio_part(l,loc_bio_remin_min_k) = loc_bio_part_TMP(l,loc_bio_remin_min_k)
+                case default
+                   loc_bio_part(l,loc_bio_remin_min_k) = loc_bio_part(l,loc_bio_remin_min_k) + &
+                     & loc_bio_part_TMP(l,loc_bio_remin_min_k)
+                end SELECT
              end do
-          case default
-             ! *** UPDATE PARTICULATE MATTER INFORMATION ***
-             ! update local ocean particulate tracer field - store residual particulate tracer at the point of
-             ! the deepest level reached
-             ! NOTE: do not store if the sediment surface is reached
-             ! NOTE: to be correct, the conc for par_sed_type_frac needs to be flux-weighted when summed ...
-             If (loc_bio_remin_min_k >= loc_k1) then
-                DO l=1,n_l_sed
-                   is = conv_iselected_is(l)
-                   SELECT CASE (sed_type(is))
-                   case (par_sed_type_frac)
-                      loc_bio_part(l,loc_bio_remin_min_k) = loc_bio_part_TMP(l,loc_bio_remin_min_k)
-                   case default
-                      loc_bio_part(l,loc_bio_remin_min_k) = loc_bio_part(l,loc_bio_remin_min_k) + &
-                        & loc_bio_part_TMP(l,loc_bio_remin_min_k)
-                   end SELECT
-                end do
-             end if
-          
-             ! record particulate fluxes at base of each layer (units of: mol per time-step)
-             ! NOTE: implicitly includes sedimentation flux (kk=dum_k1)
-             ! NOTE: to be correct, the flux for par_sed_type_frac needs to be flux-weighted when summed ...
-             !       for now, just scaled by the time-step (so it is integrated properly later)
-             do kk=k,loc_bio_remin_min_k+1,-1
-                DO l=1,n_l_sed
-                   is = conv_iselected_is(l)
-                   SELECT CASE (sed_type(is))
-                   case (par_sed_type_frac)
-                      loc_bio_settle(l,kk) = dum_dtyr*loc_bio_part_TMP(l,kk)
-                   case default
-                      loc_bio_settle(l,kk) = loc_bio_settle(l,kk) + dum_vphys_ocn%mk(ipo_M,kk)*loc_bio_part_TMP(l,kk)
-                   end SELECT
-                end do
-             end do
-          end select
+          end if
 
+          ! record particulate fluxes at base of each layer (units of: mol per time-step)
+          ! NOTE: implicitly includes sedimentation flux (kk=dum_k1)
+          ! NOTE: to be correct, the flux for par_sed_type_frac needs to be flux-weighted when summed ...
+          !       for now, just scaled by the time-step (so it is integrated properly later)
+          do kk=k,loc_bio_remin_min_k+1,-1
+             DO l=1,n_l_sed
+                is = conv_iselected_is(l)
+                SELECT CASE (sed_type(is))
+                case (par_sed_type_frac)
+                   loc_bio_settle(l,kk) = dum_dtyr*loc_bio_part_TMP(l,kk)
+                case default
+                   loc_bio_settle(l,kk) = loc_bio_settle(l,kk) + dum_vphys_ocn%mk(ipo_M,kk)*loc_bio_part_TMP(l,kk)
+                end SELECT
+             end do
+          end do
        end If
 
     end do
@@ -5963,12 +5954,12 @@ CONTAINS
 
   !   Loop over small and large particle types, density in [g/cm**3]
       do l=1,2
-         massConc_PM(l) = (fpomz(l)*MWpoc) &
+         massConc_PM(l) = ((fpomz(l)+fpomz_frac2(l))*MWpoc) &
       &        + ((fcalz(l)+faragz(l))*MWcaco3) &
       &        + (fopz(l)*MWsio2)
 
-        if (massConc_PM(l).gt.0.) then
-           rho_solid(l) = massConc_PM(l) / (fpomz(l)*MWrho_om & 
+        if (massConc_PM(l).gt.const_real_nullsmall) then
+           rho_solid(l) = massConc_PM(l) / ((fpomz(l)+fpomz_frac2(l))*MWrho_om & 
       &          + (fcalz(l)+faragz(l))*MWrho_caco3 &
       &          + fopz(l)*MWrho_sio2)
         elseif (isnan(massConc_PM(l))) then
@@ -5998,14 +5989,14 @@ CONTAINS
         opomz_frac2(l) = fpomz_frac2(l)/(1.+a_aerob*0.1) 
   !     PIC fluxes
       !     PIC dissolution due to remineralisation (Liang et al. 2023GBC)
-        if (fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l).gt.0.) then
+        if (fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l).gt.const_real_nullsmall) then
            Rres_cal = rresxcal*(fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l))**rresmcal
            Rres_arag = rresxarag*(fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l))**rresmarag
         else
            Rres_cal = 0.
            Rres_arag = 0.
         endif
-
+        
         if (omegaC_up < 1. .and. omegaC_up > 0.8) then
            ocalz(l) = fcalz(l) &
       &           /(1.+(Rres_cal+bgck_calcUp*SSA_calc(l) &
