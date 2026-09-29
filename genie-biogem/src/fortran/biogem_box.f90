@@ -5930,8 +5930,8 @@ CONTAINS
       real::k_poc_star,rt,k_opal
       real::a_aerob
       real::massConc_PM(2),rho_solid(2),rho_p(2),w_up(2)
-      real::Rres_cal,Rres_arag
-      real::bgcphis(2),kfrag_POC(2),kfrag_CaCO3(2),kfrag_opal(2)
+      real::Rres_cal,Rres_arag,kfrag
+      real::bgcphis(2),kfrag_POC(2),kfrag_POC2(2),kfrag_Calc(2),kfrag_Arag(2),kfrag_opal(2)
       real::T_up,S_up,O2_up,omegaA_up,omegaC_up,rho_up,visc_up
       real::T_zero,A,B,mu_w
       real::zk,zkp1,zb,zbm1
@@ -6018,32 +6018,27 @@ CONTAINS
         ! Fragmentation of large particles
         select case (trim(opt_biogem_fragmentation))
         case ('briggs')
-           kfrag_POC(1) = 0.0
-           kfrag_POC(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
-           kfrag_CaCO3(1) = 0.0
-           kfrag_CaCO3(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
-           kfrag_opal(1) = 0.0
-           kfrag_opal(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
+           kfrag = min(0.27/(24.*60*60)*exp(-0.0024*zk)*rt,1.)
         case ('naidoo-bagwell')
-           kfrag_POC(1) = 0.0
-           kfrag_POC(2) = k_maxfrag*(fpomz(2)+fpomz_frac2(2))/(k_fragPOC+fpomz(2)+fpomz_frac2(2))
-           kfrag_CaCO3(1) = 0.0
-           kfrag_CaCO3(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
-           kfrag_opal(1) = 0.0
-           kfrag_opal(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
+           kfrag = min(k_maxfrag*(fpomz(2)+fpomz_frac2(2))/(k_fragPOC+fpomz(2)+fpomz_frac2(2))*rt,1.)
         case ('none')
-           kfrag_POC(1) = 0.0
-           kfrag_POC(2) = 0.0
-           kfrag_CaCO3(1) = 0.0
-           kfrag_CaCO3(2) = 0.0
-           kfrag_opal(1) = 0.0
-           kfrag_opal(2) = 0.0
+           kfrag = 0.0
         end select
+        kfrag_POC(1) = kfrag*fpomz(2)
+        kfrag_POC(2) = -kfrag*fpomz(2)
+        kfrag_POC2(1) = kfrag*fpomz_frac2(2)
+        kfrag_POC2(2) = -kfrag*fpomz_frac2(2)
+        kfrag_Calc(1) = kfrag*fcalz(2)
+        kfrag_Calc(2) = -kfrag*fcalz(2)
+        kfrag_Arag(1) = kfrag*faragz(2)
+        kfrag_Arag(2) = -kfrag*faragz(2)
+        kfrag_opal(1) = kfrag*fopz(2)
+        kfrag_opal(2) = -kfrag*fopz(2)
 
   !     POM fluxes
         a_aerob = (k_poc_star)*rt
-        opomz(l) = fpomz(l)/(1.+a_aerob+kfrag_POC(l)*rt) 
-        opomz_frac2(l) = fpomz_frac2(l)/(1.+a_aerob*k_pocfrac2+kfrag_POC(l)*rt) 
+        opomz(l) = (fpomz(l)+kfrag_POC(l))/(1.+a_aerob) 
+        opomz_frac2(l) = (fpomz_frac2(l)+kfrag_POC2(l))/(1.+a_aerob*k_pocfrac2) 
   !     PIC fluxes
       !     PIC dissolution due to remineralisation (Liang et al. 2023GBC)
         if (fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l).gt.const_real_nullsmall) then
@@ -6055,26 +6050,26 @@ CONTAINS
         endif
         
         if (omegaC_up < 1. .and. omegaC_up > 0.8) then
-           ocalz(l) = fcalz(l) &
-      &           /(1.+(kfrag_CaCO3(l)+Rres_cal+bgck_calcUp*SSA_calc(l) &
+           ocalz(l) = (fcalz(l)+kfrag_Calc(l)) &
+      &           /(1.+(Rres_cal+bgck_calcUp*SSA_calc(l) &
       &           *(1-omegaC_up)**n_calcUp)*rt)
         elseif (omegaC_up <= 0.8) then
-           ocalz(l) = fcalz(l) &
-      &           /(1.+(kfrag_CaCO3(l)+Rres_cal+bgck_calcLow*SSA_calc(l) &
+           ocalz(l) = (fcalz(l)+kfrag_Calc(l)) &
+      &           /(1.+(Rres_cal+bgck_calcLow*SSA_calc(l) &
       &           *(1.-omegaC_up)**n_calcLow)*rt)
         else
-           ocalz(l) = fcalz(l) &
-      &           /(1.+(kfrag_CaCO3(l)+Rres_cal)*rt)
+           ocalz(l) = (fcalz(l)+kfrag_Calc(l)) &
+      &           /(1.+(Rres_cal)*rt)
         endif
         if (omegaA_up < 1.) then
-           oaragz(l) = faragz(l) &
-      &           /(1.+(kfrag_CaCO3(l)+Rres_arag+k_arag*SSA_arag &
+           oaragz(l) = (faragz(l)+kfrag_Arag(l)) &
+      &           /(1.+(Rres_arag+k_arag*SSA_arag &
       &           *(1.-omegaA_up)**n_arag)*rt)
         else
-           oaragz(l) = faragz(l) / (1.+(kfrag_CaCO3(l)+Rres_arag)*rt)
+           oaragz(l) = (faragz(l)+kfrag_Arag(l)) / (1.+(Rres_arag)*rt)
         endif
 !       opal fluxes
-        oopz(l) = fopz(l)/(1.+(kfrag_opal(l)+k_opal)*rt) 
+        oopz(l) = (fopz(l)+kfrag_opal(l))/(1.+(k_opal)*rt) 
 !       dust fluxes
         odustz(l) = fdustz(l)
       enddo
