@@ -443,15 +443,20 @@ MODULE biogem_lib
   NAMELIST /ini_biogem_nml/ctrl_bio_remin_ecogemMLD
   ! MSPACMAM
   CHARACTER(len=63)::opt_biogem_particles
-  real::MWc,MWcaco3,MWsio2,alpha_omc,rho_om,rho_caco3,rho_opal,SSA_calcSm,SSA_calcLg,SSA_arag,r_sm,r_lg
-  real::phi_sm,phi_lg,k_POC,aE,remin_Tref,K_O2,e_arag,n_calcUp,k_calcUp_ex,n_calcLow,k_calcLow_ex,n_arag
+  CHARACTER(len=63)::opt_biogem_fragmentation
+  real::MWc,MWcaco3,MWsio2,MWdust,alpha_omc,rho_om,rho_caco3,rho_opal,rho_dust
+  real::SSA_calcSm,SSA_calcLg,SSA_arag
+  real::r_sm,r_lg,phi_sm,phi_lg,k_POC,aE,remin_Tref,K_O2,e_arag
+  real::n_calcUp,k_calcUp_ex,n_calcLow,k_calcLow_ex,n_arag
   real::k_arag,rresxcal,rresmcal,rresxarag,rresmarag,a_pom_frac2
-  NAMELIST /ini_biogem_nml/opt_biogem_particles
-  NAMELIST /ini_biogem_nml/MWc,MWcaco3,MWsio2,alpha_omc,rho_om
-  NAMELIST /ini_biogem_nml/rho_caco3,rho_opal,SSA_calcSm,SSA_calcLg,SSA_arag,r_sm,r_lg
+  real::k_maxfrag,k_fragPOC,k_sigmaL,k_pocfrac2,sigmaD
+  NAMELIST /ini_biogem_nml/opt_biogem_particles,opt_biogem_fragmentation
+  NAMELIST /ini_biogem_nml/MWc,MWcaco3,MWsio2,MWdust,alpha_omc,rho_om
+  NAMELIST /ini_biogem_nml/rho_caco3,rho_opal,rho_dust,SSA_calcSm,SSA_calcLg,SSA_arag,r_sm,r_lg
   NAMELIST /ini_biogem_nml/phi_sm,phi_lg,k_POC,aE,remin_Tref,K_O2,e_arag,n_calcUp
   NAMELIST /ini_biogem_nml/k_calcUp_ex,n_calcLow,k_calcLow_ex,n_arag
   NAMELIST /ini_biogem_nml/k_arag,rresxcal,rresmcal,rresxarag,rresmarag,a_pom_frac2
+  NAMELIST /ini_biogem_nml/k_maxfrag,k_fragPOC,k_sigmaL,k_pocfrac2,sigmaD
   ! ------------------- ISOTOPIC FRACTIONATION ----------------------------------------------------------------------------------- !
   CHARACTER(len=63)::opt_d13C_DIC_Corg                           ! Corg 13C fractionation scheme ID string
   NAMELIST /ini_biogem_nml/opt_d13C_DIC_Corg
@@ -886,7 +891,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_diag_misc_2D                       = 09 !
   INTEGER::n_diag_redox                                   =  0 !
   INTEGER::n_diag_redox_aq                                =  0 !
-  INTEGER,PARAMETER::n_diag_part                          = 07 !
+  INTEGER,PARAMETER::n_diag_part                          = 09 !
 
   ! ****************************************************************************************************************************** !
   ! DEFINE ARRAY INDICES
@@ -1047,6 +1052,8 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_part_smallPOC_frac2           = 05    !
   INTEGER,PARAMETER::idiag_part_smallCalc                = 06    !
   INTEGER,PARAMETER::idiag_part_CaCO3_fracA              = 07    !
+  INTEGER,PARAMETER::idiag_part_smallArag                = 08    !
+  INTEGER,PARAMETER::idiag_part_smallOpal                = 09    !
 
   ! ****************************************************************************************************************************** !
   ! DEFINE ARRAY INDICES NAMES
@@ -1193,13 +1200,15 @@ MODULE biogem_lib
        & 'FCa_44Ca      ' /)
   ! diagnostics - particle fluxes
   CHARACTER(len=14),DIMENSION(n_diag_part),PARAMETER::string_diag_particles = (/ &
-       & 'smallW         ', &
-       & 'largeW         ', &
-       & 'meanW          ', &
-       & 'smallPOC       ', &
-       & 'smallPOC_frac2 ', &
-       & 'smallCalc      ', &
-       & 'CaCO3_fracA    ' /)
+       & 'smallW        ', &
+       & 'largeW        ', &
+       & 'meanW         ', &
+       & 'smallPOC      ', &
+       & 'smallPOC_frac2', &
+       & 'smallCalc     ', &
+       & 'CaCO3_fracA   ', &
+       & 'smallArag     ', &
+       & 'smallOpal     ' /)
   ! diagnostics - redox
   ! NOTE: set a generous potential string length for automatically-generated variable names
   CHARACTER(len=63),DIMENSION(:),ALLOCATABLE::string_diag_redox        !

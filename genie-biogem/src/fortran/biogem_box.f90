@@ -3162,11 +3162,11 @@ CONTAINS
 !!$    real,DIMENSION(:,:),ALLOCATABLE::loc_diag_redox
 !!$    allocate(loc_diag_redox(n_diag_redox,n_k),STAT=alloc_error)
     !MSPACMAM
-    real,dimension(1:n_k,2)::fldpomz,fldpomz_frac2,fldcalz,fldaragz,fldopz
+    real,dimension(1:n_k,2)::fldpomz,fldpomz_frac2,fldcalz,fldaragz,fldopz,flddustz
     real,dimension(1:n_l_sed,1:n_k)::loc_diag_part
     real::sigmaL,conv_conc2flux
     real,dimension(3)::loc_W
-    real::MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2
+    real::MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2,MWrho_dust
     real,dimension(2)::SSA_calc
     real::loc_input
     CHARACTER(len=31)::loc_string     !
@@ -3220,10 +3220,13 @@ CONTAINS
        fldcalz(:,:) = 0.0
        fldaragz(:,:) = 0.0
        fldopz(:,:) = 0.0
+       flddustz(:,1) = loc_bio_part_OLD(is2l(is_det),:)*(1-sigmaD)
+       flddustz(:,2) = loc_bio_part_OLD(is2l(is_det),:)*sigmaD
        MWpoc = MWc*alpha_omc
        MWrho_om = MWpoc/rho_om
        MWrho_caco3 = MWcaco3/rho_caco3
        MWrho_sio2 = MWsio2/rho_opal
+       MWrho_dust = MWdust/rho_dust
        SSA_calc(1) = SSA_calcSm
        SSA_calc(2) = SSA_calcLg
     END SELECT
@@ -3644,11 +3647,11 @@ CONTAINS
                       ! Set up MSPACMAM scheme
                       ! sigmaL: export fluxes converted to g/(m**2 s)
                       if (sed_select(is_opal)) then
-                         sigmaL = (loc_bio_part_TMP(is2l(is_opal),k)*Mwsio2 + loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*MWcaco3) &
+                         sigmaL = k_sigmaL*(loc_bio_part_TMP(is2l(is_opal),k)*Mwsio2 + loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*MWcaco3) &
                          &              / ( loc_bio_part_TMP(is2l(is_POC),k)*MWc + loc_bio_part_TMP(is2l(is_CaCO3),k)*MWcaco3 &
                          &                  + loc_bio_part_TMP(is2l(is_opal),k)*MWsio2)
                       else
-                         sigmaL = (loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*MWcaco3) &
+                         sigmaL = k_sigmaL*(loc_bio_part_TMP(is2l(is_CaCO3),k)*e_arag*MWcaco3) &
                          &              / ( loc_bio_part_TMP(is2l(is_POC),k)*MWc + loc_bio_part_TMP(is2l(is_CaCO3),k)*MWcaco3)
                       endif
                       sigmaL = max(0.0, sigmaL)
@@ -3681,21 +3684,24 @@ CONTAINS
                       fldcalz(kk+1,2) = fldcalz(kk+1,2)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)*(1-diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk)) &
                       & *(1-diag_particle(idiag_part_smallCalc,dum_i,dum_j,kk))*conv_conc2flux*loc_bio_remin_layerratio !Divide fractions!
                       loc_bio_part_TMP(is2l(is_CaCO3),kk+1) = loc_bio_part_TMP(is2l(is_CaCO3),kk+1)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)
-                      fldaragz(kk+1,1) = 0. !no small aragonite
+                      fldaragz(kk+1,1) = fldaragz(kk+1,1)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)*diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk) &
+                      & *diag_particle(idiag_part_smallArag,dum_i,dum_j,kk)*conv_conc2flux*loc_bio_remin_layerratio !small aragonite
                       fldaragz(kk+1,2) = fldaragz(kk+1,2)+loc_bio_part_OLD(is2l(is_CaCO3),kk+1)*diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,kk) &
-                      & *conv_conc2flux*loc_bio_remin_layerratio !large aragonite
-                      fldopz(kk+1,1) = 0. !no small opal particles
+                      & *(1-diag_particle(idiag_part_smallArag,dum_i,dum_j,kk))*conv_conc2flux*loc_bio_remin_layerratio !large aragonite
                       if (sed_select(is_opal)) then
-                          fldopz(kk+1,2) = fldopz(kk+1,2)+loc_bio_part_OLD(is2l(is_opal),kk+1)*conv_conc2flux*loc_bio_remin_layerratio !only large opal particles
+                          fldopz(kk+1,1) = fldopz(kk+1,1)+loc_bio_part_OLD(is2l(is_opal),kk+1)*diag_particle(idiag_part_smallOpal,dum_i,dum_j,kk) & 
+                             & *conv_conc2flux*loc_bio_remin_layerratio !small opal particles
+                          fldopz(kk+1,2) = fldopz(kk+1,2)+loc_bio_part_OLD(is2l(is_opal),kk+1)*(1-diag_particle(idiag_part_smallOpal,dum_i,dum_j,kk)) &
+                             & *conv_conc2flux*loc_bio_remin_layerratio !only large opal particles
                           loc_bio_part_TMP(is2l(is_opal),kk+1) = loc_bio_part_TMP(is2l(is_opal),kk+1)+loc_bio_part_OLD(is2l(is_opal),kk+1)
                       endif
                    endif
                    
                    ! calculate particle flux changes below zb
                    call sub_biogem_mspacmam(dum_dtyr,dum_i,dum_j,kk, &
-                   &          MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2,SSA_calc,fldpomz(kk+1,:), &
-                   &          fldpomz_frac2(kk+1,:),fldcalz(kk+1,:),fldaragz(kk+1,:),fldopz(kk+1,:), &
-                   &          fldpomz(kk,:),fldpomz_frac2(kk,:),fldcalz(kk,:),fldaragz(kk,:),fldopz(kk,:),loc_W)
+                   &          MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2,MWrho_dust,SSA_calc,fldpomz(kk+1,:), &
+                   &          fldpomz_frac2(kk+1,:),fldcalz(kk+1,:),fldaragz(kk+1,:),fldopz(kk+1,:),flddustz(kk+1,:), &
+                   &          fldpomz(kk,:),fldpomz_frac2(kk,:),fldcalz(kk,:),fldaragz(kk,:),fldopz(kk,:),flddustz(kk,:),loc_W)
                    loc_bio_remin_sinkingrate_physical = loc_W(3)
                    if (dum_dtyr*par_bio_remin_sinkingrate_physical <= goldstein_dsc) then
                        loc_bio_remin_sinkingrate_reaction = loc_bio_remin_sinkingrate_physical
@@ -4460,6 +4466,17 @@ CONTAINS
                    endif
                    if (sum(fldcalz(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.
                    
+                   loc_string = 'smallArag'
+                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                   if (kk == k-1) then
+                      loc_diag_part(id,n_k:k) = fldaragz(k,1)/sum(fldaragz(k,:))
+                      loc_diag_part(id,kk) = fldaragz(kk,1)/sum(fldaragz(kk,:))
+                      if (sum(fldaragz(k,:)).le.const_real_nullsmall) loc_diag_part(id,n_k:k) = 0.
+                   else
+                      loc_diag_part(id,kk) = fldaragz(kk,1)/sum(fldaragz(kk,:))
+                   endif
+                   if (sum(fldaragz(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.
+                   
                    loc_string = 'CaCO3_fracA'
                    id = fun_find_str_i(trim(loc_string),string_diag_particles)
                    if (kk == k-1) then
@@ -4470,6 +4487,17 @@ CONTAINS
                       loc_diag_part(id,kk) = sum(fldaragz(kk,:))/(sum(fldcalz(kk,:))+sum(fldaragz(kk,:)))
                    endif
                    if (sum(fldcalz(kk,:))+sum(fldaragz(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.
+                   
+                   loc_string = 'smallOpal'
+                   id = fun_find_str_i(trim(loc_string),string_diag_particles)
+                   if (kk == k-1) then
+                      loc_diag_part(id,n_k:k) = fldopz(k,1)/sum(fldopz(k,:))
+                      loc_diag_part(id,kk) = fldopz(kk,1)/sum(fldopz(kk,:))
+                      if (sum(fldopz(k,:)).le.const_real_nullsmall) loc_diag_part(id,n_k:k) = 0.
+                   else
+                      loc_diag_part(id,kk) = fldopz(kk,1)/sum(fldopz(kk,:))
+                   endif
+                   if (sum(fldopz(kk,:)).le.const_real_nullsmall) loc_diag_part(id,kk) = 0.
                    
                    do l=1,2,1              
                       if ((dum_vphys_ocn%mk(ipo_Dbot,kk)-dum_vphys_ocn%mk(ipo_Dbot,kk+1))/loc_W(l).gt.dum_dtyr*conv_yr_s) then
@@ -4612,7 +4640,9 @@ CONTAINS
        diag_particle(idiag_part_smallPOC,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallPOC,:)
        diag_particle(idiag_part_smallPOC_frac2,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallPOC_frac2,:)
        diag_particle(idiag_part_smallCalc,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallCalc,:)
+       diag_particle(idiag_part_smallArag,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallArag,:)
        diag_particle(idiag_part_CaCO3_fracA,dum_i,dum_j,:) = loc_diag_part(idiag_part_CaCO3_fracA,:)
+       diag_particle(idiag_part_smallOpal,dum_i,dum_j,:) = loc_diag_part(idiag_part_smallOpal,:)
     END SELECT
     ! write ocean tracer field and settling flux arrays (global array)
     dum_vbio_part%mk(:,:) = loc_bio_part(:,:)
@@ -5876,8 +5906,8 @@ CONTAINS
   !   Implementation and variable names follow Dinauer et al. 2022 GBC
   !   This also updates global arrays
       subroutine sub_biogem_mspacmam (dum_dtyr,i,j,k,MWpoc,MWrho_om,MWrho_caco3,MWrho_sio2, &
-      &     SSA_calc,fpomz,fpomz_frac2,fcalz,faragz,fopz, &
-      &     opomz,opomz_frac2,ocalz,oaragz,oopz,locW) ! OUT
+      &     MWrho_dust,SSA_calc,fpomz,fpomz_frac2,fcalz,faragz,fopz,fdustz, &
+      &     opomz,opomz_frac2,ocalz,oaragz,oopz,odustz,locW) ! OUT
       
 
   !   INPUT variables
@@ -5885,12 +5915,14 @@ CONTAINS
       real,intent(in) :: dum_dtyr                      ! time step (yrs)
       real,intent(in) :: MWpoc,MWrho_om                   ! Molar weights POC and organic matter
       real,intent(in) :: MWrho_caco3,MWrho_sio2           ! Molar weights CaCO3 and opal
+      real,intent(in) :: MWrho_dust                ! Molar weight dust
       real,intent(in) :: SSA_calc(2)                      ! Specific surface area CaCO3: small and large
       real,intent(in) :: fpomz(2),fpomz_frac2(2),fcalz(2) ! Input POM and calcite fluxes
       real,intent(in) :: faragz(2),fopz(2)                ! Input aragonite and opal fluxes
+      real,intent(in) :: fdustz(2)                        ! Input dust fluxes
       
   !   OUTPUT variables
-      real,intent(out) :: opomz(2),opomz_frac2(2),ocalz(2),oaragz(2),oopz(2) ! remineralization flux
+      real,intent(out) :: opomz(2),opomz_frac2(2),ocalz(2),oaragz(2),oopz(2),odustz(2) ! remineralization flux
       real,intent(out) :: locW(3)                                            ! sinking speed
 
   !   LOCAL variables
@@ -5899,7 +5931,7 @@ CONTAINS
       real::a_aerob
       real::massConc_PM(2),rho_solid(2),rho_p(2),w_up(2)
       real::Rres_cal,Rres_arag
-      real::bgcphis(2)
+      real::bgcphis(2),kfrag_POC(2),kfrag_CaCO3(2),kfrag_opal(2)
       real::T_up,S_up,O2_up,omegaA_up,omegaC_up,rho_up,visc_up
       real::T_zero,A,B,mu_w
       real::zk,zkp1,zb,zbm1
@@ -5956,12 +5988,12 @@ CONTAINS
       do l=1,2
          massConc_PM(l) = ((fpomz(l)+fpomz_frac2(l))*MWpoc) &
       &        + ((fcalz(l)+faragz(l))*MWcaco3) &
-      &        + (fopz(l)*MWsio2)
+      &        + (fopz(l)*MWsio2) + (fdustz(l))*MWdust
 
         if (massConc_PM(l).gt.const_real_nullsmall) then
            rho_solid(l) = massConc_PM(l) / ((fpomz(l)+fpomz_frac2(l))*MWrho_om & 
       &          + (fcalz(l)+faragz(l))*MWrho_caco3 &
-      &          + fopz(l)*MWrho_sio2)
+      &          + fopz(l)*MWrho_sio2+fdustz(l)*MWrho_dust)
         elseif (isnan(massConc_PM(l))) then
            massConc_PM(l) = 0.0
            rho_solid(l)   = 0.0
@@ -5983,10 +6015,35 @@ CONTAINS
   !     residence time (s), limit at time step length
         rt = min((zbm1-zb)/w_up(l), dum_dtyr*conv_yr_s)
 
+        ! Fragmentation of large particles
+        select case (trim(opt_biogem_fragmentation))
+        case ('briggs')
+           kfrag_POC(1) = 0.0
+           kfrag_POC(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
+           kfrag_CaCO3(1) = 0.0
+           kfrag_CaCO3(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
+           kfrag_opal(1) = 0.0
+           kfrag_opal(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
+        case ('naidoo-bagwell')
+           kfrag_POC(1) = 0.0
+           kfrag_POC(2) = k_maxfrag*(fpomz(2)+fpomz_frac2(2))/(k_fragPOC+fpomz(2)+fpomz_frac2(2))
+           kfrag_CaCO3(1) = 0.0
+           kfrag_CaCO3(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
+           kfrag_opal(1) = 0.0
+           kfrag_opal(2) = 0.27/(24.*60*60)*exp(-0.0024*zk)
+        case ('none')
+           kfrag_POC(1) = 0.0
+           kfrag_POC(2) = 0.0
+           kfrag_CaCO3(1) = 0.0
+           kfrag_CaCO3(2) = 0.0
+           kfrag_opal(1) = 0.0
+           kfrag_opal(2) = 0.0
+        end select
+
   !     POM fluxes
         a_aerob = (k_poc_star)*rt
-        opomz(l) = fpomz(l)/(1.+a_aerob) 
-        opomz_frac2(l) = fpomz_frac2(l)/(1.+a_aerob*0.1) 
+        opomz(l) = fpomz(l)/(1.+a_aerob+kfrag_POC(l)*rt) 
+        opomz_frac2(l) = fpomz_frac2(l)/(1.+a_aerob*k_pocfrac2+kfrag_POC(l)*rt) 
   !     PIC fluxes
       !     PIC dissolution due to remineralisation (Liang et al. 2023GBC)
         if (fpomz(l)-opomz(l)+fpomz_frac2(l)-opomz_frac2(l).gt.const_real_nullsmall) then
@@ -5999,25 +6056,27 @@ CONTAINS
         
         if (omegaC_up < 1. .and. omegaC_up > 0.8) then
            ocalz(l) = fcalz(l) &
-      &           /(1.+(Rres_cal+bgck_calcUp*SSA_calc(l) &
+      &           /(1.+(kfrag_CaCO3(l)+Rres_cal+bgck_calcUp*SSA_calc(l) &
       &           *(1-omegaC_up)**n_calcUp)*rt)
         elseif (omegaC_up <= 0.8) then
            ocalz(l) = fcalz(l) &
-      &           /(1.+(Rres_cal+bgck_calcLow*SSA_calc(l) &
+      &           /(1.+(kfrag_CaCO3(l)+Rres_cal+bgck_calcLow*SSA_calc(l) &
       &           *(1.-omegaC_up)**n_calcLow)*rt)
         else
            ocalz(l) = fcalz(l) &
-      &           /(1.+(Rres_cal)*rt)
+      &           /(1.+(kfrag_CaCO3(l)+Rres_cal)*rt)
         endif
         if (omegaA_up < 1.) then
            oaragz(l) = faragz(l) &
-      &           /(1.+(Rres_arag+k_arag*SSA_arag &
+      &           /(1.+(kfrag_CaCO3(l)+Rres_arag+k_arag*SSA_arag &
       &           *(1.-omegaA_up)**n_arag)*rt)
         else
-           oaragz(l) = faragz(l) / (1.+(Rres_arag)*rt)
+           oaragz(l) = faragz(l) / (1.+(kfrag_CaCO3(l)+Rres_arag)*rt)
         endif
 !       opal fluxes
-        oopz(l) = fopz(l)/(1.+(k_opal)*rt) 
+        oopz(l) = fopz(l)/(1.+(kfrag_opal(l)+k_opal)*rt) 
+!       dust fluxes
+        odustz(l) = fdustz(l)
       enddo
       
 !     save small, large and mean sinking velocity in 3D arrays, convert to m/yr 

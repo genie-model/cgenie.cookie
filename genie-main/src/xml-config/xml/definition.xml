@@ -5022,6 +5022,163 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <value datatype="real">0.0</value>
                         <description>N2O lifetime (yr)</description>
                     </param>
+<!-- Particle remineralization scheme  -->
+                    <param name="opt_biogem_particles">
+			<value datatype="string">NONE</value>
+                        <description>name of chosen biogenic particle scheme</description>
+                    </param>
+                    <param name="opt_biogem_fragmentation">
+			<value datatype="string">'none'</value>
+                        <description>name of chosen particle fragmentation scheme</description>
+                    </param>
+                    <param name="MWc">
+			<value datatype="real">12.0</value>
+                        <description>molecular weight of C (g/mol)</description>
+                    </param>
+                    <param name="MWcaco3">
+			<value datatype="real">100.0</value>
+                        <description>molecular weight of CaCO3 (g/mol)</description>
+                    </param>
+                    <param name="MWsio2">
+			<value datatype="real">60.0</value>
+                        <description>molecular weight of opal (g/mol)</description>
+                    </param>
+                    <param name="MWdust">
+			<value datatype="real">80.0</value>
+                        <description>molecular weight of dust (g/mol)</description>
+                    </param>
+                    <param name="alpha_omc">
+			<value datatype="real">2.7</value>
+                        <description>organic matter per carbon (g/g)</description>
+                    </param>
+                    <param name="rho_om">
+			<value datatype="real">1.06</value>
+                        <description>density of organic matter (g cm-3)</description>
+                    </param>
+                    <param name="rho_caco3">
+			<value datatype="real">2.71</value>
+                        <description>density of carbonate (g cm-3)</description>
+                    </param>
+                    <param name="rho_opal">
+			<value datatype="real">2.10</value>
+                        <description>density of opal (g cm-3)</description>
+                    </param>
+                    <param name="rho_dust">
+			<value datatype="real">2.5</value>
+                        <description>density of dust (g cm-3)</description>
+                    </param>
+                    <param name="SSA_calcSm">
+			<value datatype="real">1040.0</value>
+                        <description>specific surface area of small particle calcite (m2/mol)</description>
+                    </param>
+                    <param name="SSA_calcLg">
+			<value datatype="real">430.0</value>
+                        <description>specific surface area of large particle calcite (m2/mol)</description>
+                    </param>
+                    <param name="SSA_arag">
+			<value datatype="real">217.0</value>
+                        <description>specific surface area of particle opal (m2/mol)</description>
+                    </param>
+                    <param name="r_sm">
+			<value datatype="real">0.0025</value>
+                        <description>radius of small particles (cm)</description>
+                    </param>
+                    <param name="r_lg">
+			<value datatype="real">0.025</value>
+                        <description>radius of large particles (cm)</description>
+                    </param>
+                    <param name="phi_sm">
+			<value datatype="real">0.0</value>
+                        <description>porosity of small particles</description>
+                    </param>
+                    <param name="phi_lg">
+			<value datatype="real">0.975</value>
+                        <description>porosity of large particles</description>
+                    </param>
+                    <param name="a_pom_frac2">
+			<value datatype="real">0.0</value>
+                        <description>POM fraction 2 of export</description>
+                    </param>
+                    <param name="k_POC">
+			<value datatype="real">0.000001389</value>
+                        <description>remineralization rate constant (s-1)</description>
+                    </param>
+                    <param name="k_pocfrac2">
+			<value datatype="real">1.0</value>
+                        <description>factor to scale POC_frac2 remineralization speed to that of POC_frac1</description>
+                    </param>
+                    <param name="aE">
+			<value datatype="real">0.063</value>
+                        <description>exponent for remin temperature modification (degC-1)</description>
+                    </param>
+                    <param name="remin_Tref">
+			<value datatype="real">15.0</value>
+                        <description>reference Temp for remineralization (degC)</description>
+                    </param>
+                    <param name="K_O2">
+			<value datatype="real">0.008</value>
+                        <description>half-saturation for oxygen uptake (mol m-3)</description>
+                    </param>
+                    <param name="e_arag">
+			<value datatype="real">0.23</value>
+                        <description>aragonite fraction in carbonate export</description>
+                    </param>
+                    <param name="n_calcUp">
+			<value datatype="real">0.11</value>
+                        <description>calcite dissolution reaction order above 0.8</description>
+                    </param>
+                    <param name="k_calcUp_ex">
+			<value datatype="real">-10.3</value>
+                        <description>calcite dissolution rate constant exponent above 0.8</description>
+                    </param>
+                    <param name="n_calcLow">
+			<value datatype="real">4.7</value>
+                        <description>calcite dissolution reaction order below 0.8</description>
+                    </param>
+                    <param name="k_calcLow_ex">
+			<value datatype="real">-6.8</value>
+                        <description>calcite dissolution rate constant exponent below 0.8</description>
+                    </param>
+                    <param name="n_arag">
+			<value datatype="real">1.37</value>
+                        <description>aragonite dissolution reaction order</description>
+                    </param>
+                    <param name="k_arag">
+			<value datatype="real">6.1164e-10</value>
+                        <description>aragonite dissolution rate constant (mol m-2 s-1)</description>
+                    </param>
+                    <param name="rresxcal">
+			<value datatype="real">1.0</value>
+                        <description>calcite dissolution rate factor due to remineralization</description>
+                    </param>
+                    <param name="rresmcal">
+			<value datatype="real">1.2e-6</value>
+                        <description>calcite dissolution rate exponent</description>
+                    </param>
+                    <param name="rresxarag">
+			<value datatype="real">1.0</value>
+                        <description>aragonite dissolution rate factor due to remineralization</description>
+                    </param>
+                    <param name="rresmarag">
+			<value datatype="real">1.2e-6</value>
+                        <description>aragonite dissolution rate exponent</description>
+                    </param>
+                    <param name="k_maxfrag">
+			<value datatype="real">0.0</value>
+                        <description>maximum large particle fragmentation rate (s-1)</description>
+                    </param>
+                    <param name="k_fragPOC">
+			<value datatype="real">0.0</value>
+                        <description>constant for POC fragmentation (mol m-2 s-1)</description>
+                    </param>
+                    <param name="k_sigmaL">
+			<value datatype="real">1.0</value>
+                        <description>constant for scaling large particle fraction of export</description>
+                    </param>
+                    <param name="sigmaD">
+			<value datatype="real">1.0</value>
+                        <description>large particle fraction of dust</description>
+                    </param>
 <!-- ISOTOPIC FRACTIONATION -->
                     <param name="opt_d13C_DIC_Corg">
 			<value datatype="string">Ridgwell2001</value>
@@ -5559,130 +5716,6 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                     <param name="par_bio_Kd_PO4_FeOOH">
 			<value datatype="real">0.0</value>
                         <description>Ads constant for PO4 adsorption on (POM-)FeOOH</description>
-                    </param>
-                    <param name="opt_biogem_particles">
-			<value datatype="string">NONE</value>
-                        <description>name of chosen biogenic particle scheme</description>
-                    </param>
-                    <param name="MWc">
-			<value datatype="real">12.0</value>
-                        <description>molecular weight of C (g/mol)</description>
-                    </param>
-                    <param name="MWcaco3">
-			<value datatype="real">100.0</value>
-                        <description>molecular weight of CaCO3 (g/mol)</description>
-                    </param>
-                    <param name="MWsio2">
-			<value datatype="real">60.0</value>
-                        <description>molecular weight of opal (g/mol)</description>
-                    </param>
-                    <param name="alpha_omc">
-			<value datatype="real">2.7</value>
-                        <description>organic matter per carbon (g/g)</description>
-                    </param>
-                    <param name="rho_om">
-			<value datatype="real">1.06</value>
-                        <description>density of organic matter (g cm-3)</description>
-                    </param>
-                    <param name="rho_caco3">
-			<value datatype="real">2.71</value>
-                        <description>density of carbonate (g cm-3)</description>
-                    </param>
-                    <param name="rho_opal">
-			<value datatype="real">2.10</value>
-                        <description>density of opal (g cm-3)</description>
-                    </param>
-                    <param name="SSA_calcSm">
-			<value datatype="real">1040.0</value>
-                        <description>specific surface area of small particle calcite (m2/mol)</description>
-                    </param>
-                    <param name="SSA_calcLg">
-			<value datatype="real">430.0</value>
-                        <description>specific surface area of large particle calcite (m2/mol)</description>
-                    </param>
-                    <param name="SSA_arag">
-			<value datatype="real">217.0</value>
-                        <description>specific surface area of particle opal (m2/mol)</description>
-                    </param>
-                    <param name="r_sm">
-			<value datatype="real">0.0025</value>
-                        <description>radius of small particles (cm)</description>
-                    </param>
-                    <param name="r_lg">
-			<value datatype="real">0.025</value>
-                        <description>radius of large particles (cm)</description>
-                    </param>
-                    <param name="phi_sm">
-			<value datatype="real">0.0</value>
-                        <description>porosity of small particles</description>
-                    </param>
-                    <param name="phi_lg">
-			<value datatype="real">0.975</value>
-                        <description>porosity of large particles</description>
-                    </param>
-                    <param name="a_pom_frac2">
-			<value datatype="real">0.0</value>
-                        <description>POM fraction 2 of export</description>
-                    </param>
-                    <param name="k_POC">
-			<value datatype="real">0.000001389</value>
-                        <description>remineralization rate constant (s-1)</description>
-                    </param>
-                    <param name="aE">
-			<value datatype="real">0.063</value>
-                        <description>exponent for remin temperature modification (degC-1)</description>
-                    </param>
-                    <param name="remin_Tref">
-			<value datatype="real">15.0</value>
-                        <description>reference Temp for remineralization (degC)</description>
-                    </param>
-                    <param name="K_O2">
-			<value datatype="real">0.008</value>
-                        <description>half-saturation for oxygen uptake (mol m-3)</description>
-                    </param>
-                    <param name="e_arag">
-			<value datatype="real">0.23</value>
-                        <description>aragonite fraction in carbonate export</description>
-                    </param>
-                    <param name="n_calcUp">
-			<value datatype="real">0.11</value>
-                        <description>calcite dissolution reaction order above 0.8</description>
-                    </param>
-                    <param name="k_calcUp_ex">
-			<value datatype="real">-10.3</value>
-                        <description>calcite dissolution rate constant exponent above 0.8</description>
-                    </param>
-                    <param name="n_calcLow">
-			<value datatype="real">4.7</value>
-                        <description>calcite dissolution reaction order below 0.8</description>
-                    </param>
-                    <param name="k_calcLow_ex">
-			<value datatype="real">-6.8</value>
-                        <description>calcite dissolution rate constant exponent below 0.8</description>
-                    </param>
-                    <param name="n_arag">
-			<value datatype="real">1.37</value>
-                        <description>aragonite dissolution reaction order</description>
-                    </param>
-                    <param name="k_arag">
-			<value datatype="real">6.1164e-10</value>
-                        <description>aragonite dissolution rate constant (mol m-2 s-1)</description>
-                    </param>
-                    <param name="rresxcal">
-			<value datatype="real">1.0</value>
-                        <description>calcite dissolution rate factor due to remineralization</description>
-                    </param>
-                    <param name="rresmcal">
-			<value datatype="real">1.2e-6</value>
-                        <description>calcite dissolution rate exponent</description>
-                    </param>
-                    <param name="rresxarag">
-			<value datatype="real">1.0</value>
-                        <description>aragonite dissolution rate factor due to remineralization</description>
-                    </param>
-                    <param name="rresmarag">
-			<value datatype="real">1.2e-6</value>
-                        <description>aragonite dissolution rate exponent</description>
                     </param>
 <!-- I/O DIRECTORY DEFINITIONS  -->
                     <param name="par_pindir_name">

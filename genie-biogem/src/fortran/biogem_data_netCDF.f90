@@ -1899,6 +1899,32 @@ CONTAINS
     end DO
     call sub_adddef_netcdf(loc_iou,4,'part_diag_CaCO3_fracA','CaCO3 aragonite fraction','',const_real_zero,const_real_zero)
     call sub_putvar3d_g('part_diag_CaCO3_fracA',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+    
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'smallArag'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallArag','small aragnoite particle fraction','',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_smallArag',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+    
+    loc_ijk(:,:,:) = const_real_null
+    DO i=1,n_i
+       DO j=1,n_j
+          DO k=goldstein_k1(i,j),n_k             
+             loc_string = 'smallOpal'
+             id = fun_find_str_i(trim(loc_string),string_diag_particles)
+             loc_ijk(i,j,k) = int_diag_particle_timeslice(id,i,j,k)/int_t_timeslice
+           end DO
+       end DO
+    end DO
+    call sub_adddef_netcdf(loc_iou,4,'part_diag_smallOpal','small opal particle fraction','',const_real_zero,const_real_zero)
+    call sub_putvar3d_g('part_diag_smallOpal',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
 
     ! ---------------------------------------------------------------- !
     ! END
