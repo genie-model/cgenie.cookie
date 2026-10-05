@@ -2087,7 +2087,7 @@ CONTAINS
     if ( ctrl_force_ocn_age .AND. ocn_select(io_colr) ) then
        loc_unitsname = 'yrs'
        loc_ijk(:,:,:) = int_ocn_timeslice(io_colr,:,:,:)/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,4,'climate_age','idealized ventilation age','(yrs)',const_real_zero,const_real_zero)
+       call sub_adddef_netcdf(loc_iou,4,'climate_age','idealized ventilation age',loc_unitsname,const_real_zero,const_real_zero)
        call sub_putvar3d_g('climate_age',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end if
     ! ---------------------------------------------------------------- !
@@ -4619,10 +4619,28 @@ CONTAINS
        CASE (0)
           ! T,S
              call sub_adddef_netcdf(loc_iou, 3, trim(loc_shortname), &
-                  & 'surface-water '//trim(string_ocn(io)), trim(loc_unitsname),const_real_zero,const_real_zero)
+                  & 'surface-water '//trim(string_ocn(io)),trim(loc_unitsname),const_real_zero,const_real_zero)
              call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_sur)
        end SELECT
     END DO
+    ! ---------------------------------------------------------------- !
+    ! COLOR AGE TRACER -- benthic ventilation age
+    ! ---------------------------------------------------------------- !
+    if ( ctrl_force_ocn_age .AND. ocn_select(io_colr) ) then
+       loc_ij(:,:) = const_real_zero
+       DO i=1,n_i
+          DO j=1,n_j
+             loc_k1 = goldstein_k1(i,j)
+             IF (n_k >= loc_k1) THEN
+                loc_ij(i,j) = int_ocn_timeslice(io_colr,i,j,loc_k1)/int_t_timeslice
+             end IF
+          end DO
+       end DO
+       loc_unitsname = 'yrs'
+       call sub_adddef_netcdf(loc_iou,3,'climate_seafloor_age','bottom-water ventilation age', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_seafloor_age',loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_sur)
+    end if
     ! ---------------------------------------------------------------- !
     ! MOC
     ! ---------------------------------------------------------------- !
@@ -4669,7 +4687,6 @@ CONTAINS
     loc_mask_sur(:,:) = const_real_one
     call sub_adddef_netcdf_psi(loc_iou,'climate_psi','Barotropic streamfunction','Sv',const_real_zero,const_real_zero)
     call sub_putvar2d('climate_psi',loc_iou,n_i,n_j+1,loc_ntrec,loc_tmp_ij,loc_mask_sur)
-    !-----------------------------------------------------------------------
   END SUBROUTINE sub_2d_save_hidden_climate
   ! ****************************************************************************************************************************** !
 
