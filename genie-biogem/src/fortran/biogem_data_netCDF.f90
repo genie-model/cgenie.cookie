@@ -1012,6 +1012,64 @@ CONTAINS
        END DO
     end if
     ! ---------------------------------------------------------------- !
+    ! ocean carbonate system isotopic properties
+    ! ---------------------------------------------------------------- !
+    If (ctrl_save_basic_proxies) then
+       if (ocn_select(io_DIC_13C)) then
+          loc_ijk(:,:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_CO2,i,j,k), &
+                        & int_carbisor_timeslice(ici_CO2_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO2,i,j,k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'carbchem_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo', &
+               & const_real_zero,const_real_zero)
+          call sub_putvar3d_g('carbchem_d13C_CO2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          loc_ijk(:,:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_HCO3,i,j,k), &
+                        & int_carbisor_timeslice(ici_HCO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_HCO3,i,j,k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'carbchem_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo', &
+               & const_real_zero,const_real_zero)
+          call sub_putvar3d_g('carbchem_d13C_HCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+          loc_ijk(:,:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                DO k=goldstein_k1(i,j),n_k
+                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_CO3,i,j,k), &
+                        & int_carbisor_timeslice(ici_CO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO3,i,j,k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END DO
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,4,'carbchem_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo', &
+               & const_real_zero,const_real_zero)
+          call sub_putvar3d_g('carbchem_d13C_CO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
+       end if
+    end if
+    ! ---------------------------------------------------------------- !
     ! GEOCHEMICAL DIAGNOSTICS -- PRECIP
     ! ---------------------------------------------------------------- !
     loc_unitsname = 'mol kg-1 yr-1'
@@ -1189,64 +1247,6 @@ CONTAINS
        call sub_putvar3d_g('carbchem_const_'//trim(string_carbconst(icc)),loc_iou, &
             & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     END DO
-    ! ---------------------------------------------------------------- !
-    ! ocean carbonate system isotopic properties
-    ! ---------------------------------------------------------------- !
-    If (ctrl_save_basic_proxies) then
-       if (ocn_select(io_DIC_13C)) then
-          loc_ijk(:,:,:) = const_real_zero
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
-                        & int_carb_timeslice(ic_conc_CO2,i,j,k), &
-                        & int_carbisor_timeslice(ici_CO2_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO2,i,j,k), &
-                        & const_standards(11), &
-                        & .FALSE., &
-                        & const_real_null &
-                        & )
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'carbchem_d13C_CO2','carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo', &
-               & const_real_zero,const_real_zero)
-          call sub_putvar3d_g('carbchem_d13C_CO2',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-          loc_ijk(:,:,:) = const_real_zero
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
-                        & int_carb_timeslice(ic_conc_HCO3,i,j,k), &
-                        & int_carbisor_timeslice(ici_HCO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_HCO3,i,j,k), &
-                        & const_standards(11), &
-                        & .FALSE., &
-                        & const_real_null &
-                        & )
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'carbchem_d13C_HCO3','carbonate chemistry properties - '//'d13C of HCO3-','o/oo', &
-               & const_real_zero,const_real_zero)
-          call sub_putvar3d_g('carbchem_d13C_HCO3',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-          loc_ijk(:,:,:) = const_real_zero
-          DO i=1,n_i
-             DO j=1,n_j
-                DO k=goldstein_k1(i,j),n_k
-                   loc_ijk(i,j,k) = fun_calc_isotope_delta( &
-                        & int_carb_timeslice(ic_conc_CO3,i,j,k), &
-                        & int_carbisor_timeslice(ici_CO3_r13C,i,j,k)*int_carb_timeslice(ic_conc_CO3,i,j,k), &
-                        & const_standards(11), &
-                        & .FALSE., &
-                        & const_real_null &
-                        & )
-                END DO
-             END DO
-          END DO
-          call sub_adddef_netcdf(loc_iou,4,'carbchem_d13C_CO32','carbonate chemistry properties - '//'d13C of CO32-','o/oo', &
-               & const_real_zero,const_real_zero)
-          call sub_putvar3d_g('carbchem_d13C_CO32',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
-       end if
-    end if
     ! ---------------------------------------------------------------- !
     ! END
     ! ---------------------------------------------------------------- !
@@ -2982,6 +2982,67 @@ CONTAINS
              call sub_putvar2d('carbchem_seasur_'//trim(string_carb(ic)),loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
           end select
        END DO
+    end if
+    ! ---------------------------------------------------------------- !
+    ! surface ocean carbonate chemsitry -- isotopic properties
+    ! ---------------------------------------------------------------- !
+    if (ocn_select(io_DIC) .AND. ocn_select(io_ALK)) then
+    If (ctrl_save_basic_proxies .AND. ocn_select(io_DIC_13C)) then
+          loc_ij(:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                loc_k1 = goldstein_k1(i,j)
+                IF (n_k >= loc_k1) THEN
+                   loc_ij(i,j) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_CO2,i,j,n_k), &
+                        & int_carbisor_timeslice(ici_CO2_r13C,i,j,n_k)*int_carb_timeslice(ic_conc_CO2,i,j,n_k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END if
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,3,'carbchem_seasur_d13C_CO2', &
+               & 'carbonate chemistry properties - '//'d13C of CO2(aq)','o/oo',const_real_zero,const_real_zero)
+          call sub_putvar2d('carbchem_seasur_d13C_CO2',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          loc_ij(:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                loc_k1 = goldstein_k1(i,j)
+                IF (n_k >= loc_k1) THEN
+                   loc_ij(i,j) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_HCO3,i,j,n_k), &
+                        & int_carbisor_timeslice(ici_HCO3_r13C,i,j,n_k)*int_carb_timeslice(ic_conc_HCO3,i,j,n_k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END if
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,3,'carbchem_seasur_d13C_HCO3', &
+               & 'carbonate chemistry properties - '//'d13C of HCO3-','o/oo',const_real_zero,const_real_zero)
+          call sub_putvar2d('carbchem_seasur_d13C_HCO3',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          loc_ij(:,:) = const_real_zero
+          DO i=1,n_i
+             DO j=1,n_j
+                loc_k1 = goldstein_k1(i,j)
+                IF (n_k >= loc_k1) THEN
+                   loc_ij(i,j) = fun_calc_isotope_delta( &
+                        & int_carb_timeslice(ic_conc_CO3,i,j,n_k), &
+                        & int_carbisor_timeslice(ici_CO3_r13C,i,j,n_k)*int_carb_timeslice(ic_conc_CO3,i,j,n_k), &
+                        & const_standards(11), &
+                        & .FALSE., &
+                        & const_real_null &
+                        & )
+                END if
+             END DO
+          END DO
+          call sub_adddef_netcdf(loc_iou,3,'carbchem_seasur_d13C_CO32', &
+               & 'carbonate chemistry properties - '//'d13C of CO32-','o/oo',const_real_zero,const_real_zero)
+          call sub_putvar2d('carbchem_seasur_d13C_CO32',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       end if
     end if
     ! ---------------------------------------------------------------- !
     ! seafloor carbonate chemsitry
