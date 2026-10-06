@@ -3508,6 +3508,7 @@ SUBROUTINE diag_biogem_timeslice( &
                        !       and this needs to be propagated
                        loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
                        loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
+                       loc_carbisor(:,i,j,loc_k1:n_k)  = carbisor(:,i,j,loc_k1:n_k)
                        ! set water column interval for solving pH
                        if (ctrl_carbchem_pH_OLD) then
                           ! flag for whole water-column updating

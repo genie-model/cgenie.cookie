@@ -1194,6 +1194,7 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     If (ctrl_save_basic_proxies) then
        if (ocn_select(io_DIC_13C)) then
+          loc_ijk(:,:,:) = const_real_zero
           DO i=1,n_i
              DO j=1,n_j
                 DO k=goldstein_k1(i,j),n_k
@@ -1204,6 +1205,9 @@ CONTAINS
                         & .FALSE., &
                         & const_real_null &
                         & )
+
+print*,i,j,k,int_carbisor_timeslice(ici_CO2_r13C,i,j,k),int_carb_timeslice(ic_conc_CO2,i,j,k),loc_ijk(i,j,k)
+                   
                 END DO
              END DO
           END DO
