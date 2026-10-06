@@ -1205,9 +1205,6 @@ CONTAINS
                         & .FALSE., &
                         & const_real_null &
                         & )
-
-print*,i,j,k,int_carbisor_timeslice(ici_CO2_r13C,i,j,k),int_carb_timeslice(ic_conc_CO2,i,j,k),loc_ijk(i,j,k)
-                   
                 END DO
              END DO
           END DO
