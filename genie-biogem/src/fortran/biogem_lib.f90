@@ -446,14 +446,14 @@ MODULE biogem_lib
   CHARACTER(len=63)::opt_biogem_fragmentation
   real::MWc,MWcaco3,MWsio2,MWdust,alpha_omc,rho_om,rho_caco3,rho_opal,rho_dust
   real::SSA_calcSm,SSA_calcLg,SSA_arag
-  real::r_sm,r_lg,phi_sm,phi_lg,k_POC,aE,remin_Tref,K_O2,e_arag
+  real::r_sm,r_lg,phi_sm,phi_lg,k_POC_aerob,k_POC_anaerob,aE,remin_Tref,K_O2,e_arag
   real::n_calcUp,k_calcUp_ex,n_calcLow,k_calcLow_ex,n_arag
   real::k_arag,rresxcal,rresmcal,rresxarag,rresmarag,a_pom_frac2
   real::k_maxfrag,k_fragPOC,k_sigmaL,k_pocfrac2,sigmaD
   NAMELIST /ini_biogem_nml/opt_biogem_particles,opt_biogem_fragmentation
   NAMELIST /ini_biogem_nml/MWc,MWcaco3,MWsio2,MWdust,alpha_omc,rho_om
   NAMELIST /ini_biogem_nml/rho_caco3,rho_opal,rho_dust,SSA_calcSm,SSA_calcLg,SSA_arag,r_sm,r_lg
-  NAMELIST /ini_biogem_nml/phi_sm,phi_lg,k_POC,aE,remin_Tref,K_O2,e_arag,n_calcUp
+  NAMELIST /ini_biogem_nml/phi_sm,phi_lg,k_POC_aerob,k_POC_anaerob,aE,remin_Tref,K_O2,e_arag,n_calcUp
   NAMELIST /ini_biogem_nml/k_calcUp_ex,n_calcLow,k_calcLow_ex,n_arag
   NAMELIST /ini_biogem_nml/k_arag,rresxcal,rresmcal,rresxarag,rresmarag,a_pom_frac2
   NAMELIST /ini_biogem_nml/k_maxfrag,k_fragPOC,k_sigmaL,k_pocfrac2,sigmaD

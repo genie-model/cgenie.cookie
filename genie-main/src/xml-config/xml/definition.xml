@@ -5099,7 +5099,11 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
 			<value datatype="real">0.0</value>
                         <description>POM fraction 2 of export</description>
                     </param>
-                    <param name="k_POC">
+                    <param name="k_POC_aerob">
+			<value datatype="real">0.000001389</value>
+                        <description>remineralization rate constant (s-1)</description>
+                    </param>
+                    <param name="k_POC_anaerob">
 			<value datatype="real">0.000001389</value>
                         <description>remineralization rate constant (s-1)</description>
                     </param>
