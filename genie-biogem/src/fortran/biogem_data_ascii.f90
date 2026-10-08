@@ -4014,7 +4014,7 @@ CONTAINS
                & ' mol yr-1'
           Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
                & '                                            : ',          &
-               & 14.0*2.0*1.0E-12*loc_tot,  &
+               & 14.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 NO3       '
        end if
        if (ocn_select(io_NH4)) then
@@ -4043,6 +4043,16 @@ CONTAINS
                & 14.0*2.0*1.0E-12*loc_tot,  &
                & ' Tg N yr-1 N2        '
        end if
+       ! ----------------------------------------------------------- ! PON export
+       loc_tot = SUM(int_bio_settle_timeslice(is_PON,:,:,n_k))/int_t_timeslice
+       Write(unit=out,fmt='(A46,E15.7,A10)',iostat=ios)             &
+            & ' Global PON export flux ................... : ',    &
+            & loc_tot,                                 &
+            & ' mol yr-1'
+       Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
+            & '                                            : ',          &
+            & 14.0*1.0E-12*loc_tot,  &
+            & ' Tg N yr-1 PON       '
        ! -------------------------------------------------------- ! WATER COLUMN AND SEDIMENTARY REDOX TRANSFORMATIONS
        if (ctrl_bio_remin_redox_save) then
           ! -------------------------------------------------------- ! NH4 oxidation

@@ -72,9 +72,9 @@ CONTAINS
           CASE ('Ozaki')
              ! from: Ozaki et al. [EPSL ... ?]
              loc_NH4_oxidation = dum_dtyr*(18250.0/conv_m3_kg)*loc_NH4*loc_O2
-          CASE ('Monteiro')
+          CASE ('Naafs2019')
 	     ! Second order equation of enzyme kinetics which accounts for both O2 and NH4 limitations on nitrification
-             ! NOTE: this scheme was used in 2019 PNAS paper (but only in the svn, not git repository code version)
+             ! NOTE: this scheme was used in Naafs et al. 2019 PNAS paper (but only in the svn, not git repository code version)
              loc_potO2cap = ocn(io_O2,dum_i,dum_j,k) + bio_remin(io_O2,dum_i,dum_j,k)
              loc_NH4_oxidation = dum_dtyr*par_nitri_mu*loc_NH4*loc_potO2cap &
                   & /(par_nitri_c0_NH4*par_nitri_c0_O2 +par_nitri_c0_O2*loc_NH4 &
@@ -83,8 +83,9 @@ CONTAINS
              If (loc_NH4_oxidation > min(loc_NH4,loc_potO2cap*par_bio_red_POP_PON/(-par_bio_red_POP_PO2))) then
                 loc_NH4_oxidation = min(loc_NH4,loc_potO2cap*loc_potO2cap*par_bio_red_POP_PON/(-par_bio_red_POP_PO2))
              end if
-          CASE ('Monteiro2')
+          CASE ('Naafs2019NEW')
 	     ! Second order equation of enzyme kinetics which accounts for both O2 and NH4 limitations on nitrification
+	     ! From Naafs et al. [2019] corrected for stoichiometry (0.5*O2) and loc_O2
              loc_NH4_oxidation = dum_dtyr*par_nitri_mu*min(loc_NH4,0.5*loc_O2)* &
                   & loc_NH4*loc_O2/ &
                   & (par_nitri_c0_NH4*par_nitri_c0_O2 + par_nitri_c0_O2*loc_NH4 + par_nitri_c0_NH4*loc_O2 + loc_NH4*loc_O2)
@@ -110,35 +111,25 @@ CONTAINS
              loc_NH4_oxidation = min(loc_NH4,0.5*loc_O2)
           end select
           ! cap NH4 oxidation and O2 consumption
-          ! NOTE: omitt reaction rate limitation term for 2019 PNAS paper compatability (CASE ('Monteiro'))
+          ! NOTE: omitt reaction rate limitation term for 2019 PNAS paper compatability (CASE ('Naafs2019'))
           SELECT CASE (opt_bio_remin_oxidize_NH4toNO3)
-          CASE ('Monteiro')
+          CASE ('Naafs2019')
              ! (nothing)
           case default
              loc_NH4_oxidation = min(loc_NH4_oxidation,loc_f*loc_NH4,loc_f*0.5*loc_O2)
           end select
-          ! isotopic fractionation
-          ! NOTE: currently, becasue the reaction has already been limited by factor loc_f,
-          !       Rayleigh fractionation will *ALWAYS* occur
-          ! calculate isotopic ratio (loc_NH4 is already tested for being > 0)
-          loc_r15N = ocn(io_NH4_15N,dum_i,dum_j,k)/loc_NH4
-          if (loc_NH4_oxidation > loc_NH4) then
-             ! complete NH4 oxidation (no N fractionation)
-             loc_bio_remin(io_NH4,k) = -loc_NH4
-             loc_bio_remin(io_NO3,k) = loc_NH4
-             loc_bio_remin(io_O2,k)  = -2.0*loc_NH4
-             loc_bio_remin(io_ALK,k) = loc_bio_remin(io_NH4,k) - loc_bio_remin(io_NO3,k)
-             loc_bio_remin(io_NH4_15N,k) = -loc_r15N*loc_NH4
-             loc_bio_remin(io_NO3_15N,k) = loc_r15N*loc_NH4
-          else
-             ! partial NH4 oxidation (=> N isotope Rayleigh fractionation)
-             loc_bio_remin(io_NH4,k) = -loc_NH4_oxidation
-             loc_bio_remin(io_NO3,k) = loc_NH4_oxidation
-             loc_bio_remin(io_O2,k)  = -2.0*loc_NH4_oxidation
-             loc_bio_remin(io_ALK,k) = loc_bio_remin(io_NH4,k) - loc_bio_remin(io_NO3,k)
+          ! bulk tracer conversion
+          loc_bio_remin(io_NH4,k) = -loc_NH4_oxidation
+          loc_bio_remin(io_NO3,k) = loc_NH4_oxidation
+          loc_bio_remin(io_O2,k)  = -2.0*loc_NH4_oxidation
+          loc_bio_remin(io_ALK,k) = loc_bio_remin(io_NH4,k) - loc_bio_remin(io_NO3,k)
+          ! calculate isotopic fractionation
+          ! NOTE: we already know that loc_NH4 is non-zero
+          if (ocn_select(io_NH4_15N) .AND. ocn_select(io_NO3_15N)) then
+             loc_r15N = ocn(io_NH4_15N,dum_i,dum_j,k)/loc_NH4
              ! ### INSERT ALTERNATIVE CODE FOR NON-ZERO N FRACTIONATION ########################################################## !
-             loc_bio_remin(io_NH4_15N,k) = -loc_r15N*loc_NH4_oxidation
-             loc_bio_remin(io_NO3_15N,k) = loc_r15N*loc_NH4_oxidation
+             loc_bio_remin(io_NH4_15N,k) = loc_r15N*loc_bio_remin(io_NH4,k)
+             loc_bio_remin(io_NO3_15N,k) = loc_r15N*loc_bio_remin(io_NO3,k)
              ! ################################################################################################################### !
           end if
        end if
@@ -154,9 +145,6 @@ CONTAINS
     ! -------------------------------------------------------- !
     ! DIAGNOSTICS
     ! -------------------------------------------------------- !
-    ! -------------------------------------------------------- ! record diagnostics (mol kg-1) OLD
-    diag_geochem_old(idiag_geochem_old_ammox_dNH4,dum_i,dum_j,:) = loc_bio_remin(io_NH4,:)
-    diag_geochem_old(idiag_geochem_old_ammox_dNO3,dum_i,dum_j,:) = loc_bio_remin(io_NO3,:)
     ! -------------------------------------------------------- ! record diagnostics (mol kg-1)
     id = fun_find_str_i('redox_NH4toNO3_dNH4',string_diag_redox)
     diag_redox(id,dum_i,dum_j,:) = loc_bio_remin(io_NH4,:)
