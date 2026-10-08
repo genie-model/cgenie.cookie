@@ -88,11 +88,11 @@ echo ">> Checking parameters ..."
 #
 # NOTE: deal with ".config" being accidently included in the run command
 #
-if test -e $CONFIGPATH/$MODELID
-then
+CONFIGEXT=${MODELID: -7}
+if [[ "$CONFIGEXT" == ".config" ]]; then
     echo "   #0 Removing .config from base configuration name (before adding it back again later ...): "
     echo $MODELID
-    MODELID=${MODELID::-7}
+    MODELID=${MODELID:: -7}
 fi
 if test -e $CONFIGPATH/$MODELID".config"
 then
@@ -385,23 +385,28 @@ echo ""
 echo ">> Here we go ..."
 echo ""
 cd $BINARYPATH
+# extract number of tracers -- generalized by Gemini
+#TRACERS=$(grep -o '$(DEFINE)GOLDSTEINNTRACS=..\>' $CONFIGPATH/$MODELID".config" | sed -e s/.*=//)
+TRACERS=$(grep -v '^[[:space:]]*#' $CONFIGPATH/$MODELID".config" | grep -o '$(DEFINE)GOLDSTEINNTRACS=[0-9]\+' | sed -e 's/.*=//' | tr -d '\r' | head -n 1)
+# create array size #
+ndim="$(echo "$LONS*$LATS*$LEVS*$TRACERS" | bc -l)"
 # test for change of base-config
-if test -e 'current_config.dat' 
+if test -e 'cookie.current_grid_size.txt' 
 then
-    current_config=$(<'current_config.dat')
-    if [ "$current_config" != "$MODELID" ]; then
-        echo ">> Use of different base-config detected, so ... (make cleanall) ..."
+    cookie_n=$(<'cookie.current_grid_size.txt')
+    if [ "$cookie_n" != "$ndim" ]; then
+        echo ">> Use of different ocean array size detected, so ... (make cleanall) ..."
         echo ""
         sleep 2
         make cleanall
-        echo "$MODELID" > 'current_config.dat'
+        echo "$ndim" > 'cookie.current_grid_size.txt'
     fi
 else
-    echo ">> WARNING: No record of last base-config (file: current_config.dat): CONTINUING ..."
+    echo ">> WARNING: No record of last ocean array size used (file: cookie.current_grid_size.txt): CONTINUING ..."
     echo ""
     sleep 4
     make cleanall
-    echo "$MODELID" > 'current_config.dat'
+    echo "$ndim" > 'cookie.current_grid_size.txt'
 fi
 ./genie_example.job -O -f $CONFIGPATH/$CONFIGNAME
 # ---------------------------------

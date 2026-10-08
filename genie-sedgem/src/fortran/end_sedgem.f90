@@ -42,6 +42,7 @@ SUBROUTINE end_sedgem( &
   loc_dtyr = loc_dts/conv_yr_s
   ! save diagnostics
   call sub_data_save_seddiag_GLOBAL(loc_dtyr,dum_sfcsumocn,dum_SLT)
+  call sub_data_save_seddiag_burial(loc_dtyr)
   ! save final oecan-sediment interface properties
   ! NOTE: netCDF was set up to be able to save multiple time-slices, but is only being used here to save a single final slice
   call sub_save_netcdf(const_real_zero)
@@ -71,6 +72,8 @@ SUBROUTINE end_sedgem( &
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_mask_muds,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_mask_dsea,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_mask_hydr,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed,STAT=dealloc_error)
@@ -94,6 +97,8 @@ SUBROUTINE end_sedgem( &
   DEALLOCATE(sed_carbisor,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_save_mask,STAT=dealloc_error)
+  call check_iostat(dealloc_error,__LINE__,__FILE__)
+  DEALLOCATE(sed_save_n,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)
   DEALLOCATE(sed_fsed_OLD,STAT=dealloc_error)
   call check_iostat(dealloc_error,__LINE__,__FILE__)

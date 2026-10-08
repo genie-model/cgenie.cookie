@@ -1202,7 +1202,11 @@ CONTAINS
        select case (opt_bio_CaCO3toPOCrainratio)
        case ('prescribed')
           ! fixed, spatially explicit
-          bio_part_red(is_POC,is_CaCO3,dum_i,dum_j) = (1.0 - loc_bio_red_DOMtotal)*par_bio_CaCO3toPOCrainratio(dum_i,dum_j)
+          ! NOTE: added par_bio_red_POC_CaCO3 modiier so that global CaCo3 production can be scaled
+          !       the value of par_bio_red_POC_CaCO3 has been changed in the xml to 1.0 by default
+          !       and so this scaling addition should not impact existing experiment configs
+          bio_part_red(is_POC,is_CaCO3,dum_i,dum_j) = (1.0 - loc_bio_red_DOMtotal)* &
+               & par_bio_red_POC_CaCO3*par_bio_CaCO3toPOCrainratio(dum_i,dum_j)
        case ('Heinze2004')
           ! Heinze [2004] saturation dependent parameterization
           ! NOTE: par_bio_red_POC_CaCO3_CO2aqREF in (umol kg-1)
@@ -1509,7 +1513,7 @@ CONTAINS
        bio_part_red(is_POFe,is_POFe_56Fe,dum_i,dum_j) = loc_r56Fe
     end if
     ! ---------------------------------------------------------- !
-    ! carbon isotopes in CaCO3
+    ! isotopes in CaCO3
     ! ---------------------------------------------------------- !
     ! d13C [CaCO3]
     if (sed_select(is_CaCO3_13C)) then
@@ -1545,7 +1549,9 @@ CONTAINS
        end select
        bio_part_red(is_CaCO3,is_CaCO3_44Ca,dum_i,dum_j) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)
     end if
-    !
+    ! ---------------------------------------------------------- !
+    ! isotopes in opal
+    ! ---------------------------------------------------------- !
     ! d30Si [opal]
     if (sed_select(is_opal_30Si)) then
        if (ocn(io_SiO2,dum_i,dum_j,n_k) > const_real_nullsmall) then
@@ -1558,7 +1564,9 @@ CONTAINS
        loc_R = loc_r30Si/(1.0 - loc_r30Si)
        bio_part_red(is_opal,is_opal_30Si,dum_i,dum_j) = loc_alpha*loc_R/(1.0 + loc_alpha*loc_R)
     end if
-    !
+    ! ---------------------------------------------------------- !
+    ! isotopes in POM
+    ! ---------------------------------------------------------- !
     ! d114Cd [POCd]
     if (sed_select(is_POCd_114Cd)) then
        ! calculate 114/???Cd fractionation between Cd and POCd
@@ -2317,7 +2325,7 @@ CONTAINS
                    loc_frac    = loc_ocn(io_DIC_14C)
                    loc_d14Cocn = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
                    bio_remin(io,dum_i,dum_j,n_k) = &
-                        & const_lamda_14C_libby*log( (loc_d14Catm+1000.0)/(loc_d14Cocn+1000.0) ) - loc_ocn(io)
+                        & (1.0/const_lambda_14C_libby)*log( (loc_d14Catm+1000.0)/(loc_d14Cocn+1000.0) ) - loc_ocn(io)
                 else
                    bio_remin(io,dum_i,dum_j,n_k) = 0.0 - loc_ocn(io)                  
                 end if
@@ -2337,10 +2345,14 @@ CONTAINS
   ! ****************************************************************************************************************************** !
   ! CALCULATE ABIOTIC CaCO3 PRECIP
   SUBROUTINE sub_calc_precip_CaCO3(dum_i,dum_j,dum_k1,dum_dt)
-    ! dummy arguments
+    ! -------------------------------------------------------- !
+    ! DUMMY ARGUMENTS
+    ! -------------------------------------------------------- !
     INTEGER,INTENT(in)::dum_i,dum_j,dum_k1
     real,intent(in)::dum_dt
-    ! local variables
+    ! -------------------------------------------------------- !
+    ! DEFINE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
     INTEGER::k,l,io,is
     integer::loc_i,loc_tot_i
     real,dimension(n_ocn,n_k)::loc_bio_uptake
@@ -2348,11 +2360,12 @@ CONTAINS
     real::loc_ohm
     real::loc_delta_CaCO3
     real::loc_alpha
-    real::loc_R,loc_r7Li
+    real::loc_R,loc_r7Li,loc_r44Ca
     integer::loc_kmax
-
-    ! *** INITIALIZE VARIABLES ***
-    ! initialize remineralization tracer arrays
+    ! -------------------------------------------------------- !
+    ! INITIALIZE LOCAL VARIABLES
+    ! -------------------------------------------------------- !
+    ! -------------------------------------------------------- ! initialize remineralization tracer arrays
     DO l=3,n_l_ocn
        io = conv_iselected_io(l)
        loc_bio_uptake(io,:) = 0.0
@@ -2361,14 +2374,15 @@ CONTAINS
        is = conv_iselected_is(l)
        loc_bio_part(is,:) = 0.0
     end DO
-    ! restrict abiotic precipitation to the surface if requested
+    ! -------------------------------------------------------- ! restrict abiotic precipitation to the surface if requested
     if (ctrl_bio_CaCO3precip_sur) then
        loc_kmax = n_k
     else
        loc_kmax = dum_k1
     end if
-
-    ! *** CALCULATE CaCO3 PRECIPITATION ***
+    ! -------------------------------------------------------- !
+    ! CALCULATE CaCO3 PRECIPITATION
+    ! -------------------------------------------------------- !
     DO k=n_k,loc_kmax,-1
        ! re-calculate carbonate dissociation constants
        CALL sub_calc_carbconst(                 &
@@ -2418,9 +2432,23 @@ CONTAINS
        else
           loc_ohm = carb(ic_ohm_arg,dum_i,dum_j,k)
        end if
-       if (loc_ohm > par_bio_CaCO3precip_abioticohm_min) then
+       ! make precipitation!
+       if (ctrl_force_CaCO3export) then
+          ! prescribed CaCO3 precip (export)
+          ! NOTE: netCDF output is units of mol m-2 yr-1
+          !       but units of loc_bio_part are mol kg-1 yr-1
+          !       => divide by layer depth (m-2 -> m-3) and then by density (m-3 -> kg-1)
+          ! NOTE: surface ocean layer only
+          loc_bio_part(is_CaCO3,n_k) = &
+               & dum_dt*par_bio_CaCO3export(dum_i,dum_j)/phys_ocn(ipo_dD,dum_i,dum_j,n_k)/conv_m3_kg
+       elseif (loc_ohm > par_bio_CaCO3precip_abioticohm_min) then
+          ! abiotic precip
+          ! NOTE: the units of loc_bio_part will be mol kg-1 yr-1
+          !       e.g., if par_bio_CaCO3precip_exp=0.0 then
+          !             par_bio_CaCO3precip_sf will be mol CaCO3 kg-1 yr-1 where-ever loc_ohm > par_bio_CaCO3precip_abioticohm_min
+          !       e.g., par_bio_CaCO3precip_sf=10.0E-6 would remove 10 uM DIC, Ca per year from the ocean surface
           loc_bio_part(is_CaCO3,k) = &
-               & dum_dt*par_bio_CaCO3precip_sf*(par_bio_CaCO3precip_abioticohm_min - 1.0)**par_bio_CaCO3precip_exp
+               & dum_dt*par_bio_CaCO3precip_sf*(loc_ohm - par_bio_CaCO3precip_abioticohm_min)**par_bio_CaCO3precip_exp
        else
           loc_bio_part(is_CaCO3,k) = 0.0
        end if
@@ -2428,7 +2456,7 @@ CONTAINS
        if (sed_select(is_CaCO3_13C)) then
           ! re-calculate carbonate system isotopic properties
           if (ocn_select(io_DIC_13C)) then
-             call sub_calc_carb_r13C(           &
+             call sub_calc_carb_r13C(              &
                   & ocn(io_T,dum_i,dum_j,k),       &
                   & ocn(io_DIC,dum_i,dum_j,k),     &
                   & ocn(io_DIC_13C,dum_i,dum_j,k), &
@@ -2461,6 +2489,25 @@ CONTAINS
           loc_R = carbisor(ici_HCO3_r14C,dum_i,dum_j,n_k)/(1.0 - carbisor(ici_HCO3_r14C,dum_i,dum_j,n_k))
           loc_bio_part(is_CaCO3_14C,k) = (loc_alpha*loc_R/(1.0 + loc_alpha*loc_R))*loc_bio_part(is_CaCO3,k)
        end if
+       ! d44Ca
+       if (sed_select(is_CaCO3_44Ca)) then
+          ! calculate 44Ca/40Ca fractionation between Ca and CaCO3
+          loc_r44Ca = ocn(io_Ca_44Ca,dum_i,dum_j,k)/ocn(io_Ca,dum_i,dum_j,k)
+          loc_R = loc_r44Ca/(1.0 - loc_r44Ca)
+          SELECT CASE (opt_d44Ca_Ca_CaCO3)
+          CASE ('Fantle')
+             ! D44Ca_calcite-Ca(aq) = -0.066649·omega_calcite - 0.320614
+             loc_alpha = 1.0 + (-0.066649*loc_ohm - 0.320614)/1000.0
+          CASE ('Komar')
+             ! D44Ca_calcite-Ca(aq) = −(1.31 ± 0.12) + (3.69 ± 0.59) [CO2−3](mmol/kg)
+             ! NOTE: here, [CO32-] converted from mmol kg-1 to umol kg-1
+             loc_alpha = 1.0 + (-1.31 + 3.69*carb(ic_conc_CO3,dum_i,dum_j,k)*1.0E3)/1000.0
+          case default
+             ! fixed fractionation
+             loc_alpha = 1.0 + par_d44Ca_CaCO3_epsilon/1000.0
+          end select
+          loc_bio_part(is_CaCO3_44Ca,k) = (loc_alpha*loc_R/(1.0 + loc_alpha*loc_R))*loc_bio_part(is_CaCO3,k)
+       end if
        ! Li
        if (ocn_select(io_Li) .AND. ocn_select(io_Ca)) then
           loc_bio_part(is_LiCO3,k) = &
@@ -2491,19 +2538,23 @@ CONTAINS
           end do
        end DO
     end DO
-
-    ! *** SET MODIFICATION OF TRACER CONCENTRATIONS ***
+    ! -------------------------------------------------------- !
+    ! SET MODIFICATION OF TRACER CONCENTRATIONS
+    ! -------------------------------------------------------- !
     DO l=3,n_l_ocn
        io = conv_iselected_io(l)
        bio_remin(io,dum_i,dum_j,:) = bio_remin(io,dum_i,dum_j,:) - loc_bio_uptake(io,:)
     end do
-
-    ! *** SET MODIFICATION OF PARTICULATE CONCENTRATIONS ***
-    DO l=3,n_l_sed
+    ! -------------------------------------------------------- !
+    ! SET MODIFICATION OF PARTICULATE CONCENTRATIONS
+    ! -------------------------------------------------------- !
+    DO l=1,n_l_sed
        is = conv_iselected_is(l)
        bio_part(is,dum_i,dum_j,:) = bio_part(is,dum_i,dum_j,:) + loc_bio_part(is,:)
     end DO
-
+    ! -------------------------------------------------------- !
+    ! END
+    ! -------------------------------------------------------- !
   end SUBROUTINE sub_calc_precip_CaCO3
   ! ****************************************************************************************************************************** !
 

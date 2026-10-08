@@ -1346,9 +1346,9 @@ CONTAINS
     ! RETURN FUNCTION VALUE
     ! -------------------------------------------------------- !
     ! NOTE: == ((loc_conc_CO2-dum_carb(ic_conc_CO2)/dum_carb(ic_conc_CO2)) / ((loc_DIC_RFO-dum_DIC)/dum_DIC)
-    ! test for issues ... set RF0 to zero (which will result in no air-sea gas exchange) if there is an issue
+    ! test for issues ... DO NOT UPDATE RF0 (set to existing value) if there is an issue
     if (loc_carb(ic_err) > const_real_nullsmall) then
-       fun_calc_carb_RF0 = 0.0
+       fun_calc_carb_RF0 = dum_carb(ic_RF0)
     else
        fun_calc_carb_RF0 = (loc_carb(ic_conc_CO2)/loc_conc_CO2 - 1.0)/(loc_DIC_RFO/dum_DIC - 1.0)
     end if
@@ -1365,7 +1365,7 @@ CONTAINS
 
   
   ! ****************************************************************************************************************************** !
-  ! CALCULATE pCO2 SENSITIVITY FACOR
+  ! CALCULATE pCO2 SENSITIVITY FACTOR
   ! NOTE: as per the previous fun_calc_carb_RF0_SF0
   ! NOTE: carb chem is re-solved at the outset to the same accuracy as needed for the perturbation
   function fun_calc_carb_SF0( &
