@@ -888,10 +888,21 @@ c climatological albedo (similar to Weaver et al. 2001)
 c AR/080930 : modified climatological albedo for greater flexibility
 c             and to fit HadCM3 predictions
 c AR/170320 : added option of reading-from-file
+c AR/261020 : added 2D reading-from-file
       if (debug_init) print*,'climatological albedo, by latitude'
-      if (par_albedo2d_name.ne.'NONE') then   
-c 2D ABLEDO    
-c          ccc NOTHING SO FAR cccccccccccccccccccccccccccccccccccccccc
+      if (par_albedo2d_name.ne.'NONE') then 
+c 2D ABLEDO      
+c        read 2D abledo from file
+         if (debug_init) print *, 'reading in 2D albedo file'
+         call check_unit(13,__LINE__,__FILE__)
+         open(13,file=indir_name(1:lenin)//
+     &     trim(par_albedo2d_name),iostat=ios)
+         call check_iostat(ios,__LINE__,__FILE__)
+         do j=jmax,1,-1
+            read(13,*,iostat=ios)(albcl(i,j),i=1,imax)
+            call check_iostat(ios,__LINE__,__FILE__)
+         enddo
+         close(13,iostat=ios)
       elseif (par_albedo1d_name.ne.'NONE') then    
 c ZONAL (1D) ABLEDO   
 c         read zonal abledo from file 
