@@ -22,7 +22,7 @@ ea_radfor_scl_co2=1.0
 # e.g., bg_par_bio_prodopt='NONE' -> no biologial export scheme (or ECOGEM will be used)
 bg_par_bio_prodopt='NONE'
 #
-# *** DATA SAVING ***************************************************
+# *** DATA SAVING ******************************************************
 #
 # SPECIFY WHAT TO SAVE!
 # NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!

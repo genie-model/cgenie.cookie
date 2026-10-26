@@ -3187,8 +3187,14 @@ CONTAINS
           SELECT CASE (ic)
           CASE (ic_pHsws)
              loc_unitsname = 'pH(sws)'           
-          CASE (ic_ohm_cal,ic_ohm_arg,ic_RF0,ic_RdDICdALK,ic_RdfCO2dDIC,ic_RdALKdDIC,ic_pH_n,ic_err)  
+          CASE (ic_ohm_cal,ic_ohm_arg,ic_RF0,ic_pH_n,ic_err)  
              loc_unitsname = 'n/a' 
+          CASE (ic_RdDICdALK)  
+             loc_unitsname = 'mol DIC mol-1 ALK' 
+          CASE (ic_RdALKdDIC)  
+             loc_unitsname = 'mol ALK mol-1 DIC' 
+          CASE (ic_RdfCO2dDIC)  
+             loc_unitsname = 'atm pCO2 mol-1 DIC' 
           case default
              loc_unitsname = 'mol kg-1'
           end SELECT
