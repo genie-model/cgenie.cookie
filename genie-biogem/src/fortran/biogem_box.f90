@@ -6021,7 +6021,7 @@ CONTAINS
 
       enddo    
 
-      ! Fragmentation of large particles
+      ! Fragmentation of large particles - affects only POC_frag1 for now
       select case (trim(opt_biogem_fragmentation))
       case ('briggs')
          kfrag = min(0.27/(24.*60*60)*exp(-0.0024*zk)*min((zbm1-zb)/w_up(2), dum_dtyr*conv_yr_s),1.)
@@ -6035,12 +6035,12 @@ CONTAINS
       kfrag_POC(2) = -kfrag*fpomz(2)
       kfrag_POC2(1) = 0.0
       kfrag_POC2(2) = 0.0
-      kfrag_Calc(1) = kfrag*fcalz(2)
-      kfrag_Calc(2) = -kfrag*fcalz(2)
-      kfrag_Arag(1) = kfrag*faragz(2)
-      kfrag_Arag(2) = -kfrag*faragz(2)
-      kfrag_opal(1) = kfrag*fopz(2)
-      kfrag_opal(2) = -kfrag*fopz(2)
+      kfrag_Calc(1) = 0.0
+      kfrag_Calc(2) = 0.0
+      kfrag_Arag(1) = 0.0
+      kfrag_Arag(2) = 0.0
+      kfrag_opal(1) = 0.0
+      kfrag_opal(2) = 0.0
 
       do l=1,2
   !      residence time (s), limit at time step length
