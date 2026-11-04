@@ -3846,7 +3846,7 @@ CONTAINS
                & ))/int_t_timeslice
           If (flag_sedgem) then
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
-                  & ' Global O2 consumtpion rate (POM, DOM) .... : ',            &
+                  & ' Global O2 consumtpion (C+P in POM, DOM) .. : ',          &
                   & -loc_tot_POM,-loc_tot_DOM,                                 &
                   & ' mol yr-1',' (water-column only)                      '
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
@@ -3859,7 +3859,7 @@ CONTAINS
                   & ' Tmol yr-1 O2 TOTAL '
           else
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
-                  & ' Global O2 consumtpion rate (POM+DOM) ..... : ',          &
+                  & ' Global O2 consumtpion (C+P in POM, DOM) .. : ',          &
                   & -loc_tot_POM,-loc_tot_DOM, &
                   & ' mol yr-1',' (including reflective boundary condition)'
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
@@ -3881,7 +3881,7 @@ CONTAINS
                & ))/int_t_timeslice
           If (flag_sedgem) then
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
-                  & ' Global NO3 consumtpion rate (POM, DOM) ... : ',          &
+                  & ' Global NO3 consumtpion (C+P in POM, DOM) . : ',          &
                   & -loc_tot_POM,-loc_tot_DOM, &
                   & ' mol yr-1',' (water-column only)                      '
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)          &
@@ -3894,7 +3894,7 @@ CONTAINS
                   & ' Tmol yr-1 NO3 TOTAL'
           else
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)             &
-                  & ' Global NO3 consumtpion rate (POM, DOM) ... : ',    &
+                  & ' Global NO3 consumtpion (C+P in POM, DOM) . : ',          &
                   & -loc_tot_POM,-loc_tot_DOM,                                 &
                   & ' mol yr-1',' (including reflective boundary condition)'
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                   &
@@ -3916,7 +3916,7 @@ CONTAINS
                & ))/int_t_timeslice
           If (flag_sedgem) then
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
-                  & ' Global SO4 consumtpion rate (POM, DOM) ... : ',         &
+                  & ' Global SO4 consumtpion (C+P in POM, DOM) . : ',         &
                   & -loc_tot_POM,-loc_tot_DOM, &
                   & ' mol yr-1',' (water-column only)                      '
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
@@ -3929,7 +3929,7 @@ CONTAINS
                   & ' Tmol yr-1 SO4 TOTAL'
           else
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
-                  & ' Global SO4 consumtpion rate (POM, DOM) ... : ',         &
+                  & ' Global SO4 consumtpion (C+P in POM, DOM) . : ',         &
                   & -loc_tot_POM,-loc_tot_DOM, &
                   & ' mol yr-1',' (including reflective boundary condition)'
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
@@ -3951,7 +3951,7 @@ CONTAINS
                & ))/int_t_timeslice
           If (flag_sedgem) then
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
-                  & ' Global CH4 production rate (POM, DOM) .... : ',         &
+                  & ' Global CH4 production (C+P in POM, DOM) .. : ',         &
                   & loc_tot_POM,loc_tot_DOM, &
                   & ' mol yr-1',' (water-column only)                      '
              Write(unit=out,fmt='(A46,E15.7,A15,A10,A42)',iostat=ios)         &
@@ -3964,7 +3964,7 @@ CONTAINS
                   & ' Tmol yr-1'
           else
              Write(unit=out,fmt='(A46,2E15.7,A10,A42)',iostat=ios)            &
-                  & ' Global CH4 production rate (POM, DOM) .... : ',         &
+                  & ' Global CH4 production (C+P in POM, DOM) .. : ',         &
                   & loc_tot_POM,loc_tot_DOM, &
                   & ' mol yr-1',' (including reflective boundary condition)'
              Write(unit=out,fmt='(A46,F9.3,A20)',iostat=ios)                  &
