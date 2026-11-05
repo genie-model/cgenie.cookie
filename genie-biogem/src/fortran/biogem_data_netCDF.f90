@@ -3803,7 +3803,7 @@ CONTAINS
 !!$            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
 !!$       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! ------------------------------------------------------------- ! (6) percentatges -- sulphate reduction
-       if (ocn_select(io_NO3)) then
+       if (ocn_select(io_SO4)) then
           loc_unitsname = '%'
           loc_shortname = 'biop_wcint_reminfrac_POCbySO4'
           loc_longname  = '% of total water-column POC remineralized via sulphate reduction' 
