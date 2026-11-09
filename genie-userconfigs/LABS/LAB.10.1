@@ -1,5 +1,4 @@
 # **********************************************************************
-# adapted from:	muffin.CBSR.p_worbe2.BASES.RidgwellHargreaves1997_S36x36.SPIN2
 # base-config: 	cookie.CBSR.p_worbe2.BASES
 # **********************************************************************
 #
@@ -156,16 +155,9 @@ bg_ctrl_ncout_expid_name=.false.
 # *** FORCINGS *********************************************************
 #
 # SPEFICY ANY FORCINGS OF OCEAN/ATMOSPHERE/SEDIMENTS
-# specify a flux of CO2 to atmosphere (and assign it an isotopic composition) PLUS a non-carbonate (detrital) flux (to the sediments)
+# specify forcings -- ONLY apply a non-carbonate (detrital) flux (to the sediments)
 # NOTE: now allow pCO2 to freely evolve -- its final value should be similar to its initial value if the CaCO3 cycle has been balanaced correctly
-bg_par_forcing_name="worbe2.FpCO2_Fp13CO2_PgC.detplusopalSED"
-# SCALE THE FORCING 
-# NOTE: bg_par_atm_force_scale_val_3 is the flux in PgC
-# NOTE: bg_par_atm_force_scale_time_3 is the duration of emissions in years
-bg_par_atm_force_scale_val_3=0.0
-bg_par_atm_force_scale_time_3=1.0
-# (isotopic composition of emissions)
-bg_par_atm_force_scale_val_4=-27.0
+bg_par_forcing_name="worbe2.detplusopalSED"
 #
 # *** MISC *************************************************************
 #
