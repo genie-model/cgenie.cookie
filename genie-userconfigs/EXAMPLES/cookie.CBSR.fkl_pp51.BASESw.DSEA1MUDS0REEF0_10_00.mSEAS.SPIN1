@@ -62,6 +62,22 @@ bg_par_bio_remin_sinkingrate_reaction=125.0
 # maximum time-scale to geochemical reaction completion (days)
 bg_par_bio_geochem_tau=45.0
 #
+# *** SEDIMENTS - GENERAL **********************************************
+#
+# REDOX CONFIGURATION
+# add redox-dependent SEDGEM remin
+sg_ctrl_sed_conv_sed_ocn_old=.false.
+# DETRITAL FLXUES
+# generic paleo detrital flux (g cm-2 kyr-1)
+# NOTE: set to zero when applying a dust field (unless an additional detrital flux is required)
+# set mean modern non-carbonate ('detrital' flux) (g cm-2 kyr-1)
+sg_par_sed_fdet=0.309
+# SEDCORES
+# configure some sediment cores ... 
+sg_par_sedcore_save_mask_name='fkl_pp51.sedcoremask.dsea_transect.txt'
+# increase number of internal array sedcore layers (from 10 x run duration to 20x run duration (kyr))
+sg_par_n_sedcore_tot_perky=20
+#
 # *** SEDIMENTS - DEEP-SEA *********************************************
 #
 # SEDIMENT TOPO
@@ -75,12 +91,6 @@ sg_par_sed_diagen_CaCO3opt="ridgwell2001lookup"
 # bioturbation
 # NOTE: turn OFF bioturbation to equilibriate the system faster
 sg_ctrl_sed_bioturb=.FALSE.
-# generic paleo detrital flux (g cm-2 kyr-1)
-# NOTE: set to zero when applying a dust field (unless an additional detrital flux is required)
-# set mean modern non-carbonate ('detrital' flux) (g cm-2 kyr-1)
-sg_par_sed_fdet=0.309
-# add redox-dependent SEDGEM remin
-sg_ctrl_sed_conv_sed_ocn_old=.false.
 #
 # *** SEDIMENTS - MUDS *************************************************
 #
@@ -132,9 +142,6 @@ bg_par_infile_slice_name='save_timeslice_NONE.dat'
 # SPECIFY USE OF MORE EXPLICIT (EXPERIMENT NAME BASED) netCDF FILENAMES
 # e.g., bg_ctrl_ncout_expid_name=.false. -> assign default (short) netCDF filenames
 bg_ctrl_ncout_expid_name=.false.
-# DEFINE SEDCORE LOCATIONS (IF ANY) TO SAVE AT
-# configure some sediment cores ... 
-sg_par_sedcore_save_mask_name='fkl_pp51.sedcoremask.dsea_transect.txt'
 #
 # *** FORCINGS *********************************************************
 #
