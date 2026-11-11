@@ -7336,7 +7336,7 @@ par_bio_red_PC_alpha2 scales the offset of 6.0e-3 of Galbraith & Martiny, 2015 C
                         <description>Minimum (basic) number of sedcore layers</description>
                     </param>
                     <param name="par_n_sedcore_tot_perky">
-			<value datatype="integer">20</value>
+			<value datatype="integer">10</value>
                         <description>Number of dimensioned sedcore layers per ka of runtime</description>
                     </param>
                     <param name="n_sed_tot">
