@@ -1,5 +1,5 @@
 # **********************************************************************
-# base-config: 	cookie.CB.p_worjh2.BASES
+# base-config: 	cookie.C.ebP2_yyy.BASES
 # **********************************************************************
 #
 # *** CLIMATE **********************************************************
@@ -13,11 +13,11 @@ ea_36=y
 # *** BIOLOGICAL NEW PRODUCTION ****************************************
 #
 # SPECIFY THE BIOLOGICAL EXPORT SCHEME
-# e.g., bg_par_bio_prodopt='1N1T_PO4MM' -> as used in Cao et al. [2009]
-bg_par_bio_prodopt='1N1T_PO4MM'
+# e.g., bg_par_bio_prodopt='1N1T_PO4MM_Tdep' -> P-only (as per Cao et al. [2009]) but with an added temperature-dependency [Crichton et al., 2021]
+bg_par_bio_prodopt='1N1T_PO4MM_Tdep'
 # SPECIFY BIOLOGICAL EXPORT PARAMETERS
-# maximum rate of conversion of dissolved PO4 into organic matter by phytoplankton (mol kg-1 yr-1)
-bg_par_bio_k0_PO4=8.9876e-006
+# dissolved PO4 uptake timescale multiplier
+bg_par_bio_mu1=10
 # [PO4] M-M half-sat value (mol kg-1)
 bg_par_bio_c0_PO4=8.9369e-007
 #
@@ -37,12 +37,14 @@ bg_par_bio_red_POC_CaCO3_pP=0.7440
 # DOC lifetime (yrs)
 bg_par_bio_remin_DOMlifetime=0.5
 # SPECIFY PARAMETERS CONTROLLIING WATER-COLUMN DECAY OF PARTICULATE ORGANIC MATTER (POM)
-# initial fractional abundance of POC component #2
-bg_par_bio_remin_POC_frac2=0.0557
-# depth of remineralization or particulate organic matter
-bg_par_bio_remin_POC_eL1=589.9451
-# remineralization length #2 for POC
-bg_par_bio_remin_POC_eL2=1000000.0
+# TNOTE: -dep remin parameters following Crichton et al. [2021]
+bg_ctrl_bio_remin_POC_fixed=.false.
+bg_par_bio_remin_sinkingrate=125.0
+bg_par_bio_remin_POC_K1=9.0E11
+bg_par_bio_remin_POC_Ea1=54000.0
+bg_par_bio_remin_POC_K2=1.0E14
+bg_par_bio_remin_POC_Ea2=80000.0
+bg_par_bio_remin_POC_frac2=0.008
 # SPECIFY PARAMETERS CONTROLLIING WATER-COLUMN DECAY OF CaCO3
 # initial fractional abundance of CaCO3 component #2
 bg_par_bio_remin_CaCO3_frac2=0.45
@@ -55,14 +57,14 @@ bg_par_bio_remin_CaCO3_eL2=1000000.0
 #
 # SPECIFY WHAT TO SAVE!
 # NOTE: (0) REFER TO THE COOKIE MANUAL FOR DETAILS!
-#		(1) all 'false' will leave you with the basic (hidden option!) defaults: 
-#           	    bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
-#		(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
-#		(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
-#       	(4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
-#		(5) turning off a 'basic' option will also turn off the corresponding advanced option
-#		(6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
-#                   bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
+#	(1) all 'false' will leave you with the basic (hidden option!) defaults: 
+#           bg_ctrl_save_hidden_grid=.true., bg_ctrl_save_hidden_climate=.true.
+#	(2) isotope output is enabled by turning on bg_ctrl_save_basic_proxies
+#	(3) not selecting a biologicla scheme (or selection ECOGEM) will turn off bg_ctrl_save_basic_biologicalpump
+#       (4) there are 4 'advanced' options corresponding to the 4 'basic' options which add more output
+#	(5) turning off a 'basic' option will also turn off the corresponding advanced option
+#       (6) bg_ctrl_save_basic_ALL=.true. turns on all basic options; 
+#           bg_ctrl_save_advanced_ALL=.true. turns on all advanced options
 bg_ctrl_save_basic_reservoirs=.TRUE.
 bg_ctrl_save_basic_geochemistry=.TRUE.
 bg_ctrl_save_basic_biologicalpump=.TRUE.
@@ -90,13 +92,24 @@ bg_ctrl_ncout_expid_name=.false.
 # e.g., bg_par_forcing_name="pyyyyz.RpCO2_Rp13CO2" -> generic forcing of atmopsheric pCO2 and d13C
 bg_par_forcing_name="pyyyyz.RpCO2_Rp13CO2"
 # SCALE THE FORCING
-bg_par_atm_force_scale_val_3=278.0E-06
+# NOTE: Crichton et al. [2021] used 280 ppm rather than 278 ppm
+bg_par_atm_force_scale_val_3=280.0E-06
 bg_par_atm_force_scale_val_4=-6.5
 #
-# *** MISC **********************************************************
+# *** MISC *************************************************************
 #
 #
-# *******************************************************************
-# *** END ***********************************************************
-# *******************************************************************
+# *** BOUNDARY CONDITIONS **********************************************
+#
+# SPECIFY SOLAR CONSTANT (Wm-2)
+# NOTE: default (modern) value is 1368.0
+ma_genie_solar_constant=1285.92
+# SET THE CO2 FORCING
+# NOTE: setting pCO2 here will over-ride any previous setting
+#       (e.g., the 280.0E-06 default Crichton et al. [2021] value above)
+bg_par_atm_force_scale_val_3=278.0E-06
+#
+# **********************************************************************
+# *** END **************************************************************
+# **********************************************************************
 
