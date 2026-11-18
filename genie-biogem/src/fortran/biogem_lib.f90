@@ -866,7 +866,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_opt_data                           = 30 ! data (I/O)
 !!$  INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
   ! diagnostics arrays dimensions
-  INTEGER,PARAMETER::n_diag_bio                           = 24 !
+  INTEGER,PARAMETER::n_diag_bio                           = 25 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
   INTEGER,PARAMETER::n_diag_precip                        = 09 ! 
   INTEGER,PARAMETER::n_diag_react                         = 11 ! 
@@ -974,6 +974,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_bio_opaltoPOC_sp              = 20    !
   INTEGER,PARAMETER::idiag_bio_fspPOC                    = 21    !
   INTEGER,PARAMETER::idiag_bio_DOMlifetime               = 22    !
+  INTEGER,PARAMETER::idiag_bio_RDOMlifetime              = 25    !
   INTEGER,PARAMETER::idiag_bio_frac_Fe2                  = 23    !
   INTEGER,PARAMETER::idiag_bio_dNO3                      = 24    !
   ! diagnostics - OLD
@@ -1116,6 +1117,7 @@ MODULE biogem_lib
        & 'opaltoPOC_sp  ', &
        & 'fspPOC        ', &
        & 'DOMlifetime   ', &
+       & 'RDOMlifetime  ', &
        & 'frac_Fe2      ', &
        & 'dNO3          ' /)
   ! diagnostics - geochemistry -- OLD

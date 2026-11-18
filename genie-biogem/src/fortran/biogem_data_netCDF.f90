@@ -3858,6 +3858,46 @@ CONTAINS
 !!$       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end If
     ! ---------------------------------------------------------------- !
+    ! Biological productivity controls
+    ! ---------------------------------------------------------------- !
+    DO ib=1,n_diag_bio
+       select case (ib)
+       CASE (idiag_bio_DOMlifetime,idiag_bio_RDOMlifetime)
+          loc_unitsname = 'yr'
+       case default
+          loc_unitsname = 'n/a'
+       end select
+       select case (ib)
+       CASE (idiag_bio_DOMlifetime,idiag_bio_RDOMlifetime)
+          loc_ij(:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                If (goldstein_k1(i,j) <= n_k) then
+                   loc_ij(i,j) = int_diag_bio_timeslice(ib,i,j)/int_t_timeslice
+                end If
+             end DO
+          end DO
+       end select
+       select case (ib)
+       CASE (idiag_bio_DOMlifetime)
+          if (ocn_select(io_DOM_C)) then
+             call sub_adddef_netcdf(loc_iou,3,'biop_bio_'//trim(string_diag_bio(ib)), &
+                  & 'biological productivity control - '//trim(string_diag_bio(ib)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar2d('biop_bio_'//trim(string_diag_bio(ib)),loc_iou, &
+                  & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          end if
+       CASE (idiag_bio_RDOMlifetime)
+          if (ocn_select(io_RDOM_C)) then
+             call sub_adddef_netcdf(loc_iou,3,'biop_bio_'//trim(string_diag_bio(ib)), &
+                  & 'biological productivity control - '//trim(string_diag_bio(ib)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar2d('biop_bio_'//trim(string_diag_bio(ib)),loc_iou, &
+                  & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          end if
+       end select
+    end DO
+    ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_2d_save_biologicalpump_basic
   ! ****************************************************************************************************************************** !
 
