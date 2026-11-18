@@ -856,7 +856,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_k = inl1_ocn                            !
   ! misc arrays dimensions
   INTEGER,PARAMETER::n_phys_ocn                           = 24 ! number of ocean box physical descriptors
-  INTEGER,PARAMETER::n_phys_ocnatm                        = 26 ! number of ocean-atmosphere interface physical descriptors
+  INTEGER,PARAMETER::n_phys_ocnatm                        = 29 ! number of ocean-atmosphere interface physical descriptors
   INTEGER,PARAMETER::n_data_max     = 32767                    ! (maximum) number of (time series) data points (2^15 - 1)
   ! options arrays dimensions
   INTEGER,PARAMETER::n_opt_misc                           = 14 ! miscellaneous
@@ -866,7 +866,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_opt_data                           = 30 ! data (I/O)
 !!$  INTEGER,PARAMETER::n_opt_select                         = 05 ! (tracer) selections
   ! diagnostics arrays dimensions
-  INTEGER,PARAMETER::n_diag_bio                           = 24 !
+  INTEGER,PARAMETER::n_diag_bio                           = 25 !
   INTEGER,PARAMETER::n_diag_geochem_old                   = 10 !
   INTEGER,PARAMETER::n_diag_precip                        = 09 ! 
   INTEGER,PARAMETER::n_diag_react                         = 11 ! 
@@ -931,7 +931,10 @@ MODULE biogem_lib
   INTEGER,PARAMETER::ipoa_mld_k                           = 26   ! k value of MDL (m below surface)
   INTEGER,PARAMETER::ipoa_evap                            = 20   ! evap
   INTEGER,PARAMETER::ipoa_pptn                            = 21   ! pptn
-  INTEGER,PARAMETER::ipoa_seaice_dV                       = 22   ! change in sea-ice volumn
+  INTEGER,PARAMETER::ipoa_seaice_dV                       = 22   ! change in sea-ice volume
+  INTEGER,PARAMETER::ipoa_albedo                          = 27   ! albedo
+  INTEGER,PARAMETER::ipoa_albice                          = 28   ! sea-ice albedo
+  INTEGER,PARAMETER::ipoa_albcl                           = 29   ! climatological albedo
   ! options - misc
   integer,parameter::iopt_misc_O2_equil                   = 07   ! force O2 equilibrium of ocean with atmosphere
   integer,parameter::iopt_misc_debugij                    = 10   ! debug - explicit reporting of (i,j) location in main loop
@@ -971,6 +974,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::idiag_bio_opaltoPOC_sp              = 20    !
   INTEGER,PARAMETER::idiag_bio_fspPOC                    = 21    !
   INTEGER,PARAMETER::idiag_bio_DOMlifetime               = 22    !
+  INTEGER,PARAMETER::idiag_bio_RDOMlifetime              = 25    !
   INTEGER,PARAMETER::idiag_bio_frac_Fe2                  = 23    !
   INTEGER,PARAMETER::idiag_bio_dNO3                      = 24    !
   ! diagnostics - OLD
@@ -1085,7 +1089,10 @@ MODULE biogem_lib
        & 'u               ', &
        & 'v               ', &
        & 'usurf           ', &
-       & 'MLD_k           ' /)
+       & 'MLD_k           ', &
+       & 'albedo          ', &
+       & 'albice          ', &
+       & 'albcl           ' /)
   ! diagnostics - biology
   CHARACTER(len=14),DIMENSION(n_diag_bio),PARAMETER::string_diag_bio = (/ &
        & 'dPO4          ', &
@@ -1110,6 +1117,7 @@ MODULE biogem_lib
        & 'opaltoPOC_sp  ', &
        & 'fspPOC        ', &
        & 'DOMlifetime   ', &
+       & 'RDOMlifetime  ', &
        & 'frac_Fe2      ', &
        & 'dNO3          ' /)
   ! diagnostics - geochemistry -- OLD

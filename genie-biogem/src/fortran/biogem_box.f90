@@ -2222,7 +2222,7 @@ CONTAINS
                    loc_frac    = loc_ocn(io_DIC_14C)
                    loc_d14Cocn = fun_calc_isotope_delta(loc_tot,loc_frac,loc_standard,.FALSE.,const_real_null)
                    bio_remin(io,dum_i,dum_j,n_k) = &
-                        & const_lamda_14C_libby*log( (loc_d14Catm+1000.0)/(loc_d14Cocn+1000.0) ) - loc_ocn(io)
+                        & (1.0/const_lambda_14C_libby)*log( (loc_d14Catm+1000.0)/(loc_d14Cocn+1000.0) ) - loc_ocn(io)
                 else
                    bio_remin(io,dum_i,dum_j,n_k) = 0.0 - loc_ocn(io)                  
                 end if
@@ -2952,7 +2952,7 @@ CONTAINS
     integer::loc_m,loc_tot_m                                            !
     real::tmp_bio_remin
     real::loc_bio_remin_DOMratio,loc_bio_remin_RDOMratio                !
-    real::loc_bio_remin_DOMlifetime
+    real::loc_bio_remin_DOMlifetime,loc_bio_remin_RDOMlifetime
     real::loc_intI                                                      ! local integrated insolation
     real,dimension(n_l_ocn,n_k)::loc_vbio_remin                         !
     real,dimension(n_sed,n_k)::loc_bio_part                             !
@@ -2995,7 +2995,7 @@ CONTAINS
        end if
        if (loc_bio_remin_DOMratio > 1.0) loc_bio_remin_DOMratio = 1.0
        ! store (surface) lifetime
-       if (k == n_k) loc_bio_remin_DOMlifetime = 1.0/(loc_bio_remin_DOMratio/dum_dtyr)
+       if (k == n_k .AND. loc_bio_remin_DOMratio > const_rns) loc_bio_remin_DOMlifetime = 1.0/(loc_bio_remin_DOMratio/dum_dtyr)
        ! calculate RDOM lifetime modifier
        if (ctrl_bio_remin_RDOM_photolysis) then
           ! restrict photolysis to the surface (n = n_k) layer (otherwise, set a 'high' (effectively infinite) lifetime)
@@ -3024,6 +3024,8 @@ CONTAINS
              loc_bio_remin_RDOMratio = 1.0
           end if
        endif
+       ! store (surface) lifetime
+       if (k == n_k .AND. loc_bio_remin_RDOMratio > const_rns) loc_bio_remin_RDOMlifetime = 1.0/(loc_bio_remin_RDOMratio/dum_dtyr)
        ! convert dissolved organic matter to POM as first step in carrying out remineralization
        ! reduce DOM concentrations (as a negative remin tracer anomoly value)
        ! DOM
@@ -3096,7 +3098,8 @@ CONTAINS
        end if
     end if
     ! write out (surface) lifetime for integration/averaging
-    diag_bio(idiag_bio_DOMlifetime,loc_i,loc_j) = dum_dtyr*loc_bio_remin_DOMlifetime
+    diag_bio(idiag_bio_DOMlifetime,loc_i,loc_j)  = dum_dtyr*loc_bio_remin_DOMlifetime
+    diag_bio(idiag_bio_RDOMlifetime,loc_i,loc_j) = dum_dtyr*loc_bio_remin_RDOMlifetime
     ! write ocean tracer remineralization field (global array)
     dum_vbio_remin%mk(:,:) = loc_vbio_remin(:,:)
 !!$    ! deallocate local arrays

@@ -2750,6 +2750,9 @@ subroutine biogem_climate( &
      & dum_mld,                 &
      & dum_evap,                &
      & dum_pptn,                &
+     & dum_albedo,              &
+     & dum_albice,              &
+     & dum_albcl,               &
      & dum_solconst,            &
      & dum_diffv,               &
      & dum_dzrho,               &
@@ -2773,6 +2776,9 @@ subroutine biogem_climate( &
   real,dimension(n_i,n_j),INTENT(in)::dum_mld                    ! mixed layer depth
   real,dimension(n_i,n_j),INTENT(in)::dum_evap                   ! evap
   real,dimension(n_i,n_j),INTENT(in)::dum_pptn                   ! precip
+  real,dimension(n_i,n_j),INTENT(in)::dum_albedo                 ! 
+  real,dimension(n_i,n_j),INTENT(in)::dum_albice                 ! 
+  real,dimension(n_i,n_j),INTENT(in)::dum_albcl                  ! 
   REAL,INTENT(inout)::dum_solconst                               ! solar constant
   REAL,DIMENSION(n_i,n_j,n_k),INTENT(in)::dum_diffv              ! vertical diffusivity
   REAL,DIMENSION(n_i,n_j,n_k),INTENT(in)::dum_dzrho              ! density gradient
@@ -2786,8 +2792,8 @@ subroutine biogem_climate( &
 
   ! *** INITIALIZE ***
   ! calculate local variables
-  loc_tau_scale = goldstein_rh0sc*goldstein_dsc*goldstein_usc*goldstein_fsc/goldstein_scf
-  loc_diff_scale = (goldstein_usc*goldstein_dsc*goldstein_dsc)/const_rEarth
+  loc_tau_scale   = goldstein_rh0sc*goldstein_dsc*goldstein_usc*goldstein_fsc/goldstein_scf
+  loc_diff_scale  = (goldstein_usc*goldstein_dsc*goldstein_dsc)/const_rEarth
   loc_dzrho_scale = goldstein_rh0sc/goldstein_dsc
   ! calculate sea-ice volume at previous (BIOGEM) time-step
   DO i=1,n_i
@@ -2845,6 +2851,10 @@ subroutine biogem_climate( &
         ! evap and precip
         phys_ocnatm(ipoa_evap,i,j)  = dum_evap(i,j)
         phys_ocnatm(ipoa_pptn,i,j)  = dum_pptn(i,j)
+        ! albedo fields
+        phys_ocnatm(ipoa_albedo,i,j) = dum_albedo(i,j)
+        phys_ocnatm(ipoa_albice,i,j) = dum_albice(i,j)
+        phys_ocnatm(ipoa_albcl,i,j)  = dum_albcl(i,j)
      end DO
   end DO
   ! copy barotropic streamfunction
@@ -3508,6 +3518,7 @@ SUBROUTINE diag_biogem_timeslice( &
                        !       and this needs to be propagated
                        loc_carbconst(:,i,j,loc_k1:n_k) = carbconst(:,i,j,loc_k1:n_k)
                        loc_carb(:,i,j,loc_k1:n_k)      = carb(:,i,j,loc_k1:n_k)
+                       loc_carbisor(:,i,j,loc_k1:n_k)  = carbisor(:,i,j,loc_k1:n_k)
                        ! set water column interval for solving pH
                        if (ctrl_carbchem_pH_OLD) then
                           ! flag for whole water-column updating

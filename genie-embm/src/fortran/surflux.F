@@ -69,6 +69,7 @@ c
      :     eb_fx0a,eb_fx0o,eb_fxsen,eb_fxlw,
      :     eb_evap,eb_pptn,eb_relh,
      :     eb_uv,eb_usurf,
+     :     eb_albedo,eb_albice,eb_albcl,
      :     solconst,
      :     co2_out,ch4_out,n2o_out,
      :     surf_orog_atm,                    !< orography (m)
@@ -182,7 +183,10 @@ c pbh for orography
       real eb_relh(imax,jmax)
       real eb_uv(2,imax,jmax)
       real eb_usurf(imax,jmax)
-
+      real eb_albedo(imax,jmax)
+      real eb_albice(imax,jmax)
+      real eb_albcl(imax,jmax)
+      
 c Existing declarations
 
       real runoff(imax,jmax)
@@ -891,6 +895,7 @@ c let albedo over sea ice vary as a function of tair (Holland et al. 1993)
 
                   albsic = max(par_albsic_min, 
      &             min(par_albsic_max,0.40 - 0.04*atemp(i,j)))
+     
 c cgv2 seasonal
 c nre note for IGCM needs changing
                   if (flag_ents) then
@@ -1025,7 +1030,7 @@ c                exceeds a given  threshold (par_sich_max)
      1                       - rhooi*evapsic(i,j)
                      endif
                   endif
-
+     		
                else
 c              * Sea-ice absent *
                   albsic        = 0.
@@ -1637,27 +1642,22 @@ c     AY (12/07/04) : removed surplus input arguments to subroutine
 c Set values of dummy variables destined for BIOGEM & ENTS
 c NOTE: convert precision between GOLDSTEIn (real*8) and GENIE 
 c       (which can be real*4 or real* depending on the IGCM)
-c      do j=1,jmax
-c         do i=1,imax
       do i=1,imax
          do j=1,jmax
-            go_fxsw(i,j) = real(fxsw(i,j))
-ccc            if (flag_ents) then
-               eb_fx0a(i,j)  = real(fx0a(i,j))
-               eb_fx0o(i,j)  = real(fx0o(i,j))
-               eb_fxsen(i,j) = real(fxsen(i,j))
-               eb_fxlw(i,j)  = real(fxlw(i,j))
-               eb_evap(i,j)  = real(evap(i,j))
-               eb_pptn(i,j)  = real(pptn(i,j))
-               eb_uv(1,i,j)  = usc*uatm(1,i,j)
-               eb_uv(2,i,j)  = usc*uatm(2,i,j)
-               eb_usurf(i,j) = usurf(i,j)
+            go_fxsw(i,j)   = real(fxsw(i,j))
+            eb_fx0a(i,j)   = real(fx0a(i,j))
+            eb_fx0o(i,j)   = real(fx0o(i,j))
+            eb_fxsen(i,j)  = real(fxsen(i,j))
+            eb_fxlw(i,j)   = real(fxlw(i,j))
+            eb_evap(i,j)   = real(evap(i,j))
+            eb_pptn(i,j)   = real(pptn(i,j))
+            eb_uv(1,i,j)   = usc*uatm(1,i,j)
+            eb_uv(2,i,j)   = usc*uatm(2,i,j)
+            eb_usurf(i,j)  = usurf(i,j)
+            eb_albedo(i,j) = real(albedo(i,j))
+            eb_albice(i,j) = real(albice(i,j))
+            eb_albcl(i,j)  = real(albcl(i,j))
 c     eb_relh(i,j) = real(relh(i,j))
-cccc SHELF SOLAR RADIATION HACK
-ccc               if(k1(i,j).ne.kmax) then
-ccc                  go_fxsw(i,j) = 0.0
-ccc               endif
-ccc            endif
          enddo
       enddo
       do j=1,jmax
