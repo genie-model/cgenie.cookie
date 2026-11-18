@@ -310,7 +310,7 @@ c     Heat flux         [-> GOLDSTEIN]
             sic_FX0_ocn(i,j) = real(fx_delta(i,j))
          enddo
       enddo
-
+      
 c     ======================================================================
 c     DJL
 c     This bit just calculates the diagnostic of the total seaice 

@@ -856,7 +856,7 @@ MODULE biogem_lib
   INTEGER,PARAMETER::n_k = inl1_ocn                            !
   ! misc arrays dimensions
   INTEGER,PARAMETER::n_phys_ocn                           = 24 ! number of ocean box physical descriptors
-  INTEGER,PARAMETER::n_phys_ocnatm                        = 26 ! number of ocean-atmosphere interface physical descriptors
+  INTEGER,PARAMETER::n_phys_ocnatm                        = 29 ! number of ocean-atmosphere interface physical descriptors
   INTEGER,PARAMETER::n_data_max     = 32767                    ! (maximum) number of (time series) data points (2^15 - 1)
   ! options arrays dimensions
   INTEGER,PARAMETER::n_opt_misc                           = 14 ! miscellaneous
@@ -931,7 +931,10 @@ MODULE biogem_lib
   INTEGER,PARAMETER::ipoa_mld_k                           = 26   ! k value of MDL (m below surface)
   INTEGER,PARAMETER::ipoa_evap                            = 20   ! evap
   INTEGER,PARAMETER::ipoa_pptn                            = 21   ! pptn
-  INTEGER,PARAMETER::ipoa_seaice_dV                       = 22   ! change in sea-ice volumn
+  INTEGER,PARAMETER::ipoa_seaice_dV                       = 22   ! change in sea-ice volume
+  INTEGER,PARAMETER::ipoa_albedo                          = 27   ! albedo
+  INTEGER,PARAMETER::ipoa_albice                          = 28   ! sea-ice albedo
+  INTEGER,PARAMETER::ipoa_albcl                           = 29   ! climatological albedo
   ! options - misc
   integer,parameter::iopt_misc_O2_equil                   = 07   ! force O2 equilibrium of ocean with atmosphere
   integer,parameter::iopt_misc_debugij                    = 10   ! debug - explicit reporting of (i,j) location in main loop
@@ -1085,7 +1088,10 @@ MODULE biogem_lib
        & 'u               ', &
        & 'v               ', &
        & 'usurf           ', &
-       & 'MLD_k           ' /)
+       & 'MLD_k           ', &
+       & 'albedo          ', &
+       & 'albice          ', &
+       & 'albcl           ' /)
   ! diagnostics - biology
   CHARACTER(len=14),DIMENSION(n_diag_bio),PARAMETER::string_diag_bio = (/ &
        & 'dPO4          ', &

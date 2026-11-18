@@ -750,6 +750,9 @@ MODULE genie_global
   real,dimension(1:2,ilon1_ocn,ilat1_ocn)::go_tau
   real,dimension(1:2,ilon1_ocn,ilat1_ocn)::eb_uv
   real,dimension(ilon1_ocn,ilat1_ocn)::eb_usurf
+  real,dimension(ilon1_ocn,ilat1_ocn)::eb_albedo
+  real,dimension(ilon1_ocn,ilat1_ocn)::eb_albice
+  real,dimension(ilon1_ocn,ilat1_ocn)::eb_albcl
   REAL,DIMENSION(ilat1_ocn)::go_solfor
   REAL,DIMENSION(ilat1_atm)::solfor_atm
   REAL,DIMENSION(ilon1_ocn,ilat1_ocn)::go_fxsw

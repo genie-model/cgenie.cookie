@@ -3147,6 +3147,24 @@ CONTAINS
        end DO
     end if
     ! ---------------------------------------------------------------- !
+    ! additional surface ocean carbonate chemsitry diagnostics
+    ! ---------------------------------------------------------------- !
+    if (ocn_select(io_DIC) .AND. ocn_select(io_ALK) .AND. atm_select(ia_pCO2)) then
+       ! save air-sea delta pCO2 data
+       loc_ij(:,:) = phys_ocn(ipo_mask_ocn,:,:,n_k) * &
+            & (int_carb_timeslice(ic_fug_CO2,:,:,n_k) - int_sfcatm1_timeslice(ia_pCO2,:,:))/int_t_timeslice
+       loc_unitsname = 'atm'
+       call sub_adddef_netcdf(loc_iou,3,'carbchem_seasur_CO2_diff','air-sea pCO2 difference', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('carbchem_seasur_CO2_diff',loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_surf)
+       ! air-sea gas exchange coefficient
+       loc_unitsname = 'mol m-2 yr-1 uatm-1'
+       call sub_adddef_netcdf(loc_iou,3,'carbchem_seasur_CO2_gasx','air-sea CO2 gasx coefficient', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('carbchem_seasur_CO2_gasx',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_KCO2,:,:)/int_t_timeslice,loc_mask_surf)
+    end if
+    ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_2d_save_geochemistry_basic
   ! ****************************************************************************************************************************** !
   
@@ -4520,11 +4538,14 @@ CONTAINS
     if (ctrl_save_hidden_extra) then
        loc_ij(:,:) = const_real_zero
        DO ip=1,n_phys_ocnatm
-          loc_ij(:,:) = int_phys_ocnatm_timeslice(ip,:,:)/int_t_timeslice
-          call sub_adddef_netcdf(loc_iou,3,'2Dgrid_'//trim(string_phys_ocnatm(ip)), &
-               & 'grid - '//trim(string_phys_ocnatm(ip)),' ',const_real_zero,const_real_zero)
-          call sub_putvar2d('2Dgrid_'//trim(string_phys_ocnatm(ip)),loc_iou, &
-               & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf_ALL)
+          SELECT CASE (ip)
+          CASE (ipoa_lat,ipoa_lon,ipoa_dlat,ipoa_dlon,ipoa_A) 
+             loc_ij(:,:) = int_phys_ocnatm_timeslice(ip,:,:)/int_t_timeslice
+             call sub_adddef_netcdf(loc_iou,3,'2Dgrid_'//trim(string_phys_ocnatm(ip)), &
+                  & 'grid - '//trim(string_phys_ocnatm(ip)),' ',const_real_zero,const_real_zero)
+             call sub_putvar2d('2Dgrid_'//trim(string_phys_ocnatm(ip)),loc_iou, &
+                  & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf_ALL)
+          end SELECT
        END DO
     else
        loc_ij(:,:) = const_real_zero
@@ -4581,33 +4602,38 @@ CONTAINS
     ! ---------------------------------------------------------------- !
     ! phys_atm -- 'CLIMATE'
     ! ---------------------------------------------------------------- !
-    ! (2) surface wind speed
+    ! (1) surface wind speed
     loc_unitsname = 'm s-1'
     call sub_adddef_netcdf(loc_iou,3,'climate_wspeed','windspeed',trim(loc_unitsname),const_real_zero,const_real_zero)
     call sub_putvar2d('climate_wspeed',loc_iou,n_i,n_j,loc_ntrec, &
          & int_phys_ocnatm_timeslice(ipoa_wspeed,:,:)/int_t_timeslice,loc_mask_sur)
-    ! (3) fractional sea-ice cover
+    ! (2) fractional sea-ice cover
     loc_unitsname = 'n/a'
     call sub_adddef_netcdf(loc_iou,3,'climate_seaice','sea-ice cover (%)',trim(loc_unitsname),const_real_zero,const_real_zero)
     call sub_putvar2d('climate_seaice',loc_iou,n_i,n_j,loc_ntrec, &
          & 100.0*int_phys_ocnatm_timeslice(ipoa_seaice,:,:)/int_t_timeslice,loc_mask_sur)
-    ! (4) sea-ice thickness
+    ! (3) sea-ice thickness
     loc_unitsname = 'm'
     call sub_adddef_netcdf (loc_iou,3,'climate_seaice_th','sea-ice thickness', &
          & trim(loc_unitsname),const_real_zero,const_real_zero)
     call sub_putvar2d('climate_seaice_th',loc_iou,n_i,n_j,loc_ntrec, &
          & int_phys_ocnatm_timeslice(ipoa_seaice_th,:,:)/int_t_timeslice,loc_mask_sur)
-    ! (5) incident sw radiation
+    ! (4) incident sw radiation
     loc_unitsname = 'W m-2'
     call sub_adddef_netcdf(loc_iou,3,'climate_fxsw','incident sw radiation',trim(loc_unitsname),const_real_zero,const_real_zero)
     call sub_putvar2d('climate_fxsw',loc_iou,n_i,n_j,loc_ntrec, &
          & int_phys_ocnatm_timeslice(ipoa_fxsw,:,:)/int_t_timeslice,loc_mask_sur_ALL)
-    ! (6) convective 'cost' (need to un-do the time-step weighting)
+    ! (5) convective 'cost' (need to un-do the time-step weighting)
     loc_unitsname = 'yr-1'
     loc_longname = 'convective cost (column integrated adjustments per year)'
     call sub_adddef_netcdf(loc_iou,3,'climate_cost',trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
     call sub_putvar2d('climate_cost',loc_iou,n_i,n_j,loc_ntrec, &
          & int_phys_ocnatm_timeslice(ipoa_cost,:,:)/int_t_timeslice/dum_dtyr,loc_mask_sur)
+    ! (6) MLD (1)
+    loc_unitsname = 'm'
+    call sub_adddef_netcdf(loc_iou,3,'climate_MLD','mixed layer depth',trim(loc_unitsname),const_real_zero,const_real_zero)
+    call sub_putvar2d('climate_MLD',loc_iou,n_i,n_j,loc_ntrec, &
+         & int_phys_ocnatm_timeslice(ipoa_mld,:,:)/int_t_timeslice,loc_mask_sur)
     if (ctrl_save_hidden_extra) then
        ! (7) solar forcing
        loc_unitsname = 'W m-2'
@@ -4619,27 +4645,55 @@ CONTAINS
        call sub_adddef_netcdf (loc_iou,3,'climate_tau_u','wind stress (u)',trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d('climate_tau_u',loc_iou,n_i,n_j,loc_ntrec, &
             & int_phys_ocnatm_timeslice(ipoa_tau_u,:,:)/int_t_timeslice,loc_mask_sur)
-       loc_unitsname = 'N/m-2'
        call sub_adddef_netcdf(loc_iou,3,'climate_tau_v','wind stress (v)',trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d('climate_tau_v',loc_iou,n_i,n_j,loc_ntrec, &
             & int_phys_ocnatm_timeslice(ipoa_tau_v,:,:)/int_t_timeslice,loc_mask_sur)
-       ! (9) air-sea gas exchange coefficient
-       if (atm_select(ia_pCO2)) then
-          loc_unitsname = 'mol m-2 yr-1 uatm-1'
-          call sub_adddef_netcdf(loc_iou,3,'climate_KCO2','air-sea gasx coef.',trim(loc_unitsname),const_real_zero,const_real_zero)
-          call sub_putvar2d('climate_KCO2',loc_iou,n_i,n_j,loc_ntrec, &
-               & int_phys_ocnatm_timeslice(ipoa_KCO2,:,:)/int_t_timeslice,loc_mask_sur)
-       end if
-       ! (10) MLD
-       loc_unitsname = 'm'
-       call sub_adddef_netcdf(loc_iou,3,'climate_MLD','mixed layer depth',trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('climate_MLD',loc_iou,n_i,n_j,loc_ntrec, &
-            & int_phys_ocnatm_timeslice(ipoa_mld,:,:)/int_t_timeslice,loc_mask_sur)
+       ! (9) wind velocity
+       loc_unitsname = 'm s-1'
+       call sub_adddef_netcdf (loc_iou,3,'climate_vel_u','wind velocity (u)',trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_vel_u',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_tau_u,:,:)/int_t_timeslice,loc_mask_sur_ALL)
+       call sub_adddef_netcdf(loc_iou,3,'climate_vel_v','wind velocity (v)',trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_vel_v',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_tau_v,:,:)/int_t_timeslice,loc_mask_sur_ALL)
+       ! (10) MLD (2)
        loc_unitsname = 'n/a'
        call sub_adddef_netcdf(loc_iou,3,'climate_MLD_k','mixed layer level',trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar2d('climate_MLD_k',loc_iou,n_i,n_j,loc_ntrec, &
             & int_phys_ocnatm_timeslice(ipoa_mld_k,:,:)/int_t_timeslice,loc_mask_sur)
+       ! (11) evap
+       loc_unitsname = '--'
+       call sub_adddef_netcdf(loc_iou,3,'climate_evap','evaporation',trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_evap',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_evap,:,:)/int_t_timeslice,loc_mask_sur_ALL)
+       ! (12) precip
+       loc_unitsname = '--'
+       call sub_adddef_netcdf(loc_iou,3,'climate_precip','precipitation',trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_precip',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_pptn,:,:)/int_t_timeslice,loc_mask_sur_ALL)
+       ! (13) albedo fields
+       !      NOTE: for seaice albedo, the output is misleading becasue the averaged albedo is not weighted by % seaice cover
+       !            i.e., a time-step of seaice and 0.7 albedo will get averaged with an ice-free time-step, and look like 0.35 ...
+       loc_unitsname = 'n/a'
+       call sub_adddef_netcdf(loc_iou,3,'climate_albedo_mean','mean albedo', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_albedo_mean',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_albedo,:,:)/int_t_timeslice,loc_mask_sur_ALL)
+       call sub_adddef_netcdf(loc_iou,3,'climate_albedo_seaice','seaice albedo', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_albedo_seaice',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_albice,:,:)/int_t_timeslice,loc_mask_sur)
+       call sub_adddef_netcdf(loc_iou,3,'climate_albedo_clim','climatological albedo', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('climate_albedo_clim',loc_iou,n_i,n_j,loc_ntrec, &
+            & int_phys_ocnatm_timeslice(ipoa_albcl,:,:)/int_t_timeslice,loc_mask_sur_ALL)
     end if
+    ! (13) MLD P-E
+    loc_unitsname = '--'
+    call sub_adddef_netcdf(loc_iou,3,'climate_PminusE','precipitation minus evaporation', &
+         & trim(loc_unitsname),const_real_zero,const_real_zero)
+    call sub_putvar2d('climate_PminusE',loc_iou,n_i,n_j,loc_ntrec, &
+         & (int_phys_ocnatm_timeslice(ipoa_pptn,:,:)-int_phys_ocnatm_timeslice(ipoa_evap,:,:))/int_t_timeslice,loc_mask_sur_ALL)
     ! ---------------------------------------------------------------- !
     ! atmosphere climate fields
     ! ---------------------------------------------------------------- !
@@ -4803,16 +4857,6 @@ CONTAINS
                & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_sur)
        END SELECT
     end DO
-    ! ---------------------------------------------------------------- !
-    ! save air-sea delta pCO2 data
-    ! ---------------------------------------------------------------- !
-    IF (atm_select(ia_pCO2)) THEN
-       loc_ij(:,:) = phys_ocn(ipo_mask_ocn,:,:,n_k) * &
-            & (int_carb_timeslice(ic_fug_CO2,:,:,n_k) - int_sfcatm1_timeslice(ia_pCO2,:,:))/int_t_timeslice
-       loc_unitsname = 'atm'
-       call sub_adddef_netcdf(loc_iou,3,'CO2_Dairsea','air-sea pCO2 diff',trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('CO2_Dairsea',loc_iou,n_i,n_j,loc_ntrec,loc_ij,loc_mask_sur)
-    end if
     ! ---------------------------------------------------------------- !
     ! save derived CO2 flux data
     ! ---------------------------------------------------------------- !

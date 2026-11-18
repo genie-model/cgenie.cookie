@@ -131,6 +131,9 @@ contains
          eb_evap,eb_pptn,eb_relh, &               ! (also output to BIOGEM)
          eb_uv, &                                 ! output (to BIOGEM)
          eb_usurf, &                              ! output (to BIOGEM)
+         eb_albedo, &                             ! output (to BIOGEM)
+         eb_albice, &                             ! output (to BIOGEM)
+         eb_albcl, &                              ! output (to BIOGEM)
          genie_solar_constant, &
          co2_atm,ch4_atm,n2o_atm, &               ! output
          surf_orog_atm, &                         ! in/output
@@ -675,6 +678,9 @@ contains
          & go_mldta,                                         & ! input
          & eb_evap,                                          & ! input
          & eb_pptn,                                          & ! input
+         & eb_albedo,                                        & ! input
+         & eb_albice,                                        & ! input
+         & eb_albcl,                                         & ! input
          & genie_solar_constant,                             & ! input/output
          & go_diffv,                                         & ! input
          & go_dzrho,                                         & ! input
