@@ -1114,11 +1114,11 @@ CONTAINS
     IF ( ocn_select(io_Fe) .AND. ocn_select(io_FeL) ) THEN
        loc_unitsname = 'nmol kg-1'
        loc_ijk(:,:,:) = 1.0E9*(int_ocn_timeslice(io_Fe,:,:,:) + int_ocn_timeslice(io_FeL,:,:,:))/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,4,'geochem_Fe_FeT','Total dissolved iron concentration', &
+       call sub_adddef_netcdf(loc_iou,4,'geochem_Fe_FeT','total dissolved iron concentration', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar3d_g('geochem_Fe_FeT',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
        loc_ijk(:,:,:) = 1.0E9*(int_ocn_timeslice(io_L,:,:,:) + int_ocn_timeslice(io_FeL,:,:,:))/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,4,'geochem_Fe_LT','Total Fe-binding ligand concentration', &
+       call sub_adddef_netcdf(loc_iou,4,'geochem_Fe_LT','total Fe-binding ligand concentration', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
        call sub_putvar3d_g('geochem_Fe_LT',loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
     end IF
@@ -1135,7 +1135,7 @@ CONTAINS
           end SELECT
           loc_ijk(:,:,:) = int_diag_iron_timeslice(id,:,:,:)/int_t_timeslice
           call sub_adddef_netcdf(loc_iou,4,'geochem_Fe_'//trim(string_diag_iron(id)), &
-               & 'water-column Fe speciation - '//trim(string_diag_iron(id)), &
+               & 'Fe speciation - '//trim(string_diag_iron(id)), &
                & trim(loc_unitsname),const_real_zero,const_real_zero)
           call sub_putvar3d_g('geochem_Fe_'//trim(string_diag_iron(id)),loc_iou, &
                & n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
@@ -1171,7 +1171,7 @@ CONTAINS
              loc_min        = -1000.0
              loc_max        = +1000.0
              loc_name = 'geochem_Fe_TDFe_d56Fe'
-             call sub_adddef_netcdf(loc_iou,4,trim(loc_name),'water-column Fe speciation - d56Fe (total dissolved iron)', &
+             call sub_adddef_netcdf(loc_iou,4,trim(loc_name),'Fe speciation - d56Fe (total dissolved iron)', &
                   & trim(loc_unitsname),loc_min,loc_max)
              call sub_putvar3d_g(trim(loc_name),loc_iou,n_i,n_j,n_k,loc_ntrec,loc_ijk(:,:,:),loc_mask)
           end if
@@ -3532,24 +3532,51 @@ CONTAINS
        loc_unitsname = 'mg Fe m-2 yr-1'
        loc_ij(:,:) = conv_mol_mmol*par_det_Fe_frac*conv_det_mol_g* &
             & (int_phys_ocn_timeslice(ipo_rA,:,:,n_k)*int_bio_settle_timeslice(is_det,:,:,n_k))/(int_t_timeslice**2)
-       call sub_adddef_netcdf(loc_iou,3,'biop_iron_fluxden','Total aeolian iron flux density to surface', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_dustflux','total iron supply to surface in dust', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_iron_fluxden',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_dustflux',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
        ! solubility (%)
        loc_unitsname = '%'
        loc_ij(:,:) = 100.0*int_phys_ocnatm_timeslice(ipoa_solFe,:,:)/int_t_timeslice
-       call sub_adddef_netcdf(loc_iou,3,'biop_iron_sol','Aeolian iron solubility', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_iron_dustsol','iron solubility in dust', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_iron_sol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_iron_dustsol',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
     ! ---------------------------------------------------------------- !
-    ! nutrient limitation
+    ! productivity limitation (/modifier) factors
     ! ---------------------------------------------------------------- !
-    ! NOTE: -1.0 equates to dominance of PO4 limitation, +1.0 to dominance of Fe limitation
-    !       a value of ~0.0 represents ~equal limitation
-    ! for reference: loc_kPO4 = loc_PO4/(loc_PO4 + par_bio_c0_PO4), loc_kFe = loc_FeT/(loc_FeT + par_bio_c0_Fe)
-    !                i.e. 1.0 == no limitation, 0.0 == complete limitation
+    if ( ocn_select(io_PO4) ) then
+       ! PO4 limitation
+       loc_unitsname = 'n/a'
+       loc_ij(:,:) = int_diag_bio_timeslice(idiag_bio_kPO4,:,:)/int_t_timeslice
+       call sub_adddef_netcdf(loc_iou,3,'biop_biolim_PO4','productivity modifier by PO4 availability', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('biop_biolim_PO4',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       ! light limitation
+       loc_unitsname = 'n/a'
+       loc_ij(:,:) = int_diag_bio_timeslice(idiag_bio_kI,:,:)/int_t_timeslice
+       call sub_adddef_netcdf(loc_iou,3,'biop_biolim_light','productivity modifier by light availability', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('biop_biolim_light',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       ! temperature modifier
+       loc_unitsname = 'n/a'
+       loc_ij(:,:) = int_diag_bio_timeslice(idiag_bio_kT,:,:)/int_t_timeslice
+       call sub_adddef_netcdf(loc_iou,3,'biop_biolim_temp','productivity modifier by temeprature', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('biop_biolim_temp',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+    end if
     if ( ocn_select(io_PO4) .AND. (ocn_select(io_Fe) .OR. ocn_select(io_TDFe)) ) then
+       ! Fe limitation
+       loc_unitsname = 'n/a'
+       loc_ij(:,:) = int_diag_bio_timeslice(idiag_bio_kFe,:,:)/int_t_timeslice
+       call sub_adddef_netcdf(loc_iou,3,'biop_biolim_Fe','productivity modifier by total dissolved iron availability', &
+            & trim(loc_unitsname),const_real_zero,const_real_zero)
+       call sub_putvar2d('biop_biolim_Fe',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       ! relative nutrient limitaiton diagnostic
+       ! NOTE: -1.0 equates to dominance of PO4 limitation, +1.0 to dominance of Fe limitation
+       !       a value of ~0.0 represents ~equal limitation
+       ! for reference: loc_kPO4 = loc_PO4/(loc_PO4 + par_bio_c0_PO4), loc_kFe = loc_FeT/(loc_FeT + par_bio_c0_Fe)
+       !                i.e. 1.0 == no limitation, 0.0 == complete limitation
        loc_unitsname = 'n/a'
        loc_ij(:,:) = const_real_null
        DO i=1,n_i
@@ -3562,10 +3589,50 @@ CONTAINS
              end if
           end do
        end do
-       call sub_adddef_netcdf(loc_iou,3,'biop_iron_FevsPO4lim','occurrence of Fe (+1.0) vs. PO4 (-1.0) limitation', &
+       call sub_adddef_netcdf(loc_iou,3,'biop_biolim_rFevsPO4','occurrence of total limitation by Fe (+1) vs. by PO4 (-1)', &
             & trim(loc_unitsname),const_real_zero,const_real_zero)
-       call sub_putvar2d('biop_iron_FevsPO4lim',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+       call sub_putvar2d('biop_biolim_rFevsPO4',loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end if
+    ! ---------------------------------------------------------------- !
+    ! DOM diagnostics
+    ! ---------------------------------------------------------------- !
+    DO ib=1,n_diag_bio
+       select case (ib)
+       CASE (idiag_bio_DOMlifetime,idiag_bio_RDOMlifetime)
+          loc_unitsname = 'yr'
+       case default
+          loc_unitsname = 'n/a'
+       end select
+       select case (ib)
+       CASE (idiag_bio_DOMlifetime,idiag_bio_RDOMlifetime)
+          loc_ij(:,:) = const_real_null
+          DO i=1,n_i
+             DO j=1,n_j
+                If (goldstein_k1(i,j) <= n_k) then
+                   loc_ij(i,j) = int_diag_bio_timeslice(ib,i,j)/int_t_timeslice
+                end If
+             end DO
+          end DO
+       end select
+       select case (ib)
+       CASE (idiag_bio_DOMlifetime)
+          if (ocn_select(io_DOM_C)) then
+             call sub_adddef_netcdf(loc_iou,3,'biop_dom_'//trim(string_diag_bio(ib)), &
+                  & 'biological productivity control - '//trim(string_diag_bio(ib)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar2d('biop_dom_'//trim(string_diag_bio(ib)),loc_iou, &
+                  & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          end if
+       CASE (idiag_bio_RDOMlifetime)
+          if (ocn_select(io_RDOM_C)) then
+             call sub_adddef_netcdf(loc_iou,3,'biop_dom_'//trim(string_diag_bio(ib)), &
+                  & 'biological productivity control - '//trim(string_diag_bio(ib)), &
+                  & trim(loc_unitsname),const_real_zero,const_real_zero)
+             call sub_putvar2d('biop_dom_'//trim(string_diag_bio(ib)),loc_iou, &
+                  & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
+          end if
+       end select
+    end DO
     ! ---------------------------------------------------------------- !
     ! ECOGEM diagnostics
     ! ---------------------------------------------------------------- !
@@ -3857,46 +3924,6 @@ CONTAINS
 !!$            & trim(loc_longname),trim(loc_unitsname),const_real_zero,const_real_zero)
 !!$       call sub_putvar2d(trim(loc_shortname),loc_iou,n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
     end If
-    ! ---------------------------------------------------------------- !
-    ! Biological productivity controls
-    ! ---------------------------------------------------------------- !
-    DO ib=1,n_diag_bio
-       select case (ib)
-       CASE (idiag_bio_DOMlifetime,idiag_bio_RDOMlifetime)
-          loc_unitsname = 'yr'
-       case default
-          loc_unitsname = 'n/a'
-       end select
-       select case (ib)
-       CASE (idiag_bio_DOMlifetime,idiag_bio_RDOMlifetime)
-          loc_ij(:,:) = const_real_null
-          DO i=1,n_i
-             DO j=1,n_j
-                If (goldstein_k1(i,j) <= n_k) then
-                   loc_ij(i,j) = int_diag_bio_timeslice(ib,i,j)/int_t_timeslice
-                end If
-             end DO
-          end DO
-       end select
-       select case (ib)
-       CASE (idiag_bio_DOMlifetime)
-          if (ocn_select(io_DOM_C)) then
-             call sub_adddef_netcdf(loc_iou,3,'biop_bio_'//trim(string_diag_bio(ib)), &
-                  & 'biological productivity control - '//trim(string_diag_bio(ib)), &
-                  & trim(loc_unitsname),const_real_zero,const_real_zero)
-             call sub_putvar2d('biop_bio_'//trim(string_diag_bio(ib)),loc_iou, &
-                  & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-          end if
-       CASE (idiag_bio_RDOMlifetime)
-          if (ocn_select(io_RDOM_C)) then
-             call sub_adddef_netcdf(loc_iou,3,'biop_bio_'//trim(string_diag_bio(ib)), &
-                  & 'biological productivity control - '//trim(string_diag_bio(ib)), &
-                  & trim(loc_unitsname),const_real_zero,const_real_zero)
-             call sub_putvar2d('biop_bio_'//trim(string_diag_bio(ib)),loc_iou, &
-                  & n_i,n_j,loc_ntrec,loc_ij(:,:),loc_mask_surf)
-          end if
-       end select
-    end DO
     ! ---------------------------------------------------------------- !
   END SUBROUTINE sub_2d_save_biologicalpump_basic
   ! ****************************************************************************************************************************** !
